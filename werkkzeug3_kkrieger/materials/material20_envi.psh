@@ -1,0 +1,97 @@
+ps.2.0
+// material 2.0: envi pass (pixel shader)
+
+// flag data layout, constants
+flags
+	Flags
+	_pad[7]
+	
+	TexFlags[4]
+	TexScale[4]
+	
+	LgtFlags[4]
+	LgtScale[4]
+	
+	SRT1[9]
+	SRT2[5]
+	
+	TexUsed[4]
+	LgtUsed[4]
+	SrcScale[4]
+	SrcScale2[4]
+endflags
+
+def c0,-2,0,-0.5,0.5
+
+// texture coords and samplers
+alias tBasisX = t0
+alias tEye = t1
+alias tUV = t2
+alias tBasisY = t3
+alias tBasisZ = t4
+
+alias sEnvi = s0
+alias sBump = s1
+
+dcl     tBasisX.xyz
+dcl     tEye.xyz
+dcl_2d  sEnvi
+
+if LgtFlags[2][17]
+  dcl     tUV.xy
+  dcl     tBasisY.xyz
+  dcl     tBasisZ.xyz
+  dcl_2d  sBump
+elif Flags[7]
+  dcl     tUV.xy
+  dcl_2d  sBump
+endif
+
+// sample bump if required
+temp    normalMap
+if LgtFlags[2][17] // bumped
+  texld   normalMap,tUV,sBump
+elif Flags[7] // specular map
+  texld   normalMap,tUV,sBump
+endif
+
+// calc input normal
+temp    inN
+
+if LgtFlags[2][17] // bumped
+  mul   inN.xyz,normalMap.x,tBasisX
+  mad   inN.xyz,normalMap.y,tBasisY,inN
+  mad   inN.xyz,normalMap.z,tBasisZ,inN
+else // unbumped
+  vmov  inN,tBasisX
+endif
+
+// calc reflected dir
+temp    envDir
+
+if LgtFlags[2][16] // reflection
+  // R = eye - 2 * (eye . N) * N
+  temp    eye
+  
+  nrm     eye.xyz,tEye
+  nrm     envDir.xyz,inN
+  dp3     eye.w,eye,envDir
+  mul     envDir.xyz,envDir,eye.w
+  mad     envDir.xyz,envDir,c0.x,eye
+else // just normal
+  vmov    envDir,inN
+endif
+
+// sample envmap
+temp  color,smpUV
+
+nrm   smpUV.xyz,envDir
+mad   smpUV.xy,smpUV,c0.wzyx,c0.w
+texld color,smpUV,sEnvi
+
+// weight with specular map if desired
+if Flags[7]
+  mul   color.rgb,color,normalMap.a
+endif
+
+mov   oC0,color

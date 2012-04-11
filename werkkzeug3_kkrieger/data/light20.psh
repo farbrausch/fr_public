@@ -1,0 +1,83 @@
+ps.2.0
+
+// texture coords
+alias		tL = t0, tH = t1, tUV = t2, tLightProj = t3, tLightFall = t4
+alias		tEye = t5
+
+dcl			tL.xyz
+dcl			tUV.xy
+dcl			tLightProj.xyzw
+dcl			tLightFall.xy
+
+if 0
+	dcl			tH.xyz
+endif
+
+if 1
+	dcl			tEye.xy
+endif
+
+// samplers
+alias		sDiffuse = s0, sNormal = s1, sLightProj = s2, sLightFall = s3
+dcl_2d	sDiffuse
+dcl_2d	sNormal
+dcl_2d	sLightProj
+dcl_2d	sLightFall
+
+// temp registers
+temp		N,dispUV
+temp		L,H,NdotL,NdotH,specCoeff
+temp		diffuse,output
+temp		att1,att2
+
+alias		cDiffuse = c0, cSpecular = c1
+alias		params = c2
+
+// constants:
+// c2.x = specular power
+// c2.y = paralax strength
+
+// conditions:
+// 0 = specular?
+// 1 = paralax map?
+// 2 = light projective?
+
+// fetch normal
+texld		N,tUV,sNormal
+
+if 1 // paralax mapping
+	mul			dispUV.xy,N.w,tEye
+	mad			dispUV.xy,params.y,dispUV,tUV
+else
+	vmov		dispUV,tUV
+endif
+
+nrm			L.xyz,tL
+texld		diffuse,dispUV,sDiffuse
+dp3_sat	NdotL,N,L
+
+if 2											// light projection
+	texldp	att1,tLightProj,sLightProj
+else
+	texld		att1,tLightProj,sLightProj
+endif
+
+if 0
+	nrm			H.xyz,tH
+endif
+
+texld		att2,tLightFall,sLightFall
+mul			output,diffuse,cDiffuse
+mul			att1.w,att1.x,att2.x
+
+if 0											// only if specular
+	dp3_sat	NdotH,N,H
+	pow			specCoeff.w,NdotH.x,params.x
+  mad			output.xyz,specCoeff.w,cSpecular,output
+endif
+
+mul			att1.w,att1,NdotL.x
+mul			output.xyz,output,att1.w
+add			output.w,output,-output
+
+mov			oC0,output

@@ -1,0 +1,83 @@
+ps.2.0
+// material 2.0: texture pass (pixel shader)
+
+// flag data layout, constants
+flags
+	Flags
+	_pad[7]
+	
+	TexFlags[4]
+	TexScale[4]
+	
+	LgtFlags[4]
+	LgtScale[4]
+	
+	SRT1[9]
+	SRT2[5]
+	
+	TexUsed[4]
+	LgtUsed[4]
+	SrcScale[4]
+endflags
+
+def   c8,1,1,1,0
+def   c9,4,0,0,0
+
+// texture coords and samplers
+imov i1,0
+
+/* no paralax mapping yet
+if Flags[1] // if paralax mapping is enabled, we need to sample the bump textures
+	for i = 0..1
+		if LgtUsed[i]
+			dcl			t0+i1
+			dcl_2d	s0+i1
+			iadd		i1,1
+		endif
+	endif
+endif*/
+
+for i = 0..2 // texture samplers
+	if TexUsed[i][0]
+		dcl			t0+i1.xy
+		dcl_2d	s0+i1
+		iadd		i1,1
+	endif
+endfor
+
+imov i1,0
+
+// actual shader code
+temp  accu
+
+if TexUsed[0][0] // main texture?
+  texld   accu,t0+i1,s0+i1
+  iadd    i1,1
+else
+  mov     accu,c8 // use white
+endif
+
+for i=1..2 // detail textures
+  if TexUsed[i][0] // detail i used?
+    temp    detail
+    
+    texld   detail,t0+i1,s0+i1
+    iadd    i1,1
+    
+    if TexFlags[i][16..19] == 0 // mul
+      mul     accu.rgb,accu,detail
+    elif TexFlags[i][16..19] == 1 // mul2
+      mul     accu.rgb,accu,detail
+      add     accu.rgb,accu,accu
+    elif TexFlags[i][16..19] == 2 // mul4
+      mul     accu.rgb,accu,detail
+      mul     accu.rgb,accu,c9.x
+    elif TexFlags[i][16..19] == 3 // add
+      add     accu.rgb,accu,detail
+    elif TexFlags[i][16..19] == 4 // addsmooth
+      lrp     accu.rgb,detail,c8,accu
+    endif
+  endif
+endfor
+
+mov   oC0,accu

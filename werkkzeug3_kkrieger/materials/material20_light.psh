@@ -1,0 +1,137 @@
+ps.2.0
+// material 2.0: light pass (pixel shader)
+
+// flag data layout, constants
+flags
+	Flags
+	_pad[7]
+	
+	TexFlags[4]
+	TexScale[4]
+	
+	LgtFlags[4]
+	LgtScale[4]
+	
+	SRT1[9]
+	SRT2[5]
+	
+	TexUsed[4]
+	LgtUsed[4]
+	SrcScale[4]
+endflags
+
+alias   cDiffuse = c0
+alias   cSpecular = c1
+def     c2,1,0,0,0
+
+// textures and samplers
+alias   tTex = t0, sTex = s0, sBump = s1
+alias   tAtten = t1
+alias   tL = t2
+alias   tH = t3
+alias   vColor = v0
+
+dcl     tTex.xyzw
+dcl     tAtten.xyz
+dcl     tL.xyz
+dcl_2d  sTex
+
+if Flags[3] // vertex color
+  dcl     vColor
+endif  
+
+if Flags[0] // specular
+  imov    i1,4
+  dcl     tH.xyz
+else
+  imov    i1,3
+endif
+
+imov  i2,i1
+imov  i3,0
+for i=0..1 // bump maps
+  if LgtUsed[i][0]
+    dcl     t0+i2.xy
+    dcl_2d  sBump+i3
+    iadd    i2,1
+    iadd    i3,1
+  endif
+endfor
+
+// normal
+temp    cDiff,cSpec,L,N0,N
+temp    specMap
+
+vmov    N0,c2
+imov    i2,i1
+imov    i3,0
+
+for i=0..1 // bump maps
+  if LgtUsed[i][0]
+    temp    map
+  
+    // load texture
+    texld   map,t0+i2,sBump+i3
+    
+    // accumulate
+    if i3 == 0
+      vmov    N0,map
+      vmov    specMap,map
+    else
+      add     N0,N0,map
+    endif
+
+    // increment steps
+    iadd    i2,1
+    iadd    i3,1
+    free    map
+  endif
+endfor
+
+// renomalize normal if necessary
+if i3 > 1
+  nrm   N,N0
+elif Flags[5]
+  nrm   N,N0
+else
+  vmov  N,N0
+endif
+
+// diffuse
+nrm     L.xyz,tL
+dp3_sat cDiff.r,L,N
+mul     cDiff.rgb,cDiffuse,cDiff.r
+
+// specular
+if Flags[0]
+  temp    H
+  
+  nrm     H.xyz,tH
+  dp3_sat cSpec.r,H,N
+  pow     cSpec.r,cSpec.r,cSpecular.a
+  mul     cSpec.rgb,cSpecular,cSpec.r
+  
+  if Flags[7]
+    mul     cSpec.rgb,specMap.a,cSpec
+  endif
+endif
+
+// material
+temp    cTex,color
+texldp  cTex,tTex,sTex
+
+if Flags[0] // specular used?
+  mad     color.rgb,cTex,cDiff,cSpec
+else
+  mul     color.rgb,cTex,cDiff
+endif
+
+// attenuation: *(1-r^2)
+dp3_sat color.a,tAtten,tAtten
+mad_sat color.rgb,color,-color.a,color
+
+if Flags[3] // vertex color
+  mul   color,color,vColor
+endif
+
+mov     oC0,color

@@ -1,0 +1,801 @@
+/****************************************************************************/
+/****************************************************************************/
+
+material system
+
+/****************************************************************************/
+
+Structures
+
+
+Portal: (is a scene operator)
+- Segment
+- Portals
+
+Segment: (is a scene hirarchy)
+- Meshes
+- Lights
+
+Mesh:
+- Geometries with Material
+- Collision Box
+
+/****************************************************************************/
+
+Function
+
+
+Das Portal stellt die Position fest und findet die Collision Box der Kamera.
+Damit steht fest, in welchem Segment die Kamera ist. Alle Portale dieses 
+Segmentes werden gesucht und die dahinterliegenden Segmente werden Markiert.
+Rekursion. Jedes Segment hat einen Flood-Fill wert. Gestartet wird bei 10. 
+Jedes Portal hat einen "Widerstand" von 1-10. Der Flood-Fill wird gestoppt 
+wenn der Wert 0 erreicht.
+
+Jetzt ist eine vorauswahl von Segmenten bekannt. Die Gamelogic fügt nun 
+bewegliche Meshes und Lichtquellen zu den Segmenten hinzu. Lightquellen 
+der nähe von portalen können in mehreren Segmenten eingetragen werden. 
+Meshes die von einem Segment in das andere sich bewegen werden "ploppen".
+
+Jetzt sind alle Meshes und Lichtquellen bekannt und auf Segmente aufgeteilt,
+die Paintjobs können erstellt werden. Es gibt 6 Phases: Lightmap, Prebump, 
+Light, Mul, Add, Specular, Extra. Jede Phase hat Renderpasses. Jedes Mesh 
+kann PaintJobs für die entsprechenden Phases eintragen. 
+
+/****************************************************************************/
+
+Phases
+
+
+- Lightmap
+
+Alle Meshes sortiert nach Lightmap-Texture zeichnen. Das füllt den ZBuffer 
+und macht etwas sinvolles im Color-Buffer ohne viel Zeit zu kosten.
+
+- Prebump
+
+Alle Meshes mit Bumpmap werden für die 3-4 wichtigesten Lichtquellen des 
+Segmentes gezeichnet. Die Bumps werden addiert und in den Framebuffer
+multipliziert.
+
+- Light
+
+Für jede Lichtquelle wird der Stencil-Buffer gefüllt (shadow caster
+zeichnen), und dann werden shadow receiver mit Per-Pixel-Bump-Light 
+gezeichnet. Das ergebniss wird auf den Framebuffer addiert.
+
+- Mul
+
+Hier werden alle Meshes mit ihren Texturen und Detail-Texturen in den 
+Framebuffer multipliziert
+
+- Specular
+
+Ein Screen-filling Quad addiert den Alpha-Kanal zum Color-Kanal des
+Framebuffers. Im Apha sind die Specular Highlights.
+
+- Add
+
+Hier werden Envi-Maps und andere additive Effekte in den Framebuffer addiert.
+
+- Extra
+
+Hier landet alles was nicts mit der normalen light-pipeline zu tun hat...
+
+
+/****************************************************************************/
+/****************************************************************************/
+
+Animation und Operator-hirarchie
+
+/****************************************************************************/
+
+Hirarchie:
+
+
+Texture -> Material -> Mesh -> Scene -> World 
+                             FXChain -> World
+
+Meshes enthalten neben den Polygondaten den Link zum Material und Collision-
+Cubes.
+
+Eine Szene ist eine Zusammenstellung von Paintjobs, Paintjobs können 
+Meshes, Echtzeit-Lichtquellen, Lightmap-Lichtquellen und Effekte wie
+Partikelsysteme sein.
+
+Die World enthält Portale, Game-Entities und Specials. Anhand der Portale 
+wird ermittelt, welche Szenen gerade sichtbar sind. Game-Entities sind
+Monster, Items, Türen und sonstige Dinge die im Level verteilt werden 
+müssen. Specials sind Texturen, Materialien, Meshes oder Szenen die von 
+der Game-Logic benötigt werden, etwa für Waffeneffekte, Monster-Prototypen
+oder das Cockpit.
+
+All diese World-Elemente werden einfach zu einem Level zusammenaddiert. Der 
+unterste World-Add ist das "root"
+
+/****************************************************************************/
+
+Portale:
+
+
+Jedes Portal enthält zwei Szenen und eine Verbindungsfläche/Verbindungsbox. 
+Anhand der Kollision wird die aktuelle Szene bestimmt, Anhand der Sichbarkeit
+der Verbindung im Viewing-Frustrum und einem "Verbindungswiderstand" wird 
+ermittelt, welche weitere Szenen sichtbar sind.
+
+/****************************************************************************/
+
+Instanzen und Animation:
+
+Ein Special kann in mehreren Instanzen in der Welt vorhanden sein. Die 
+einzelnen Instanzen sind dabei wirklich unterschiedlich. Zum Beispiel muß 
+das Mesh eines Monsters in zwei verschiedenen Animationsphasen gezeichnet
+werden können. Trotzdem soll es nicht nötig sein, für jede Instanz eines
+Monsters ein eigenes Mesh anzulegen.
+
+Für Szene-Ops ergibt das kein Problem. Der Baum wird pro Instanz vollständig
+ausgewertet und die PaintJobs werden registriert. Texturen, FXChain und World
+Operatoren wirken immer global, sollten mehrere Instanzen diese animieren so 
+"gewinnt" die letzte.
+
+Der variable Teil der Materialien (UV-SRT, UV-Scale und Colors) muß mit
+den Paintjobs gespeichert werden, damit das selbe Mesh in einer anderen
+Instanz eine andere Material-Animation haben kann. Das ist selbst für
+simple Effekte wie ausfadende Explosions-Halbkugeln wichtig.
+
+Mesh-Animationen müssen global sein. (sonst wird alles GANZ kompliziert).
+Animation also nur über Scene-Translates.
+
+
+Der Ablauf ist also der Folgende:
+
+Die Welt findet eine Menge benötigter Szenen. Das sind die sichtbaren 
+Portale, Monster, Effekte und Timeline-Events. Jede dieser Szenen wird ein 
+Satz Variablen definiert, das sind TIME, VELOCITY, SCALE, ROTATE, 
+TRANSLATE,... Prinzipiell könnten weitere Variablen definiert werden, 
+die mit speziellen Ops (ähnlich ChannelAnim) beim Abstieg berechnet werden. 
+
+Der Baum wird zuerst in richtung Blätter (oben) 
+durchlaufen. Wird ein "weicher" Parameter animiert,
+so wird der Operator nicht als geändert markiert. Weich sind zum Beispiel
+Mesh-Recorder Parameter und UV/Color beim Material. Die geänderten Werte
+werden in ein KUpdate Objekt eingetragen und automatisch berücksichtigt.
+Operatoren, über denen keine Animationen vorhanden sind können markiert 
+werden um die Rekursion vorzeitig abzubrechen wenn das Objekt bereits
+gecached ist. Wird ein "harter" Parameter animiet, so wird der Op als
+veraltet markiert, wenn sich der Wert tatsächlich geändert hat.
+
+Beim Rückweg werden veraltete Operatoren komplett ausgeführt,
+wie beim ersten mal. Bei einer Klassengrenze, also Textur->Material, 
+Material->Mesh, Mesh->Scene bricht das neuauswerten der Ops ab, IRGENDWIE
+muß dafür gesorgt werden dass die gelinkten Pointer gültig bleiben auch wenn
+ein Objekt neu alloziert wurde. Vielleicht sollte das Resultat-Objekt nicht 
+vom Op sondern vom System alloziert werden?
+
+Für den Scenegraphen sind zwei Methoden denkbar: 
+
+A) (so ist es jetzt) Die Scene-Ops bauen einen Scenegraphen auf,
+anhand dessen PaintJobs (SceneJobs) erzeugt werden. Die SceneJobs zeichen
+ein MeshMtrl in einer bestimmten Phase.
+
+B) Beim Abstieg werden die S/R/T Variablen verändert. Der Multiply-Op steigt 
+für jede Instanz einmal den Baum ab, mit jeweils anderer S/R/T. Die 
+eigentlichen Scene-Ops können dann beim Rückweg PaintJobs direkt eintragen
+
+In jedem Falle können dynamische Geometrien (Finalizer, Partikelsysteme, 
+andere Special-Effects) erst erzeugt werden wenn der PaintJob gezeichnet 
+wird. Wenn dynamische Vertexbuffer wie üblich gestreamed werden, dann
+müssen dynamische Geometrien die in mehreren Phasen benötigt werden auch
+mehrmals erzeugt werden, sonst wird der Verwaltungsaufwand recht groß.
+
+/****************************************************************************/
+
+Subroutines (optional):
+
+
+Ein Teilbaum der mit einem Subroutine-Op gestored wird kann mit einem Call-Op
+aufgerufen werden. Der Teilbaum kann Input-Operatoren haben, um auf die 
+Inputs des Call-Ops zuzugreifen.
+
+Im Subroutine-Operator können Typ und Name von ca. 8 Variablen bestimmt 
+werden. Diese Variablen tauchen im Call-Operator als Parameter auf, und
+können im Unterprogramm ganz normal zur Animation verwendet werden. Natürlich
+können die Parameter im Call-Op ihrerseits animiert werden.
+
+Beim Werkkzeug1 hatten Unterprogramme das Problem das bei geringster Änderung
+der Parametriesierung alle Call-Ops falsch waren. Durch explizite Numerierung,
+Benennung und Typisierung der Parameter kann man auch einen Parameter in der
+Mitte löschen ohne das sich die anderen Parameter deswegen verschieben.
+
+/****************************************************************************/
+
+Die Animation eines Parameters:
+
+
+Für jeden animierten Parameter wird eine editierbare Funktion ausgewertet.
+
+Es gibt ca. 64 Variablen, jede Variable ist ein 4d-Float Vektor. Die Variable
+#0 entspricht immer dem ursprünglichen Wert des zu animierenden Parameters
+(VALUE), #1 ist eine Konstante die pro Animation editiert werden kann (CONST).
+Die nächsten Variablen sind TIME, VELOCITY, SCALE, ROTATE, TRANSLATE, ... 
+
+Eine typische Formel wäre "VALUE + spline(TIME)", dieses Verhalten ist
+voreingestellt. Mit "VALUE + rnd(VELOCITY) * CONST" kann zum Beispiel eine
+Texteinblendung quasi zufällig positionieren.
+
+Die Funktionl wird (ähnlich dem Select Logic Op) zusammengesetzt, Sie hat
+immer die Form "A x ((B x C) x (D x E))", wobei A B C D E die primären
+Ausdrücke sind und 'x' ein Operator.
+
+Der Operator ist '+', '-' oder '*'. Die Funktion läßt sich auch als
+LERP(A,BxC,DxE) konfigurieren. Ein Primärer Ausdruck ist "f(x)", 
+wobei x eine der Variablen ist. Als funktionen stehen Splines und
+die üblichen sin, cos, rect, saw, rnd, ... zur Verfügung. Die Spline ist
+entweder die lokale Spline, die diesem Parameter zugeordnet ist, oder eine
+bestimmte globale Spline. Damit ist es einfach möglich, mehrere Parameter
+mit einer Spline zu animieren. 
+
+Alle Operatoren werden in x,y,z und w getrennt ausgeführt. Die lokale Spline
+kann auf Wunsch "scalar" sein, um z.B. einen Scale-Wert in allen Achsen 
+gleichmäßig zu animieren. Es gibt also spline(), splines() und splineg()
+(vector, scalar, global).
+
+Einige Variablen sind als "Swizzle-Konstanten" vordefiniert. So kann man mit
+der Variable "XYZ" die den Wert (1,1,1,0) hat den Helligkeit einer Farbe
+animieren ohne den Alpha-Teil zu verändern: "VALUE + ( splines(TIME) * XYZ )". 
+Solche Variablen müssen vor Veränderung geschützt werden.
+
+
+Text-Parameter können auch "animiert" werden. Zu jedem Timeline-Event kann 
+eine Text-Variable definiert werden. Alle Texte die gleich "$0" sind werden
+durch diese Text-Variable ersetzt.
+
+
+Es ist denkbar, Operatoren zu definiern die mit Variablen rechnen oder die
+Text-Variable abhängig von anderen Variablen setzen. Diese Ops müssen im 
+Abstieg ausgerechnet werden. Die Änderungen müssen auf dem Rückweg wieder
+rückgängig gemacht werden.
+
+
+Eventuell ist es sinnvoll einen zweiten CONST zu haben (z.B. LERP zwischen
+2 Farben).
+
+Eventuell reicht es, die Funktionen auf folgende Auswahl einzuschänken,
+wobei unbenutzte Werte vom Editor automatisch auf 0 oder 1, je nach dem,
+gesetzt werden:
+
+-  A+((B*C)+(D*E))
+-  A+((B+C)*(D+E))
+-  A+((B+C)*(D*E))      // ???
+-  A+(LERP(B*C),D,E))
+-  A+(LERP(B+C),D,E))   // ???
+-  A*((B*C)+(D*E))
+-  A*((B+C)*(D+E))
+-  A*((B+C)*(D*E))      // ???
+-  A*(LERP(B*C),D,E))
+-  A*(LERP(B+C),D,E))   // ???
+-  LERP(A,(B*C),(D*E))
+-  LERP(A,(B+C),(D+E))
+-  LERP(A,(B+C),(D*E))  // ???
+
+/****************************************************************************/
+
+Nachtrag:
+
+
+für manche szene-ops mag es wichtig sein, zusätzliche per instance daten zu
+speichern. dies könnten auch einem per instance stack gespeicher werden.
+
+ob die ops direkt pro frame abgearbeitet werden oder einen szene-graphen
+aufbauen ist für diesen vorschlag unerheblich. im szene-graph fall muß jeder
+komplizierte op einen "handler" schreiben, im direkt-fall muß der
+op-evaluator komplizierter werden, weil auch aktionen im rekursiven abstieg
+definiert werden können und ein op seinen input eventuell mehrmals auswerten
+muß. (hierzu bitte kommentar: beides ist eklig. szene-graph ist mehr code,
+aber der op-evaluator sollte "sauber" bleiben).
+
+wenn die world entscheided, das ein instance von einer szene gebraucht wird,
+alloziert er einen kleinen (4k) buffer. jeder szene-op kann von diesem stack
+allozieren, dazu registriert er seinen typ und wie viel speicher er will.
+beim ersten aufruf wird der speicher registriert, beim zweiten bekommt er
+den selben pointer zurück. hat sich die auswertungsreihenfolge der ops
+geändert (z.B. weil ein szene-multiply count animiert wurde) so wird das
+allozieren fehlschlagen sobald die typen nicht in der richtigen reihenfolge
+angefordert werden. es werden keine destruktoren aufgefuren.
+
+auf diese weise ist es möglich, partikelsysteme wirklich zu multiplizieren,
+oder teile der monster-logik in den szene-graph zu verlagern (etwa fuß-bein
+koordination). Letzteres ist zwar recht langsam (weil kein optimierter
+inner-loop), aber was bei kasparov optimiert funktioniert sollte heute
+unoptimiert klappen.
+
+
+/****************************************************************************/
+/****************************************************************************/
+
+another werkkzeug timing proposal
+
+<----------------------------------------------------------------------------->
+
+Es gibt zwei prinzipielle Ansätze, Operatoren-Bäume zu animieren. Die Probleme
+entstehen dadurch, das diese beiden Konzepte unwissentlich gemischt werden.
+
+Namen
+-----
+
+- Operator: Die Befehle, aus denen das Demo besteht
+- Handler: Code, der für den Operator ausgeführt wird
+- Tree (Baum): Baum von Operators, die zusammen das Demo erzeugen
+- Operator System: Ein Programm das den Baum durchläuft und die Handler
+                   aufruft.
+- Root: Wurzel-Operator des Baumes.
+- Complete Tree (Kompletter Baum): alle Operatoren oberhalb des Root (incl.)
+- Subtree (Teilbaum): Alle Operatoren oberhalb eines Operators (incl.)
+- Input: Operator als Eingabe in einen anderen Operator
+- Parameter: Ein Wert als Eingabe in einen Operator
+- Output: Ausgabe eines Operators in einen anderen Operator
+- Object (Objekt): Konkreter Wert des Output wenn er ausgeführt wird
+- Root-Object: Object des Root
+- Object-Model: Datenstruktur des Object
+- Cache: Zwischengespeichertes Object des Operators
+- System: Das was die Operatoren darstellen
+- Init: Erste auswertung des Systems.
+- Frame: Alle weiteren Auswertungen des Systems
+- Animation: Änderung von Parametern vor einem Frame.
+- Modification (Modifikation): Änderung von Parametern bei der Initialisierung
+- Expression (Ausdruck): Die Abhängigkeit des animierten Parameters.
+- Result: Ausgabe des Systems per Frame, normalerweise ein Bild.
+- Rendern (zeichnen): Zeichnen des Objects. führt zum Result.
+
+- Event: Ein mögliches Ereigniss, entweder von der Timeline oder dynamisch
+  erzeugt.
+- Event System: Der Teil des Systems, auf den sich das Event bezieht
+- Event Op: Der Operator, der das Event System markiert.
+- Instance: Das vorkommen eines Events.
+
+
+PS: Den Begriff Baum vermeiden, weil er (a) zu allgemein und (b) falsch ist...
+
+<----------------------------------------------------------------------------->
+
+Ansatz 1: Execute Operator
+--------------------------
+
+Die Parameter werden direkt animiert und alle Operatoren werden jeden Frame 
+ausgeführt.
+
+Das System ist der Complete Tree.
+
+Ein Caching sorgt dafür, das ungeänderte Operatoren nicht jeden Frame
+ausgeführt werden müssen. Die zu cachenden Objekte lassen sich leicht 
+identifizieren: Vor jedem animierten Operator und vor jedem Operator mit mehr
+als einem Output.
+
+Gezeichnet wird beim Ausführen der Operatoren, die Operatoren werden von oben
+nach unten ausgeführt. Die oberen Operatoren erzeugen meist nur das Object, 
+wenn sie nicht animiert sind, so kann auf das gecachte Objekt zurückgegriffen
+werden. Die unteren Operatoren sind meistens für das "wirkliche" zeichnen
+verantwortlich und können direkt ausgeführt werden, sie müssen kein Objekt
+zurückliefiern.
+
+Besonders für interaktive Systeme ist es wichtig, das ein Operator ein 
+Fehlverhalten zurückliefert. Je nach gewählter Calling-Convention eignen
+sich Exceptions, globale Fehlervariablen oder ein Error-Object. Einfach 0 
+als Objekt zurückzuliefern ist eine ungenügende Fehlermeldung, weil es 
+durchaus Operatoren geben mag die kein sinvolles Objekt zurückliefern. 
+
+
+Ansatz 2: Record Operator
+-------------------------
+
+Die Operatoren werden nur bei der Initialisierung ausgeführt. Das System
+ist das Object vom Root. Der Complete Tree wird nach der Initialisierung
+nicht mehr gebraucht, alle informationen müssen im Root-Objekt enthalten
+sein. Jeden Frame wird das System "gezeichnet". 
+
+Das Object-Model hat unterschiedliche Klassen, etwa Scene, Mesh, Material 
+und Texture. Jede Klasse muß einen "Paint" Aufruf implementieren die 
+entsprechend hirarchisch das System zeichnet.
+
+Animiert werden nicht die Parameter, sondern die Kopie des Parameters im 
+System. Dazu muß die Animation in das Object-Model integriert werden. In
+der Regel können nur Parameter animiert werden die bei der Initialisierung
+nicht gebraucht werden. 
+
+In einem reinen Record-Ansatz würden für alle animierbaren Parameter nicht 
+der Wert sondern ein Ausdruck an den Handler übergeben, damit er die 
+Animation in das Objekt einbauen kann. Eine alternative ist, den Baum zu
+behalten und einen Zeiger auf den Operator im Objekt zu speichern. Die
+Animation wird im Baum ausgewertet und danach werden die Objekte gezeichnet.
+Dies macht allerdings einige Probleme mit Instances.
+
+Im Record-Ansatz muß genau zwischen Animation und Modifikation unterschieden
+werden: Animation ist die Veränderung eines Parameter zwischen zwei Frames,
+Modifikation ist die Veränderung eines Parameters bei mehrfacher Auswertung
+eines Teilbaumes.
+
+
+Hybrid-Ansatz:
+--------------
+
+Jeder Operator enthält einen Init() und einen Paint() Handler. Das 
+Object-Model benutzt den Tree als Rückrad. Während der Initialisierung erzeugen 
+Typen wie Mesh, Texture und Material Objekte. Jedes Objekt enthält einen Zeiger
+zu "seinem" Operator. Während des Zeichnens wird Paint() des Root aufgerufen. 
+Die Rekursion wird vorangetrieben in dem die Paint()-routine der Inputs indirekt 
+über den Operator aufgerufen werden. 
+
+Die meisten Operatoren müssen nur eine von beiden Routinen implementieren, die
+Andere benutzt einen Default. Für den Init()-Handler gibt es zwei Defaults:
+einer liefert ein 0-Objekt, der andere liefert den ersten Input als Ergebniss.
+Der Default-Paint()-Handler ist leer.
+
+Im oberen Teil des Tree's kommt es zu einer Großzahl redundanter Paint() 
+Aufrufe, nichtanimierte Teile die ausschließlich den Default-Paint() benutzen
+müssen ausgeblendet werden.
+
+Der Hybrid-Ansatz lößt die meisten Probleme des Record-Ansatzes, aber es ist
+immer noch nötig animierbare und nicht animierbare Parameter zu unterscheiden.
+
+
+<----------------------------------------------------------------------------->
+
+Instances
+---------
+
+Der Time-Op ist ein spezieller Operator, der seinen Subtree nur auswertet,
+wenn eine bestimmte bedingung erfüllt ist, meistens abhängig von der Zeit.
+Damit läßt sich eine Timeline realisieren. Der Event-Op geht noch weiter und
+ist in der lage, den Subtree pro Event einmal auszuwerten, also auch mehrmals
+pro Frame wenn mehrere Event's dieses Typs anliegen.
+
+Beim EXecute Operator Ansatz muß der Event-Op das Event-System mehrmals
+unterschiedlich animiert auswerten. Die Ergebnisse werden analog zum 
+Add-Operator zusammengefasst. Der Event-Op ist fester bestandteil des
+Operator Systems. 
+
+Beim Record Operator Ansatz müssen die Events Teil der Datenstruktur sein, 
+die Datenstruktur muß also an einigen stellen explizit Events zulassen 
+(etwa in Scene-Graph). Die Animation wird dann per Frame und per Event 
+ausgeführt bevor das Objekt (auch per Frame per Event) gezeichnet wird.
+
+Wenn die Animation die Hirarchie des Operator-Baumes nachbildet hat man ein 
+ernstes implementationsproblem weil das Zeichnen mit dem Baum koordiniert 
+werden muß. Dies kann entweder beim erstellen des Objektes geschehen in dem 
+die Ausdrücke entsprechend verknüpft werden, oder beim Zeichnen in dem zu 
+jedem animierten Objekt eine liste der Animierten Operatoren gespeichert wird.
+Im zweifelsfall sollte man darauf verzichten, im Baum Variablen zu setzen.
+
+Der Hybrid-Ansatz lößt das Problem: Der Event-Operator ist immer noch Teil
+des Object-Model, aber die Rekursion wird nicht vom Object-Model sondern vom
+Baum vorangetrieben, Animationen können richtig ausgeführt werden.
+
+
+Instance Data
+-------------
+
+Manchmal brauchen Instances eigenen Speicher, etwa ein Partikelsystem das
+mehrmals vorkommt oder Objekte mit Intelligenz und Erinnerung.
+
+Diese Instance-Daten darf man nicht im Operator oder Object Speichern, weil 
+die für alle Instances nur einmal vorhanden sind. Der Speicher muß im Event 
+enthalten sein. Wenn alle Operatoren des Subtrees immer in der gleichen 
+Reihenfolge abgearbeitet werden und immer genau gleich viel Speicher 
+benötigen, muß sich der Operator nur einen Offset auf den Event-Speicher 
+merken. Das funktioniert in allen Varianten.
+
+Gibt es pro Event noch Subevents, so wird für jeden Subtree der Subevents ein 
+neuer Speicherblock alloziert und die Speicherverteilung im Subevent neu 
+gestartet.
+
+
+Subroutines
+-----------
+
+Es ist sinvoll, Eine Gruppe von Operatoren als Unterprogramm zu definieren,
+um mächtigere Operatoren zu bekommen. Solche Unterprogramme enthalten 
+Parameter die entsprechend zur Animation funktionieren. Animation ist aber
+eine änderung Per-Frame, währen Subroutines eine Änderung während der 
+Initialisierung darstellen, hierfür benutze ich den Begriff Modification.
+Das User-Interface für Animation und Modification ist ähnlich. 
+
+Beim Execute Operator Ansatz ergibt sich ein Problem: Für jeden Subroutine
+Call muß ein eigener Cache zur verfügung stehen. Man kann dieses Problem
+aber ignorieren wenn man sich darauf beschränkt das Ergebniss des 
+Unterprogramms zu Cachen. Das Cachen im Unterprogramm selber wird nicht 
+optimal funktionieren wenn nicht alle Inputs des Unterprogramms animiert
+sind oder einzelne Parameter des unterprogramms Animiert sind, aber das
+ist tolerabel.
+
+Beim Record Operator Ansatz sind Animation und Modification unterschiedliche
+Mechanismen, vor allem wenn man nicht animierbare Parameter modifizieren will.
+Animation ist ein Feature des Object-Model, während Modification ein Feature
+der Operator Execution ist. Beides kann über Expressions implementiert werden.
+Es muß für jede Variable bekannt sein, ob sie Animiert ist oder nicht. Dann 
+kann für jeden Ausdruck bestimmt werden, ob er zur Initialisierung ausgewertet
+werden kann oder nicht. Ist der Ausdruck animiert, so wird er in das Object 
+Model eingetragen. Ist er Modifiziert, so wird er sofort ausgewertet. Damit 
+kann man auch Subroutines animieren. Subroutines sind kein bestandteil des
+Object-Models sondern werden während der Operator Execution aufgelößt.
+
+Der Hybrid-Ansatz entspricht den Record Ansatz.
+
+<----------------------------------------------------------------------------->
+
+Vergleich
+---------
+
+
+				Execute		Record		Hybrid
+-------------------------------------------------------------------------------
+System				Kompletter Baum	Root-Object	beides
+Animierbare Parameter		alle		einige		einige
+Optimierung der Operatoren	wichtig		unwichtig	unwichtig
+Optimierung des Zeichnens	wichtig		wichtig		wichtig
+Events				Überall		Im Object-Model	Im Object-Model
+Calling-Conventions		flexibel	speziell	flexibel
+Trennung zwischen Init & Paint	nein		ja		ja
+Paint-Rekursion			Im Baum		Object::Paint() Op::Paint()
+Animation und Modifikation	das selbe	unterschiedlich	unterschiedlich
+
+/****************************************************************************/
+/****************************************************************************/
+
+Ein Painter-System für das Werkkzeug:
+
+<----------------------------------------------------------------------------->
+
+
+Namen
+-----
+
+- PaintJob: Eine Matrix, ein Material, ein Vertexbuffer (+Indexbuffer)
+- Cluster: Vertex-Gruppe eines Meshes mit dem selben (Multi-) Material
+- Usage: ein Durchgang beim Zeichnen von Multipass-Materials
+- Renderpass: Methode zum sortieren von Singlepass-Meshes
+- SceneJob: Ein abstrackter PaintJob, der noch mit dem Light vervielfacht wird.
+
+Das Problem: Ich will direkt PaintJobs erzeugen, aber ich kann nur SceneJobs
+erzeugen solange ich die Beleichtungsituation nicht kenne.
+
+
+Klassen
+-------
+
+Die Aktuelle Hirarchie ist:
+
+Bitmap
+(Textur)
+Material
+Mesh           Light
+Scene
+Painter
+IPP
+
+Der Player muß lediglich in der Lage sein, einen IPP zu zeichnen. Das Tool 
+muß jede Ebene darstellen können (vielleicht mit Ausnahme vom Material), und
+die Mesh und Scene ebene muß auch als Wireframe darstellbar sein. 
+
+Mesh
+----
+
+Ist ein Animiertes Mesh mehrmals unterschiedlich zu Zeichnen, so darf das 
+nicht durcheinander kommen. Der schlimmste Fall sind die Instanzen A und B 
+die in den Usages 1 und 2 zu zeichnen sind, in der Reihenfolge A1 B1 A2 B2,
+weil dann das Mesh 4 mal animiert werden muß (das hat auch schon bei Candytron
+nicht besser geklappt).
+
+Das Problem läßt sich nur lösen, in dem die dynamischen Vertexbuffer nicht
+discarded werden. Da die Grafikkarte sowieso den gesamten Frame buffert ist
+das nicht alzu schlimm. Daraus ergibt sich, das wenn ein Instance gezeichnet
+wird, alle benötigten Usages auf einmal erzeugt werden müssen, also auch 
+mehrere unterschiedlich extrudete Shadow-Volumes.
+
+
+Painter
+-------
+
+Der Painter muß:
+
+- Die sichtbaren Portale ermitteln
+- Die Lichtquellen den Meshes zuordnen
+- Die Meshes Aufrufen um die Paintjobs zu erzeugen
+- Die Paintjobs sortieren und ausführen
+
+
+Fake-Ansatz
+-----------
+
+Nach all diesen Problem versuchen wir mal modernes lighting zu faken:
+
+- eine Bump-Quelle pro mesh
+- eine dynamische Shadowmap mit 3 lichtquellen
+- eine statische Lightmap
+- 8-Texture (2-pass) für opaque materials
+- 4-Texture (1-pass) für transparente/alpha-faded materials
+
+Zuerst wird die dynamische Shadowmap gezeichnet, dies kann in screen-resolution
+geschehen, oder auch in geringerer auflösung. Dazu wird die gesammte Scene in
+den Z-Buffer gezeichnet und dann werden für 3 ausgewählte lichtquellen die
+Shadow-Volumes gezeichnet. Dabei wird für jede Lightquelle ein Fabrkanal (RGB)
+auf 0 (schatten) oder 255 (licht) gesetzt. Bei bedarf kann diese "shadow map"
+geblurrt werden.
+
+Der Vertex-Shader berechnet die Helligkeit der 3 dynamischen Lichtquellen, das
+Dotproduct aus shadowmap und Color ergibt die Helligkeit (PS13). Bei PS20 kann
+jede Lichtquelle einzeln eingefärbt werden, bei PS13 muß der Vertex-Shader die
+dominante Farbe berechnen, unabhängig vom Schatten.
+
+Das 1-Pass Transparent Setup:
+
+Tex0: Texture + Gloss(A) (oder Alpha-Blending)
+Tex1: Bump + Specular(A)
+Tex2: ShadowMap
+Tex3: Lightmap
+
+Im 2-Pass (Opaque) Setup ist in Tex0 eine Bump-Detail Map oder nichts, der 
+zweite Pass multipliert die Textur.
+
+
+<----------------------------------------------------------------------------->
+
+/****************************************************************************/
+/****************************************************************************/
+
+Kollision
+---------
+
+<----------------------------------------------------------------------------->
+
+Es gibt:
+- statische Cells
+- dynamische Cells
+- Particles
+- Constraints
+
+Es ist vorteilhaft, wenn Particles, Constraints und dynamische kollisionen 
+enfach ohne weiteres "verschwinden" können. Nur die optimierten, statischen
+Zellen bleiben erhalten. Dazu muß der Speicher der Partikel dem "Benutzer"
+gehören.
+
+<----------------------------------------------------------------------------->
+ 
+Der zeitliche Ablauf eines Frames ist:
+--------------------------------------
+
+1) Während Exec_ werden alle Partikel, Constraints und dynamischen Zellen 
+eingetragen. 
+
+Der Benutzer wird warscheinlich Arrays für Particles und
+Constraints speichern. Um das Eintragen zu beschleunigen reicht es, den
+Zeiger auf das erste Element einzutragen, die Elemente enthalten eine
+Endekennung im letzten Element.
+
+Für Kollisionen kann eine neue Position "requested" werden. Ob dies möglich
+ist muß sich im Laufe der Simulation zeigen...
+
+2) Die Timeslices werden simuliert.
+
+In jeder Timeslice werden zuerst die Partikel bewegt, und dann die 
+dynamischen Kollisionen. 
+
+Eine Kollision kann dabei partikel vor sich 
+herschieben. Eine kollision darf niemals einen Partikel in eine andere
+Kollision schieben, sonst würde er "zerquetscht". Auch Constraints 
+müssen getestet werden.
+
+Eine besondere Art der "Bewegung" ist das erscheinen von Kollisionen. Auch
+hier müssen eventuell alle Partikel zur Seite geschoben werden.
+
+Die Kollisionen sind in der Lage, von den Constraints eine neue Position
+zu übernehmen, die dann in der nächsten timeslice angestrebt wird.
+
+3) Debug-Painting
+
+Da die Information noch vorhanden ist, kann man alle partikel und constraints
+noch einmal im wireframe zeichnen...
+
+4=1) Im nächsten Exec werden die neuen Position der Partikel und der Kollisionen
+zurückgelesen.
+
+<----------------------------------------------------------------------------->
+
+Der Vorgang der Kollision:
+--------------------------
+
+Es gibt ADD und SUB Cells, und Partikel.
+
+- ein Partikel kann in mehreren ADDs sein
+- ein SUB kann in mehreren ADDs sein
+- ein ADD kann mehrere SUBs enthalten
+- ein ADD kann mehrere benachbarte ADD kennen
+
+Zu jedem Partikel wird nur einer der ADD's gespeichert, die aktuelle Cell.
+
+Verläßt ein Partikel die aktuelle Cell, so wird eine neue bestimmt. Ist dies
+nicht möglich, so kollidiert der Partikel an der Außenwand der ADD-Cell. Die
+gesammte Flugbahn des Partikels muß überprüft werden.
+
+Im nächsten Schritt müssen alle SUBs gefunden und getestet werden. Mit alter
+und neuer Position kann exakt die Kollision gefunden werden, die vorderste
+Kollision bestimmt die entgültige neue Position des Partikels. Eventuell muß
+die ADD-Cell überprüft werden.
+
+Um eine Kollision zu verschieben müssen alle Planes der Kollision verschoben 
+werden. Hier wird "invers" getestet, ob das Partikel bei der Umgekehrten 
+Bewegung in die Box eindringen würde. Die früheste Berührung ist die maximale
+Bewegung, die die Zelle machen darf.
+
+<----------------------------------------------------------------------------->
+
+Mathematik:
+===========
+
+Zelle in Zelle:
+---------------
+
+Teste die Vertices von A gegen die Planes von B, wenn alle Vertices bei einer
+Plane "draußen" sind, so ist die Box draußen. Ansonsten teste die Vertices 
+von B gegen A. Ist hier nicht "draußen", so müssen die Zellen sich überlappen.
+
+Strahl aus Zelle:
+-----------------
+
+Ein Strahl besteht aus Startpunkt und Richtung. Gesucht ist der Punkt, an dem
+der Strahl die Zelle verläßt. Zuerst werden die möglichen Ebenen gesucht
+(Punktprodukt), dann wird für jede Ebene der Schnittpunkt berechnet (ray plane
+intersection). der naheste Schnittpunkt ist die Kollision
+
+Strahl in Zelle:
+----------------
+
+Es werden wieder die Ebenen gesucht und jeder Schnittpunkt berechnet. Diesmal 
+ist der am weitesten entferne Schnittpunkt der gesuchte. wenn der Strahl an
+der Zelle vorbei geht, dann liegt dieser Punkt außerhalb der Zelle. Wenn dieser
+Punkt hinter dem Strahl liegt dann lieght 
+
+Punkt in Zelle:
+---------------
+
+Einfach, Plane-Equations.
+
+<----------------------------------------------------------------------------->
+
+Zerdrücken an der Kollision
+---------------------------
+
+
+
+<----------------------------------------------------------------------------->
+
+/****************************************************************************/
+/****************************************************************************/
+
+VFX (ViruZ FX) Fileformat:
+
+<----------------------------------------------------------------------------->
+
+sU32   tag  ('VFX0')
+
+sU32   v2msize (bytes)
+sU8[]  embedded v2m file
+
+sU32   samplerate (im moment immer 44100)
+
+sU32   nEffects
+struct 
+{
+  sU8  MajorID, MinorID;
+  sS8  Gain;  (in dB/5)
+  sU8  reserved; (immer 0)
+  sU32 StartPos; (samples)
+  sU32 EndPos; (samples)
+  sU32 LoopSize; (samples)
+} [nEffects]
+
+<----------------------------------------------------------------------------->
+
+sF32 realgain=powf(10.0f,(rec.gain/5.0f)/20.0f);
+
+<----------------------------------------------------------------------------->
+

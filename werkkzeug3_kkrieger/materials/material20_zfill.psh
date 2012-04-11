@@ -1,0 +1,35 @@
+ps.2.0
+// material 2.0: zfill pass (pixel shader)
+
+// flag data layout, constants
+flags
+	Flags
+	_pad[7]
+	
+	TexFlags[4]
+	TexScale[4]
+	
+	LgtFlags[4]
+	LgtScale[4]
+	
+	SRT1[9]
+	SRT2[5]
+	
+	TexUsed[4]
+	LgtUsed[4]
+	SrcScale[4]
+	SrcScale2[4]
+endflags
+
+def c0,0,0,0,1
+
+if TexUsed[3][0]
+  dcl     t0.xy
+  dcl_2d  s0
+  
+  temp    color
+  texld   color,t0,s0
+  mov     oC0,color
+else
+  mov     oC0,c0
+endif

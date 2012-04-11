@@ -1,0 +1,151 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Deutsch (Deutschland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 250, 202
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Project: Snowblind Teaser"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Akzeptieren",IDOK,192,180,50,14
+    PUSHBUTTON      "Abbrechen",IDCANCEL,6,180,50,14
+    LTEXT           "Informationen zu dem Project: Snowblind Teaser:",
+                    IDC_STATIC,6,6,234,8
+    COMBOBOX        IDC_RESOLUTION,138,138,102,54,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Auflösung:",IDC_STATIC,90,138,36,12,SS_CENTERIMAGE
+    CONTROL         "Vollbild",IDC_FULLSCREEN,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,6,138,58,12
+    EDITTEXT        IDC_LICENSE,6,24,234,105,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL | WS_HSCROLL,WS_EX_STATICEDGE
+    CONTROL         "Endlosschleife",IDC_LOOP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,6,156,58,12
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 214, 89
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Project: Snowblind Teaser"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "http://www.project-snowblind.de",IDWWW1,6,30,143,14,
+                    BS_LEFT
+    PUSHBUTTON      "Abbruch",IDCANCEL,156,66,50,14
+    LTEXT           "Möchten Sie mehr über Project: Snowblind erfahren oder uns ihre Meinung zu diesem Teaser sagen?",
+                    IDC_STATIC,12,6,192,18
+    PUSHBUTTON      "http://www.eidosforum.de",IDWWW2,6,48,143,14,BS_LEFT
+    PUSHBUTTON      "http://www.eidos.de",IDWWW3,6,66,143,14,BS_LEFT
+END
+
+IDD_DIALOG3 DIALOGEX 0, 0, 186, 77
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Project: Snowblind Teaser"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,126,54,50,14
+    LTEXT           "Der Snowblind Teaser benötigt eine Grafikkarte mit PixelShader 1.1 oder besser, zum Beispiel eine GeForce 4200TI oder eine Radeon 8500 (oder besser). Das Spiel Snowblind kommt auch mit älteren Grafikkarten zurecht.",
+                    IDC_STATIC,12,6,162,42
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 243
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 195
+    END
+
+    IDD_DIALOG2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 207
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 82
+    END
+
+    IDD_DIALOG3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 70
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Deutsch (Deutschland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

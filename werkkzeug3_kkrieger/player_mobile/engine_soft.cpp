@@ -1,0 +1,1480 @@
+
+#include "engine_soft.hpp"
+#include "start_mobile.hpp"
+#include "_intmath.hpp"
+#if !sMOBILE
+#include "_start.hpp"
+#endif
+#include "wz_mobile/gen_mobmesh.hpp"
+
+static sInt frame = 0;
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   converter                                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+bool operator== (const SoftVertex &a,const SoftVertex &b)
+{
+  const sU32 *aa = (const sU32 *) &a;
+  const sU32 *bb = (const sU32 *) &b;
+
+  for(sInt i=0;i<sizeof(SoftVertex)/4;i++)
+    if(aa[i]!=bb[i]) return 0;
+  return 1;
+}
+
+/****************************************************************************/
+
+SoftMesh *MakeSoftMesh(GenMobMesh *mob)
+{
+  SoftMesh *mesh = new SoftMesh;
+  SoftVertex *sv;
+  SoftCluster *sc;
+  GenMobVertex *mv;
+  GenMobFace *mf;
+  GenMobCluster *mc;
+  sInt vc,ic;
+  sInt i,cluster;
+
+  vc = ic = 0;
+  {sFORALL(mob->Faces,mf)
+  {
+    sVERIFY(mf->Count>=3);
+    vc += mf->Count;
+    ic += (mf->Count-2)*3;
+  }}
+
+  mesh->Vertices = new SoftVertex[vc];
+  mesh->Indices = new sU16[ic];
+  mesh->Clusters = new SoftCluster[mob->Clusters.Count];
+  sv = mesh->Vertices;
+
+  for(cluster=1;cluster<mob->Clusters.Count;cluster++)
+  {
+    mc = &mob->Clusters[cluster];
+
+    sc = &mesh->Clusters[mesh->ClusterCount];
+    sc->IndexStart = mesh->IndexCount;
+    sc->IndexCount = 0;
+    sc->VertexStart = mesh->VertexCount;
+    sc->VertexCount = 0;
+    sc->Flags = mc->Flags;
+    sc->TFlags[0] = mc->TFlags[0];
+    sc->TFlags[1] = mc->TFlags[1];
+    sc->Texture[0] = mc->Image[0];
+    sc->Texture[1] = mc->Image[1];
+
+    sInt sizex = 256;
+    sInt sizey = 256;
+    if(sc->Texture[0])
+    {
+      sizex = sc->Texture[0]->SizeX;
+      sizey = sc->Texture[0]->SizeY;
+    }
+
+    sFORALL(mob->Faces,mf)
+    {
+      if(mf->Cluster == cluster)
+      {
+        sInt index[4];
+        for(i=0;i<mf->Count;i++)
+        {
+          sv = &mesh->Vertices[mesh->VertexCount];
+          mv = &mob->Vertices[mf->Vertex[i].Index];
+          sv->x = sRange(mv->Pos.x>>6,0x7fff,-0x7fff);
+          sv->y = sRange(mv->Pos.y>>6,0x7fff,-0x7fff);
+          sv->z = sRange(mv->Pos.z>>6,0x7fff,-0x7fff);
+          sv->u0 = (mf->Vertex[i].TexU0*sizex)>>(12+0);
+          sv->v0 = (mf->Vertex[i].TexV0*sizey)>>(12+0);
+          sv->u1 = (mf->Vertex[i].TexU1*sizex)>>(12+0);
+          sv->v1 = (mf->Vertex[i].TexV1*sizey)>>(12+0);
+          sv->c[0] = sRange<sInt>(mf->Vertex[i].Color.x,0xff,0x00);
+          sv->c[1] = sRange<sInt>(mf->Vertex[i].Color.y,0xff,0x00);
+          sv->c[2] = sRange<sInt>(mf->Vertex[i].Color.z,0xff,0x00);
+          sv->matrix = 0;
+
+          for(sInt j=sc->VertexStart;j<mesh->VertexCount;j++)
+          {
+            if(*sv == mesh->Vertices[j])
+            {
+              index[i] = j;
+              goto found;
+            }
+          }
+          index[i] = mesh->VertexCount++;
+        found: ;
+        }
+        for(i=2;i<mf->Count;i++)
+        {
+          mesh->Indices[mesh->IndexCount++] = index[0];
+          mesh->Indices[mesh->IndexCount++] = index[i];
+          mesh->Indices[mesh->IndexCount++] = index[i-1];
+        }
+      }
+    }
+
+    sc->IndexCount = mesh->IndexCount - sc->IndexStart;
+    sc->VertexCount = mesh->VertexCount - sc->VertexStart;
+    if(sc->IndexCount>0 && sc->VertexCount>0)
+      mesh->ClusterCount++;
+  }
+
+  sVERIFY(mesh->VertexCount<=vc);
+  sVERIFY(mesh->IndexCount<=ic);
+  sVERIFY(mesh->ClusterCount>0);
+
+  return mesh;
+}
+
+/****************************************************************************/
+
+struct tvertex
+{
+  sS32 x,y;
+  sS32 tx,ty,tz;
+  sU16 clip;
+  sS16 u,v;
+  sS16 i,j,k;       // additonal interpolants
+};
+
+tvertex tvert[0x4000];
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   a 3d engine                                                        ***/
+/***                                                                      ***/
+/****************************************************************************/
+/****************************************************************************/
+
+SoftMesh::SoftMesh()
+{
+  Vertices = 0;
+  Clusters = 0;
+  Matrices = 0;
+  Indices = 0;
+
+  VertexCount = 0;
+  ClusterCount = 0;
+  MatrixCount = 0;
+  IndexCount = 0;
+}
+
+/****************************************************************************/
+
+SoftMesh::~SoftMesh()
+{
+  delete[] Vertices;
+  delete[] Clusters;
+  delete[] Matrices;
+  delete[] Indices;
+}
+
+/****************************************************************************/
+
+SoftEngine::SoftEngine()
+{
+  ScreenX = 0;
+  ScreenY = 0;
+  BackBuffer = 0;
+  ConvertTable = 0;
+  FrontBuffer32 = 0;
+  FrontBuffer16 = 0;
+
+  TriCount[0] = 0;
+  TriCount[1] = 0;
+  TriCount[2] = 0;
+  TriCount[3] = 0;
+  PixCount[0] = 0;
+  PixCount[1] = 0;
+  PixCount[2] = 0;
+  PixCount[3] = 0;
+
+  View.Init();
+
+  Tesselate = 1;
+}
+
+SoftEngine::~SoftEngine()
+{
+  delete[] BackBuffer;
+  delete[] ConvertTable;
+}
+
+/****************************************************************************/
+
+void SoftEngine::CalcConvertTable()
+{
+  sInt i;
+  if(ConvertTable)
+    return;
+
+  ConvertTable = new sU32[256+256];
+  
+  // low half
+  for(i=0;i<256;i++)
+    ConvertTable[  0+i] = ((i<<5)&0xfc00) | ((i<<3)&0xf8);
+
+  // high half
+  for(i=0;i<256;i++)
+    ConvertTable[256+i] = 0xff000000 | ((i<<16)&0xf80000) | ((i<<13)&0xfc00);
+}
+
+void SoftEngine::Begin(sInt sx,sInt sy,sU16 clearcolor)
+{
+  if(ScreenX!=sx || ScreenY!=sy)
+  {
+    delete[] BackBuffer;
+    BackBuffer = new SoftPixel[sx*sy];
+    ScreenX = sx;
+    ScreenY = sy;
+  }
+
+  sSetMem4((sU32 *)BackBuffer,clearcolor|0xffff0000,ScreenX*ScreenY);
+
+  TriCount[0] = 0;
+  TriCount[1] = 0;
+  TriCount[2] = 0;
+  TriCount[3] = 0;
+  PixCount[0] = 0;
+  PixCount[1] = 0;
+  PixCount[2] = 0;
+  PixCount[3] = 0;
+}
+
+void SoftEngine::Begin(sU16 *dest,sInt sx,sInt sy,sU16 clearcolor)
+{
+  FrontBuffer16 = dest;
+  FrontBuffer32 = 0;
+
+  Begin(sx,sy,clearcolor);
+}
+
+void SoftEngine::Begin(sU32 *dest,sInt stride,sInt sx,sInt sy,sU32 c)
+{
+  FrontBuffer32 = dest;
+  FrontBuffer16 = 0;
+  Stride = stride;
+
+  c = ((c&0xf80000)>>8) | ((c&0x00fc00)>>5) | ((c&0xf8)>>3);
+  CalcConvertTable();
+
+  Begin(sx,sy,c);
+}
+
+/****************************************************************************/
+
+void SoftEngine::End()
+{
+  sInt c;
+  SoftPixel *s;
+  sU32 *d32;
+  if(FrontBuffer32)
+  {
+    d32 = FrontBuffer32;
+    s = BackBuffer;
+
+    sU32 *convl = ConvertTable +   0;
+    sU32 *convh = ConvertTable + 256;
+
+    for(sInt y=0;y<ScreenY;y++)
+    {
+      for(sInt x=0;x<ScreenX;x++)
+      {
+        c = s[x].Color;
+//        c = 0xffff;
+        d32[x] = convl[c & 0xff] | convh[c >> 8];
+        //c = 0xff000000 | ((c<<8)&0xf80000) | ((c<<5)&0xfc00) | ((c<<3)&0xf8);
+        //d32[x] = c;
+      }
+      s += ScreenX;
+      d32 += Stride;
+    }
+    FrontBuffer32 = 0;
+  }
+  if(FrontBuffer16)
+  {
+    for(sInt i=0;i<ScreenX*ScreenY;i++)
+      FrontBuffer16[i] = BackBuffer[i].Color;
+    FrontBuffer16 = 0;
+  }
+
+  frame++;
+}
+
+/****************************************************************************/
+
+#if !sPLAYER
+
+void SoftEngine::EndDouble()
+{
+  sInt c;
+  SoftPixel *s;
+  sU32 *d32;
+
+  sVERIFY(!FrontBuffer16);
+
+  if(FrontBuffer32)
+  {
+    d32 = FrontBuffer32;
+    s = BackBuffer;
+    for(sInt y=0;y<ScreenY;y++)
+    {
+      for(sInt x=0;x<ScreenX;x++)
+      {
+        c = s[x].Color;
+        c = 0xff000000 | ((c<<8)&0xf80000) | ((c<<5)&0xfc00) | ((c<<3)&0xf8);
+        d32[x*2+0] = c;
+        d32[x*2+1] = c;
+        d32[x*2+0+Stride] = c;
+        d32[x*2+1+Stride] = c;
+      }
+      s += ScreenX;
+      d32 += Stride*2;
+    }
+    FrontBuffer32 = 0;
+  }
+  if(FrontBuffer16)
+  {
+    for(sInt i=0;i<ScreenX*ScreenY;i++)
+      FrontBuffer16[i] = BackBuffer[i].Color;
+    FrontBuffer16 = 0;
+  }
+}
+
+#endif
+
+/****************************************************************************/
+
+void SoftEngine::SetViewport(const sIMatrix34 &mat,sInt zoom)
+{
+  View = mat;
+  View.TransR();
+  Zoom = (ScreenX*16*zoom/2)>>sFIXSHIFT;
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   the real painting                                                  ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+static const sInt zNear = 0x80000;
+
+void SoftEngine::Paint(SoftMesh *mesh)
+{
+  sInt i;
+  sInt px,py,pz;
+  sInt sx,sy,sz;
+  sInt clip;
+  sIMatrix34 mat;
+
+  mat = View;
+
+
+  for(sInt cli=0;cli<mesh->ClusterCount;cli++)
+  {
+    SoftCluster *sc = &mesh->Clusters[cli];
+
+// material
+
+    SoftImage *tex0,*tex1;
+    PixelMode = sc->Flags&7;
+    PixelFlags = sc->Flags;
+    tex0 = sc->Texture[0];
+    tex1 = sc->Texture[1];
+    
+    if((PixelMode==PM_TEXADD || PixelMode==PM_TEXMUL) && tex1==0)
+      PixelMode = PM_PLAIN;
+    if(tex0==0 && PixelMode!=PM_FLAT)
+      PixelMode = PM_FLAT;
+    sInt cv = !(PixelMode==PM_TEXADD||PixelMode==PM_TEXMUL);
+
+// transform
+
+    for(i=sc->VertexStart;i<sc->VertexCount+sc->VertexStart;i++)
+    {
+      SoftVertex *vert = &mesh->Vertices[i];
+      px = vert->x;
+      py = vert->y;
+      pz = vert->z;
+
+      sx = (px*mat.i.x + py*mat.j.x + pz*mat.k.x + mat.l.x);
+      sy = -(px*mat.i.y + py*mat.j.y + pz*mat.k.y + mat.l.y);
+      sz = (px*mat.i.z + py*mat.j.z + pz*mat.k.z + mat.l.z);
+
+      tvert[i].tx = sx;
+      tvert[i].ty = sy;
+      tvert[i].tz = sz;
+
+      if(sz>=zNear)
+      {
+        sx = sMulDiv(sx,Zoom,sz) + (ScreenX*8);
+        sy = sMulDiv(sy,Zoom,sz) + (ScreenY*8);
+        clip = 0;
+        if(sx<0         ) clip |= 0x01;
+        if(sx>ScreenX*16) clip |= 0x02;
+        if(sy<0         ) clip |= 0x04;
+        if(sy>ScreenY*16) clip |= 0x08;
+      }
+      else
+      {
+        clip = 0x10;
+      }
+
+      /*if(0 && clip==0)
+        BackBuffer[(sy>>4)*ScreenX+(sx>>4)].Color = 0xffff;*/
+
+      tvert[i].x = sx;
+      tvert[i].y = sy;
+      //tvert[i].z = (sz>>14);
+      tvert[i].clip = clip;
+      tvert[i].u = vert->u0;
+      tvert[i].v = vert->v0;
+      if(cv)
+      {
+        tvert[i].i = vert->c[0]*4;
+        tvert[i].j = vert->c[1]*4;
+        tvert[i].k = vert->c[2]*4;
+      }
+      else
+      {
+        tvert[i].i = vert->u1;
+        tvert[i].j = vert->v1;
+        tvert[i].k = 0;
+      }
+
+      //tvert[i].pad = 0;
+    }
+
+// draw
+    static tvertex vertbuf[16];
+
+    for(sInt j=sc->IndexStart;j<sc->IndexCount+sc->IndexStart;j+=3)
+    {
+      const tvertex *iv[4]; // in vertex
+      tvertex *vp = vertbuf;
+      
+      iv[0] = &tvert[mesh->Indices[j+0]]; 
+      iv[1] = &tvert[mesh->Indices[j+1]]; 
+      iv[2] = &tvert[mesh->Indices[j+2]]; 
+
+
+#if 1
+      sInt c0 = iv[0]->clip;
+      sInt c1 = iv[1]->clip;
+      sInt c2 = iv[2]->clip;
+      if(c0&c1&c2) continue;
+
+      if(Tesselate)
+      {
+        DrawTriangleTess(iv[0],iv[1],iv[2],tex0,tex1);
+      }
+      else
+      { 
+        if((c0|c1|c2) & 0x10) continue;
+        DrawTriangle(iv[0],iv[1],iv[2],tex0,tex1);
+        if(PixelFlags&16)
+          DrawTriangle(iv[0],iv[2],iv[1],tex0,tex1);
+      }
+#else
+      sInt c0 = iv[0]->clip;
+      sInt c1 = iv[1]->clip;
+      sInt c2 = iv[2]->clip;
+
+      const tvertex *ov[4]; // out vertex
+      if(c0&c1&c2) continue;
+      if((c0|c1|c2) & 0x10) // need z clip
+      {
+        iv[3] = iv[0];
+        sInt ovc = 0;
+
+        // go through edges, clipping in turn
+        for(sInt e=0;e<3;e++)
+        {
+          const tvertex *v0 = iv[e];
+          const tvertex *v1 = iv[e+1];
+
+          // start vertex in?
+          if(!(v0->clip & 0x10))
+            ov[ovc++] = v0;
+
+          // crossing plane? create new vertex at intersection.
+          if((v0->clip ^ v1->clip) & 0x10)
+          {
+            ov[ovc++] = vp;
+
+            // solve for t, calc position
+            sInt t = sDivShift30(zNear - v0->tz,v1->tz - v0->tz);
+            vp->tx = v0->tx + sMulShift30(t,v1->tx - v0->tx);
+            vp->ty = v0->ty + sMulShift30(t,v1->ty - v0->ty);
+
+//            sInt num = zNear - v0->tz;
+//            sInt denom = v1->tz - v0->tz;
+
+//            vp->tx = v0->tx + sMulDiv(v1->tx - v0->tx,num,denom);
+//            vp->ty = v0->ty + sMulDiv(v1->ty - v0->ty,num,denom);
+//            vp->tz = zNear; // that's what we hope, at least!
+            
+            // projection (we skip clip flags for now)
+            vp->x = sMulDiv(vp->tx,Zoom,vp->tz) + (ScreenX*8);
+            vp->y = sMulDiv(vp->ty,Zoom,vp->tz) + (ScreenY*8);
+            clip = 0;
+
+            // clipping & other interpolants
+            vp->clip = clip;
+            vp->u = v0->u + sMulShift30(t,v1->u - v0->u);
+            vp->v = v0->v + sMulShift30(t,v1->v - v0->v);
+            vp->i = v0->i + sMulShift30(t,v1->i - v0->i);
+            vp->j = v0->j + sMulShift30(t,v1->j - v0->j);
+            vp->k = v0->k + sMulShift30(t,v1->k - v0->k);
+            vp++;
+          }
+        }
+
+        // draw resulting triangles, if there are any
+        for(sInt e=1;e+1<ovc;e++)
+        {
+          DrawTriangle(ov[0],ov[e],ov[e+1],tex0,tex1);
+          if(PixelFlags&16)
+            DrawTriangle(ov[e+1],ov[e],ov[0],tex0,tex1);
+        }
+      }
+      else
+      {
+        DrawTriangle(iv[0],iv[1],iv[2],tex0,tex1);
+        if(PixelFlags&16)
+          DrawTriangle(iv[0],iv[2],iv[1],tex0,tex1);
+      }
+
+#endif
+    }
+  }
+}
+
+void SoftEngine::Middle(tvertex &xxx,const struct tvertex &vp0,const struct tvertex &vp1)
+{
+  xxx.tx = (vp0.tx + vp1.tx) / 2;
+  xxx.ty = (vp0.ty + vp1.ty) / 2;
+  xxx.tz = (vp0.tz + vp1.tz) / 2;
+  xxx.u  = (vp0.u  + vp1.u ) / 2;
+  xxx.v  = (vp0.v  + vp1.v ) / 2;
+  xxx.i  = (vp0.i  + vp1.i ) / 2;
+  xxx.j  = (vp0.j  + vp1.j ) / 2;
+  xxx.k  = (vp0.k  + vp1.k ) / 2;
+
+  if(xxx.tz>=zNear)
+  {
+    xxx.x = sMulDiv(xxx.tx,Zoom,xxx.tz) + (ScreenX*8);
+    xxx.y = sMulDiv(xxx.ty,Zoom,xxx.tz) + (ScreenY*8);
+    xxx.clip = 0;
+    if(xxx.x<0         ) xxx.clip |= 0x01;
+    if(xxx.x>ScreenX*16) xxx.clip |= 0x02;
+    if(xxx.y<0         ) xxx.clip |= 0x04;
+    if(xxx.y>ScreenY*16) xxx.clip |= 0x08;
+  }
+  else
+  {
+    xxx.clip = 0x10;
+  }
+
+}
+
+void SoftEngine::DrawTriangleTess(const struct tvertex *vp0,const struct tvertex *vp1,const struct tvertex *vp2,SoftImage *img0,SoftImage *img1,sInt level)
+{
+  tvertex n0,n1,n2;
+  sInt c0 = vp0->clip;
+  sInt c1 = vp1->clip;
+  sInt c2 = vp2->clip;
+
+  if(c0&c1&c2) return;
+  if(level>2)
+  {
+    if(((c0|c1|c2) & 0x10)==0)
+    {
+      DrawTriangle(vp0,vp1,vp2,img0,img1);
+      if(PixelFlags&16)
+        DrawTriangle(vp0,vp2,vp1,img0,img1);
+    }
+    return;
+  }
+  level++;
+
+  sInt s0,s1,s2;
+  s0 = s1 = s2 = 0;
+  if(c0&0x10) s1 = s2 = 1;
+  if(c1&0x10) s2 = s0 = 1;
+  if(c2&0x10) s0 = s1 = 1;
+
+  const sInt a = 3;
+  const sInt b = 4;
+
+  if(vp0->tz > vp1->tz) { if(vp0->tz*a > vp1->tz*b) s2 = 1; }
+  else                  { if(vp1->tz*a > vp0->tz*b) s2 = 1; }
+  if(vp1->tz > vp2->tz) { if(vp1->tz*a > vp2->tz*b) s0 = 1; }
+  else                  { if(vp2->tz*a > vp1->tz*b) s0 = 1; }
+  if(vp2->tz > vp0->tz) { if(vp2->tz*a > vp0->tz*b) s1 = 1; }
+  else                  { if(vp0->tz*a > vp2->tz*b) s1 = 1; }
+
+
+  switch(s0+s1*2+s2*4)
+  {
+  case 0:
+    DrawTriangle(vp0,vp1,vp2,img0,img1);
+    if(PixelFlags&16)
+      DrawTriangle(vp0,vp2,vp1,img0,img1);
+    break;
+
+  case 1:
+    Middle(n0,*vp1,*vp2);
+    DrawTriangleTess(vp0,vp1,&n0,img0,img1,level);
+    DrawTriangleTess(vp0,&n0,vp2,img0,img1,level);
+    break;
+
+  case 2:
+    Middle(n1,*vp2,*vp0);
+    DrawTriangleTess(vp0,vp1,&n1,img0,img1,level);
+    DrawTriangleTess(&n1,vp1,vp2,img0,img1,level);
+    break;
+
+  case 3:
+    Middle(n0,*vp1,*vp2);
+    Middle(n1,*vp2,*vp0);
+    DrawTriangleTess(vp0,vp1,&n0,img0,img1,level);
+    DrawTriangleTess(&n1,&n0,vp2,img0,img1,level);
+    DrawTriangleTess(vp0,&n0,&n1,img0,img1,level);
+    break;
+
+  case 4:
+    Middle(n2,*vp0,*vp1);
+    DrawTriangleTess(&n2,vp1,vp2,img0,img1,level);
+    DrawTriangleTess(vp0,&n2,vp2,img0,img1,level);
+    break;
+
+  case 5:
+    Middle(n0,*vp1,*vp2);
+    Middle(n2,*vp0,*vp1);
+    DrawTriangleTess(vp0,&n2,&n0,img0,img1,level);
+    DrawTriangleTess(&n2,vp1,&n0,img0,img1,level);
+    DrawTriangleTess(vp0,&n0,vp2,img0,img1,level);
+    break;
+
+  case 6:
+    Middle(n1,*vp2,*vp0);
+    Middle(n2,*vp0,*vp1);
+    DrawTriangleTess(vp0,&n2,&n1,img0,img1,level);
+    DrawTriangleTess(&n2,vp1,&n1,img0,img1,level);
+    DrawTriangleTess(&n1,vp1,vp2,img0,img1,level);
+    break;
+
+  case 7:
+    Middle(n0,*vp1,*vp2);
+    Middle(n1,*vp2,*vp0);
+    Middle(n2,*vp0,*vp1);
+    DrawTriangleTess(vp0,&n2,&n1,img0,img1,level);
+    DrawTriangleTess(&n2,vp1,&n0,img0,img1,level);
+    DrawTriangleTess(&n1,&n0,vp2,img0,img1,level);
+    DrawTriangleTess(&n0,&n1,&n2,img0,img1,level);
+    break;
+  }
+}
+
+void SoftEngine::DrawTriangle(const struct tvertex *vp0,const struct tvertex *vp1,const struct tvertex *vp2,SoftImage *img0,SoftImage *img1)
+{
+  static const sInt uKernel[2][2] = { 0x4000,0x8000,0xc000,0x0000 };
+  static const sInt vKernel[2][2] = { 0x0000,0xc000,0x8000,0x4000 };
+
+  // set up deltas
+
+  sInt x0 = vp0->x; 
+  sInt y0 = vp0->y;
+  sInt x1 = vp1->x;
+  sInt y1 = vp1->y;
+  sInt x2 = vp2->x;
+  sInt y2 = vp2->y;
+  
+  sInt dx0 = x1-x2;
+  sInt dx1 = x2-x0;
+  sInt dx2 = x0-x1;
+  sInt dy0 = y1-y2;
+  sInt dy1 = y2-y0;
+  sInt dy2 = y0-y1;
+
+  sInt u0 = vp0->u;
+  sInt v0 = vp0->v;
+  sInt z0 = vp0->tz >> 14;
+  sInt du0 = vp1->u-vp2->u;
+  sInt du1 = vp2->u-vp0->u;
+  sInt du2 = vp0->u-vp1->u;
+  sInt dv0 = vp1->v-vp2->v;
+  sInt dv1 = vp2->v-vp0->v;
+  sInt dv2 = vp0->v-vp1->v;
+  sInt dz0 = (vp1->tz-vp2->tz) >> 14;
+  sInt dz1 = (vp2->tz-vp0->tz) >> 14;
+  sInt dz2 = (vp0->tz-vp1->tz) >> 14;
+
+  sInt i0 = vp0->i;
+  sInt j0 = vp0->j;
+  sInt k0 = vp0->k;
+  sInt di0 = vp1->i - vp2->i;
+  sInt di1 = vp2->i - vp0->i;
+  sInt di2 = vp0->i - vp1->i;
+  sInt dj0 = vp1->j - vp2->j;
+  sInt dj1 = vp2->j - vp0->j;
+  sInt dj2 = vp0->j - vp1->j;
+  sInt dk0 = vp1->k - vp2->k;
+  sInt dk1 = vp2->k - vp0->k;
+  sInt dk2 = vp0->k - vp1->k;
+
+  // zero size and backface culling
+
+  TriCount[1]++;
+  if(dx0==0 && dx1==0 && dx2==0) return;
+  if(dy0==0 && dy1==0 && dy2==0) return;
+  if(dx2*dy0 > dx0*dy2) return;
+  sInt det = (dx2*dy1-dy2*dx1);
+  if(det==0) return;
+  TriCount[0]++;
+
+  // bounding rect
+
+  sInt minx,maxx,miny,maxy;
+
+  minx = x0;
+  if(x1<minx) minx = x1;
+  if(x2<minx) minx = x2;
+  if(minx<0) minx = 0;
+  maxx = x0;
+  if(x1>maxx) maxx = x1;
+  if(x2>maxx) maxx = x2;
+  if(maxx>(ScreenX)*16) maxx=(ScreenX)*16;
+  miny = y0;
+  if(y1<miny) miny = y1;
+  if(y2<miny) miny = y2;
+  if(miny<0) miny = 0;
+  maxy = y0;
+  if(y1>maxy) maxy = y1;
+  if(y2>maxy) maxy = y2;
+  if(maxy>(ScreenY)*16) maxy=(ScreenY)*16;
+
+  minx = (minx+15)>>4;
+  maxx = (maxx+15)>>4;
+  miny = (miny+15)>>4;
+  maxy = (maxy+15)>>4;
+
+  SoftPixel *dest = BackBuffer + miny*ScreenX;
+
+  // deltas pos
+  // note that dx and dy are used rotated by 90°: (dx,dy) -> (-dy,dx)
+
+  sInt c0 = dy0*x1 - dx0*y1;
+  sInt c1 = dy1*x2 - dx1*y2;
+  sInt c2 = dy2*x0 - dx2*y0;
+
+  if(dy0 < 0 || (dy0==0 && dx0>0)) c1++;
+  if(dy1 < 0 || (dy1==0 && dx1>0)) c2++;
+  if(dy2 < 0 || (dy2==0 && dx2>0)) c0++;
+
+  sInt cy0 = c0 - dy0*(minx<<4) + dx0*(miny<<4);
+  sInt cy1 = c1 - dy1*(minx<<4) + dx1*(miny<<4);
+  sInt cy2 = c2 - dy2*(minx<<4) + dx2*(miny<<4);
+
+  // deltas ub
+
+  sInt deti;
+  sInt dxu,dxv,dxz;
+  sInt dyu,dyv,dyz;
+  sInt dxi,dxj,dxk;
+  sInt dyi,dyj,dyk;
+
+  sInt lz = sCountLeadingZeroes(det>0 ? det : -det);
+  if(lz<16)
+  {
+    lz = 16-lz;
+    deti = 0x40000000/(det>>lz);
+    dxu = sMulShift(du2*dy1-du1*dy2,deti)>>lz;
+    dyu = sMulShift(du1*dx2-du2*dx1,deti)>>lz;
+    dxv = sMulShift(dv2*dy1-dv1*dy2,deti)>>lz;
+    dyv = sMulShift(dv1*dx2-dv2*dx1,deti)>>lz;
+    dxz = sMulShift(dz2*dy1-dz1*dy2,deti)>>lz;
+    dyz = sMulShift(dz1*dx2-dz2*dx1,deti)>>lz;
+
+    dxi = sMulShift(di2*dy1-di1*dy2,deti)>>lz;
+    dyi = sMulShift(di1*dx2-di2*dx1,deti)>>lz;
+    dxj = sMulShift(dj2*dy1-dj1*dy2,deti)>>lz;
+    dyj = sMulShift(dj1*dx2-dj2*dx1,deti)>>lz;
+    dxk = sMulShift(dk2*dy1-dk1*dy2,deti)>>lz;
+    dyk = sMulShift(dk1*dx2-dk2*dx1,deti)>>lz;
+  }
+  else
+  {
+    lz = lz-16;
+    deti = 0x40000000/(det<<lz);
+    dxu = sMulShift(du2*dy1-du1*dy2,deti)<<lz;
+    dyu = sMulShift(du1*dx2-du2*dx1,deti)<<lz;
+    dxv = sMulShift(dv2*dy1-dv1*dy2,deti)<<lz;
+    dyv = sMulShift(dv1*dx2-dv2*dx1,deti)<<lz;
+    dxz = sMulShift(dz2*dy1-dz1*dy2,deti)<<lz;
+    dyz = sMulShift(dz1*dx2-dz2*dx1,deti)<<lz;
+
+    dxi = sMulShift(di2*dy1-di1*dy2,deti)<<lz;
+    dyi = sMulShift(di1*dx2-di2*dx1,deti)<<lz;
+    dxj = sMulShift(dj2*dy1-dj1*dy2,deti)<<lz;
+    dyj = sMulShift(dj1*dx2-dj2*dx1,deti)<<lz;
+    dxk = sMulShift(dk2*dy1-dk1*dy2,deti)<<lz;
+    dyk = sMulShift(dk1*dx2-dk2*dx1,deti)<<lz;
+  }
+
+  sInt cyu = u0*0x4000 + dxu*((minx<<4)-x0) + dyu*((miny<<4)-y0);
+  sInt cyv = v0*0x4000 + dxv*((minx<<4)-x0) + dyv*((miny<<4)-y0);
+  sInt cyz = z0*0x4000 + dxz*((minx<<4)-x0) + dyz*((miny<<4)-y0);
+
+  sInt cyi = i0*0x4000 + dxi*((minx<<4)-x0) + dyi*((miny<<4)-y0);
+  sInt cyj = j0*0x4000 + dxj*((minx<<4)-x0) + dyj*((miny<<4)-y0);
+  sInt cyk = k0*0x4000 + dxk*((minx<<4)-x0) + dyk*((miny<<4)-y0);
+
+//    sDPrintF(L"%08x %08x %08x %08x\n",dxu,dyu,dxv,dyv);
+
+  // loop
+
+//      cy0 ++;
+//      cy1 ++;
+//      cy2 ++;
+
+  sInt stepshiftstart = 0;
+  while((4<<stepshiftstart) < maxx-minx)
+    stepshiftstart++;
+
+  // texture pointers
+  sU32 *tex0 = img0 ? img0->Data : 0;
+  sU32 *tex1 = img1 ? img1->Data : 0;
+
+  for(sInt y=miny; y<maxy; y++)
+  {
+    sInt cx0 = cy0;
+    sInt cx1 = cy1;
+    sInt cx2 = cy2;
+
+    sInt cxu = cyu;
+    sInt cxv = cyv;
+    sInt cxz = cyz;
+
+    sInt cxi = cyi;
+    sInt cxj = cyj;
+    sInt cxk = cyk;
+
+    sInt x=minx;
+    sInt stepshift = stepshiftstart;
+
+    // binare suche des ersten punktes (grob)
+
+    if((cx0|cx1|cx2)<0)
+    {
+      while(stepshift>=1)
+      {
+        sInt step = 1<<stepshift;
+        for(;;)
+        {
+          sInt cx0s = (cx0-(dy0<<(4+stepshift)))&cx0;
+          sInt cx1s = (cx1-(dy1<<(4+stepshift)))&cx1;
+          sInt cx2s = (cx2-(dy2<<(4+stepshift)))&cx2;
+
+          if((cx0s|cx1s|cx2s)>=0)
+            break;
+
+//          PixCount[3]++;
+          cx0 -= dy0<<(4+stepshift);
+          cx1 -= dy1<<(4+stepshift);
+          cx2 -= dy2<<(4+stepshift);
+          cxu += dxu<<(4+stepshift);
+          cxv += dxv<<(4+stepshift);
+          cxz += dxz<<(4+stepshift);
+          cxi += dxi<<(4+stepshift);
+          cxj += dxj<<(4+stepshift);
+          cxk += dxk<<(4+stepshift);
+//            dest[x].Color += 0x0100;
+          x+=step;
+          if(x>=maxx)
+            goto endofline;
+        }
+        stepshift--;
+      }
+    }
+
+    // binare suche ist bis zu zwei pixel daneben...
+
+
+    sInt skip;
+    for(skip=3;(cx0|cx1|cx2)<0 && x<maxx && skip>=0; skip--)
+    {
+//            dest[x].Color += 0x2000;
+//      PixCount[2]++;
+      cx0 -= dy0<<4;
+      cx1 -= dy1<<4;
+      cx2 -= dy2<<4;
+      cxu += dxu<<4;
+      cxv += dxv<<4;
+      cxz += dxz<<4;
+      cxi += dxi<<4;
+      cxj += dxj<<4;
+      cxk += dxk<<4;
+      x++;
+    }
+    
+    // solange scannen bis triangle zuende
+    const sInt *uOffs,*vOffs;
+
+    uOffs = uKernel[(y^frame)&1];
+    vOffs = vKernel[(y^frame)&1];
+
+    switch(PixelMode)
+    {
+    case PM_FLAT:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+
+          sInt b = cxi>>16;
+          sInt g = cxj>>16;
+          sInt r = cxk>>16;
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+          dest[x].Depth = (cxz>>16);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxz += dxz<<4;
+        cxi += dxi<<4;
+        cxj += dxj<<4;
+        cxk += dxk<<4;
+        x++;
+      }      
+      break;
+
+    case PM_PLAIN:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+          sInt u = ((cxu+uOffs[x&1])>>16)&0xff;
+          sInt v = ((cxv+vOffs[x&1])>> 8)&0xff00;
+          sU8 *tex = (sU8 *) &img0->Data[u+v];
+
+          sInt b = tex[0];
+          sInt g = tex[1];
+          sInt r = tex[2];
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+          dest[x].Depth = (cxz>>16);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxu += dxu<<4;
+        cxv += dxv<<4;
+        cxz += dxz<<4;
+        x++;
+      }      
+      break;
+
+    case PM_BLENDADD:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+          sInt u = ((cxu+uOffs[x&1])>>16)&0xff;
+          sInt v = ((cxv+vOffs[x&1])>> 8)&0xff00;
+          sU8 *tex = (sU8 *) &tex0[u+v];
+          sU16 dcol = dest[x].Color;
+
+          sInt b = tex[0] + ((dcol&0x001f)<<3); if(b>255) b=255;
+          sInt g = tex[1] + ((dcol&0x07c0)>>3); if(g>255) g=255;
+          sInt r = tex[2] + ((dcol&0xf800)>>8); if(r>255) r=255;
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxu += dxu<<4;
+        cxv += dxv<<4;
+        cxz += dxz<<4;
+        x++;
+      }      
+      break;
+
+    case PM_VERTEXCOLOR:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+          sInt u = ((cxu+uOffs[x&1])>>16)&0xff;
+          sInt v = ((cxv+vOffs[x&1])>> 8)&0xff00;
+          sU8 *tex = (sU8 *) &tex0[u+v];
+
+          sInt b =  (tex[0] * (cxi>>8))>>15; if(b>255) b=255; // modulate*2
+          sInt g =  (tex[1] * (cxj>>8))>>15; if(g>255) g=255;
+          sInt r =  (tex[2] * (cxk>>8))>>15; if(r>255) r=255;
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+          dest[x].Depth = (cxz>>16);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxu += dxu<<4;
+        cxv += dxv<<4;
+        cxz += dxz<<4;
+        cxi += dxi<<4;
+        cxj += dxj<<4;
+        cxk += dxk<<4;
+        x++;
+      }      
+      break;
+
+    case PM_TEXADD:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+          sInt u0 = (cxu>>16)&0xff;
+          sInt v0 = (cxv>>16)&0xff;
+          sU8 *tex0 = (sU8 *) &img0->Data[u0+v0*256];
+          sInt u1 = (cxi>>16)&0xff;
+          sInt v1 = (cxj>>16)&0xff;
+          sU8 *tex1 = (sU8 *) &img1->Data[u1+v1*256];
+
+          sInt b =  (tex0[0] + tex1[0]); if(b>255) b=255; // modulate*2
+          sInt g =  (tex0[1] + tex1[1]); if(g>255) g=255;
+          sInt r =  (tex0[2] + tex1[2]); if(r>255) r=255;
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+          dest[x].Depth = (cxz>>16);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxu += dxu<<4;
+        cxv += dxv<<4;
+        cxz += dxz<<4;
+        cxi += dxi<<4;
+        cxj += dxj<<4;
+        x++;
+      }      
+      break;
+
+    case PM_TEXMUL:
+      while((cx0|cx1|cx2)>=0 && x<maxx)
+      {
+//        PixCount[1]++;
+        if(dest[x].Depth>(cxz>>16))
+        {
+//          PixCount[0]++;
+          sInt u0 = (cxu>>16)&0xff;
+          sInt v0 = (cxv>>16)&0xff;
+          sU8 *tex0 = (sU8 *) &img0->Data[u0+v0*256];
+          sInt u1 = (cxi>>16)&0xff;
+          sInt v1 = (cxj>>16)&0xff;
+          sU8 *tex1 = (sU8 *) &img1->Data[u1+v1*256];
+
+          sInt b =  (tex0[0] * tex1[0])>>7; if(b>255) b=255; // modulate*2
+          sInt g =  (tex0[1] * tex1[1])>>7; if(g>255) g=255;
+          sInt r =  (tex0[2] * tex1[2])>>7; if(r>255) r=255;
+
+          dest[x].Color = (b>>3)|((g&0xfc)<<3)|((r&0xf8)<<8);
+          dest[x].Depth = (cxz>>16);
+        }
+
+        cx0 -= dy0<<4;
+        cx1 -= dy1<<4;
+        cx2 -= dy2<<4;
+        cxu += dxu<<4;
+        cxv += dxv<<4;
+        cxz += dxz<<4;
+        cxi += dxi<<4;
+        cxj += dxj<<4;
+        x++;
+      }      
+      break;
+    }
+endofline:
+
+    // nächste zeile
+
+    cy0 += dx0<<4;
+    cy1 += dx1<<4;
+    cy2 += dx2<<4;
+    cyu += dyu<<4;
+    cyv += dyv<<4;
+    cyz += dyz<<4;
+    cyi += dyi<<4;
+    cyj += dyj<<4;
+    cyk += dyk<<4;
+
+    TriCount[2]++;
+    dest += ScreenX;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   debug printouts                                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+sU8 FontData[];
+
+void SoftEngine::Print(sInt px,sInt py,sChar *text,sU16 color)
+{
+  SoftPixel *dest;
+
+  if(py+8<=ScreenY)
+  {
+    dest = BackBuffer + (py*ScreenX+px);
+    while(*text)
+    {
+      sU8 *s = FontData+(*text)*8;
+      for(sInt y=0;y<8;y++)
+      {
+        sInt bits = *s++;
+        for(sInt x=0;x<6;x++)
+        {
+          if(bits&0x80)
+            dest[y*ScreenX+x].Color = color;
+          bits*=2;
+        }
+      }
+      dest+=6;
+      text++;
+    }
+  }
+}
+
+
+void SoftEngine::DebugOut()
+{
+  static sInt lasttime;
+  static sInt framecount=-1,starttime,fps200=0;
+  sInt time;
+  sInt delta;
+  sInt fps;
+
+#if sMOBILE
+  time = sGetTime();
+#else
+  time = sSystem->GetTime();
+#endif
+  delta = time-lasttime;
+  lasttime = time;
+  if(delta>0)
+    fps = 1000000/delta;
+  else
+    fps = 0;
+
+  framecount++;
+  if(framecount == 0)
+    starttime = time;
+  else if(framecount == 200)
+    fps200 = 200000000/(time-starttime);
+
+  sChar txt[64];
+  const sInt col = 0xf800;//fff;
+  sSPrintF(txt,sCOUNTOF(txt),sTXT("%3d ms / %2d.%03d fps"),delta,fps/1000,fps%1000);
+  Print(5,5,txt,col);
+  sSPrintF(txt,sCOUNTOF(txt),sTXT("%6d / %6d tri d/t"),TriCount[0],TriCount[1]);
+  Print(5,15,txt,col);
+//  sSPrintF(txt,sCOUNTOF(txt),sTXT("%6d / %6d pix d/z"),PixCount[0],PixCount[1]);
+//  Print(5,25,txt,col);
+//  sSPrintF(txt,sCOUNTOF(txt),sTXT("%6d / %6d skip 1/s"),PixCount[2],PixCount[3]);
+//  Print(5,35,txt,col);
+  sSPrintF(txt,sCOUNTOF(txt),sTXT("%6d          scanlines"),TriCount[2]);
+  Print(5,45,txt,col);
+  sSPrintF(txt,sCOUNTOF(txt),sTXT("%6d / %6d fps/ktps"),TriCount[1]*fps/1000,sMulDiv(PixCount[1],fps,1000000));
+  Print(5,55,txt,col);
+  sSPrintF(txt,sCOUNTOF(txt),sTXT("%2d.%03d avg fps"),fps200/1000,fps200%1000);
+  Print(5,65,txt,col);
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+static sU8 FontData[] = 
+{
+    0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x20,0x20,0x20,0x20,0x20,0x00,0x20,0x00,
+    0x50,0x50,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x50,0x50,0xf8,0x50,0xf8,0x50,0x50,0x00,
+    0x20,0x78,0x80,0x70,0x08,0xf0,0x20,0x00,
+    0x40,0xa8,0x50,0x20,0x50,0xa8,0x10,0x00,
+    0x20,0x50,0x50,0x60,0xa8,0x90,0x68,0x00,
+    0x20,0x20,0x40,0x00,0x00,0x00,0x00,0x00,
+    0x10,0x20,0x40,0x40,0x40,0x20,0x10,0x00,
+    0x40,0x20,0x10,0x10,0x10,0x20,0x40,0x00,
+    0x00,0x50,0x70,0xf8,0x70,0x50,0x00,0x00,
+    0x00,0x20,0x20,0xf8,0x20,0x20,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x20,0x20,0x40,
+    0x00,0x00,0x00,0xf8,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x00,
+    0x08,0x10,0x10,0x20,0x20,0x40,0x40,0x80,
+    0x70,0x88,0x98,0xa8,0xc8,0x88,0x70,0x00,
+    0x10,0x30,0x10,0x10,0x10,0x10,0x10,0x00,
+    0x70,0x88,0x08,0x10,0x20,0x40,0xf8,0x00,
+    0x70,0x88,0x08,0x30,0x08,0x88,0x70,0x00,
+    0x10,0x30,0x50,0x90,0xf8,0x10,0x10,0x00,
+    0xf8,0x80,0xf0,0x08,0x08,0x88,0x70,0x00,
+    0x30,0x40,0x80,0xf0,0x88,0x88,0x70,0x00,
+    0xf8,0x08,0x08,0x10,0x20,0x20,0x20,0x00,
+    0x70,0x88,0x88,0x70,0x88,0x88,0x70,0x00,
+    0x70,0x88,0x88,0x78,0x08,0x10,0x60,0x00,
+    0x00,0x00,0x20,0x00,0x00,0x20,0x00,0x00,
+    0x00,0x00,0x20,0x00,0x00,0x20,0x20,0x40,
+    0x00,0x10,0x20,0x40,0x20,0x10,0x00,0x00,
+    0x00,0x00,0xf8,0x00,0xf8,0x00,0x00,0x00,
+    0x00,0x40,0x20,0x10,0x20,0x40,0x00,0x00,
+    0x70,0x88,0x08,0x10,0x20,0x00,0x20,0x00,
+    0x70,0x88,0xb8,0xa8,0xb8,0x80,0x70,0x00,
+    0x70,0x88,0x88,0xf8,0x88,0x88,0x88,0x00,
+    0xf0,0x88,0x88,0xf0,0x88,0x88,0xf0,0x00,
+    0x70,0x88,0x80,0x80,0x80,0x88,0x70,0x00,
+    0xe0,0x90,0x88,0x88,0x88,0x90,0xe0,0x00,
+    0xf8,0x80,0x80,0xf0,0x80,0x80,0xf8,0x00,
+    0xf8,0x80,0x80,0xf0,0x80,0x80,0x80,0x00,
+    0x70,0x88,0x80,0x98,0x88,0x88,0x78,0x00,
+    0x88,0x88,0x88,0xf8,0x88,0x88,0x88,0x00,
+    0x70,0x20,0x20,0x20,0x20,0x20,0x70,0x00,
+    0x10,0x10,0x10,0x10,0x10,0x90,0x60,0x00,
+    0x88,0x90,0xa0,0xc0,0xa0,0x90,0x88,0x00,
+    0x80,0x80,0x80,0x80,0x80,0x80,0xf8,0x00,
+    0x88,0xd8,0xa8,0xa8,0x88,0x88,0x88,0x00,
+    0x88,0xc8,0xa8,0x98,0x88,0x88,0x88,0x00,
+    0x70,0x88,0x88,0x88,0x88,0x88,0x70,0x00,
+    0xf0,0x88,0x88,0xf0,0x80,0x80,0x80,0x00,
+    0x70,0x88,0x88,0x88,0xa8,0x98,0x70,0x08,
+    0xf0,0x88,0x88,0xf0,0xa0,0x90,0x88,0x00,
+    0x70,0x88,0x80,0x70,0x08,0x88,0x70,0x00,
+    0xf8,0x20,0x20,0x20,0x20,0x20,0x20,0x00,
+    0x88,0x88,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x88,0x88,0x88,0x50,0x50,0x20,0x20,0x00,
+    0x88,0x88,0x88,0xa8,0xa8,0xd8,0x88,0x00,
+    0x88,0x88,0x50,0x20,0x50,0x88,0x88,0x00,
+    0x88,0x88,0x50,0x20,0x20,0x20,0x20,0x00,
+    0xf8,0x08,0x10,0x20,0x40,0x80,0xf8,0x00,
+    0x30,0x20,0x20,0x20,0x20,0x20,0x30,0x00,
+    0x80,0x40,0x40,0x20,0x20,0x10,0x10,0x08,
+    0x60,0x20,0x20,0x20,0x20,0x20,0x60,0x00,
+    0x20,0x50,0x88,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xfc,
+    0x20,0x20,0x10,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x80,0x80,0xf0,0x88,0x88,0x88,0xf0,0x00,
+    0x00,0x00,0x70,0x88,0x80,0x88,0x70,0x00,
+    0x08,0x08,0x78,0x88,0x88,0x88,0x78,0x00,
+    0x00,0x00,0x70,0x88,0xf8,0x80,0x70,0x00,
+    0x18,0x20,0x70,0x20,0x20,0x20,0x20,0x00,
+    0x00,0x00,0x78,0x88,0x88,0x78,0x08,0x70,
+    0x80,0x80,0xb0,0xc8,0x88,0x88,0x88,0x00,
+    0x20,0x00,0x20,0x20,0x20,0x20,0x10,0x00,
+    0x10,0x00,0x10,0x10,0x10,0x10,0x10,0x60,
+    0x40,0x40,0x48,0x50,0x60,0x50,0x48,0x00,
+    0x20,0x20,0x20,0x20,0x20,0x20,0x10,0x00,
+    0x00,0x00,0xf0,0xa8,0xa8,0xa8,0xa8,0x00,
+    0x00,0x00,0xb0,0xc8,0x88,0x88,0x88,0x00,
+    0x00,0x00,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x00,0x00,0xf0,0x88,0x88,0xf0,0x80,0x80,
+    0x00,0x00,0x78,0x88,0x88,0x78,0x08,0x08,
+    0x00,0x00,0x58,0x60,0x40,0x40,0x40,0x00,
+    0x00,0x00,0x70,0x80,0x70,0x08,0xf0,0x00,
+    0x20,0x20,0x70,0x20,0x20,0x20,0x10,0x00,
+    0x00,0x00,0x88,0x88,0x88,0x98,0x68,0x00,
+    0x00,0x00,0x88,0x88,0x88,0x50,0x20,0x00,
+    0x00,0x00,0x88,0xa8,0xa8,0x50,0x50,0x00,
+    0x00,0x00,0x88,0x50,0x20,0x50,0x88,0x00,
+    0x00,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x00,0x00,0xf8,0x10,0x20,0x40,0xf8,0x00,
+    0x18,0x20,0x20,0x40,0x20,0x20,0x18,0x00,
+    0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,
+    0xc0,0x20,0x20,0x10,0x20,0x20,0xc0,0x00,
+    0x68,0xb0,0x00,0x00,0x00,0x00,0x00,0x00,
+    0xa8,0x50,0xa8,0x50,0xa8,0x50,0xa8,0x50,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x7c,0x64,0x64,0x64,0x64,0x64,0x7c,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x20,0x00,0x20,0x20,0x20,0x20,0x20,
+    0x20,0x78,0xa0,0xa0,0x78,0x20,0x00,0x00,
+    0x30,0x48,0x40,0xe0,0x40,0x40,0xf8,0x00,
+    0x88,0x70,0x88,0x70,0x88,0x00,0x00,0x00,
+    0x88,0x50,0x20,0x70,0x20,0x20,0x20,0x00,
+    0x20,0x20,0x20,0x00,0x20,0x20,0x20,0x00,
+    0x70,0x88,0x60,0x90,0x48,0x30,0x88,0x70,
+    0x50,0x50,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x78,0x84,0xb4,0xa4,0xb4,0x84,0x78,0x00,
+    0x38,0x48,0x58,0x68,0x00,0x78,0x00,0x00,
+    0x00,0x28,0x50,0xa0,0x50,0x28,0x00,0x00,
+    0xf8,0x08,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0xfc,0x00,0x00,0x00,0x00,
+    0x78,0x84,0xb4,0xac,0xb4,0xac,0x84,0x78,
+    0xfc,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x40,0xa0,0x40,0x00,0x00,0x00,0x00,0x00,
+    0x20,0x20,0xf8,0x20,0x20,0x00,0xf8,0x00,
+    0x60,0x90,0x20,0x40,0xf0,0x00,0x00,0x00,
+    0xe0,0x10,0x60,0x10,0xe0,0x00,0x00,0x00,
+    0x10,0x20,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x88,0x88,0x88,0xd8,0xa8,0x80,
+    0x78,0xe8,0xe8,0x68,0x28,0x28,0x28,0x00,
+    0x00,0x00,0x30,0x30,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x60,
+    0x20,0x60,0x20,0x20,0x20,0x00,0x00,0x00,
+    0x30,0x48,0x48,0x30,0x00,0x78,0x00,0x00,
+    0x00,0xa0,0x50,0x28,0x50,0xa0,0x00,0x00,
+    0x40,0xc8,0x50,0x28,0x50,0xb8,0x08,0x00,
+    0x40,0xc8,0x50,0x38,0x48,0x90,0x18,0x00,
+    0xc0,0x48,0x30,0xe8,0x50,0xb8,0x08,0x00,
+    0x20,0x00,0x20,0x40,0x80,0x88,0x70,0x00,
+    0x40,0x20,0x70,0x88,0xf8,0x88,0x88,0x00,
+    0x10,0x20,0x70,0x88,0xf8,0x88,0x88,0x00,
+    0x20,0x50,0x70,0x88,0xf8,0x88,0x88,0x00,
+    0x68,0xb0,0x70,0x88,0xf8,0x88,0x88,0x00,
+    0x50,0x70,0x88,0x88,0xf8,0x88,0x88,0x00,
+    0x30,0x50,0x70,0x88,0xf8,0x88,0x88,0x00,
+    0x3c,0x30,0x50,0x7c,0x90,0x90,0x9c,0x00,
+    0x70,0x88,0x80,0x80,0x80,0x88,0x70,0x20,
+    0x40,0x20,0xf8,0x80,0xf0,0x80,0xf8,0x00,
+    0x10,0x20,0xf8,0x80,0xf0,0x80,0xf8,0x00,
+    0x20,0x50,0xf8,0x80,0xf0,0x80,0xf8,0x00,
+    0x50,0x00,0xf8,0x80,0xf0,0x80,0xf8,0x00,
+    0x40,0x20,0x70,0x20,0x20,0x20,0x70,0x00,
+    0x10,0x20,0x70,0x20,0x20,0x20,0x70,0x00,
+    0x20,0x50,0x70,0x20,0x20,0x20,0x70,0x00,
+    0x50,0x00,0x70,0x20,0x20,0x20,0x70,0x00,
+    0x60,0x50,0x48,0xe8,0x48,0x50,0x60,0x00,
+    0x68,0xb0,0x88,0xc8,0xa8,0x98,0x88,0x00,
+    0x40,0x20,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x10,0x20,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x20,0x50,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x68,0xb0,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x50,0x70,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x00,0x88,0x50,0x20,0x50,0x88,0x00,0x00,
+    0x78,0x98,0x98,0xa8,0xc8,0xc8,0xf0,0x00,
+    0x40,0x20,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x10,0x20,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x20,0x50,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x50,0x88,0x88,0x88,0x88,0x88,0x70,0x00,
+    0x10,0x20,0x88,0x50,0x20,0x20,0x20,0x00,
+    0x80,0x80,0xf0,0x88,0x88,0xf0,0x80,0x80,
+    0x60,0x90,0x90,0xb0,0x88,0x88,0xb0,0x00,
+    0x40,0x20,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x10,0x20,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x20,0x50,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x68,0xb0,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x50,0x00,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x30,0x50,0x70,0x08,0x78,0x88,0x78,0x00,
+    0x00,0x00,0xd8,0x24,0x7c,0xb0,0xec,0x00,
+    0x00,0x00,0x70,0x88,0x80,0x88,0x70,0x20,
+    0x40,0x20,0x70,0x88,0xf8,0x80,0x70,0x00,
+    0x10,0x20,0x70,0x88,0xf8,0x80,0x70,0x00,
+    0x20,0x50,0x70,0x88,0xf8,0x80,0x70,0x00,
+    0x50,0x00,0x70,0x88,0xf8,0x80,0x70,0x00,
+    0x40,0x20,0x00,0x20,0x20,0x20,0x10,0x00,
+    0x10,0x20,0x00,0x20,0x20,0x20,0x10,0x00,
+    0x20,0x50,0x00,0x20,0x20,0x20,0x10,0x00,
+    0x50,0x00,0x20,0x20,0x20,0x20,0x10,0x00,
+    0x50,0x60,0x10,0x78,0x88,0x88,0x70,0x00,
+    0x68,0xb0,0x00,0xb0,0xc8,0x88,0x88,0x00,
+    0x40,0x20,0x00,0x70,0x88,0x88,0x70,0x00,
+    0x10,0x20,0x00,0x70,0x88,0x88,0x70,0x00,
+    0x20,0x50,0x00,0x70,0x88,0x88,0x70,0x00,
+    0x68,0xb0,0x00,0x70,0x88,0x88,0x70,0x00,
+    0x50,0x00,0x70,0x88,0x88,0x88,0x70,0x00,
+    0x00,0x20,0x00,0xf8,0x00,0x20,0x00,0x00,
+    0x00,0x04,0x78,0x98,0xa8,0xc8,0x70,0x80,
+    0x40,0x20,0x88,0x88,0x88,0x98,0x68,0x00,
+    0x10,0x20,0x88,0x88,0x88,0x98,0x68,0x00,
+    0x20,0x50,0x88,0x88,0x88,0x98,0x68,0x00,
+    0x50,0x00,0x88,0x88,0x88,0x98,0x68,0x00,
+    0x10,0x20,0x88,0x88,0x50,0x20,0x20,0x40,
+    0x80,0x80,0xb0,0xc8,0x88,0xc8,0xb0,0x80,
+    0x50,0x00,0x88,0x88,0x50,0x20,0x20,0x40,
+};
+
+/****************************************************************************/

@@ -1,0 +1,58 @@
+ps.2.0
+
+alias   tUV = t0, tKern = t1
+
+dcl     tUV.xy    // texture uv
+dcl     tKern.xy  // filter kernel
+
+alias   sTex0 = s0, sTex1 = s1, sTex2 = s2, sTex3 = s3
+alias   sKern0 = s4, sKern1 = s5
+
+alias   cOffset = c0
+def     c1,4.0,-2.0,0.0,0.0
+
+dcl_2d  sTex0     // the texture
+dcl_2d  sTex1     // the texture
+dcl_2d  sTex2     // the texture
+dcl_2d  sTex3     // the texture
+dcl_2d  sKern0    // kernel 1
+dcl_2d  sKern1    // kernel 2
+
+// ---- stage 1
+temp    uv0,uv1,uv2,uv3,kernel
+temp    pix0,pix1,pix2,pix3
+
+vmov    uv3,tUV
+add     uv2.xy,uv3,-cOffset
+add     uv1.xy,uv2,-cOffset
+add     uv0.xy,uv1,-cOffset
+
+texld   kernel,tKern,sKern0
+mad     kernel,kernel,c1.x,c1.y
+
+texld   pix0,uv0,sTex0
+mul     pix0,pix0,kernel.x
+texld   pix1,uv1,sTex1
+mad     pix0,pix1,kernel.y,pix0
+texld   pix2,uv2,sTex2
+mad     pix0,pix2,kernel.z,pix0
+texld   pix3,uv3,sTex3
+mad     pix0,pix3,kernel.w,pix0
+
+// ---- stage 2
+add     uv1.xy,tUV,cOffset
+add     uv2.xy,uv1,cOffset
+add     uv3.xy,uv2,cOffset
+
+texld   kernel,tKern,sKern1
+mad     kernel,kernel,c1.x,c1.y
+
+texld   pix1,uv1,sTex0
+mad     pix0,pix1,kernel.x,pix0
+texld   pix2,uv2,sTex1
+mad     pix0,pix2,kernel.y,pix0
+texld   pix3,uv3,sTex2
+mad     pix0,pix3,kernel.z,pix0
+
+//add     pix0,pix0,pix0        // multiply everything by 2
+mov     oC0,pix0

@@ -1,0 +1,429 @@
+? = unshure what to do
+- = todo
+o = do today
+x = done
++ = in progress...
+
+<-- ----------------------------------------------------------------------- -->  
+
+[[Krieger Final]]
+
+- (fiver2) logo
+- (fiver2) intro content
+- (fiver2) spawn-machines
+- (fiver2) full level
+- (fiver2) monster verteilen
+- (chaos)  special effects
+  - schuss
+  - treffer / daneben
+  - monster death
+  - große explosion visualisieren
+  - spawn effekte
+  - player was hit
+- (chaos)  walk operator einstellungen überarbeiten
+  - schönere, sauberere beinarbeit
+  - kollision sollte langsamer sein als beine
+- (chaos)  schönere bewegungs-ai (seitwärts steppen)
+- (chaos)  schaufenster-modus
+- (ryg)    gamma correction
+- (ryg)    specular on/off
+- (ryg)    fehlermeldung bei falscher hardware
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< done >>>
+
+3.305:
+- undo does not update display
+- uv-mapping bei cube
+- hintline for selectcube
+- 'e' minmesh
+- shadows
+
+3.304:
+- bricks mit fein links-rechts weiterschieben
+- commandline-player (that's better than incasm-debugging)
+- fix _config.hpp for new project file
+- fix demo-name problem
+- buzz timing button
+
+3.303: 050514
+- texture op "bricks"
+
+3.302:
+- intro capablity
+- material 2.0
+
+
+
+<-- ----------------------------------------------------------------------- -->  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<-- ----------------------------------------------------------------------- -->  
+
+MASTER PLAN
+
++ gameplay
++ shadows
+- lightsource-management
+- particles
+
+- size
+- speed
+- optional features
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< RYG >>>
+
+--- vertexshader constants ---
+
+frequent section
+- 4x4 model->screen         xform                   c0-c3
+- 4   light pos (mdlspace)  vec                     c4
+- 4   light attenuate uvt   vec                     c5
+- 4   cam pos (mdlspace)    vec                     c6
+- 4   texture scale         4x flt                  c7
+
+infrequent section
+- 2x4 tex srt 1             xform                   c8-c9
+- 2x4 tex srt 2             xform                   c10-c11
+- 4x4 tex special 1         xform                   c12-c15
+- 4x4 tex special 2         xform                   c16-c19
+- 4   fog xform             vec                     c20
+
+constant section
+- 4   0.5, -0.5, 0.0, 1.0   4x flt  always          c24.xyzw
+- 4   2.0, -1.0, 1.0, .001  4x flt  always          c25.xyzw
+
+--- vertexshader register allocation ---
+
+source:
+  v0 = position (mdlspace)
+  v1 = texture coord 0 (if available)
+  v2 = texture coord 1 (if available)
+  v3 = compressed tgsp basis 1 (if available) => packed normal
+  v4 = compressed tgsp basis 2 (if available) => packed tangent
+  v5 = vertex color (if available)
+  
+temp:
+  r0-r3 = designated temporary/calculation area
+  r4 = computed mdlspace position (if any)
+  r5 = position (scrspace) / pos->camera (mdlspace)
+  r6 = normal in modelspace (tgsp basis x axis)
+  r7 = binormal in modelspace (tgsp basis y axis)
+  r8 = tangent in modelspace (tgsp basis z axis)
+
+--- pixelshader constants ---
+
+material section
+- 4x4 colors 0-3            4x col  per mtrl        c0-c3
+
+OR light section (diffuse)
+- 3x4 light colors          3x col  per lgt         c0-c2
+- 4   (0,1,0)               3x flt                  c3
+
+OR light section (specular)
+- 3   light intensities     3x flt  per lgt         c0.xyz
+- 2   specular A            2x flt  per lgt         c1.zw
+
+constant section
+- 4   0.5,-0.5,0,1          4x flt                  c6
+- 4   1.0,0.0,0.0,0.5       4x flt                  c7
+
+--- end ---
+
+- bugs:
+  - crash when subdiving xsi objects
+
+- features:
+  - ps2.0 autodetect (for specular)
+  - better 3d sound (partially done)
+  - splines texture op
+  
+  - sticky edit ops
+
+  -  
+  <fiver2^fB> btw, ryg, hast du interesse, die verwaltung der pages mal etwas
+  zu fixen? 
+  buggen: fokus wird oft vergessen, so dass man nicht sieht was man macht.
+  wenn man eine page in einen ordner verschiebt sollte der auto geöffnet werden.
+  und man müsste ganze ordner mit inhalt verschieben können.
+  -
+  <fiver2^fB> und ich wünsche mir schon lange einen auto-r2t von objekt
+  silhouetten. was ich meine ist ein op, der ein objekt aus einer ortogonal
+  ansicht in ne textur rendert. und zwar so, dass möglichst problemlos diese
+  textur wieder auf das objekt projeziert werden kann.   
+  
+- code quality:
+  - several pieces of caching code in _start.cpp need cleanup badly
+  - general cleanup
+
+- later
+  - lekktor-brauchbarkeit
+  
+<-- ----------------------------------------------------------------------- -->  
+
+<<< CHAOS >>>
+
+- now
+  - move always
+  - prevent monsters from sticking together
+  x GetInst instancemem template
+  - monsters can hit themself...
+  - monster line of sight / shot
+  - shooting from outside collision -> problems
+  - gizmo: partikelsysteme unsichtbar sobald der schuss unsichtbar wird
+  - ball-bombe
+
+- later
+  - disable monsters far away
+  - alle monster fixen
+  - life-balken
+  - respawn point / unlimited lifes. loose weapon on death?
+  - game-focus wird verloren wenn usb-stick removed
+  
+<-- ----------------------------------------------------------------------- -->  
+<-- ----------------------------------------------------------------------- -->  
+<-- ----------------------------------------------------------------------- -->  
+<-- ----------------------------------------------------------------------- -->  
+
+- head collision
+  - kantenkollision
+  - kopfkollision
+  - kollisionsverbidung optimieren
+
+- tweaks
+  - switches are "or" of all zones that affect them
+  - collision-damp factor by initial impact dot product
+  - offset gravity after collision by initial impact dot product
+  - reflect particles (if they want it)
+  - fade out life-bar
+  - dynamic zones
+  - 'r' reset crates in game
+  - translate as variable
+  - clean up physics
+  - better ai
+  - near clip plane
+  - remove KOpCurrent (use calling convention!)
+  - double-jump.
+  - dynamic zones
+  
+- bugs
+  - shooting from outside collision -> problems
+  - find something like switches but hirarchically...
+  - monster and portals
+
+<<< Later >>>
+
+- feature requests
+  - events die nur animationen starten, aber nicht neue objekte.
+  - color-picker
+  - progress bar
+  - comment operator
+  - two splines with same name
+  - animation parameter: input types color, int
+  - visualise spline (srt) in 3d
+  - hidden faces in wireframe.
+  
+- database
+  - table view of all ops
+  - query / view language
+  - query / view gui
+  - table header
+  - table header gui
+  - system table: switch name operator
+  - comment operator to "autoplace" database entries
+  
+- new browser
+  - filtering does nor work correctly for ".."
+  - for ops/event/splines ".." "..." "->" everywhere
+  - filter browser for links
+  - filter browser on demand (by checkboxes)
+  - dragging in browser-lists select entries while dragging
+  - preview on/off
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< engine >>>
+
+[finaliseres]
+- sprite / tree / spike
+- shadow
+- finns
+- outline
+- thickline
+- lines
+- extrude normal (always)
+
+[fx-chain]
+- camera op
+- fog
+- fx-ops
+  - copy, layer2d, color, highlights
+  - blur, crashzoom
+  - sharpen
+  - depth dependent blur
+  - smear (motion blur)
+- head-up-display op
+- render-to-texture
+- controlled glares
+  - create object in middle of world
+  - crashzoom that object
+  - zbuffer-composite the crashzoom
+- cubemaps
+  - create texture with 1234|5x6x
+  - upload that texture as cubemap
+  - add cubemap support to envi
+  - cubemap-rendertargets  
+
+[material]
+- lerp with color, not alpha
+- bumpenv ist nicht vom licht abhängig! optimieren!
+- better shadows
+- brdf & toon
+- stencil problems: sat or not?
+- fog
+
+[particle system]
+
+[polygon nachziehen]
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< sound >>>
+
+- ambient effekte
+- gegnersounds
+- waffensounds
+- music
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< menu >>>
+
+- installer
+- main-menu
+- options 
+- highscores
+- punkte-zähl-screen
+- gewinn-screen
+- progress bar
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< Gui >>>
+
+
+[presets]
+- selforganising operator presets
+- show how similar a preset is to what you have currently edited
+- use different presets from list, but allow revert to old parameters (cancel)
+
+[medium importance or uncertains]
+- better string editing
+- kiffer-fly-mode ( gedämpfte bewegung)
+- mask-operator : nach feldern 
+- check mesh operators for input type
+- andere farbe für collision cube operators
+x correct X-Y-Z orthogonal views
+- vertex-markers should get smaller/darker with distance
+- "colorise" pages in page list 
+- start new page in the middle of the page
+- in birdseye: right mousebutton moves whole hirarhy
+
+[absolutly unimportant or too hard to do]
+- find related operators and compare parameters. (spare / original)
+- select cube so modifizieren, dass man ein einzelnes poly raycast selecten kann und der selectcube automatisch die werte anpasst.
+- auf dem cube ist manchmal nicht genug rechenzeit über um winamp laufen zu lassen (aussetzer nonstop)
+- wenn ein objekt-op angeclickt wird sollte man in der scene sehen können 
+  WAS selektiert  wurde, so muss ich immer an einem parameter drehen um zu sehen welchen 
+  cube ich grade habe (parameter-shake für ein paar millisekunden z.b.)
+- camera link edit
+- save camera settings in scene
+- farbig unterlegte op-parameter
+- redo keyboard input. right-shift + cursor is not working
+
+[buttonleiste]
+- camera-slots
+- page/time/spline
+- play/stop/loop
+- quicksave
+- save
+- saveas
+- change quantise factor for SRT (independently)
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< ryg >>>
+
+- partial subdivide w/ creases
+- echter bevel (WIE? :)
+
+- proper outmask concept for extrude
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< later >>>
+
+[texture]
+- ! kanten finden filter 
+- !rotate mul: recursive: scroll ist ungenau - die abstände zwischen den einzelnen einheiten ist unterschiedlich! 
+- kanten finden filter 
+- 2d op lines 
+- 2d-rotatemul mit random (auch recursive?)
+- random fill ist doch eine gute idee! (anzahl füll-punkte, füll-schwellwert, mindesthelligkeits-schwellwert?, farbe) 
+- 2dbump: der power-wert ist nicht schön. früher war es möglich, recht spitz zulaufende glows zu machen. selbst die kleinsten werte ergeben jetzt aber keine zufriedenstellenden ergebnisse. 
+- import fonts
+- bump mit soft-self-shadow
+
+<-- ----------------------------------------------------------------------- -->  
+
+<<< cleanup >>>
+
+- unit-tests einbauen
+- Templated String Class benutzen
+- sListControl & sTreeControl: eine "zwischenklasse" zwischen control und 
+  container einfügen.
+- when doing document-change handling, care about Animatable Parameters
+
+
+<-- ----------------------------------------------------------------------- -->  
+<-- ----------------------------------------------------------------------- -->  
+
+History:
+

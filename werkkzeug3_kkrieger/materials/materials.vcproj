@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="materials"
+	ProjectGUID="{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}"
+	RootNamespace="materials"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".."
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/materials.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=".."
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/materials.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\material11.cpp">
+		</File>
+		<File
+			RelativePath=".\material11.hpp">
+		</File>
+		<File
+			RelativePath=".\material11.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material11ps.hpp $(InputFileName)
+"
+					Outputs="material11ps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material11ps.hpp $(InputFileName)
+"
+					Outputs="material11ps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material11.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material11vs.hpp $(InputFileName)
+"
+					Outputs="material11vs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material11vs.hpp $(InputFileName)
+"
+					Outputs="material11vs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20.cpp">
+		</File>
+		<File
+			RelativePath=".\material20.hpp">
+		</File>
+		<File
+			RelativePath=".\material20_envi.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_envips.hpp $(InputFileName)
+"
+					Outputs="material20_envips.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_envips.hpp $(InputFileName)
+"
+					Outputs="material20_envips.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_envi.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_envivs.hpp $(InputFileName)
+"
+					Outputs="material20_envivs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_envivs.hpp $(InputFileName)
+"
+					Outputs="material20_envivs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_fat.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_fatps.hpp $(InputFileName)
+"
+					Outputs="material20_fatps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_fatps.hpp $(InputFileName)
+"
+					Outputs="material20_fatps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_fat.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_fatvs.hpp $(InputFileName)
+"
+					Outputs="material20_fatvs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_fatvs.hpp $(InputFileName)
+"
+					Outputs="material20_fatvs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_light.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_lightps.hpp $(InputFileName)
+"
+					Outputs="material20_lightps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_lightps.hpp $(InputFileName)
+"
+					Outputs="material20_lightps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_light.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_lightvs.hpp $(InputFileName)
+"
+					Outputs="material20_lightvs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_lightvs.hpp $(InputFileName)
+"
+					Outputs="material20_lightvs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_tex.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_texps.hpp $(InputFileName)
+"
+					Outputs="material20_texps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_texps.hpp $(InputFileName)
+"
+					Outputs="material20_texps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_tex.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_texvs.hpp $(InputFileName)
+"
+					Outputs="material20_texvs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_texvs.hpp $(InputFileName)
+"
+					Outputs="material20_texvs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_vcolor.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_vcolorps.hpp $(InputFileName)"
+					Outputs="material20_vcolorps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_vcolorps.hpp $(InputFileName)"
+					Outputs="material20_vcolorps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_vcolor.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_vcolorvs.hpp $(InputFileName)"
+					Outputs="material20_vcolorvs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_vcolorvs.hpp $(InputFileName)"
+					Outputs="material20_vcolorvs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_zfill.psh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_zfillps.hpp $(InputFileName)
+"
+					Outputs="material20_zfillps.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_zfillps.hpp $(InputFileName)
+"
+					Outputs="material20_zfillps.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\material20_zfill.vsh">
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_zfillvs.hpp $(InputFileName)
+"
+					Outputs="material20_zfillvs.hpp"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description=""
+					CommandLine="..\shadercompile\$(ConfigurationName)\shadercompile --out-header material20_zfillvs.hpp $(InputFileName)
+"
+					Outputs="material20_zfillvs.hpp"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\materialdirect.cpp">
+		</File>
+		<File
+			RelativePath=".\materialdirect.hpp">
+		</File>
+		<File
+			RelativePath=".\rtmanager.cpp">
+		</File>
+		<File
+			RelativePath=".\rtmanager.hpp">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

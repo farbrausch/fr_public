@@ -1,0 +1,1858 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="werkkzeug3"
+	ProjectGUID="{539D27AD-3957-43BF-96E9-C0CFB08E3A24}"
+	RootNamespace="werkkzeug3"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/werkkzeug3.pdb"
+				SubSystem="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="3"
+				GlobalOptimizations="TRUE"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="0"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="0"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				StringPooling="FALSE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				GenerateMapFile="TRUE"
+				MapLines="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x800000"
+				TargetMachine="1"
+				FixedBaseAddress="0"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Player Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PLAYER"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="FALSE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="5"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="winmm.lib dxguid.lib dinput.lib"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/werkkzeug3.pdb"
+				SubSystem="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Player Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/QIfist"
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="2"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="3"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PLAYER"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="0"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				AssemblerOutput="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/OPT:ICF=8"
+				AdditionalDependencies="winmm.lib dxguid.lib dinput.lib"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				GenerateMapFile="TRUE"
+				MapLines="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x800000"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="DoPE|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/QIfist"
+				Optimization="1"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="2"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="3"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_DOPE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="0"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				AssemblerOutput="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/OPT:ICF=8"
+				AdditionalDependencies="winmm.lib dxguid.lib dinput.lib"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				GenerateMapFile="TRUE"
+				MapLines="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x800000"
+				TargetMachine="1"
+				FixedBaseAddress="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="DoPE debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/QIfist"
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				InlineFunctionExpansion="0"
+				EnableIntrinsicFunctions="FALSE"
+				FavorSizeOrSpeed="0"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="3"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_DOPE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
+				EnableEnhancedInstructionSet="0"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="0"
+				AssemblerOutput="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/OPT:ICF=8"
+				AdditionalDependencies="winmm.lib dxguid.lib dinput.lib"
+				OutputFile="$(OutDir)/werkkzeug3.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				GenerateMapFile="TRUE"
+				MapLines="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x800000"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="System"
+			Filter="">
+			<File
+				RelativePath=".\_config.hpp">
+				<FileConfiguration
+					Name="Player Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description=""
+						CommandLine=""
+						Outputs=""/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_diskitem.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_diskitem.hpp">
+			</File>
+			<File
+				RelativePath=".\_gui.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_gui.hpp">
+			</File>
+			<File
+				RelativePath=".\_lekktor.cpp">
+			</File>
+			<File
+				RelativePath=".\_lekktor.hpp">
+			</File>
+			<File
+				RelativePath=".\_mp3.cpp">
+			</File>
+			<File
+				RelativePath=".\_mp3.hpp">
+			</File>
+			<File
+				RelativePath=".\_ogg.cpp">
+			</File>
+			<File
+				RelativePath=".\_ogg.hpp">
+			</File>
+			<File
+				RelativePath=".\_start.cpp">
+				<FileConfiguration
+					Name="DoPE|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						GlobalOptimizations="FALSE"
+						FavorSizeOrSpeed="0"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_start.hpp">
+			</File>
+			<File
+				RelativePath=".\_startdx.hpp">
+			</File>
+			<File
+				RelativePath=".\_types.cpp">
+			</File>
+			<File
+				RelativePath=".\_types.hpp">
+			</File>
+			<File
+				RelativePath=".\_util.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_util.hpp">
+			</File>
+			<File
+				RelativePath=".\_viruz2.cpp">
+			</File>
+			<File
+				RelativePath=".\_viruz2.hpp">
+			</File>
+			<File
+				RelativePath=".\_viruz2a.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 -o&quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot; "/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_xsi.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_xsi.hpp">
+			</File>
+			<File
+				RelativePath=".\ronan.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\ronan.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Apps"
+			Filter="">
+			<File
+				RelativePath=".\appbrowser.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appbrowser.hpp">
+			</File>
+			<File
+				RelativePath=".\appcube.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appcube.hpp">
+			</File>
+			<File
+				RelativePath=".\appfractal.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appfractal.hpp">
+			</File>
+			<File
+				RelativePath=".\appprefs.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appprefs.hpp">
+			</File>
+			<File
+				RelativePath=".\apptext.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\apptext.hpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Werkkzeug3"
+			Filter="">
+			<File
+				RelativePath=".\data.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="cscript makeinc.js //nologo &quot;$(OutDir)&quot; &lt; _config.hpp &gt; _config.inc
+nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="_config.h;makeinc.js;depacker.bin;depack2.bin;Player Release/werkkzeug3.exe"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\engine.cpp">
+			</File>
+			<File
+				RelativePath=".\engine.hpp">
+			</File>
+			<File
+				RelativePath=".\genbitmap.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						MinimalRebuild="FALSE"
+						BasicRuntimeChecks="0"
+						DebugInformationFormat="3"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="3"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						BasicRuntimeChecks="0"
+						DebugInformationFormat="3"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						InlineFunctionExpansion="2"
+						FavorSizeOrSpeed="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\genbitmap.hpp">
+			</File>
+			<File
+				RelativePath=".\geneffect.cpp">
+			</File>
+			<File
+				RelativePath=".\geneffect.hpp">
+			</File>
+			<File
+				RelativePath=".\genmaterial.cpp">
+			</File>
+			<File
+				RelativePath=".\genmaterial.hpp">
+			</File>
+			<File
+				RelativePath=".\genmesh.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						BasicRuntimeChecks="0"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						BasicRuntimeChecks="0"
+						DebugInformationFormat="3"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						InlineFunctionExpansion="2"
+						FavorSizeOrSpeed="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\genmesh.hpp">
+			</File>
+			<File
+				RelativePath=".\genminmesh.cpp">
+			</File>
+			<File
+				RelativePath=".\genminmesh.hpp">
+			</File>
+			<File
+				RelativePath=".\genoverlay.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						EnableEnhancedInstructionSet="0"
+						AssemblerOutput="4"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\genoverlay.hpp">
+			</File>
+			<File
+				RelativePath=".\genscene.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\genscene.hpp">
+			</File>
+			<File
+				RelativePath=".\kdoc.cpp">
+			</File>
+			<File
+				RelativePath=".\kdoc.hpp">
+			</File>
+			<File
+				RelativePath=".\kkriegergame.cpp">
+			</File>
+			<File
+				RelativePath=".\kkriegergame.hpp">
+			</File>
+			<File
+				RelativePath=".\main.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\main.hpp">
+			</File>
+			<File
+				RelativePath=".\maindope.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\mainplayer.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\material11.cpp">
+			</File>
+			<File
+				RelativePath=".\material11.hpp">
+			</File>
+			<File
+				RelativePath=".\material20.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\material20.hpp">
+			</File>
+			<File
+				RelativePath=".\materialdirect.cpp">
+			</File>
+			<File
+				RelativePath=".\materialdirect.hpp">
+			</File>
+			<File
+				RelativePath=".\novaplayer.cpp">
+			</File>
+			<File
+				RelativePath=".\novaplayer.hpp">
+			</File>
+			<File
+				RelativePath=".\script.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\script.hpp">
+			</File>
+			<File
+				RelativePath=".\shadercodegen.cpp">
+			</File>
+			<File
+				RelativePath=".\shadercodegen.hpp">
+			</File>
+			<File
+				RelativePath=".\shadercompile.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\shadercompile.hpp">
+			</File>
+			<File
+				RelativePath=".\werkkzeug.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ExceptionHandling="FALSE"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\werkkzeug.hpp">
+			</File>
+			<File
+				RelativePath=".\werkops.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\wincalc.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\wincalc.hpp">
+			</File>
+			<File
+				RelativePath=".\winnova.cpp">
+			</File>
+			<File
+				RelativePath=".\winnova.hpp">
+			</File>
+			<File
+				RelativePath=".\winnovaview.cpp">
+			</File>
+			<File
+				RelativePath=".\winnovaview.hpp">
+			</File>
+			<File
+				RelativePath=".\winpage.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AssemblerOutput="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\winpage.hpp">
+			</File>
+			<File
+				RelativePath=".\winpara.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\winpara.hpp">
+			</File>
+			<File
+				RelativePath=".\winspline.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\winspline.hpp">
+			</File>
+			<File
+				RelativePath=".\wintimeline.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\wintimeline.hpp">
+			</File>
+			<File
+				RelativePath=".\wintool.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\wintool.hpp">
+			</File>
+			<File
+				RelativePath=".\winview.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\winview.hpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="KKrunchy"
+			Filter="">
+			<File
+				RelativePath=".\depack2.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\depacker.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f bin -o &quot;$(OutDir)\$(InputName).bin&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\depacker.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\depacker.hpp">
+			</File>
+			<File
+				RelativePath=".\dis.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\dis.hpp">
+			</File>
+			<File
+				RelativePath=".\exepacker.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\exepacker.hpp">
+			</File>
+			<File
+				RelativePath=".\incdata.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot; -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot; -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot; -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; &quot;$(InputPath)&quot; -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)\$(InputName).obj&quot; $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin;$(OutDir)\snowblind-resource.res"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DDEPACKER=\&quot;$(OutDir)\depacker.bin\&quot; -DDEPACK2=\&quot;$(OutDir)\depack2.bin\&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\mapfile.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\mapfile.hpp">
+			</File>
+			<File
+				RelativePath=".\packer.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DoPE debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\packer.hpp">
+			</File>
+		</Filter>
+		<File
+			RelativePath=".\_config.inc">
+		</File>
+		<File
+			RelativePath=".\concept.txt">
+		</File>
+		<File
+			RelativePath=".\demo-resource.rc">
+		</File>
+		<File
+			RelativePath=".\history.txt">
+		</File>
+		<File
+			RelativePath=".\index.html">
+		</File>
+		<File
+			RelativePath=".\makeinc.js">
+		</File>
+		<File
+			RelativePath=".\resource.h">
+		</File>
+		<File
+			RelativePath=".\script.kon">
+		</File>
+		<File
+			RelativePath=".\snowblind-resource.rc">
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Player Debug|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Player Release|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="DoPE|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="DoPE debug|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCResourceCompilerTool"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\todo.txt">
+		</File>
+		<File
+			RelativePath=".\todo_chaos.txt">
+		</File>
+		<File
+			RelativePath=".\VTune\werkkzeug3.vpj">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

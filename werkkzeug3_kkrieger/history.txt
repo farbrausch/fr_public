@@ -1,0 +1,1253 @@
+
+
+HISTORY
+-------
+
+
+3.220:
+- created new project file, parallel to old one
+- fixed __w64 portability issues with new type sDInt
+- created new "cube" example application
+
+3.219:
+- breakpoint 2005 version
+
+3.213:
+- editor settings: auto light range
+- nova gui features
+- nova: one call for OnPara, OnDefaults, OnEnum.
+- nova: autosplines
+
+
+3.211 (050216)
+- more nova
+- fixed max mipmaps in texture format crash
+- listbox: drag and drop with rmb,
+- listbox: automatically open folders when moving items
+
+3.210 (050216)
+- fixed uv loading
+- "nova" mode
+
+3.205 (050206)
+- removed "w8ing" debug trace
+- added "nova" mode, with new timeline editor
+- fixed minor bug in pagelist reordering
+
+3.204 (040202)
+- fixed 32-bit overflow when zooming timeline. the whole 
+  timeline should  not be larger than 0x7fff0000!
+- reload button for file requester. 
+  (das ganze ding sollte man löschen)
+- fixed bug with float default parameters (Layer2D)
+- fixed memory leak in sOpWindow::CheckDest()
+
+3.203 (040202)
+- fixed collision problem
+
+3.202 (040126)
+- fixed trivial memory leak in particle system
+- fixed monster start position problem
+- fixed divison by zero when monsters have same position
+- weapons are ALWAYS activates when collecting
+- monster up/down aming
+- fixed code with monster/player hitcell
+- fixed crash with scene particles and monsters. 
+  now the count parameter reconnects the ops to flush instance mem
+
+3.201 (040123)
+- monsters were hit twice - taking double damange
+- monsters have a 1 meter radius
+
+3.199e (040121)
+- commented out lots of code for old collision
+- fixed bug with CollideRay and Zones 
+
+3.199d (040121)
+- removed memory leaks in event-system for monsters and shots
+- rewrote shots.
+- LOUD memory leak message
+- rewrote monster hits player / player hits monster
+- rewrote lightgun bouncing / rotation without particles
+
+
+3.199
+- removed debug output in text op
+- re-enabled old steering-physics
+- added wireframe-display for player collider
+- fixes wireframe-display for dynamic cells
+- removed old player-body-physik, hitcell remains
+- missing shadows bug fixed
+- theta rendertarget allocation bug fixed
+- more font bugfixes
+- system requirements fixed, legal stuff replaced by official eidos variant
+
+3.198h
+- fixed text operator blob version number check
+- several optimizations
+
+3.198g
+
+- fixed fullscreen-resize bug for player
+- noise anim op
+
+- changed diablogbox header to "project: snowblind" because
+  of branding
+- text can now handle linefeed. even centering works perfect.
+- snowblind default resolution 640x480 instead of 800x600
+- reactivate escape in progressbar (except for kkrieger)
+- systemspecs (minimum & recommended) for snowblind
+- radius parameter for print operator: you can create a text-roll
+
+3.198 040102 
+- rewrote sound timing
+- fixed looping of graphics when looping sound
+- removed flickering when scratching time
+- bumped version 
+
+3.197 ??????
+
+3.196 041230
+- sound sync fix for gizmo
+
+3.194, 3.195
+- tum releases with several theta-related bugfixes
+- ogg support in player
+- single vertex mesh op
+- print current camera position in view
+- on creation of new spline points, old ones don't remain selected anymore
+
+3.193 041222
+- sSystem::GetTransform: sGT_MODELVIEW bugfix (fixes a sprites problem)
+- deluxe avi writer
+
+3.192 041221
+- link to snowblind website (www.projektsnowblind.de)
+- changed link-dialog-box layout
+- snowblind - loop - checkbox
+- fixed problem with text operator font a-z feature
+- fixed problem with clicking in text edit boxes
+- if switch >= value op
+- monster die bei killswitch spawnen.
+- monster-pre-parameter-op
+- optimised memory allocation for collision-bsp-creation
+- sprites finalizer bug fixed and debugoutput removed (ahem ;)
+- select/GenOverlayManager::Free bug fixed
+- scalar/vector divide added to animation ops
+- specular on/off flag for viewports
+
+3.191 041220
+- no more cpu waste when werkkzeug is inactive
+- "find bugs" is automatically executed on exports
+- rendertarget ipp op
+- alpha fixes for ipp blur and crashzoom
+- scene now has a default light again
+- sFMod bugfix
+- ramp/pulse anim modes bugfixed (incorrect behavior below 0)
+- several small export bugs fixed
+- windowed runs now have sensible window title and don't hide mouse cursor
+  anymore
+- event: start interval/end interval parameters
+- anisotropic filtering now works correctly
+- partsystem: now supports world-aligned billboards
+- sprites finalizer (without aspect ratio at the moment)
+
+3.190 041220
+- layer2d positioning with center/size instead of corner
+- better zooming in timeline
+- 64 lines in timeline
+- don't forget finetune-timing when copy/pasting events
+- don't move splinekeys when selecting in link-edit
+- when creating a new event, the name of the current operator is automatically inserted.
+
+3.189 041219
+- new blend mode: invert
+- fixed text problem: back color gets lost when storing font in demo
+- fixed IPP_CRASHZOOM zoom parameter <1 gets mapped to >1 range
+- fixed IPP_CRASHZOOM parameter
+- fixed XSize!=YSize bug in Text-op
+- fixed "store in export" bug when exporting not-fonts in Text-Op
+- for snowblind: set enableshadow = 1
+
+3.188: 041219
+- sMAKEDEMO flag. with just one define you can make the player load
+  from data.asm
+- default settings for project snowblindf
+- enabled music sync
+- envi opaque flag
+
+3.188: 041219
+
+- fixed IPP_CRASHZOOM parameter
+- sMAKEDEMO flag. with just one define you can make the player load
+  from data.asm
+- default settings for project snowblindf
+- enabled music sync
+
+3.187: ?
+- snowblind update
+
+3.186: 041206
+- reworked incbin
+- load resources with incbin
+- #ifdefs for kkrieger code in mainplayer.
+  saves some KB for snowblind, but there's much to do.
+- gui: mask edit fields now allow unmasking by single-clicking if there's
+  only one bit set.
+- guipainter: now correctly aligns on pixel boundaries even with antialias on.
+- texture: most ops are in-place now
+- winview: game/collision update logic bugfix
+- fixed kkrieger exbort: bevel operator added to player
+- fixed root / root_00 mismatch with shift-s
+- fixed timeline-bug: click on clip when scrolled away from time 0
+- aspect ratio / viewport sizes work now for non-game viewports
+- moved key 'm' to 'h' in 3d-view, because 'm' is game cheat.
+- fixed merge conflict in Bitmap_Text()
+- fixed update-bug with cyclic checks.
+- fixed alpha display in bitmap view
+- fixed problem with connecting events 
+  after ".." button in event screen
+
+3.185: 041128
+- "material hack" operator that triggers material animations 
+  that are used by "matlink". materials used in "layer2d"
+  are automatically animated.
+- dialog boxes for project snowblind
+- changes to the code that closes the window
+- changes to how the player finds a screen-resolution
+- added "ms" to "fps" display
+
+3.184: 041128
+- added sPROJ_SNOWBLIND
+- fixed "*2Transform" code for Labelling parameter
+- removed WinView::PlayerMode and WinView::SetDemo(). They were no good.
+- 'S' -> show root
+- calc-button ausbauen
+- sound on / off option reworked. now with a nice button.
+- use screensize set in demo-settings when pressing the 'm' button
+- sGuiPainter:PaintHole() paint rectangle with a hole.
+- blobs for font-operator
+
+3.183: 041126
+- fixed bug with SetOp() and Post()
+- monster spawning
+- improved look of menu
+- added many options in menu
+- implemented mouseinvert and mousespeed options
+- unendlich ammo für waffe 0
+- default texture-resulution = 1 (full)
+- fixed particle system timing.
+- improved monster activation: you can now hit inactive monsters
+- used "kkrieger" logo and made proper intro-sequence
+- intro can be aborted with mouse button
+- actived a few ops for kkreiger-logo
+- deactived walk-op to save memory
+- intro has timed end and camera movements. 
+- included kkrieger logo. use cheap version for debugging...
+- musik loopen
+- items have no collect-effect after respawn / restart
+- alle noch lebendigen monster resetten (position & hits) bei respawn
+- startpos
+- collectables multiply
+- exchange exit and options in menu
+- Light/Shadow bomb sollte beim schuß leicht drehen
+- envi alpha mask (enable "envi alpha mask" and place mask in alpha channel
+  of "texture 1")
+
+- engine: remove "inner" classes from .hpp
+- engine: pass mask, profiler zones
+- MulA to multiply affine matrices
+- scene modified to use MulA wherever possible
+- sVector::RotatePl to transform planes by (affine) matrices
+- call to sFloatFix() in KOp::Exec removed (slow & unnecessary)
+- sSystem_::MtrlSet now requires env != 0
+- several unused classes from _types.hpp/.cpp moved to _types_unused.hpp/.cpp
+- candytron mesh compressor moved to meshcoder_unused.cpp
+  (would require significant working to be usable again anyway)
+- vertex recorder removed for good
+- shadow rendertarget removed
+- system: specular approximation calculation redone
+
+3.182
+- limb op input type changed to "any" (it allows meshes AND scenes)
+- "find bugs"
+- imported xsi objects are now correctly lit (they need to be uv mapped!)
+- xsi objects are now automatically z inverted
+- wireframe: update bug fixed
+- perlin now works correctly for non-square texture sizes
+- normal map preview
+- text op and letter placement is now subpixel perfect, with kerning :)
+  (and no sucking borders, not even with texturesizeoffset -3)
+
+3.181
+- added blobs to operators. 
+  works with load / save / import / export
+- fixed Bitmap_Import so that it uses bobs
+- added sPROJECT variable to _config
+- define sPROJ_DEMO and sPROJ_KKRIEGER
+- made "snowblind" export. it's large!
+- fixed problem with monster op (number of inputs)
+- start.cpp: LoadBitmap() for tools and LoadBitmapCore() 
+  for intros
+- removed dead debug code from werkkzeug.cpp
+- spline automatically identify themselfs as "translate" and "rotate"
+- new version number 
+- changed how window close buttons behave
+- KEvent now has a matrix, so you don't need to 
+  anmiate with Translate and Euler-Angles
+- Shots[] are now managed as static events. so game 
+  has full control.
+- dont use Physic op for shots any more. 
+  use table in game code.
+- copied code from walk operator to game. 
+  use table in game code.
+- changed initialisation order of werkkzeug main app
+- added a new window "WinCalc", 
+  that has no function at all
+- fixed wireframe of dynamic cells in ShowScene
+- multiple roots, user "root_0".."root_15" as name
+- "root" is alias for "root_0"
+- many changes in mainplayer/demo interface
+- many changes in who sets switches
+- start: improved main message loop
+- kkriegergame: CollMesh is not released after SetScene()
+- werkkzeug: fixed bug with Switch0-window
+
+
+3.180
+- game collision init optimized
+- texture preview now respects aspect ratio
+
+3.179
+- wireframe colors again configurable
+- material preview
+- envi+projection bugfix for unlit materials
+
+3.178
+- engine completely revamped & cleaned up
+- severely improved memory usage in player
+- wrong environment map uvs fixed
+- wireframe caching fixed for good
+- several small bugfixes
+
+3.169
+- spline select all
+- extended spline value range and slightly improved display
+
+3.168
+- several minor bugfixes
+
+3.167
+- fixed minor problem with timeline
+
+3.166
+- fixed bug with going from one add-cell to the next.
+
+3.165
+- fixed instancemem bug with multiply-scene
+
+3.164
+- "All of Time" in spline editor
+- SHIFT drags time only in spline editor
+- link edit with splines
+- better spline time scratching
+
+3.163
+- show all spline-keys in numeric spline key editor
+
+3.162
+- write mask bug with animation ops
+- crash when zero particles
+- impriove UI for changing particle emitter speed/rotation
+- current weapons ammo for print / cockput
+- auto-change weapon when collecting
+- changed weapon keys (1-4 for 0/1/2/4)
+- 'm''n' cheat
+- bomb explosion after timeout
+- bomb behavour
+- edit options
+- fixed particle-viewing in werkkzeug (reset button and burst max)
+
+3.161
+- sound and bug fixes
+
+3.160
+- respawn points
+
+3.159
+- fixed lightsource management (hopefully)
+
+3.158
+- fixed particle system
+- line of sight
+- monster-collision
+
+3.157
+- min radius and wait radius for monster operator
+- step up and step down for walk operator
+- fixed bug that evaluated collision twice when IPP is used
+- various lightsource management improvements
+- engine performance improvements (didn't really kick)
+
+3.156
+- service release :-)
+
+3.155
+- fixed collision
+
+3.154
+- more rendering optimizations
+- portal/light culling bugfixes/improvements
+
+3.153
+- wireframe portal culling fixes
+- (not yet completely tested) light culling in scene
+
+3.152
+- find operator by class. with a bad user interface
+- fixed distance culling for wireframe
+
+3.151 
+- sizecoding. (114176 bytes for incomplete data)
+- fixed operator Print and Dummy Vertex Format
+- particle system
+
+3.150
+- safe config after load
+- copy / paste anim bug
+- fixed memory waste in meshes
+
+3.149
+- varius monster fixes
+- fixed cannon position
+
+3.148
+- lights' positions are now shown correctly no matter what
+- lights don't get culled away with portals
+- non-twosided stencil bug fixed
+- shadow volumes now don't get culled away anymore by portals
+
+3.147
+- light selection now only based on distance
+- shadow volumes now correct again, at least with twosided stencil
+
+3.146
+- shadowenable op
+
+3.145
+- envi back agian (in ps1.3 path)
+- ambient light in mesh color op
+
+3.144
+- sound effects
+- several bug fixes
+- better (?) specular
+
+3.143b
+- mesh show bug fixed
+
+3.143
+- first version after material system merge
+- light culling needs improvements
+
+3.143
+- sound effects (one-shot)
+
+3.142
+- Performance Analyser Overflow (final fix :-)
+- distance culling
+- enable/disble lights & shadows
+- optimise collision connect
+- speed up changing global texture resolution
+
+3.141
+- new file format
+
+3.140
+- fixed memory management for monsters. there was a hanging pointer problem.
+- fixed "merge" documents
+- improved memory management for splines.
+- fixed problem with restarting walk operators
+- added gamma settings, but many display drivers support it only in fullscreen.
+- fixed some problems with the page-list
+- remove subtree's from page-list
+- fixed crash with collision-cylinder tesselation
+
+3.139  040312
+- "noshadow" button
+
+3.138  040312
+- merge light again
+
+3.137  040309
+- remerge light
+
+3.136  040308
+- zone "inside" option did not work relyable, value flickers when standing.
+- you could not be "inside" two zones at the same time
+- look direction is limited to forward 180°.
+- fixed BIG collision bug, that affected climbing stairs (and everything else)
+- fly-mode (god-mode) with 'y'
+- camera-damping is frame-syncrone and can be adjusted with kkrieger-para
+- disable dynamic cells in wireframe
+- never show player-cell
+- flag for collisions: additive work not for player, subtractive work only 
+  for player 
+- you can have more than 2 add-collisions overlap if you want. a shot may skip
+  more than 2 add-collisions if he is fast. limit is now 16.
+
+3.135  030408
+- kkrieger_para defaults: life=100, eyeheight = 2.00
+- rename TransformEx to TransEx
+- fixed bug with infinite events after beat-time 256. (float to int rounding)
+- removed a memory leak that caused verify "_startdx.cpp 359" on exit.
+  keep attention if there are other causes of this bug!
+- fixed crash when started without debugger and monsters are in use
+
+3.134  040307
+- you can toggle game-switches by clicking on them...
+
+3.133  040306
+- fixed bug with instance memory and scene-sectors, 2nd try.
+
+3.132  040306
+- fixed bug with instance memory and scene-sectors
+
+3.131
+- fixed bug with cycle-count, some operators got never ever again calculated.
+
+3.130  
+- fixed display of dynamic collisions (like for the player)
+- fixed numerical stabilty problem in verlet integration
+
+3.129  040302
+- fixed bug with jumping, really :-)
+
+3.128  040302
+- fixed bug with jumping
+
+3.127  040302
+- monsters can kill the player now
+- fixed problems with DONTCALLLINK 
+
+3.126...
+- better checking for input and link in werkkzeug
+
+3.125
+- added effect interface
+- added print operator, to print gameplay variables
+- fixed bug with game and IPP. also fixed the player
+- changed vertex buffer to D3DPOOL_MANAGED
+
+3.124  042227
+- increased several internal limits to compensate for the enourmous size of 
+  fivers data
+
+3.123  042227
+- fixed display of unconnected portals
+
+3.122  042227
+- increased KEnvironment memory pool
+
+3.121  042227
+- fixed severe bug with Calc-Error-Handling
+
+3.120
+- hitting and getting hit
+- changed event mangagement.
+- more weapon and shot parameter.
+- weapon animation
+- font option for text operator
+
+3.119
+- changed player to be fullscreen and fixed aspect ratio
+- added "crates" to physic.
+- reworked wireframe. please set "hidden" to argb = 150,0,0,0
+
+3.118
+- fixed KMemoryManager bug when recalculating objects
+
+3.117
+- changed bend parameter limits
+
+3.116
+- 't' in 3d-view sets the camera to the nearest 90-degree-axis
+- fixed problem with creating new pages and treeview. (uninitialised var)
+- improved display of portal-hints.
+
+3.115  040223
+- fixed bug that made player jump around at collisions. 
+- fixed CTRL-L log-window painting
+- fixed crash when pressing 'r' in game and the center of the world is 
+  outside of the collision. 
+- fixed crash wehn pressing 'g' and the current scene has no collision 
+  at all
+- fixed crash when viewing wireframe vertices.
+- improved positioning of tooltips on operators with large names.
+- you can toggle the 'f', 'c' and 'v' windows in 3d-view on/off now
+  you don't loose focus when exiting these windows with ESC anymore
+  when in game, these windows don't lock the mouse anymore.
+- improved memory management a bit: meshes are more expensive as expected
+- fixed bug with too many objects on screen. (Scene-Job limit increased)
+- fixed crash in performance monitor. DO NOT REGISTER TOO MANY EVENTS!
+
+3.114  040222
+- removed bug when displaying more than 903 collisioncubes.
+- improved wireframe performance a lot.
+
+3.113  040222
+- greatly improved COLLISION
+- added memory-management to meshes
+- pagelist is a tree now. try CTRL-left, CTRL-right
+- logging window CTRL-l
+
+3.112  040217
+- autoload bug fixed
+- removed hardcoded 1024 files/dir limit
+- wireframe options in 3d view (try 'f')
+- wireframe now always on black background
+- orbit control somewhat more direct
+
+3.111  040217
+- portals work now correctly in wireframe mode
+- portal culling bugfixes
+- when showing a scene and editing a portal, only the two sectors
+  connected by the portal are displayed
+- portals now also displayed as transparent cubes instead of just wireframe
+- portals got an "inbetween" link now
+- portal door value
+- orbiting now constrained to get rid of upside down problem
+- performance monitor (try ctrl-p, esp. in game)
+- statistics page now lists count of different collision types
+
+3.110  040216
+- increased collision memory
+- clipped text in operators
+
+3.109  040216
+- fixed wireframe for portals
+
+3.108  040216
+- portals make things slow -> optimise KOp::Calc
+- make portal and scene op easily recognisable
+- 'b' does not work with sector ops -> notify fiver 
+- new Exechange Op 'e', former 'l' and 'm'
+- framerate-sync WheelSpeed
+
+3.107  040215
+- fixed crash with potals when sector-link is broken.
+
+3.106  040214
+- ugly ugly UGLY hack to visualize portal cubes
+- portal op now stackable
+
+3.105  040214
+- more portal fixes
+
+3.104  040214
+- portal fixes
+
+3.103  040214
+- improvements for editing animation-ops
+- save the settings made by 'v' in 3d-view in config file
+- 'm' changes mesh <-> scene ops for add, transform and multipy
+- play the game ('g') with mesh-ops
+- fixed portal system
+- portal culling rocks again
+- renderlights op
+
+3.102  040212
+- jump-pads
+- game parameters
+
+3.101  040212
+- bend by spline op
+
+3.100  040211
+- make demo button!!!
+  (reason enough to skip 5 version numbers)
+- portals re-enabled
+- portal op usability improvements (hopefully)
+
+3.095  040211
+- THE GAME: player stats and "zone" collisions that change player stats.
+  you can actually pick up ammo, weapons, stuff, fire and run out of ammo. 
+- added functionality to change the parameterlist on flags.
+  the list will be updated when the flag changes. see Material.
+- Delay operator: take a binary variable and convert it into a sliding time
+  variable. usefull for opening and closing doors.
+
+3.094  040210
+- new options for the Walk-operator in animation mode
+- many bugfixes and improvements for the spline editor
+- cut/copy/paste whole splines
+
+3.093  040209
+- reconnect is now much faster and doesn't mark unchanged ops as changed
+  anymore
+- player works again!
+- fixed refcounting-bug in trigger-operator
+- improved the "anim" button in the parameter window
+- improved layout of the parameter window
+- improved the statistic info and sApp->SetMode()
+- new game info window. at the moment displaying just dummy data.
+
+3.092  040208
+- changed the direction of the "limbs" from z to the y axxis
+
+3.091
+- now operators can have splines as parameter
+- all float-parameter windows show at least 3 fractional digits
+- "walk" operator. (cool)
+- instance-memory for events. (you can have many walkers simultanously)
+- animation op's with no input work now as "*","+","-".
+- all changes in the parameter-window (including stirngs) are now updated 
+  immediatly. Solved the problems with KOp::ReAlloc().
+- Scene_Rotate operator: will constrain a rotation to an axxis
+- Splines can now be edited numerical.  
+- "add" anim button
+- ".." "->" "add" buttons for spline animation operators
+- you can set a spline with an event
+- Scene_Walk has a debugging mode for tuning walk/run cycles.
+- new feature: issue dynamic events with the "trigger" operator.
+- new animation operator: use 4 variables as 4x4 matrix. usefull for legs
+- "forward" operator. lets an moving object face forward
+
+3.090
+- center for bitmap_text operator
+- link-follow-button does not work when page is read-only. fixed.
+- alphabetic sorting of ".."
+- alphabetic sorting of the operator menu
+- right mousebutton drags values by 0.125 
+- ".." is now very smart in making a selection of usefull operators
+- cursor at end of text-control
+- when switching to the game, the camera changes the angle (fixed)
+- removed the blue-colored 3d-view when starting the werkkzeug
+- in the page window, 'g' jumps to the link
+- if you jump to an operator (by 'g', 'G', '->', ...) then it will blink for a second 
+- when changing the page, the pagelist will automatically scroll to the right place.
+- center text
+
+3.089
+- limb operator
+- performance update. un-animated parts of the op-tree are executed much
+  faster now (or better: are no executed)
+
+3.088:
+- now the features promised with 3.087 are really included :-)
+
+3.087:
+- wireframe bug with meshes without collisions fixed
+- bend2 now has proper hints
+- various texture generator optimizations
+- improved texture memory management (finally)
+  check out "Texture Cache" setting in edit parameters and set it
+  to a reasonable value for the amount of memory you have:
+  
+  physmem  texcache
+    128MB  <=64MB
+    256MB  64-128MB
+    512MB  128-256MB
+   1024MB  192MB and up
+  
+  (or just leave it at the default setting)
+- some portal culling optimizations removed, they can break scenes
+- various tiny bug fixes
+- improved timeline editing
+- improved spline editor
+- added spline properties
+- load&save demo settings
+- fixed problems with sound replay
+- werkop.cpp: now you can set non-standard defaults in a simpler way.
+
+3.086:
+- copy & paste for anim-ops
+- 'a' window verschiebt sich andauernd
+- unconnected ops prevent code generation.
+- added (fast) material animation
+- texture animation is impossible now
+- fixed update problems with animation operators
+- fixed add animation operator
+- fast animation of meshes is back in! (the meshrecorder!)
+- removed dead code from the old animation system.
+- spline editor is much better now
+- improved the pagelist window. check it carefully!
+- rename dialog boxes set keyboard focus correctly now
+- fixed bug with double-stored names: now BOTH store-ops are marked as error
+- fixed severe bug with cyclic links
+- fixed crash when displaying many collision
+- fixed update bug with animation operator write mask
+- vertex colors (Mesh_Color) op added
+
+3.085:
+- center now works like fiver2 wants it :)
+
+3.084:
+- various portal & frustum culling fixes
+
+3.083
+- fixed bug with portal-cost
+- fixed crash when deleting events
+- fixed crash with "red" events
+- fixed problem with bad sound drivers
+
+3.082:
+- events & timeline is working now
+- nicer buttons on top of screen for "PAGE" "SPLINE" "TIMELINE"
+- when copying an op, the animation inside the op is copied, too
+- timeline editor is working and fine.
+- portals are working, may be finished.
+
+3.081:
+- fixed anim-para-input
+- distiction between animatable and non-animatable ops
+  (to get it, add a "*" to the parameter name in werkops.cpp)
+- playing the timeline works for IPP, Painter, Scene (solid), Scene (wireframe) 
+  and all hint-lines. when viewing Meshes, Materials or Textures, the timeline
+  is not considered.
+- all operators can be animated slow.
+- scene operators can be animated fast.
+  notice that dragging on a scene-transform does not requre recalc any more!
+- CollisionCube bug fixed (again)
+- added "hide operator". usefull for ops above "add".
+
+3.080
+- fixed bugs with load / store scenes
+- fixed bug with operators that have no input
+- fixed bug with hints
+- added hintlines for scene transform & scene multiply
+- increase page height by 1.5
+- IPP fully functional (IPP = Image Post Processing = FXChain)
+- improvements to material
+- fixed bugs with bypass 
+- fixed bug with deleting the operator that is currently showed or edited
+- added camera movement to IPP
+
+3.079
+- reorder operator palette
+- remove legacy operators, insert "unknown" ops instead
+- volume for metronome
+- save PS-level in config
+- press ENTER before load & store updates
+
+3.078
+- completed reworking of operator execution & painting
+- camera operator
+- IPP does work now, although there are no useful operators
+
+3.077:
+- new fx-chain and viewport
+- new file format version because of animation
+- fixed rendertarget op
+- fixed collision cube & mesh center
+- animation system almost working now
+- new operator system witn Init_???() and Exec_???()
+
+3.076
+- the big merge
+- basic spline editor 
+- basic animation editor
+
+3.075
+- fixed wireframe-painting overflow with too manxy collision cubes
+- fixed bug with Operator Array Reallocation
+- reworked operator storage to remove some hardcoded limits. there may be 
+  quite some bugs now
+- unlimited outputs per op
+- 256 inputs for add/merge-ops (texture, mesh, scene, materal)
+- string parameters are limited to 2048 characters
+- fixed bug when saving strings
+
+3.074
+- fixed simple bug when linking materials
+- removed the old "shader"-interface from code.
+- removed the old renderstate-intergface. everything uses the new material interface.
+- removed opengl port (without renderstate-interface, it's not worth a lot...)
+- removed SetCamera() & SetMatrix() interface. remove sCamera structure.
+
+3.073
+- cyclic check (no more crashes for load-store loops in one graph)
+- show all lightsources in scene
+- switch from game to 3d-view without loosing the camera position
+- fixed polycount in wireframe
+- addsmooth für lichtquellen 
+- initialise device correctly for GeForce4MX (disable fake vertex-shaders)
+- minor changes in material (color or uv-scale) does not create new shaders anymore
+- renderpasses work for single materials now. you can set them with mat
+- shader selection mask: have different shaders for different hardware, not relying on automatic "material downgrade"
+- you can add and stack material now. needed to use the shader selection mask
+- PS00-alphatest: very limited, just use main texture alpha, no further options
+- output length of shader-programms. most useful for single-materials
+- there is a bug with bumpmapping when you use invert-mesh. temporary fix: invert the U coordinate of all texture mapping. a better fix will be done when ryg has finished the lightmap stuff.
+- fixed memory leak with default material
+- fixed material allocation, all materials are released now. hopefully.
+- fixed minor problem with specular highlights when lightsource on the other side of poly. fixed only in PS20 path.
+
+3.072
+- changed step-value for dragging with shift from 0.25 to 0.125
+- "matlink" has shortcut m in material. "matnew" has shortcut m in misc.
+- hscb: brightness max is now 64
+- "matnew": cast shadows is off by default
+- operator-add popupwindows are now centered around the mousebutton.
+- added safety check when deleting pages
+- fixed update bug with texture formats other than ARGB8888
+- fixed bug when uploading A8 textures
+- windows title was not updated after save
+- page-list: changed-star was only updated BEFORE save. 
+- texture-font operator has additional anti-aliasing (4x4 times)
+- save 3d-view background color, edit it in "editor settings"
+- scene operators "add" "transform" and "multiply" accept meshes as input.
+  "new scene" is not needed any more!
+- collision-cubes can be stacked, or just placed anywhere in mesh-pages
+- nicer button for the "combine" combiners (double size)
+
+3.071
+- fixed bug with default material
+
+3.070
+- multimat: bump faden by main-alpha
+- multimat: specular faden by bump-alpha
+- changed material-combiner order so that ambient works betters
+- added some alpha options to material
+- specular was amplified by Texture-pass (BLENDMUL2 on Alpha)
+- fixed bug with setting / changing textures
+- auto-combiener button for mateiral
+- alphatest for multi-material. but it's expensive!
+- mipmap-generator flag: smooth/hard alpha (for multimaterial-alphatest)
+- PS13, PS00
+- new structure for mesh that holds materials and geometry, created by DoPass1
+- multilight
+
+3.064:
+- wayfinder shadow distortion
+
+3.063:
+- disable shadow for a lightsource
+- show shadow volumes (debug)
+- fixed array-overflow in DoPass1
+- added materials to statistics. no leak found.
+- merge material-handles
+
+3.062:
+- invert cube bug
+- flicker bug
+- gizmos pc bug
+
+3.061:
+- debug version
+
+3.060:
+- shadows !!!
+
+3.059:
+- fixed major bug in material reference counting (again)
+
+3.058:
+- fixed major bug in material reference counting
+
+3.057:
+- rename op: cancel renames!
+- op-browser : remove .0 hack
+- show center of lights (hintlines)
+
+3.056:
+- specular factor / specular off
+- fixed crash when resizing screen 
+- mul2 / mul4 / ...
+- negative specular
+- new parameters for light operator
+- flip envis
+- light amplify
+- grid automatically enabled when starting game (fixed)
+- texture format illegal
+- debugout used geobuffers/geohandles
+- switch to single-mat must be simpler
+- fixed memory leak with multiple input operators
+
+3.055
+- urgend error in new material system when showing old material meshes fixed
+
+3.054
+- new material system (without shadows)
+- default material
+- wireframe everywhere
+- default scene light
+
+3.053
+- fixed bug in collision: planes are not freed
+
+3.052
+- fixed an update problem, major speedup!
+
+3.051
+- auto collision cube
+- hintlines für bend
+- displace: amplify x/y/z getrennt
+- select sphere
+- bug für vertices bei selectgrow
+- (vertex)selection nach crease
+- output selection mask bei autocollide
+- c-shaped curve bei bend
+- subdivide with deleted faces
+- outmask bei extrude spinnt
+- local rotate bei multiply
+- select face (mit index)
+- bottom-modus für center
+- select angle
+- hintlines for selectangle
+- new bend op
+
+3.050:
+- ???
+
+3.049:
+- ???
+
+3.048:
+- bevel translate bug fixed
+- new default parameters
+- fixed minor gui glitches 
+- bypass gets saved now
+- operators with more than two inputs are created 6 slots wide
+- crash when loading file without clearing old data (fixed)
+- autosave / quicksave verzeichniss
+- backup failed on new file (save as) (fixed)
+- low/med/high texture quality setting is saved with config
+
+3.047:
+- fixed bevel
+- new collision reaction and physics
+
+3.046:
+- fixed crash with adding meshes to scenes.
+
+3.045
+- draggen in 50 cm schritten
+- performance in wireframe
+- transform max. 256
+- collcube xx yy zz
+- cylinder besser
+
+3.044
+- fixed random bug with GenMesh::Add().
+
+3.043
+- found 100MB unused data :-)
+
+3.042
+- resource statistics
+
+3.041
+- tesselated collcube
+- coll-cylinder
+- unprepare material fixed.
+- increased shader maximum
+
+3.040
+- collisioncube can be set now
+
+3.039
+- bugfix with CalcNormal calls
+
+3.038
+- radiobutton für selection
+- undo in text-control (END-KEY)
+
+3.037
+- save last filename in config
+- "own all" function (change all page owner name)
+- glow
+- orbit-focus unsichtbar in scene
+- orbit-focus-pfeil falsch
+
+3.036
+- edit srt
+- arrow for orbit-cross
+- zoom bitmap mirror y 
+- deligate on load
+- scene multiply -> zu viel. danach licht an!
+
+3.035
+- fixed some camera issues
+
+3.034
+- fixed update-problem with links
+- kein reset pivot bei orbit
+- quakecam key-hänger
+- quake-cam mit lmb?
+
+3.033:
+- version control
+- spare-pages
+- fixed bug with muliply (to many polys)
+- fixed bug with reconnect (performance problem)
+- camera pivot. change pivot with mousewheel or alt-left. rotate around it with right button
+- prototype SRT editing. press space in viewport to edit translation of mesh operators
+- fixed bug: crash while calculating when operator types mismatch.
+- Material has a selection mask now. things are a little bit strange when adding multiple materials to one face.
+- export for bypassed ops
+
+3.032:
+- lightmaps!
+  this is subject to heavy change still - the current state is just to show an
+  impression of what it's gonna be!
+- cube: planar uv out, now normal/wraparound uv; scale uv on by default; scale uv
+    bugs fixed; pivot on bottom now works as intended by fiver2 and gizmo :)
+- torus: new switch for relative/absolute radii
+- crease: instantiating this op doesn't crash werkkzeug anymore :)
+- selectcube: face2vertex mode added
+- subdivide: selection masks fixed
+
+3.031:
+- grid: now on xz-plane instead of xy; better default selection.
+- cylinder: now standing upwards (pillar); pivot on bottom option.
+- sphere: uv coordinates not upside down anymore; same size as cube by default.
+- cube: srt parameters; "scale uv" option; pivot on bottom option; better crease flags;
+  cylinder-like uv mapping.
+- extrude: "face normals" mode added back again.
+- invert normals is now just "invert" and works properly :)
+- pivot now mesh attribute and not transform param; new set pivot op; pivots work now
+  properly even with transformex and bend and can also be set for uv coordinates/colors.
+- cubic projection mapping - for your extrude-object uv-mapping needs :)
+- some minor lightmapping fixes and speed improvements
+- hint lines now also visible in solid mode
+- show xz-grid on 'p' in view
+
+3.030:
+- grid primitive tesselation
+- better default selection for cubes (each face)
+- translate in 0.001 steps
+- geometry-multiply translate uv, random
+- new option: cylinder open/closed
+- simpler (and better working) grow operator
+- selectcube: units are now the same as in the rest of the world
+- invert normals
+- visualize multiply
+
+3.029:
+- bug with 'g' and 'o' key in 3d-view
+- escape always quits color and selection menu in 3d-view 
+- select cube sichtbar machen
+- visualise pivot/transform 
+- highlight all geometry "above" the current edited op
+- better integration of GenMesh::PaintWire in class WinView
+- adjust wireframe options in editor settings (colors, size, ...)
+- save configuration includes wireframe options
+- save configuration bitmap view zoom,
+
+3.028:
+- hidden line instead of wireframe
+- fixed a couple of problems with bitmask-control
+- choose selection for wireframe-highlighting
+- visualise selections & collision
+- fix wireframe for scene-ops
+
+3.027:
+- cursortasten, enter, backspace und tab im filerequester ala windows
+- preview im opbrowser 
+- tab (auch mit maus)
+- update bug with duplicate store names
+- key reset (r) is duplicated at F12 (i don't like that, don't get used to this!)
+- fixed operator selection bug
+- default file is not loaded when not present (no "file not found" message")
+- birdseye is now 'y'
+- bypass button for each op. can be activated from parameter-window or by pressing 'b' in page window
+- default texture size in view window is 512
+- clicking without dragging does not require the operator to be recalculated. (this fixes a bug when doubleclicking and the framerate is too low)
+- update fehler: namen eintippen test03b, wenn es test03 schon gibt dann wird der op ROT.
+
+3.026:
+- backup files (in backup folder)
+- CTRL-Q is quicksave to a file called "quicksave-#.k", the latest 9 quicksaves are preserved.
+- autosave feature all 1-15 minutes to a file called "autosave-#.k",  the latest 9 quicksaves are preserved. enable autosave in editor config
+- draggen mit mittlerer maus: höhere geschwindigkeit 
+- birdseye over mouse
+- doppelklick auf variablen => wert auf standard zurücksetzen (auch mit CTRL für alle werte einer Zeile)
+- browser soll verschwinden sobald er focus verliert 
+- mesh: select logic added
+- mesh: select grow added (!experimental, might change the way it works later!)
+- mesh: mesh transform/transformex pivot points added
+
+3.025:
+- mesh: add now has >2 inputs
+- mesh: selections updated, now all use one bitmask + mode (add/sub/set/set not)
+- mesh: all ops that change selections now have seperate output selection masks
+
+3.024:
+- operator-page: select-drag works again
+- name printed in load operator
+- orthogonal camera ('o')
+- camera savepoints. set with CTRL '1'-'4', get with '1'-'4'
+- export option
+
+3.023:
+- removed dragmode keys and added shift/ctrl mouse modifiers
+- added application wide shortcuts with CTRL (CTRL-S = save)
+- added status bar message when a file was saved.
+- time-sync für steuerung
+- new operator browser for arameter window '...' and page window 'g'
+
+3.022:
+- global rename
+- fixed bug with displaying parameters of new operators
+- texture resolution switch (low, std, high)
+- slow/fast update (wenn framerate zu sehr sinkt)
+- pause-key disables view
+- selection pagelist is updated all the time
+- backspace goes back, backspace+shift undos that
+- mousewheel works in browser now
+- birdseye
+
+3.021:
+- substractive collision
+- collision works with height
+- you can build stairs now
+
+3.020:
+- added a hack to keep old blur values consistend. NEVER use old blur parameters on purpose!
+
+3.019:
+- wenn ich bend wähle bekomme ich ein material 
+- glowrect: size ist deutlich zu grob (kleinste einheit geht über mehr als 10 pixel (bei 512)) 
+- !neue funktion für 2d-merge: ineinander kopieren (photoshop) => weiss = hell, schwarz = dunkel, grau = keine änderung! 
+- anti alias fonts
+- gradient: angle .25 ist nicht exakt 90° 
+- gradient sieht bei unterschiedl. auflösg. untersch. aus 
+- mask: statt mischen (also praktisch alpha) auch mul oder add auf die maskierten bereiche anwenden 
+- sharpen 
+- 2d-rotatemul mit xsize!=ysize -> ei!
+
+3.018:
+- crash in bump mit falscher bumpmap-size
+- gradient mit höhe < breite crash
+- rechte maus auf ops = breite verziehen wäre toll 
+- fixed bug with WinPage->SetOp()
+- rotatemul - auch völlig ohne fade schwanken die farben recht deutlich 
+
+3.017:
+- preliminary lightmap support
+
+3.016:
+- browser scrolling
+- font einen größer
+- flags control: gray out empty selections. (like "PS20" toggle control in "off" state)
+- anscheinend wird bei einigen pages (z.b. rost) die falsche position gespeichert, so dass man sich beim anwählen der page im nirgendwo wiederfindet 
+- im browser funktioniert das positionieren des cursors durch reinklicken nicht 
+- scene multiply: translate y: man kann nicht ganz nach rechts ans ende des kommas steuern: .95 eintippen erscheint so als .59
+- viel zu kleiner font im browser 
+- Simple PS00 support
+- Simple PS14 support
+
+3.015:
+- alpha-fading for envi and proj texture
+- apply aux-color to base and detail texture (for fading)
+- alpha-mipmap problem
+- genmesh.cpp(4448) : assertion (zwei meshes mit zwei materials geaddet und geshowt) 
+- bitte folgende default werte für 2d bump: mode: directional, dir: .125 1.0 
+- bump(2d/3d?): warum wird das specular nicht addiert sondern wie alpha übergeblendet? sieht eigentlich immer schlecht aus ausser bei weiss  (war 50 bytes kleiner. fixed)
+- cell: x/y unterschiedlich skalieren! (da beim nachträglichen skalieren das loopen zerstört wird) 
+- clipping an/ausschaltbar für glow.rect 
+- rotate mul: clipping(off) ist durch 
+- mipmaps: wählen zwischen hartem und weichem mm (wichtig auch für alpha!) 
+- Blur macht offset. muß das sein?
+- fine blur 
