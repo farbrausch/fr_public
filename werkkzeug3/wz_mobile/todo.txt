@@ -1,0 +1,178 @@
+
+[[Checkin comments]]
+
+[textgen features]
+
+- mehr space links / rechts vom comment op
+- knopf für commetn prop / fixed font
+- crash show -> load
+
+- notify file load
+
+[style]
+
+x gridlines als add +16
+- font: arial in bold 11, mit anti-aliasing
+x Dragging
+- dropshadow : 3 / 5
+- menu buttons
+- mauspfeil 
+- unterschiedlich grosse button
+
+- button skin
+
+----------------------------------------------------
+
+[big stuff]
+
+x light problem
+x packer
+x progress bar fixing
+x tesselation
+
+[small stuff]
+
+- copy op - hide / bypass
+- mul2-blend 
+- bend(1)
+- goto über mehrere pages
+- camspline kräftigere farben
+- camspline einzelposition
+
+[cleanup]
+- lots of aufräumen
+- parameter aus op herausnehmen - und trotzdem laden
+- variant id's besser faken in Make
+- subroutines
+
+[ops]
+- mesh-perlin
+- displace
+
+[shaders]
+- envi
+- bump
+  - generate texture space
+  - pixelloop 
+
+[reorganise texture ops]
+- color balance
+- hue / saturation / brightness
+- (dots)
+- bricks
+- twirl
+
+[libraries]
+- ...???...
+
+----------------------------------------------------
+
+[skinning]
+
+x new clear
+- labels don't clear background
+- skin switching
+- add toolborders everywhere
+- menu-button in toolborder
+- load skin texture and use it for menu-button
+- round borders
+- scrollers
+- topmost toolborder and status line with different style
+
+----------------------------------------------------
+
+[missing ops]
+
+- import
+x (text)
+- unwrap
+- sharpen
+- hscb
+
+[gui features]
+
+[document features]
+- cache only important ops
+
+[unfinished ops]
+
+- rotate
+  - power function
+  - change size in rotate
+- glowrect clipping
+- perlin: preprocess s[]
+- perlin: special gradients
+
+----------------------------------------------------
+
+[optics]
+
+- skin for ops
+- skin for splitters and borders
+- skin for controls
+- skin for buttons
+
+----------------------------------------------------
+
+[[tolle ideen]]
+
+[arrows]
+
+- display store-load-load as arrow / toggle flag in store
+- create store-load-load as arrow
+- create array by moving connected ops
+
+[customisation]
+
+- write subs in werkkzeug
+- graphically edit subs in werkkzeug
+
+[scene]
+
+- seperation of SceneView & MeshView -> inheritence
+
+----------------------------------------------------
+
+ein operator hat:
+
+- code der das user-interface aufbaut
+- versions-konflickt resolution
+- user -> implementation parameter mapping
+- implementation selection, node generation
+
+ein parameter hat
+
+- variable storage 
+- handle-interface
+- painting-interface
+- ParaId, damit man die reihenfolge der parameter verwürfeln kann
+  - gut für macros
+  - wenn sich eine skalierung ändert, kann man alte und neue variante im node-generator unterstützen
+  - typ darf sich nicht ändern, der typ enthält bei vectoren den count (nicht aber bei strings und ähnlichem)
+- will man eine spezielle benutzeroberfläche für ein macro, so kann man hier spezielle interfaces coden
+
+ein macro hat
+
+- einen optree über sich
+- die dazugehörigen "input" ops
+- parameterliste. diese liste ist ein parametertyp.
+- so ein variablensystem wird gebraucht.
+- .. alles weitere ist extra .. etwa ein script .. oder gui logic ..
+
+animationssystem
+
+- fader operator
+- expressions pro op
+- execution wärend node-generation
+- kein bytecode sondern parsetree wird gespeichert
+- beim parsen werden links auf namen erzeugt - namen nicht variablen
+  - namen werden als variable initialisert wenn sie in den scope gehen
+  - wenn der scope verlassen wird werden die namen zurückgesetzt
+  - namen haben einen stack von variablen - für scoping
+- führt letztendlich zum demo/vj system
+- timeline wie bei nova
+
+
+
+
+

@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Operator Page Window</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>Operator Page Window</h1>
+      <p>&nbsp;</p>
+<p>The Operator Page Window is where you <a href="operatorstacking.html">stack operators</a>. You can use the <span class="shortcut">Tab</span> key to toggle full window mode for this view.</p>
+<p>&nbsp;</p>
+<h2>Navigating around the Operator Page Window</h2>
+<p>&nbsp;</p>
+<p><img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> Click anywhere in the Operator Page to focus the cursor. The  properties of the operator under the cursor will appear in the Parameter Window. </p>
+<p>&nbsp;</p>
+<p><img src="images/mmb.gif" alt="middle mouse button" width="13" height="13" align="absbottom"> Click and drag with the middle mouse button or use the scroll bars to move around (scroll bars can be disabled in the <a href="editorsettings.html">Editor Settings</a>). Hold the <span class="shortcut">y</span> key to activate the Bird's Eye Tool, a thumbnail view of the current page in which you can <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> click and drag to move the view around. </p>
+<p>&nbsp;</p>
+<p>Go Back (<span class="shortcut">Backspace</span>) and Undo Go Back (<span class="shortcut">Shift</span> + <span class="shortcut">Backspace</span>) work a lot like your browser history. To make it easier to find the currently selected op on the page when you jump through the history, it will blink in green three times. Please note that  changes you make will not be undone by moving around the view history.</p>
+<p>&nbsp; </p>
+<h2>Working with operators</h2>
+<p>&nbsp;</p>
+<p>To work with operators, you have to stack them. <a href="operatorstacking.html">Operator stacking</a> works a lot like a tree, we have roots and leaves and branches. </p>
+<p>&nbsp;</p>
+<p>The root of a tree is always an <a href="operator_Export.html">Export Operator</a>. On the other end(s) of the tree, there are the leaves, operators that accept no input. Every branch must begin with a leaf.</p>
+<p>&nbsp; </p>
+<p>An operator will send its output to any operators that touch its underside. Some operators accept or need more than one input. If an operator is stacked in an illegal way, it will be marked red.</p>
+<p>&nbsp;</p>
+<p>To pop up the Add Operators Window, use the hotkeys <span class="shortcut">1</span> (add miscellaneous operators), <span class="shortcut">2</span> (add texture operators), <span class="shortcut">3</span> (add mesh operators) or <span class="shortcut">a</span> (add operators from the last used category). <img src="images/rmb.gif" alt="right mouse button" width="13" height="13" align="absbottom"> Double-clicking the right mouse button will also pop up the last used category from which you added operators. </p>
+<p>&nbsp;</p>
+<p>While the add operator dialog is open, you get a new set of keyboard shortcuts. For example, while pressing <span class="shortcut">a</span> would normally open the add dialog, pressing <span class="shortcut">a</span> with the Add Texture dialog open will add a <a href="operator_Merge.html">Merge Operator</a> to the operator page. <span class="shortcut">Escape</span> closes the add dialog.</p>
+<p>&nbsp;</p>
+<p>Every operator has three activity indicators on the left side. A red LED means that the operator is currently selected. A green LED means that the operator is currently being viewed in the <a href="viewwindow_default.html">View Window</a>. A blue LED means that the operator output has been calculated and cached. <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> Double-click an operator to display its output in the <a href="viewwindow_default.html">View Window</a>. You can also use the keyboard shortcut <span class="shortcut">s</span> to display the currently selected operator's output.</p>
+<p>&nbsp; </p>
+<p><img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> Click on an operator to select it. With the <span class="shortcut">Shift</span> key pressed, <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> clicking toggles an operator's selection status and <img src="images/rmb.gif" alt="right mouse button" width="13" height="13" align="absbottom"> right clicking adds it to the selection. You can also <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> drag a rectangle to select multiple operators. <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> Click and drag on the body of an operator to move it around the page. <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> Click and drag on the right end of an operator to change its width. You can also <img src="images/rmb.gif" alt="right mouse button" width="13" height="13" align="absbottom"> right-click and drag anywhere on the operator to change its width. To duplicate the selected operators, <img src="images/lmb.gif" alt="left mouse button" width="13" height="13" align="absbottom"> <span class="shortcut">Ctrl</span>+ click and drag.</p>
+<p></p>
+<p>&nbsp;</p>
+<h2>Context Menu</h2>
+<p>&nbsp;</p>
+<p>The Operator Page Window has a context menu that is accessible through the triangle icon in its title bar or via a <img src="images/mmb.gif" alt="middle mouse button" width="13" height="13" align="absbottom">&nbsp;middle mouse button  double-click inside the window.</p>
+<p>&nbsp;</p>
+<h3 class="description">Add</h3>
+<p class="description">Opens the last used page of the add operators dialog. Keyboard shortcut: <span class="shortcut">a</span>.</p>
+<p>&nbsp; </p>
+<h3 class="description">Add Misc</h3>
+<p class="description">Opens the misc page of the add operators dialog. Keyboard shortcut: <span class="shortcut">1</span>. </p>
+<p>&nbsp; </p>
+<h3 class="description">Add Texture</h3>
+<p class="description">Opens the texture page of the add operators dialog. Keyboard shortcut: <span class="shortcut">2</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Add MinMesh</h3>
+<p class="description">Opens the MinMesh page of the add operators dialog. Keyboard shortcut: <span class="shortcut">3</span>. </p>
+<p>&nbsp; </p>
+<h3 class="description">Bird' s Eye Tool </h3>
+<p class="description">Activates the thumbnail navigation aid. Keyboard shortcut: <span class="shortcut">y</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Go back</h3>
+<p class="description">Jump back one step in the operator edit history. Keyboard shortcut: <span class="shortcut">Backspace</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Undo Go back </h3>
+<p class="description">Jump forward one step in the operator edit history. Keyboard shortcut: <span class="shortcut">Shift</span> + <span class="shortcut">Backspace</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Goto..</h3>
+<p class="description">Opens the <a href="findanop.html">Find an Op!</a> dialog. Keyboard shortcut: <span class="shortcut">Shift</span> + <span class="shortcut">G</span>. </p>
+<p>&nbsp; </p>
+<h3 class="description">Goto Link</h3>
+<p class="description">Jumps to the first operator linked into the currently selected one. Keyboard shortcut: <span class="shortcut">g</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Bypass</h3>
+<p class="description">Temporarily turns the currently selected operator into a <a href="operator_Nop.html">Nop Operator</a>. Keyboard shortcut: <span class="shortcut">b</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Hide</h3>
+<p class="description">Temporarily disables the currently selected operator completely. Keyboard shortcut: <span class="shortcut">h</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Rename All Occurrences</h3>
+<p class="description">Renames an already named operator and updates all places to which it is linked with the new name. Keyboard shortcut: <span class="shortcut">r</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Rename Op</h3>
+<p class="description">Lets you give a name to an operator. </p>
+<p>&nbsp;</p>
+<h3 class="description">Show Operator</h3>
+<p class="description">Shows the output of the currently selected operator in the <a href="viewwindow_default.html">View Window</a>. Keyboard shortcut: <span class="shortcut">s</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Find references</h3>
+<p class="description">Opens the <a href="findresults.html">Find Results Window</a> with all occurrences of the  currently selected, named operator. Keyboard shortcut: <span class="shortcut">Shift</span> + <span class="shortcut">R</span>. </p>
+<p>&nbsp; </p>
+<h3 class="description">Delete</h3>
+<p class="description">Deletes the currently selected operator. Keyboard shortcut: <span class="shortcut">Del</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Cut</h3>
+<p class="description">Cuts the currently selected operator to the clipboard. Keyboard shortcut: <span class="shortcut">x</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Copy</h3>
+<p class="description">Copies the currently selected operator to the clipboard. Keyboard shortcut: <span class="shortcut">c</span>. </p>
+<p>&nbsp;</p>
+<h3 class="description">Paste</h3>
+<p class="description">Pastes from the clipboard into the cursor position in the operator page. Keyboard shortcut: <span class="shortcut">v</span>. </p>
+<p>&nbsp; </p>
+<h3 class="description">Extract Tree</h3>
+<p class="description">Copies the complete tree of the selected root, including all loaded branches, to the clipboard. Keyboard shortcut: <span class="shortcut">d</span>. Please note that if you have named and loaded operators that are not a <a href="operator_Store.html">Store Operator</a>, naming conflicts will arise from the duplicated, named operators. </p>
+<p>&nbsp; </p>
+<h3 class="description">Help</h3>
+<p class="description">Opens this page. </p>
+</div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

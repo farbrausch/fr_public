@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Getting Started</title>
+<link href="style.css" rel="stylesheet" type="text/css" /></head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main"> 
+      <h1>Getting Started </h1>
+      <p><br>
+        This page accompanies you building a project from scratch, from the first steps to the final texture export. You will learn how to set up a file, how to create textures, how to test them and how to export them.</p>
+      <p>&nbsp;</p>
+      <h2>The Plan</h2>
+      <p>&nbsp;</p>
+      <p>We're going to make a textures for an object that is ubiquitous in contemporary level design, just short of replacing the crate:a barrel. We're going to create a basic texture, a normal map and a specular map, each of which will be exported separately.</p>
+      <p>&nbsp;</p>
+      <h2>First steps  </h2>
+      <p>&nbsp;</p>
+      <p>First, start a new project. If you haven't saved your previous project, please do so now. Then choose the option File &gt; New from the main menu and okay the confirmation dialog. You now have an empty project in front of you. Let's populate it!</p>
+      <p>&nbsp;</p>
+      <h2>The Main Texture</h2>
+      <p>&nbsp; </p>
+      <p>Add a <a href="operator_Flat.html">Flat Operator</a> (<a href="pagewindow.html">How to work with operators</a>). Set its color to a <strong>medium grey-blue (RGB: 87, 112, 148)</strong>. This will be the base color of the barrel. Show the output of the Flat in the <a href="viewwindow_default.html">View Window</a>.</p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Perlin.html">Perlin Operator</a>. This will be the rust. Change the following values: </p>
+      <p>Frequencies: <strong>4</strong> (finer base grain) </p>
+      <p>Octaves: <strong>5</strong> (finer detail grain) </p>
+      <p>Seed: <strong>1</strong> (unique pattern)</p>
+      <p>Amplify: <strong>1.375 </strong>(more contrast)</p>
+      <p>Gamma: <strong>2.875 </strong>(shift toward Color 0)</p>
+      <p>Color 0: <strong>Dark Red (RGB: 56, 0, 0)</strong></p>
+      <p>Color 1: <strong>Dirty Ochre (RGB: 147, 115, 0)</strong></p>
+      <p>Show the output. You should see a largely brown texture with some finely grained yellowish structures. </p>
+      <p>&nbsp;</p>
+      <p>Add another Perlin Operator to the project. We will use it to blend the rust onto the base color. Change the following values:</p>
+      <p>Octaves: <strong>10</strong> (very fine detail grain)</p>
+      <p>Fadeoff: <strong>0.850</strong>   (less detail pronunciation)</p>
+      <p>Amplify: <strong>2</strong> (more contrast)</p>
+      <p>Gamma: <strong>0.100</strong> (shift overall balance toward Color 1)</p>
+      <p>Color 0: <strong>White</strong></p>
+      <p>Color 1: <strong>Black</strong></p>
+      <p>Show the output. You should see a largely black texture with a few, highly contrasted white areas and some dark gray structures. </p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Mask.html">Mask Operator</a>. We will use it to blend our base paint coat with the rust. Arrange the operators so that the Mask Operator receives the input of all three operators. The sequence should be, from left to right: mask Perlin, rust Perlin, base Flat. The Mask mode should be set to <strong>mix</strong>. Show the output of the Mask. You should see a blue paint job with rust spots.</p>
+      <p>&nbsp;</p>
+      <p>Stack a <a href="operator_Store.html">Store Operator</a> under the Mask and give it a name: <strong>texture.main</strong>. <img src="images/main-texture.jpg" alt="Main texture" width="350" height="350" class="illustration"></p>
+      <h2>&nbsp;</h2>
+      <h2>The test model</h2>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Cylinder.html">Cylinder Operator</a>. This is going to be our barrel. We'll set the Facets to <strong>24</strong> to make it a little smoother. Show the operator's output to see a 3D view of your cylinder. </p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Transform.html">Transform Operator</a> and stack it under the Cylinder. Adjust its Y scale value to 1.500 to stretch the form a little, so that it looks like a standard barrel. Show the output to check that everything looks right.</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><img src="images/cylinder.jpg" alt="Cylinder Mesh" width="350" height="350" class="illustration"></p>
+      <h2>The Material</h2>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Material 2.0.html">Material 2.0 Operator</a>. We will define the shader for the test model with it. Link <strong>texture.main</strong> into the Main texture slot and set the <strong>x2 Intensity</strong> flag to bring out the colors a bit more clearly and brightly. Move the operator next to the Transform you just created for the model.</p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_MatInput.html">MatInput Operator</a>  below that takes the transform as its left input and the Material 2.0 as its right input. Show the ouput to check that you now have a barrel with a rusty blue paint coat.</p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_TransEx.html">TransEx Operator</a>below the MatInput. We're going to adjust the UV projection with it. Set the mode to <strong>UV0 -&gt; UV0 </strong>and the Scale to <strong>X = 2.000</strong> to give the texture a more natural aspect ratio. Show the output to check everything looks alright.</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p> <img src="images/simple-material.jpg" alt="Simple material" width="350" height="350" class="illustration"></p>
+      <h2>Bump!</h2>
+      <p>&nbsp;</p>
+      <p>We're going to give a little structure to the surface of the barrel with a normal map. </p>
+      <p>&nbsp;</p>
+      <p>Add a white Flat Operator. Below it, stack a <a href="operator_GlowRect.html">GlowRect Operator</a>. We will use it to create a height map. Change the following parameters:</p>
+      <p>Center: <strong>Y = 0.253</strong> (creates an area toward the top of the texture) </p>
+      <p>Size: <strong>X =  0.500 , Y = 0.000</strong> (creates an large area that obscures the whole top half except for a narrow strip at the top) </p>
+      <p>Color: <strong>Black</strong> (black GlowRect so that it becomes visible on a white background) </p>
+      <p>Power (hardness): <strong>0.016</strong> (sharpen the edges of the glow)</p>
+      <p>Duplicate the GlowRect and stack it below the first. Change the Center to <strong>Y = 0.745</strong>. </p>
+      <p>Check the output to make sure you have a black texture with two white, faintly glowing strips along the top and bottom border and one horizontal strip in the middle of the texture.</p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Normals.html">Normals Operator</a> in <strong>3D</strong> mode below the GlowRect to convert the heightmap to a normal map. Add a Store below it and name the texture <strong>texture.bump</strong>. </p>
+      <p>&nbsp;</p>
+      <p>Go into the Material 2.0's parameters and link <strong>texture.bump</strong> into the bump texture slot.  Show the output of the TransEx to check the effect. Not half bad, huh?</p>
+      <p><img src="images/bumpmap.jpg" alt="Heightmap" width="350" height="350" class="illustration"></p>
+      <h2>&nbsp;</h2>
+      <h2>More Bump! </h2>
+      <p>&nbsp;</p>
+      <p>We're going to make the texture even more realistic by re-using a previous step. Remember when we made the basic texture? We used a mask to blend the rust onto the paint in a pattern. We're now going to use this mask to give the rust some more elevation and to add some bubbles to the paint.</p>
+      <p>&nbsp;</p>
+      <p>Add a Store below the Perlin we used to create the rust mask and name it <strong>intermediate.mask</strong>. </p>
+      <p>&nbsp;</p>
+      <p>Add a <a href="operator_Load.html">Load Operator</a> and link <strong>intermediate.mask</strong> into it. Now splice it into the normal map tree, right above the Normals Operator, by moving the Normals and the Store down one position and adding a <a href="operator_Merge.html">Merge Operator</a>. Merge the intermediate.mask Load into the tree with <strong>add</strong>. Make sure the Normals and Store are stacked below the Merge. Show the output of the TransEx to see the result. Maybe a bit too bumpy? Add a <a href="operator_HSCB.html">HSCB Operator</a> under the loaded texture and reduce the contrast to about <strong>1.300</strong>. </p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><img src="images/bumped.jpg" alt="Bumped object" width="350" height="350" class="illustration"></p>
+      <p>&nbsp;</p>
+      <h2>More recycling</h2>
+      <p>&nbsp;</p>
+      <p>We're going to recycle intermediate.mask again to create a specular map for our barrel, making the rust less reflective than the paint. Add another Load Operator and link <strong>intermediate.mask </strong>into it. Stack a <a href="operator_Color.html">Color Operator</a> in <strong>invert</strong> mode below it (white areas in the specularity map are reflective) and add another Merge Operator to splice it into the bump tree below the Normals operator. Set the Merge to <strong>alpha</strong> mode.</p>
+      <p>&nbsp;</p>
+      <p>Turn on the <strong>specular</strong> in the Material 2.0, and turn on <strong>specularity map</strong> as well. Set the Specular Color to a dark gray <strong>(RGB: 32, 32, 32)</strong>. Check the TransEx output to see the effects. Our barrel is looking very nice now!</p>
+      <p>&nbsp;</p>
+      <h2>Experiments</h2>
+      <p>&nbsp;</p>
+      <p>Go to the parameters of the Perlin you named intermediate.mask and change the random seed. Note how everything is updated automatically.</p>
+      <p>&nbsp;</p>
+      <p>Give your barrel a rain-slick look with a reflection map: A simple Perlin with Octaves set to <strong>6</strong> and Color 1 to a <strong>medium dark gray (RGB: 40, 40, 40)</strong>, stored as <strong>texture.reflection</strong> will do. Go into the Material 2.0 parameters and link the reflection map into the Envi slot. Set the mode from normal to <strong>reflection</strong> and from unbumped to <strong>bumped</strong>. Instant shiny barrel.<img src="images/specularity-reflection-bump.jpg" alt="Barrel with base texture, bump map, specularity map and reflection map" width="350" height="350" class="illustration"></p>
+      <p>&nbsp;</p>
+      <p>Other ideas: add a sprayed-on number with the <a href="operator_Text.html">Text Operator</a>, use the <a href="operator_Displace.html">Displace Operator</a> to put a dent in the barrel, etc. </p>
+      <p>&nbsp;</p>
+      <h2>Exporting your textures</h2>
+      <p>&nbsp;</p>
+      <p>Which textures are we going to export for later use in the engine? We need the basic texture, the normal map, and, depending on how your engine is set up, a separate specularity map. Simply add an <a href="operator_Export.html">Export Operator</a> below any texture you want to save.  Give them unique names and choose File &gt; Export from the main menu. You will now find a .ktx file with all your texture definitions ready to use! </p>
+      <p>&nbsp;</p>
+      <p>Take a look at <a href="getting started.k">getting started.k</a> if you get stuck. </p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><img src="images/operators.jpg" alt="Operators used in this tutorial" width="350" height="350" class="illustration"></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

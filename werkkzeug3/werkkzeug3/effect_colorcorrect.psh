@@ -1,0 +1,26 @@
+ps.2.0
+
+dcl       t0.xy
+dcl_2d    s0
+
+def       c7,0.333333333,0,0,1
+
+temp      accu,col0,col1,gray,temp0,temp1
+
+texld     accu,t0,s0                        // V: load texture
+dp3       gray.x,accu,c7.x                  // V: calculate gray version
+
+mul       temp0.xyz,gray.x,c5               // V: mix color and gray for dark
+mad       temp0.xyz,accu  ,c0  ,temp0       // V
+mad_sat   gray.y,gray.x,c4.y,c4.x           // S: addmul gray
+mul       temp1.xyz,gray.x,c6               // V: mix color and gray for light
+add       gray.z,c7.w,-gray.y               // S: inverted gray - for lerp
+mad       temp1.xyz,accu  ,c1  ,temp1       // V
+
+mul       accu.xyz,temp0,gray.y             // V: lerp between both colors
+mad       accu.xyz,temp1,gray.z,accu        // V
+mad       accu.xyz,c4.z ,gray.y,accu        // V: add debug color
+
+add_sat   accu.xyz,accu,-c3                 // V: contrast
+mul       accu.xyz,accu,c2                  // V: brightness
+mov       oC0,accu

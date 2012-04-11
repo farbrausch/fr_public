@@ -1,0 +1,51 @@
+ps.2.0
+// glare downsample shader
+
+dcl       t0.xyzw
+dcl       t1.xyzw
+dcl       t2.xyzw
+dcl       t3.xyzw
+dcl       t4.xy
+
+dcl_2d    s0
+dcl_2d    s1
+dcl_2d    s2
+dcl_2d    s3
+dcl_2d    s4
+
+// ---- stage 1
+
+temp      accu
+temp      pix0,pix1,pix2,pix3,pix4
+
+texld_pp  pix0,t0,s0
+mad_pp    accu,pix0,c0.w,c0
+texld_pp  pix1,t1,s1
+mad_pp    accu,pix1,c1.x,accu
+texld_pp  pix2,t2,s2
+mad_pp    accu,pix2,c1.y,accu
+texld_pp  pix3,t3,s3
+mad_pp    accu,pix3,c1.z,accu
+texld_pp  pix4,t4,s4
+mad_pp    accu,pix4,c1.w,accu
+
+// ---- stage 2
+
+mov_pp    pix0,t0.wzyx
+texld_pp  pix0,pix0,s0
+mad_pp    accu,pix0,c2.x,accu
+mov_pp    pix1,t1.wzyx
+texld_pp  pix1,pix1,s1
+mad_pp    accu,pix1,c2.y,accu
+mov_pp    pix2,t2.wzyx
+texld_pp  pix2,pix2,s2
+mad_pp    accu,pix2,c2.z,accu
+mov_pp    pix3,t3.wzyx
+texld_pp  pix3,pix3,s3
+mad_sat_pp accu,pix3,c2.w,accu
+
+// done
+
+mov_pp    oC0,accu
+
+

@@ -1,0 +1,172 @@
+ps.2.0
+// material 2.0: fat shader (pixel shader)
+
+// flag data layout, constants
+flags
+	Flags
+	_pad[7]
+	
+	TexFlags[4]
+	TexScale[4]
+	
+	LgtFlags[4]
+	LgtScale[4]
+	
+	SRT1[9]
+	SRT2[5]
+	ColC[4]
+	
+	TexUsed[4]
+	LgtUsed[4]
+	SrcScale[4]
+	SrcScale2[4]
+endflags
+
+alias cDiffuse = c0
+alias cSpecular = c1
+def   c8,1,1,1,0
+def   c9,1,0,0,4
+
+// texture coords and samplers
+alias tAtten = t0
+alias tL = t1
+alias tH = t2
+
+dcl   tAtten.xyz
+dcl   tL.xyz
+
+if Flags[0] // specular 
+  imov  i1,3
+  dcl   tH.xyz
+else
+  imov  i1,2
+endif
+
+imov  i2,i1
+imov  i3,0
+
+for i=0..1 // bump maps
+  if LgtUsed[i][0]
+    dcl     t0+i2.xy
+    dcl_2d  s0+i3
+    iadd    i2,1
+    iadd    i3,1
+  endif
+endfor
+
+for i=0..2 // textures
+	if TexUsed[i][0]
+		dcl			t0+i2.xy
+		dcl_2d	s0+i3
+		iadd		i2,1
+		iadd    i3,1
+	endif
+endfor
+
+// normal
+temp    N0,N
+
+vmov    N0,c9
+imov    i2,i1
+imov    i3,0
+
+for i=0..1  // bump maps
+  if LgtUsed[i][0]
+    temp    map
+    
+    // load tex
+    texld   map,t0+i2,s0+i3
+    
+    // accumulate
+    if i3 == 0
+      vmov    N0,map
+    else
+      add     N0,N0,map
+    endif
+    
+    // increment steps
+    iadd    i2,1
+    iadd    i3,1
+    free    map
+  endif
+endfor
+
+// renormalize normal if necessary
+if i3 > 1
+  nrm   N,N0
+elif Flags[5] // renormalize bump
+  nrm   N,N0
+else
+  vmov  N,N0
+endif
+
+// material 1
+temp  accu
+
+if TexUsed[0][0] // main texture?
+  texld   accu,t0+i2,s0+i3
+  iadd    i2,1
+  iadd    i3,1
+else
+  mov     accu,c8 // use white
+endif
+
+// diffuse
+temp    cDiff,L
+nrm     L.xyz,tL
+dp3_sat cDiff.r,L,N
+mul     cDiff.rgb,cDiffuse,cDiff.r
+
+// specular
+temp    cSpec
+if Flags[0]
+  temp    H
+  
+  nrm     H.xyz,tH
+  dp3_sat cSpec.a,H,N
+  pow     cSpec.a,cSpec.a,cSpecular.a
+  mul     cSpec.rgb,cSpecular,cSpec.a
+endif
+
+// detail
+for i=1..2
+  if TexUsed[i][0] // detail i used?
+    temp    detail
+    
+    texld   detail,t0+i2,s0+i3
+    iadd    i2,1
+    iadd    i3,1
+    
+    if TexFlags[i][16..19] == 0 // mul
+      mul     accu.rgb,accu,detail
+    elif TexFlags[i][16..19] == 1 // mul2
+      mul     accu.rgb,accu,detail
+      add     accu.rgb,accu,accu
+    elif TexFlags[i][16..19] == 2 // mul4
+      mul     accu.rgb,accu,detail
+      mul     accu.rgb,accu,c9.w
+    elif TexFlags[i][16..19] == 3 // add
+      add     accu.rgb,accu,detail
+    elif TexFlags[i][16..19] == 4 // addsmooth
+      temp    accu2
+      lrp     accu2.rgb,detail,c8,accu
+      vmov    accu,accu2
+    endif
+  endif
+endfor
+
+// shade
+temp    color
+
+if Flags[0]
+  mad     color.rgb,accu,cDiff,cSpec
+else
+  mul     color.rgb,accu,cDiff
+endif
+
+// attenuation
+dp3_sat   color.a,tAtten,tAtten
+mad_sat   color.rgb,color,-color.a,color
+
+// clear alpha
+mov       oC0,color

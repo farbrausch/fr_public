@@ -1,0 +1,310 @@
+? = unshure what to do
+- = todo
+o = do today
+x = done
++ = in progress...
+
+<-- ----------------------------------------------------------------------- -->  
+
+[[checkin-comments]]
+
+
+<-- ----------------------------------------------------------------------- -->  
+
+[ehaus]
+
+- Texturkomprimierung
+
+[kleinkram]
+
+- event kopierne mit spline -> rosa
+- ease default parameter out of range
+- events nach links erweitern
+- chainlines ohne animation
+- pipe scale texture funktioniert nicht beio lngen rohren
+- crash in pipe scale - drag am letzten sergmetn position
+
+[ehaus warten]
+
+- Autos die Fahren -> gizmos autos, texturanimation
+
+[ehaus ryg]
+
+- sunglares. unendlichweit / endlich weit.
+- cache animation / in walk-arond-the-block einbauen
+- culling disable
+
+[zuhause]
+
+- Bäume: bessere matrix
+- croud simulation für walk-around-the-spline und billboardfield
+- wayfinders spline crash
+
+<-- ----------------------------------------------------------------------- -->  
+
+[now]
+
+- spline time <0 >1
+
+[effects]
+
+- ipp auf einzelne objekte (layers) 
+- ipp effekte
+  - kompressionsartefakte (wavelet)
+  - tiefenunschärfe
+  - vhs-artefakte
+  - 360 grad view
+- anim-operator handkamera
+- anim-operator shaker
+- imposters
+  - bump mapping
+  - mehrere verschiedene richtungen
+  - partikelsystem für menschenmassen
+  - imposters mit brücke verbiegen
+- noise-generatoren für texturen
+
+[wouldbecools]
+  
+- lensflares
+- partikel mit normale
+- himmel/wolken
+
+- "patch" op für gizmo
+- rotierter glow
+- multiplizierter glow
+
+[[werkkzeug]]
+
+- default cam ZNear/ZFar
+
+<-- ----------------------------------------------------------------------- -->  
+
+[[fr-042]]
+
+[xsi-loader]
+
+x transform
+x material
+x merge vertices
+- merge cluster
+- merge faster
+- mutliple texture spaces
+- import/export
+x real bones
+- animation & spline fitting
+
+
+[partikel-effect]
+
+<-- ----------------------------------------------------------------------- -->  
+
+[[umbau 1]]
+
+- 3d-editing
+  - picking
+  - movement
+  - multi selection movement
+  - different move modes
+  - duplication
+  - 3d-spline
+  - keyframing
+- mesh ops in scene-graph
+  - add mesh (italics)
+  - select / transform / transformex / delete
+  - other ops
+  - topology editing
+  
+- other features
+  - multiply scene (instance mem!) (recreate deepcopy  oncalc)
+  - alias (bold)
+  - bones
+  - freeze
+  
+- export
+
+- player
+
+- Calc/Exec ausbauen / ncht beim laden...
+
+[[umbau 2]]
+
+- scene-graph
+  - select / wireframe
+  - move / duplicate hirarchies
+  - copy / paste hirarchies
+  - alias
+  - multiply
+
+- meshes & primitives
+  - cube
+  - primitives
+  - mesh-add/transform
+
+- bone-animation
+  - bones in GenMinMesh verteilen
+  - bone-mesh mitten im baum
+  - darunter "set matrix" objekte
+  - zeichnen auf dem rekursions-rückweg
+
+- effekte
+- scene multiply / link
+
+- teste kkrieger, theta, snowblind in allen builds (als legacy-data)
+- neuer build
+  - alle sPROJ_DEMO checken
+  - alter build heisst "legacy"
+  - neuer build heisst "demos"  
+  - remove "legacy" from demo-build
+  - remove "snowblind" build
+
+- layer 2d (damit man was schönes zum animieren hat...)
+  
+[[umbau 3]]
+
+- scene und painting
+  - portale
+  - schatten
+
+[[umbau 4]]
+
+- neue editoren
+  - bones und dafür geeignete animation
+  - scene-editor
+  - mesh-modeller
+  - texture-painter
+
+- scriptsprache
+  - bessere fehlermeldungen
+  - subroutines
+  - integer, array und structs
+  - writemasks
+  - CenterX/CenterY -> zusätzliche Editoren
+  - 3 routinen zum angeben von parametern?
+  - koordinaten zusammmen / getrennt animieren
+- srt:
+  - quarternions
+  - backtransformation for axxis
+  - tilt for target-animation
+  - defaults für sControls
+
+- text editor with syntax hioghlightiting / error marking
+
+- keyboard-layout in spline / timine editor inkonsistent
+  - display l/m/r mouse button for std/shift/ctrl
+  - assign operations to mouse buttons
+- commandline-parameter 
+
+[[minmesh]]
+
+- mesh
+  - cube: facetted/smooth
+  - xsi-loader
+  - default selections
+  - extrude
+  - subdivide
+  - tesselate
+  - 'E' -> exchange mesh / minmesh
+  - extrude normal zerreisst meshes mit crease
+  - torus mit arclen!=1 -> caps
+
+[[other stuff]]
+
+- KSpline::EvalDerivative(), use in particle-objects
+- export: warnings and errors. errors are not tolerated.
+- texture quality low/high is an export error
+- floodfill texture op
+- "..." -> op browser starts at current object
+- rightclick on "edit" spline buttons deletes splines. this should be visible somehow!
+- backspace for WinSplinePara like WinSpline
+- event 
+- keyboard shortcut for drag time in spline and events different
+- alias event spackt rum bei namensänderung im verlinkten.
+
+- demo parameter exportieren
+  - bpm
+  - demo duration
+  - fr-number
+- rename sPS_13 to sPS_11
+
+[[gui-features]]
+
+- walk-op-cycle-time
+- goto page in collapsed folder should uncollapse folder
+- dreifachclick um im browser texturen zu aktivieren
+- resolution from demo-parameter
+
+*** kkrieger ***
+
+[[kkrieger]]
+
+- nach einiger zeit geht das leben dauernd zurück
+- find switches um (beide) monster-ops erweitern
+- 'g' sollte wie 'r' die flags resetten
+- kollision im holzraum
+- monster laufen wände hoch - wieso ? (plane.y >= 0.75)
+- dynamic cells brauchen nicht wirklich 4 matrixen...
+- monster magnet radius
+- monster wand abstand
+
+- remove all unused structures, code, dead-code and comments
+  - HitCell KCM_DISABLED code??
+  - PlayerPos and PlayerCell are Player.Collider.Pos and Player.Collider.Cell
+  - EventMonster and kEvent::Monster
+
+- fix what happens when player is outside collision
+
+- respawn machine with time-limit
+
+[[fiver changes]]
+
+- remove all physic ops
+
+[[kkrieger meeting agenda]]
+
+- confirm player phyiscs
+- confirm monster AI
+- set up all spawn variants
+- (chaos) new particle optics
+- (chaos) new walk operators
+- (chaos) balance hitpoints
+- (chaos)  fix all missing options, or remove them
+  - texture low/high
+  - brightness
+  - specular
+
+[[final touches]]
+
+- (chaos)  intro loopen wenn menü idle ist. vorrausgesetzt das intro ist cool.
+- (chaos)  soundloop korrekt setzten (2*60+25)
+- (chaos)  restart game at start or at respawn point?
+
+
+<-- ----------------------------------------------------------------------- -->  
+
+*** musicdisk ***
+
+[[musicdisk]]
+
+- framework (intro/menu/parts)
+- some effects
+- midikeyboard-timing
+- recorded timelining
+- import midi notes
+
+<-- ----------------------------------------------------------------------- -->  
+
+*** better gui ***
+
+- browser
+- modeller
+- subroutines for modeller
+- handles for bitmap-ops
+- stroke op (simple)
+
+<-- ----------------------------------------------------------------------- -->  
+
+done:
+
+
+
+

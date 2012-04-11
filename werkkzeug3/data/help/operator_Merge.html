@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Merge Operator</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>Merge Operator</h1>
+      <p>&nbsp;</p>
+<p>The Merge Operator blends two or more textures, using a variety of blending modes. The operator blends sequentially from left to right: ((((A % B) % C) % D) % ....) </p>
+<p>&nbsp;</p>
+<h2>Inputs</h2>
+<p>&nbsp;</p>
+<p>Any number of textures. </p>
+<p>&nbsp;</p>
+<h2>Parameters</h2>
+<p>&nbsp;</p>
+<h3 class="description">Mode</h3>
+<p class="description">This sets the blending mode.</p>
+<p class="description"><em><strong>add</strong></em>: Values are added.</p>
+<p class="description"><em>sub</em>: Values of the blend texture are substracted from values of the base color. </p>
+<p class="description"><em>mul</em>: Values are multiplied.  </p>
+<p class="description"><em>diff:</em> The difference between the values in base texture and blend texture is used for the output.</p>
+<p class="description"><em>alpha</em>: The color information of the base texture is paired with a grayscale converted version of the blend texture as its alpha channel.</p>
+<p class="description"><em>brightness</em>: Pixel by pixel, the base texture brightness is checked. For values over 50%, the blend texture value is added. For values under 50%, the doubled blend texture value is multiplied with it (mul2)</p>
+<p class="description"><em>hardlight:</em>  Pixel by pixel, the blend texture brightness is checked. For values over 50%, the base texture value is added. For values under 50%, the doubled base texture value is multiplied with it (mul2)</p>
+<p class="description"><em>over:</em> Lays the blend texture on top of the base texture. If the alpha channel of the blend texture is completely white, the output will be the blend texture. </p>
+<p class="description"><em>addsmooth:</em> This mode inverts both the base color and the blend color and then multiplies them. The result is somewhat like an addition, but overall more forgiving of extreme values. </p>
+<p class="description"><em>min</em>: For each pixel, the smaller value between base and blend texture is used.</p>
+<p class="description"><em>max</em>: For each pixel, the larger value between base texture and blend texture is used .</p>
+<p>&nbsp;</p>
+<p>Keyboard shortcut</p>
+<p>&nbsp;</p>
+<p><span class="shortcut">a</span> (when adding texture operators)   </p>
+<p>&nbsp;</p>
+      <p><a href="listofoperators.html">Back to the List of Operators  </a></p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

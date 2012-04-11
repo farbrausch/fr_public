@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Operator Stacking</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>Operator Stacking </h1>
+      <p>&nbsp;</p>
+      <p>Operator Stacking is a powerful modular technique that lets users create complex structures intuitively, completely non-destructively and with every single step available at any point of a project.      </p>
+      <p>&nbsp;</p>
+      <p>Why stacking and not a more conventional approach with cable connections (as seen in many packages)? For one thing, stacking allows you to see much more of a tree than cable connections. It also structures all trees top-down, which makes them easier to read than a free layout. Finally, it's most convenient not having to create or delete connections while editing your tree. Move an operator away, and it is disconnected. Append it to a tree, and it is connected. Simple as that.</p>
+      <p>&nbsp;</p>
+      <p>Like in every modular system, there are two basic parts to Operator Stacking: The elements you can use and the rules for their combination. </p>
+      <p>&nbsp;</p>
+      <h2>Operators</h2>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">Operators</a> are the modules that make up a project. They represent bits of code that create, handle or alter data. By stacking them, you impose the order in which data is processed.</p>
+      <p>&nbsp;</p>
+      <p>There are four basic kind of operators:</p>
+      <p>&nbsp;</p>
+      <h3>Texture Operators</h3>
+      <p>These Operators create and modify 2D images which can later be exported to be used in your productions.</p>
+      <p>&nbsp;</p>
+      <h3>MinMesh Operators</h3>
+      <p>These Operators create and modify 3D meshes. This capabilty of .werkkzeug3 is provided as a minimal environment in which to test your texture creations. It is not exportable and very basic. </p>
+      <p>&nbsp;</p>
+      <h3>Structural Operators</h3>
+      <p>Three operators help you structure your project: <a href="operator_Load.html">Load</a>, <a href="operator_Store.html">Store</a> and <a href="operator_Nop.html">Nop</a> can be used to bring transparency and clarity to your constructions. </p>
+      <p>&nbsp;</p>
+      <h3>The Material 2.0 Operator</h3>
+      <p>In conjunction with the MinMesh Operators, <a href="operator_Material 2.0.html">Material 2.0</a> dresses 3D meshes in your textures. A full-featured Blinn-Phong shader, it includes not just straight texturing but also environment maps, reflections maps, bump maps and alpha maps. Please note that the Material 2.0 Operator cannot be exported. </p>
+      <p>&nbsp;</p>
+      <h2>Stacking rules</h2>
+      <p>&nbsp;</p>
+      <p>Operators are organised in trees. Each tree must have at least a root and a leaf in order to be complete and exportable. There is only one valid root, the <a href="operator_Export.html">Export Operator</a>. There are a number of leaves, which are generators, i.e. operators that do not take any input. </p>
+      <p>&nbsp;</p>
+      <p>Between the root and the leaf, any number of intermediate operators can be used. The tree can branch off to various other leaves when an operator takes more than one input, or when the output of an operator is piped into more than one recipient. Each upper end of a branch, however, must begin with one leaf, and only trees with a root are exported. </p>
+      <p>&nbsp;</p>
+      <p>Operators produce output at their underside. An operator will try to give its output to any operator stacked under it. This way, you can easily send the output of an operator to any number of others simply by stacking them side by side under the output.</p>
+      <p>&nbsp;</p>
+      <p>If an operator is handed an input it does not understand, or if a necessary input is missing, it will be painted red to show you quickly where difficulties may arise. </p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="altona rules"
+	Version="8,00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="asc"
+			DisplayName="altona shader compiler"
+			CommandLine="&quot;$(SolutionDir)tools\asc&quot; [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [WZ3]"
+			Outputs="&quot;$(InputDir)$(InputName).cpp&quot;; &quot;$(InputDir)$(InputName).hpp&quot;"
+			FileExtensions="*.asc"
+			ExecutionDescription="asc &quot;$(InputDir)$(InputName)&quot;"
+			>
+			<Properties>
+				<BooleanProperty
+					Name="Quiet"
+					DisplayName="Quiet operation"
+					Description="suppresses printing of logo"
+					Switch="-q"
+					DefaultValue="true"
+				/>
+				<BooleanProperty
+					Name="Debug"
+					DisplayName="Include debug output"
+					Description="includes shader debug output in bytecode"
+					Switch="-d"
+				/>
+				<BooleanProperty
+					Name="NoOpt"
+					DisplayName="Turn off optimizations"
+					Description="turns off shader optimizations (please only use in case of emergency)"
+					Switch="-n"
+				/>
+				<BooleanProperty
+					Name="NoAuto"
+					DisplayName="Turn off auto shader constant generation"
+					Description="Disables automatic generation of C++ representations of shader constants"
+					Switch="-noauto"
+				/>
+				<BooleanProperty
+					Name="OldEngine"
+					DisplayName="Create code for old engine"
+					Description="Will only generate shaders for DirectX as C++-array"
+					Switch="--oldengine"
+				/>
+				<BooleanProperty
+					Name="WZ3"
+					DisplayName="Create code for Werkkzeug3"
+					Description="To integrate ASC-Shaders into WZ3."
+					Switch="--wz3"
+				/>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

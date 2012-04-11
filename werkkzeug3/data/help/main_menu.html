@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Application Menu</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>.main menu </h1>
+      <p>&nbsp;</p>
+      <h2>File</h2>
+      <p>&nbsp;</p>
+      <h3 class="description">New</h3>
+      <p class="description">Creates a new, empty document.</p>
+      <p>&nbsp;</p>
+      <h3 class="description">Open</h3>
+      <p class="description">Opens a .k project file. </p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Ctrl</span> + <span class="shortcut">o</span> </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Save As</h3>
+      <p class="description">Prompts for a file name, then saves the current project.</p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Ctrl</span> + <span class="shortcut">a</span> </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Save</h3>
+      <p class="description">Saves the current project. If no file name has previously been chosen, you will be prompted for a name to use. </p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Ctrl</span> + <span class="shortcut">s</span> </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Quicksave</h3>
+      <p class="description">Saves to one of 10 quicksave states, which are kept in the same directory as the autosave files. Just like there can be ten autosave files, ten numbered quicksave states can be kept at a time, with the newest state always being #1 and older versions automatically being handed down. This option allows you to save variants of the current project without having to commit the changes to your project file.</p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Ctrl</span> + <span class="shortcut">q</span> </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Open Backup</h3>
+      <p class="description">Opens a file without changing the current project file name. This is useful when you load a backup file, which could have a name like autosave-1.k, under which you do not want to continue saving your project. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Export Textures as BMP</h3>
+      <p class="description">Exports your textures in BMP format to a subdirectory of the project location. Please note that only textures named using the <a href="operator_Export.html">Export Operator</a> are exported. </p>
+      <p>&nbsp; </p>
+      <h3 class="description">Export Textures</h3>
+      <p class="description">Exports your textures in KTX format (usable with the werkkzeug3 library) to the current directory as &lt;project name&gt;.ktx. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Save Config</h3>
+      <p class="description">Saves the current Editor Settings to a configuration file. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Exit</h3>
+      <p class="description">Quits the program. </p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Shift</span> + <span class="shortcut">Esc</span> </p>
+      <p>&nbsp;</p>
+      <h2>Edit</h2>
+      <p>&nbsp;</p>
+      <h3 class="description">Editor Settings</h3>
+      <p class="description">Opens the <a href="editorsettings.html">Editor Settings</a>.</p>
+      <p>&nbsp;</p>
+      <h3 class="description">Log</h3>
+      <p class="description">Opens the <a href="LogWindow.html">Log Window</a>.</p>
+      <p class="description">Keyboard shortcut: <span class="shortcut">Ctrl</span> + <span class="shortcut">l</span> </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Texture resolution 50% </h3>
+      <h3 class="description">Texture resolution 100% </h3>
+      <h3 class="description">Texture resolution 200% </h3>
+      <p class="description">Quickly scales all textures to half, full or double resolution. This settings influences not only the preview, but also the final export data. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Default texture format DXT1</h3>
+      <p class="description">If switched on, .werkkzeug3 texture edition defaults to generating textures in DXT1 (DirectX compressed without alpha) format. If switched off, the default format is A8R8G8B8. </p>
+      <p>&nbsp;</p>
+      <h2>Help</h2>
+      <p>&nbsp;</p>
+      <h3 class="description">Index</h3>
+      <p class="description">Opens the main documentation <a href="index.html">Index</a>. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Operators</h3>
+      <p class="description">Opens the <a href="listofoperators.html">List of Operators</a> in the documentation. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">Licensing</h3>
+      <p class="description">Opens the Licensing Information page in the documentation. </p>
+      <p>&nbsp;</p>
+      <h3 class="description">About</h3>
+      <p class="description">Opens a window with program information. </p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

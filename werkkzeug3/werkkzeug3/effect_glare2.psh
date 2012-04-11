@@ -1,0 +1,18 @@
+ps.2.0
+// glare downsample shader
+
+dcl       t0.xy
+
+dcl_2d    s0
+
+
+temp      gray,col
+
+texld_pp  col,t0,s0               // load 
+add_pp    col.xyz,col,-c0         // col = subtracted color
+dp3_pp    gray,col,c0.w           // convert to gray
+mul_pp    col,col,c1.x            // mix gray and col
+mad_pp    gray,gray,c1.y,col      
+
+mov_pp    oC0,gray
+

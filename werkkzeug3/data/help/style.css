@@ -1,0 +1,163 @@
+/* link underlines tend to make hypertext less readable, 
+   because underlines obscure the shapes of the lower halves of words */
+:link,:visited { text-decoration:none }
+
+/* no list-markers by default, since lists are used more often for semantics */
+ul,ol { list-style:none }
+
+/* avoid browser default inconsistent heading font-sizes */
+/* and pre/code too */
+h1,h2,h3,h4,h5,h6,pre,code { font-size:1em; }
+
+/* remove the inconsistent (among browsers) default ul,ol padding or margin  */
+/* the default spacing on headings does not match nor align with 
+   normal interline spacing at all, so let's get rid of it. */
+/* zero out the spacing around pre, form, body, html, p, blockquote as well */
+/* form elements are oddly inconsistent, and not quite CSS emulatable. */
+/*  nonetheless strip their margin and padding as well */
+ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,body,html,p,blockquote,fieldset,input
+{ margin:0; padding:0 }
+
+/* whoever thought blue linked image borders were a good idea? */
+a img,:link img,:visited img { border:none }
+
+/* de-italicize address */
+address { font-style:normal }
+
+/* more varnish stripping as necessary... */
+ * {
+   margin: 0;
+   padding: 0;
+ }
+
+embed, object { 
+    display: block; 
+}
+
+fieldset {
+	border:none;
+	margin-top:10px;
+}
+
+html, body {
+		height: 100%;
+	}
+	/* Hack for IE, Reset to 100% height */
+	* html {
+		height: 100%;
+	}
+	/* End IE Hack */
+a {
+	font-weight:bold;
+}
+
+a:link {
+	color: #a4a4a4;
+}
+
+a:visited {
+	color:#b9b9b9;
+}
+
+a:hover {
+	color: #FFFFFF;
+	background-color: #000000;
+}
+
+#header a:hover {
+	background-color:#f0f0f0;
+}
+
+body {
+	background-color:#d6d6d6;
+	background-image:url(images/bg.gif);
+	background-position:center top;
+	min-width: 750px;
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:12px;
+	color:#747474;
+}
+
+#gfx {
+	background-image:url(images/bbg.gif);
+	background-position:top center;
+	background-repeat:repeat-x;
+	height:187px;
+}
+
+#wrapper {
+	position:absolute;
+	left:50%;
+	margin-left:-375px;
+	width:750px;
+}
+
+#nav {
+	height:14px;
+	clear:both;
+}
+
+#main {
+	float:left;
+	width:361px;
+	padding:7px;
+}
+
+.illustration {
+	position:absolute;
+	left:50%;
+	margin-left:3px;
+	margin-top:-350px;
+	border:solid;
+	border-color:#f9f9f9;
+	border-width:7px;	
+}
+
+#sidebar {
+	float: right;
+	width: 354px;
+	padding:7px;
+	margin-right:7px;
+	background-color:#f9f9f9;
+}
+
+#footer {
+	padding-top:21px;
+	clear:both;
+	text-align:center;
+	padding-bottom:21px;
+}
+
+h1 {
+	font-size:18px;
+	font-weight:bold;
+}
+
+h2 {
+	font-size:14px;
+	font-weight:bold;
+}
+
+ul {
+	margin-left: 14px;
+}
+
+.shortcut {
+	font-family:"Courier New", Courier, monospace;
+	padding-left: 7px;
+	padding-right: 7px;
+	color:#323232;
+	font-weight:bold;
+	background-image:url(images/keyback.gif);
+	background-repeat:repeat-x;
+	overflow:visible;
+}
+
+.description {
+	padding: 7px;
+	background-color:#f4f4f4;
+}
+
+.description h3 {
+	font-weight:bold;
+}

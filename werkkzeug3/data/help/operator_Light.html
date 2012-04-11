@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Light Operator</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>Light Operator</h1>
+      <p>&nbsp;</p>
+<p>The Light  Operator simulates a light shining on a texture. It behaves exactly like a <a href="operator_Bump.html">Bump Operator</a> with a flat normal map. </p>
+<p>&nbsp;</p>
+<h2>Inputs</h2>
+<p>&nbsp;</p>
+<p>One texture.</p>
+<p>&nbsp; </p>
+<h2>Parameters</h2>
+<p>&nbsp;</p>
+<h3 class="description">Mode </h3>
+<p class="description">Defines the type of light to use.</p>
+<p class="description"><em>spot</em>: a directed light cone.</p>
+<p class="description"><em>point</em>: a single point of light emitting light in all directions equally.</p>
+<p class="description"><strong><em>directional</em></strong>: parallel rays from a single direction.</p>
+<p>&nbsp;</p>
+<h3 class="description">Pos (X, Y, Z) </h3>
+<p class="description">(mode: spot/point) Controls the position of the light source. </p>
+<p class="description">(mode: directional) No function.</p>
+<p>&nbsp;</p>
+<h3 class="description">Dir (Z, X) </h3>
+<p class="description">(mode: spot/directional) Controls light direction, expressed in rotation around Z axis and rotation around local X axis &ndash; try to imagine it as if the light was shining out of a bicycle's front wheel valve. The first value turns the handle bar, the second value turns the wheel. And the wheel is transparent and infinitely small. Sorry. </p>
+<p class="description">(mode: point) No function.</p>
+<p>&nbsp;</p>
+<h3 class="description">Diffuse </h3>
+<p class="description">Defines the diffuse color.</p>
+<p>&nbsp;</p>
+<h3 class="description">Ambient</h3>
+<p class="description">Defines the  ambient color.</p>
+<p>&nbsp;</p>
+<h3 class="description">Outer</h3>
+<p class="description">(mode: spot) Controls light cone diameter. </p>
+<p class="description">(mode: point/directional) No function.</p>
+<p>&nbsp;</p>
+<h3 class="description">Falloff</h3>
+<p class="description">(mode: spot) Controls th light cone edge softness.</p>
+<p class="description">(mode: point/directional) No function. </p>
+<p>&nbsp;</p>
+<h3 class="description">Amplify</h3>
+<p class="description">Controls the strength of the light and shadow effects.</p>
+<p>&nbsp;</p>
+<h2>Keyboard shortcut</h2>
+<p>&nbsp;</p>
+<p><span class="shortcut">Shift</span> + <span class="shortcut">L</span> (when adding texture operators)  </p>
+<p>&nbsp;</p>
+      <p><a href="listofoperators.html">Back to the List of Operators  </a></p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>

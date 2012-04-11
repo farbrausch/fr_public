@@ -1,0 +1,32 @@
+History
+=======
+
+050514:
+
+- change size and variant in gui
+
+050504:
+- rotate
+  - remove floats everywhere
+	- remove sincos & float
+	- bilinear filter
+
+- save / open
+  - write (fixed file)
+  - read (fixed file)
+  
+- player
+  - hello world app (pc/pda)
+  - slideshow random trash
+  - operators 
+  - hand-written nodes
+  - done operator
+  - export
+  - import
+
+- file manegement
+  - file requester
+
+050503:
+- execute operators
+- connect operators

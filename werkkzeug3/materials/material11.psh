@@ -1,0 +1,159 @@
+ps.1.1
+
+// constants / flag data layout
+def c5,2,-1,0,0
+def c6,0.5,-0.5,0,1
+def c7,1,0,0,0.5
+
+flags
+	BaseFlags
+	SpecialFlags
+	LightFlags
+	CodegenFlags
+	TFlags[4]
+	Combiner[13]
+	_pad[2]
+	AlphaCombiner
+  TexUsed[4]
+  AlphaOps[2]
+  CombinerSrc[13]
+  AlphaSrc[13]
+endflags
+
+// yes, this is rather hackish
+temp r0,r1
+
+// read textures used in combiners
+for i = 0..3
+  if TexUsed[i][0]
+    tex   t0+i1
+    iadd  i1,1
+    iadd  i2,1
+  endif
+endfor
+
+// read cube normalizers for lighting
+if LightFlags[0..2] == 5 // bumpx 
+  // texture reads
+  tex   t0+i1 // light
+  iadd  i1,1
+  
+  if !SpecialFlags[6] // specular?
+    tex   t0+i1 // halfway
+    iadd  i1,1
+  endif
+  
+  tex   t0+i1 // attenuation
+  iadd  i1,1
+  
+  // bump shader
+  temp  normal
+  
+  if TexUsed[1][0]
+    vmov  normal,t0
+  else
+    vmov  normal,c7
+  endif
+  
+  if SpecialFlags[6] // diffuse only
+    dp3_sat     r0.xyz,t0+i2_bx2,normal   // 1 diffuse dot
+    +mov        r0.w,c5                   // 1 clear alpha
+    mul         r1.xyz,t1+i2,c0           // 2 attenuation*light color
+    mul         r0.xyz,r0,r1              // 3 final diffuse
+  else // diffuse and specular
+    dp3_sat     r0.xyz,t1+i2_bx2,normal   // 1 specular dot
+    +mul        r0.w,c0,t2+i2             // 1 attenuation*light color
+    dp3_sat     r1.xyz,t0+i2_bx2,normal   // 2 diffuse dot
+    +mad_x4_sat r1.w,r0.z,c1.z,c1.w       // 2 specular pow 1
+    mul         r0.xyz,c0,t2+i2           // 3 attenuation*light color
+    +mul_x2     r1.w,r1,r1                // 3 specular pow 2
+    mul_x2      t0+i2.xyz,r1.w,r1.w       // 4 specular pow 3
+    // one free alpha operation here
+    mul_x2_sat  t0+i2.xyz,t0+i2,t0+i2     // 5 specular pow 4
+    
+    if SpecialFlags[7] // specular map?
+      +mul        r0.w,r0,t0              // 5 gloss map
+    endif
+    
+    mul         r0.xyz,r0,r1              // 6 final diffuse
+    +mul        r0.w,t0+i2.z,r0.w         // 6 final specular
+  endif
+else // combiner
+  imov  i2,0 // "last was set" flag
+    
+  for i = 0..12 // combiner code!
+    temp  src,asrc,rsrc
+    vmov  src,CombinerSrc[i]
+    vmov  asrc,AlphaSrc[i]
+    
+    imov  i3,0 // instruction already generated during alpha fade
+    
+    if Combiner[i][0..3] // alpha fade
+      if Combiner[i][4..7] == 9 // lerp, do nothing
+      elif Combiner[i][4..7] == 1 // set, change destination
+        mul   r0.xyz,src,asrc
+        imov  i3,1
+      elif Combiner[i][4..7] == 2 // add, generate mad
+        mad   r0.xyz,src,asrc,r0
+        imov  i3,1
+      else
+        mul   r1.xyz,src,asrc
+        vmov  src,r1
+      endif
+    endif
+    
+    if !i3
+      if Combiner[i][4..7] // combiner operation
+        imov  i2,0
+        if Combiner[i][4..7] == 1 // set
+          vmov    r0,src
+          imov    i2,1
+        elif Combiner[i][4..7] == 2 // add
+          add     r0.xyz,r0,src
+        elif Combiner[i][4..7] == 3 // sub
+          sub     r0.xyz,r0,src
+        elif Combiner[i][4..7] == 4 // mul
+          mul     r0.xyz,r0,src
+        elif Combiner[i][4..7] == 5 // mul2
+          mul_x2  r0.xyz,r0,src
+        elif Combiner[i][4..7] == 6 // mul4
+          mul_x4  r0.xyz,r0,src
+        elif Combiner[i][4..7] == 7 // mul8
+          mul_x4  r0.xyz,r0,src
+          add     r0.xyz,r0,r0
+        elif Combiner[i][4..7] == 8 // smooth
+          mad     r0.xyz,r0,1-src,src
+        elif Combiner[i][4..7] == 9 // lerp
+          lrp     r0.xyz,asrc,r0,src
+        elif Combiner[i][4..7] == 10 // rsub
+          sub     r0.xyz,src,r0
+        elif Combiner[i][4..7] == 11 // dp3
+          dp3     r0.xyz,r0,src
+        elif Combiner[i][4..7] == 12 // muls
+          mul_sat r0.xyz,r0,src
+        endif
+      endif
+    endif
+  endfor
+
+  if i2 // if last operation was a set, force a move
+    mov     r0.xyz,r0
+  endif
+
+  // alpha combiner implementation
+  if AlphaCombiner[4..7] == 14 // mix01
+    +mul    r0.w,t0,c0
+    mad     r0.w,t1,c0,r0
+  elif AlphaCombiner[4..7] // two-alpha-setup
+    temp    src0,src1
+    
+    vmov    src0,AlphaOps[0]
+    vmov    src1,AlphaOps[1]
+    +mul    r0.w,src0,src1
+  else
+    temp    src
+    
+    vmov    src,AlphaOps[0]
+    +mov    r0.w,src
+  endif
+endif

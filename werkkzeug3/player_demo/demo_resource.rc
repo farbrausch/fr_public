@@ -1,0 +1,33 @@
+#define APSTUDIO_READONLY_SYMBOLS 0
+#define IDC_STATIC -1
+#include "winresrc.h"
+#include "resource.h"
+LANGUAGE 7,1
+23 ICON DISCARDABLE "../farbrausch.ico"
+IDD_DIALOG1 DIALOGEX 0,0,206,129
+FONT 8,"MS Shell Dlg",400,0,1
+STYLE 0x80C808C8
+BEGIN
+  CONTROL "Resolution:",IDC_STATIC,"Static",0x50020200,7,7,36,12
+  CONTROL "",IDC_RESOLUTION,"ComboBox",0x50210003,136,7,61,80
+  CONTROL "Aspect ratio (for screens that stretch):",IDC_STATIC,"Static",0x50020000,7,24,126,8
+  CONTROL "",IDC_ASPECT,"ComboBox",0x50210003,136,22,61,80
+  CONTROL "Multisampling:",IDC_STATIC,"Static",0x50020000,8,40,126,9
+  CONTROL "",IDC_MULTISAMPLE,"ComboBox",0x50210003,136,38,61,54
+//  CONTROL "Texture quality:",IDC_STATIC,"Static",0x50000000,8,57,54,9
+//  CONTROL "",IDC_TEXQUAL,"ComboBox",0x50210003,136,55,61,54
+  CONTROL "Full screen",IDC_FULLSCREEN,"Button",0x50010003,6,73,58,13
+  CONTROL "Wait for VSync",IDC_VSYNC,"Button",0x50010003,6,88,64,13
+//  CONTROL "Anaglyphic 3D",IDC_STEREO3D,"Button",0x50010003,82,88,64,13
+//  CONTROL "Shadows",IDC_SHADOWS,"Button",0x50010003,82,75,44,9
+  CONTROL "Loop demo",IDC_LOOP,"Button",0x50010003,148,73,50,13
+  CONTROL "Die",IDCANCEL,"Button",0x50010000,6,108,50,15
+  CONTROL "Demo",IDOK,"Button",0x50010001,146,108,50,15
+END
+IDD_DIALOG3 DIALOGEX 0,0,186,77
+FONT 8,"MS Shell Dlg",400,0,1
+STYLE 0x80C808C8
+BEGIN
+  CONTROL "OK",IDOK,"Button",0x50010001,126,54,50,14
+  CONTROL "This demo needs DirectX 9.0b and a Pixelshader capable graphics card, like a NVidia GeForce 3 (and up) or ATI Radeon 8500 (and up).",IDC_STATIC,"Static",0x50020000,12,6,162,42
+END

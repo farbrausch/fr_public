@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>.werkkzeug3 .documentation - Material 2.0 Operator</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="gfx">
+<div id="wrapper">
+    <div id="header"><a href="index.html"><img src="images/masthead.gif" alt=".werkkzeug3 texture edition documentation" border="0" /></a></div>
+    <div id="nav">&nbsp;</div>
+    <div id="main">
+      <h1>Material 2.0 Operator</h1>
+      <p>&nbsp;</p>
+<p>The Material 2.0 Operator creates a <a href="http://en.wikipedia.org/wiki/Blinn&ndash;Phong_shading_model">Blinn-Phong</a> material to apply to meshes.  To apply a Material 2.0 to a mesh, use the <a href="operator_MatInput.html">MatInput Operator</a>. If you show the Material 2.0 Operator, a temporary cube with the material applied will appear in the <a href="viewwindow_default.html">View Window</a>. Please note that Material 2.0 settings cannot be exported. </p>
+<p>&nbsp;</p>
+<h2>Inputs</h2>
+<p>&nbsp;</p>
+<p>Up to three textures as direct inputs, but you can link any named texture in the project into any material.</p>
+<p>&nbsp;</p>
+<h2>Parameters</h2>
+<p>&nbsp;</p>
+<h2>General Section</h2>
+<p>&nbsp;</p>
+<h3 class="description">Flags</h3>
+<p class="description"><em>specular(on/<strong>off</strong>)</em>: Toggles the specular.</p>
+<p class="description"><em>x2 intensity(on/<strong>off</strong>)</em>: Doubles the light intensity.</p>
+<p class="description"><em>specularity map(on/<strong>off</strong>)</em>: uses the Q (alpha) channel of the normal map (linked into the Material 2.0 with the parameter <strong>bump</strong>) to set specularity per texel. Negative values are treated as 0, so keep the alpha between 128 and 255 to get meaningful results.</p>
+<p>&nbsp;</p>
+<h3 class="description">Diffuse</h3>
+<p class="description">Defines the  diffuse color.</p>
+<p>&nbsp;</p>
+<h3 class="description">Specular</h3>
+<p class="description">Defines the specular color </p>
+<p>&nbsp;</p>
+<h3 class="description">Specular power (hardness)</h3>
+<p class="description">Controls  specular edge definition.</p>
+<p>&nbsp;</p>
+<h2>Texture Section</h2>
+<p>&nbsp;</p>
+<h3 class="description">Main</h3>
+<p class="description"> The main texture. Select the texture to link with the link button (selecting from the direct inputs), or with the <a href="findanop.html">Find an op! Dialog</a> ([...] button), or choose from the named operators on the current operator page [..] button or simply type a name. The [-&gt;] button jumps to the linked operator in the <a href="pagewindow.html">Page Window</a>.</p>
+<p>&nbsp;</p>
+<h3 class="description">Flags (only visible when a valid Main texture is linked):</h3>
+<p class="description"><em><strong>tile</strong>/clamp</em>: Sets texture edge behaviour.</p>
+<p class="description"><em>no filter/filter/<strong>mipmap</strong>/trilin/aniso</em>: Sets the mode for filtering the texture when it is displayed at other sizes than its native resolution. <em>no filter:</em> Use nearest neighbour. <em>filter:</em> Use bilinear filtering. <strong><em>mipmap</em></strong>: Use Mipmaps (Mipmaps are set up in the <a href="operator_Format.html">Format Operator</a>). <em>trilin</em>: Use trilinear filtering. <em>aniso</em>: Use anisotropic filtering.</p>
+<p class="description"><strong><em>untransformed</em></strong><em>/scaled/trans1/trans2</em>: Defines a UV transformation to use. <em><strong>untransformed</strong></em>: No transform. <em>scaled</em>: Uses the <strong>main &gt; ScaleUV</strong> value to scale the texture uniformly. <em>trans1</em>: Uses transformation set 1. <em>trans2</em>: Uses transformation set 2.</p>
+<p>&nbsp;</p>
+<h3 class="description">ScaleUV (only visible when a valid Main texture is linked)</h3>
+<p class="description">Defines the scale factor for the <em>scaled</em> UV transformation mode.</p>
+<p>&nbsp; </p>
+<h3 class="description">Detail 1/2</h3>
+<p class="description">Detail textures. If you select a valid texture, <strong>Flags</strong> and a <strong>ScaleUV</strong> field analogous to those of the main texture will appear, with one additional parameter called <strong>Op</strong>.</p>
+<p>&nbsp;</p>
+<h3 class="description">Op</h3>
+<p class="description"> <strong><em>mul</em></strong><em>/mul2/mul4/add/addsmooth</em>: Sets the blending mode for the detail texture. <em>mul</em>: Multiplies. <em>mul2</em>: Multiplies with doubled values (A*B*2). <em>mul4</em>: Multiplies with quadrupled values (A*B*4). <em>add</em>: Adds. <em>addsmooth</em>: Adds analogous to the Screen blending mode in Adobe Photoshop&copy;.</p>
+<p>&nbsp;</p>
+<h3 class="description">Alpha map</h3>
+<p class="description">Controls texture transparency. If you select a valid texture, <strong>Flags</strong> and a <strong>ScaleUV</strong> field analogous to those of the main texture will appear. Please note that the alpha map is internally converted to 1bit format with the threshold at 50% brightness.</p>
+<p>.</p>
+<h2>Bump/Lighting Section</h2>
+<p>&nbsp;</p>
+<h3 class="description">bump</h3>
+<p class="description">Selects a normal map for bump mapping. For best results, use the <a href="operator_Normals.html">Normals Operator</a> configured to tangent 2D to create the normal map from a height map. If you select a valid texture, <strong>Flags</strong> and a <strong>ScaleUV</strong> field analogous to those of the main texture will appear.</p>
+<p>&nbsp;</p>
+<h3 class="description">detail bump</h3>
+<p class="description">Selects a second normal map for bump mapping. If you select a valid texture, <strong>Flags </strong>and a <strong>ScaleUV</strong> field analogous to those of the main texture will appear.</p>
+<p>&nbsp;</p>
+<h3 class="description">envi</h3>
+<p class="description">Selects a texture for environment mapping.  If you select a valid texture, some flags will appear, including edge behaviour and filtering options analogous to the main texture, plus the following:</p>
+<p class="description"><strong><em>normal</em></strong><em>/reflection</em>: Chooses between Environment Map (normal) and Reflection Map.</p>
+<p class="description"><em>bumped<strong>/unbumped</strong></em>: Toggles bump for the environment map.</p>
+<p>&nbsp;</p>
+<h2>UV transform</h2>
+<p>&nbsp;</p>
+<p> Use these controls to transform the texture projection. You have two separate sets of transformation controls, trans1 and trans2. They can be assigned to any texture, alpha map or bump texture. </p>
+<p>&nbsp;</p>
+<h3 class="description">trans1 scale (X, Y, Z)</h3>
+<p class="description"> Changes the projection scale.</p>
+<p>&nbsp;</p>
+<h3 class="description">trans1 rot (local X, Y, Z)</h3>
+<p class="description"> Changes the projection rotation.</p>
+<p>&nbsp; </p>
+<h3 class="description">trans1 trans (X, Y, Z)</h3>
+<p class="description"> Changes the projection position.</p>
+<p>&nbsp;</p>
+<h3 class="description">trans2 scale (X, Y): </h3>
+<p class="description">Changes the projection scale.</p>
+<p>&nbsp;</p>
+<h3 class="description">trans2 rot (local  Z)</h3>
+<p class="description"> Changes the projection rotation.</p>
+<p>&nbsp; </p>
+<h3 class="description">trans2 trans (X, Y): </h3>
+<p class="description">Changes the projection position.</p>
+<p>&nbsp;</p>
+<h2>Keyboard shortcut</h2>
+<p>&nbsp;</p>
+<p><span class="shortcut">m</span> (when adding miscellaneous operators)  </p>
+<p></p>
+    <p>&nbsp;</p>
+      <p><a href="listofoperators.html">Back to the List of Operators  </a></p>
+    </div>
+    <div id="sidebar">
+       <h1>.contents</h1>
+      <p>&nbsp;</p>
+      <p><a href="index.html">introduction</a></p>
+      <p>&nbsp;</p>
+      <p>concept</p>
+      <ul>
+        <li><a href="operatorstacking.html">operator stacking</a></li>
+        <li><a href="uielements.html">UI elements</a> </li>
+        <li><a href="gettingstarted.html">getting started</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p>views </p>
+      <ul>
+        <li><a href="viewwindow_default.html">view window</a>
+            <ul>
+              <li><a href="viewwindow_texture.html">2D view</a></li>
+              <li> <a href="viewwindow_mesh.html">3D view</a></li>
+            </ul>
+        </li>
+        <li><a href="pagelistwindow.html">page list window </a></li>
+        <li><a href="pagewindow.html">operator page window</a> </li>
+        <li><a href="parameterwindow.html">parameter window</a> </li>
+        <li><a href="LogWindow.html">log</a></li>
+        <li><a href="StatisticsWindow.html">statistics</a></li>
+        <li><a href="findanop.html">Find an Op!</a> </li>
+        <li><a href="findresults.html"> find results</a></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><a href="listofoperators.html">list of operators</a> </p>
+      <p>&nbsp;</p>
+      <p><a href="editorsettings.html">editor settings</a></p>
+      <p>&nbsp;</p>
+      <p><a href="library.html">texture generation library</a></p>
+      <p>&nbsp;</p>
+      <p><a href="license.html">licensing</a><br>
+        <a href="support.html">support</a></p>
+      <p><a href="credits.html">credits</a></p>
+    </div>
+    <div id="footer">&copy; 2007 <a href="http://www.theprodukkt.com">.theprodukkt GmbH</a></div>
+</div>
+</div>
+</body>
+</html>
