@@ -1,5 +1,6 @@
 ; dispack decoder
 ; ryg/farbrausch 2003
+; I hereby place this code in the public domain.
 
 bits 32
 

@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 #ifndef __DIS_HPP__
 #define __DIS_HPP__
 

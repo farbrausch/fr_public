@@ -1,5 +1,6 @@
 ; kkrunch_p7 depacker (asm version)
-; (c) fabian "ryg/farbrausch" giesen 2006
+; fabian "ryg/farbrausch" giesen 2006
+; I hereby place this code in the public domain.
 
 ; ---- uninitialized data
 

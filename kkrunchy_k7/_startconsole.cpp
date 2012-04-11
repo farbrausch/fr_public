@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 #include "_types.hpp"
 #include "_startconsole.hpp"
 #define WIN32_LEAN_AND_MEAN

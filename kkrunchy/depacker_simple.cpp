@@ -1,3 +1,7 @@
+// Simple kkrunchy depacker.
+// Fabian Giesen 2003.
+// I hereby place this code in the public domain.
+
 #include "_types.hpp"
 
 /****************************************************************************/

@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 #ifndef __EXEPACKER_HPP_
 #define __EXEPACKER_HPP_
 

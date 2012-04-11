@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 #ifndef __MAPFILE_HPP_
 #define __MAPFILE_HPP_
 

@@ -1,4 +1,6 @@
 ; kkrunchy depacker (c callable)
+; Fabian Giesen 2002.
+; I hereby place this code in the public domain.
 
 bits    32
 

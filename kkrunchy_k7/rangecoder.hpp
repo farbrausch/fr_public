@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 #ifndef __RANGECODER_HPP__
 #define __RANGECODER_HPP__
 

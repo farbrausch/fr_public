@@ -1,4 +1,5 @@
 ; kkrunchy: include relevant binary data
+; I hereby place this code in the public domain.
 
 bits    32
 section .text

@@ -1,3 +1,6 @@
+// Written by Fabian "ryg" Giesen.
+// I hereby place this code in the public domain.
+
 int instructionCount(unsigned char *func)
 {
 	int count = 0;
