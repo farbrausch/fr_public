@@ -1,0 +1,580 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "atlres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Germany) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_RENAMECLIP DIALOG  0, 0, 186, 45
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Rename clip"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,79,24,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+    EDITTEXT        IDC_NAME,47,7,132,14,ES_AUTOHSCROLL
+    LTEXT           "New name:",IDC_NLABEL,7,9,37,8
+END
+
+IDD_VIRUZCONFIG DIALOGEX 0, 0, 210, 61
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ViruzII settings"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,78,40,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,153,40,50,14
+    EDITTEXT        IDC_TUNEEDIT,56,7,132,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_OPENTUNE,191,7,12,14
+    LTEXT           "Main tune:",IDC_TUNE,7,10,34,8
+    EDITTEXT        IDC_TUNEEDIT2,56,23,132,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_OPENTUNE2,191,23,12,14
+    LTEXT           "Loader tune:",IDC_TUNE2,7,26,41,8
+END
+
+IDD_VIDEO DIALOGEX 0, 0, 243, 169
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | 
+    WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
+CAPTION "Export Video"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Go!",IDOK,183,147,50,17,0,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Cancel",IDCANCEL,129,149,50,14
+    LTEXT           "Resolution: ",IDC_STATIC,15,19,36,8
+    EDITTEXT        IDC_XPELS,56,18,22,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "by",IDC_STATIC,81,19,9,8
+    EDITTEXT        IDC_YPELS,93,18,22,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Pixels, Aspect Ratio:",IDC_STATIC,118,19,67,8
+    EDITTEXT        IDC_ASPECT,187,18,39,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    LTEXT           "Frame rate:",IDC_STATIC,15,38,38,9
+    EDITTEXT        IDC_FPS,55,36,27,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    LTEXT           "Fps",IDC_STATIC,87,39,12,8
+    LTEXT           "Fields:",IDC_STATIC,16,56,22,8
+    CONTROL         "None",IDC_FIELDS0,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,57,56,33,10
+    CONTROL         "Even first",IDC_FIELDS1,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,92,56,47,10
+    CONTROL         "Odd first",IDC_FIELDS2,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,141,56,44,10
+    CONTROL         "Bitmap sequence",IDC_BMPSEQ,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,14,85,70,10
+    CONTROL         "AVI video",IDC_AVI,"Button",BS_AUTORADIOBUTTON,14,101,
+                    47,10
+    GROUPBOX        "Video options",IDC_STATIC,7,7,225,66,0,
+                    WS_EX_TRANSPARENT
+    GROUPBOX        "Format",IDC_STATIC,7,75,224,47,0,WS_EX_TRANSPARENT
+    CONTROL         "Audio",IDC_AUDIO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    69,101,34,10
+    EDITTEXT        IDC_FILENAME,41,128,175,12,ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "File name:",IDC_STATIC,7,129,34,8
+    PUSHBUTTON      "...",IDC_FILEBUTTON,219,128,14,13,0,WS_EX_STATICEDGE
+END
+
+IDD_ICONFIG DIALOGEX 0, 0, 186, 63
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "fr-0xx: blabla"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Go",IDOK,79,42,50,14
+    PUSHBUTTON      "&Exit",IDCANCEL,129,42,50,14
+    CONTROL         "fr-013: flybye",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,
+                    7,7,61,10
+    CONTROL         "fr-022: ein.schlag",IDC_RADIO2,"Button",
+                    BS_AUTORADIOBUTTON,7,17,73,10
+    CONTROL         "fr-029: dopplerdefekt",IDC_RADIO3,"Button",
+                    BS_AUTORADIOBUTTON,7,28,85,10
+    CONTROL         "640x480",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,118,7,
+                    44,10
+    CONTROL         "800x600",IDC_RADIO5,"Button",BS_AUTORADIOBUTTON,118,17,
+                    44,10
+    CONTROL         "1024x768",IDC_RADIO6,"Button",BS_AUTORADIOBUTTON,118,28,
+                    48,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_RENAMECLIP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 38
+    END
+
+    IDD_VIRUZCONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 203
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 54
+    END
+
+    IDD_VIDEO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 233
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 163
+    END
+
+    IDD_ICONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 56
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""atlres.h""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PREFERENCES DIALOG  0, 0, 247, 114
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Preferences"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,139,93,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,190,93,50,14
+    GROUPBOX        "Directories",IDC_DIRECTORIES,7,7,233,45
+    RTEXT           "&Content Directory:",IDC_CONTENT_DIR,13,19,60,8
+    EDITTEXT        IDC_CONTENT_DIR_EDIT,77,17,144,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CONTENT_DIR_BUTTON,224,17,13,13
+    RTEXT           "&Backup Directory:",IDC_BACKUP_DIR,13,35,60,8
+    EDITTEXT        IDC_BACKUP_DIR_EDIT,77,33,144,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BACKUP_DIR_BUTTON,224,33,13,13
+    GROUPBOX        "User interface",IDC_USERINTERFACE,7,55,233,34
+    CONTROL         "Slider1",IDC_SLOPEKEYDELAY_SLIDER,"msctls_trackbar32",
+                    TBS_AUTOTICKS | TBS_TOP | WS_TABSTOP,77,64,122,21
+    RTEXT           "&Slope key delay:",IDC_SLOPEKEYDELAY,13,69,60,8
+    EDITTEXT        IDC_SLOPEKEYDELAY_EDIT,203,67,18,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    LTEXT           "ms",IDC_SLOPEKEYDELAY_MS,224,69,10,8
+END
+
+IDD_SEARCHSTORE DIALOGEX 0, 0, 264, 47
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Find Op"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    LTEXT           "Find what:",IDC_INPUT_LABEL,7,9,34,8
+    EDITTEXT        IDC_SEARCHNAME,42,7,161,15,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Find Next",IDOK,207,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,207,26,50,14
+    CONTROL         "Search this page",IDC_SEARCH_THISPAGE,"Button",
+                    BS_AUTORADIOBUTTON,7,27,69,10
+    CONTROL         "Search all pages",IDC_SEARCH_ALLPAGES,"Button",
+                    BS_AUTORADIOBUTTON,82,27,69,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PREFERENCES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 240
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 107
+    END
+
+    IDD_SEARCHSTORE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 257
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 40
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
+        MENUITEM "Save &As...",                 ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        POPUP "Recent &Files"
+        BEGIN
+            MENUITEM "(empty)",                     ID_FILE_MRU_FILE1
+            , GRAYED
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Undo\tCtrl+Z",               ID_EDIT_UNDO
+        MENUITEM "&Redo\tCtrl+Y",               57644
+        MENUITEM SEPARATOR
+        MENUITEM "Cu&t\tCtrl+X",                ID_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "Pr&eferences...",             ID_EDIT_PREFERENCES
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+    END
+END
+
+IDR_GRAPHADDMENU MENU 
+BEGIN
+    POPUP "graphed add"
+    BEGIN
+        POPUP "add generator"
+        BEGIN
+            MENUITEM "(empty)",                     ID_GRAPHEDADD_ADDGENERATOR_EMPTY
+            , GRAYED
+        END
+        POPUP "add filter"
+        BEGIN
+            MENUITEM "(empty)",                     ID_GRAPHEDADD_ADDFILTER_EMPTY
+            , GRAYED
+        END
+        POPUP "add combiner"
+        BEGIN
+            MENUITEM "(empty)",                     ID_GRAPHEDADD_ADDCOMBINER_EMPTY
+            , GRAYED
+        END
+        POPUP "add system"
+        BEGIN
+            MENUITEM "(empty)",                     ID_GRAPHEDADD_ADDSYSTEM_EMPTY
+            , GRAYED
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "view\tCtrl+LMB",              ID_GRAPH_VIEW
+        MENUITEM "edit\tLMB",                   ID_GRAPH_EDIT
+        MENUITEM "delete\tDel/BkSpc",           ID_GRAPH_DELETE
+        MENUITEM "find op\tCtrl+F",             ID_GRAPH_SEARCHSTORE
+        MENUITEM "center scroll",               ID_GRAPH_CENTER
+        MENUITEM SEPARATOR
+        MENUITEM "reconnect all",               ID_GRAPH_RECONNECTALL
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS 
+BEGIN
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT, NOINVERT
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT, NOINVERT
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT, NOINVERT
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL, NOINVERT
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "P",            ID_FILE_PRINT,          VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_GRAPH_SEARCHSTORE,   VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          ID_MODULE_0,            VIRTKEY, NOINVERT
+    VK_F2,          ID_MODULE_1,            VIRTKEY, NOINVERT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY, NOINVERT
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT, NOINVERT
+    "Y",            ID_EDIT_REDO,           VIRTKEY, CONTROL, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "farbrausch"
+            VALUE "FileDescription", "RauschGenerator 2"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "RG2"
+            VALUE "LegalCopyright", "Copyright 2001-2002"
+            VALUE "OriginalFilename", "RG2.exe"
+            VALUE "ProductName", "RauschGenerator 2"
+            VALUE "ProductVersion", "1, 0, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_PGLVSYMBOLS         BITMAP                  "res\\pglvsymb.bmp"
+IDB_PAGEVIEW            BITMAP                  "res\\pageview.bmp"
+IDB_LOADSTOREICONS      BITMAP                  "res\\loadstor.bmp"
+IDB_BUTTONBITMAPS       BITMAP                  "res\\buttons.bmp"
+IDB_PANEBACKGROUND      BITMAP                  "res\\panebg.bmp"
+IDB_MENUBACKGROUND      BITMAP                  "res\\menubg.bmp"
+IDB_TITLEBAR_NEW        BITMAP                  "res\\titlenew.bmp"
+IDB_BORDERS             BITMAP                  "res\\borders.bmp"
+IDB_ANIMMARKS           BITMAP                  "res\\animmark.bmp"
+IDB_TLBUTTONS           BITMAP                  "res\\tlbuttons.bmp"
+IDB_COMBOBOX            BITMAP                  "res\\combobox.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\fvs32.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDR_MAINFRAME           "farbrausch RauschGenerator 2.1"
+    ID_PREVIEW_WINDOW       "Preview Window"
+    ID_PARAM_WINDOW         "Parameters"
+    ID_PAGE_WINDOW          "Pages"
+    ID_GRAPH_WINDOW         "Operator Graph"
+    ID_ACTION_PANE          "processing SuperDuper AntiMatterEmitter"
+    ID_TIME_PANE            "calc in 99999ms"
+    ID_POS_PANE             "(1023,1023)"
+    ID_3DPREVIEW_WINDOW     "3d Preview Window"
+    ID_MAIN_VIEW            "-"
+    ID_SPLINE_WINDOW        "Spline Editor"
+    ID_TIMELINE_WINDOW      "Timeline"
+    ID_ANIMMIXER_WINDOW     "Animation Mixer"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_FILE_NEW             "Create a new document\nNew"
+    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_CLOSE           "Close the active document\nClose"
+    ID_FILE_SAVE            "Save the active document\nSave"
+    ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
+    ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
+    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT           "Print the active document\nPrint"
+    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_WINDOW_NEW           "Open another window for the active document\nNew Window"
+    ID_WINDOW_ARRANGE       "Arrange icons at the bottom of the window\nArrange Icons"
+    ID_WINDOW_CASCADE       "Arrange windows so they overlap\nCascade Windows"
+    ID_WINDOW_TILE_HORZ     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_TILE_VERT     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_EDIT_CLEAR           "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND            "Find the specified text\nFind"
+    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
+    ID_EDIT_UNDO            "Undo the last action\nUndo"
+    ID_EDIT_REDO            "Redo the previously undone action\nRedo"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
+END
+
+STRINGTABLE 
+BEGIN
+    ATL_IDS_SCSIZE          "Change the window size"
+    ATL_IDS_SCMOVE          "Change the window position"
+    ATL_IDS_SCMINIMIZE      "Reduce the window to an icon"
+    ATL_IDS_SCMAXIMIZE      "Enlarge the window to full size"
+    ATL_IDS_SCNEXTWINDOW    "Switch to the next document window"
+    ATL_IDS_SCPREVWINDOW    "Switch to the previous document window"
+    ATL_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
+END
+
+STRINGTABLE 
+BEGIN
+    ATL_IDS_SCRESTORE       "Restore the window to normal size"
+    ATL_IDS_SCTASKLIST      "Activate Task List"
+    ATL_IDS_MDICHILD        "Activate this window"
+END
+
+STRINGTABLE 
+BEGIN
+    ATL_IDS_IDLEMESSAGE     "Ready to rock"
+END
+
+STRINGTABLE 
+BEGIN
+    ATL_IDS_MRU_FILE        "Open this document"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_EDIT_PREFERENCES     "Use to configure Directory and UI Settings"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_FILE_EXPORT          "Exports the textures"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

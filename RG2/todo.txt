@@ -1,0 +1,86 @@
+RG2.1 TODO
+----------
+
+struktur:
+  -[ ] support für beliebige datentypen
+     => dedizierte typed pages weg
+     => ops danach connecten
+     => neues create-schema (a la werkkzeug?)
+     => load/store/bridge für alle typen?
+     => ein processing-code für alles?
+     => vernünftiges interface für datentypen
+
+  -[ ] std::maps soweit es geht loswerden
+  -[ ] unnötige templates loswerden
+  
+  -[?] pool-memory-manager: kopieren durch mapping ersetzen (sollte rulen)
+  
+editor (misc):
+  -[ ] klarer definiertes keyboard handling (speziell fokus)
+  --
+  -[?] drag-pfeile für SRT
+	-{ ] paste: no collision check
+  --
+  -[ ] alt+click/drag: duplicate (way) (ggf. doch anders?)
+  -[ ] anim mixer: zeit skalieren können
+  -[ ] anim mixer: items loopen
+  
+editor (spline):
+  -[ ] "tickmarks" an beats statt sekunden orientieren
+  -[ ] mehrere keys auf einmal bewegen
+  -[ ] scale time/value
+
+2d:
+  -[ ] mehr parameter von texturops animierbar machen
+
+3d:
+  -[ ] skybox-mode für camera
+  -[ ] partikelsystem
+  
+animation:
+  -[ ] gui-updatemechanismus; es fehlt noch:
+    -parameterupdate bei anim
+    -stateupdate bei anim
+    -keyframes im paramview definieren können (tricky)
+
+compositing:
+  -[ ] mehr kram
+
+viewer:
+  -[?] shape anim performance/null xform detection
+
+bugs:
+	-[ ] updatebug? (einschlag: calc cams)
+  -[ ] graphview: selection rects+scrolling bugt - rects werden nicht korrekt gelöscht
+  -[ ] copy&paste vs anim - diverses.
+	braucht evtl nen ziemliches rework des gesamten codes (bin dabei)
+
+----
+
+symbole: [ ] momentan nicht verfolgte aufgabe
+         [?] zurückgestellte aufgabe
+         [x] momentan bearbeitete aufgabe
+         [f] wahrscheinlich gefixter bug
+         
+-----
+
+  05.10.2002 19:30 version ohne halfedge
+  12.11.2002 restart work
+  18.11.2002 service release
+
+-----
+
+  blur to blur v2 (box):			radius
+  blur to blur v2 (tri):			(radius + 1) / 2
+  blur to blur v2 (gauss):		radius / 2 (approximately; orig: * 31 / 67)
+  
+  blur to blur v2 intensity:	origIntensity * origIntensity
+  
+
+  transparenzen sucken.
+  aber jetzt geht es eigentlich.
+  halbwegs.
+
+  cur tex id: 23
+  cur geo id: 158
+  cur cmp id: 192
