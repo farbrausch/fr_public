@@ -1,0 +1,120 @@
+<--- -------------------------------------------------------------------- --->
+
+
+20020731: der neue generator
+
+
+gestern habe ich all die abgefahrenen ideen weggeschmissen und mich auf das
+wesentliche konzentriert. das konzept für den neuen generator ist fertig.
+wirklich sehr minimal und sehr weit vom tool entfernt. heute habe ich die
+ersten befehle des texturgenerators implementiert: wirklich wenig overhead!
+
+das faszinierendste ist der garbage collector: ich muß mich ersteinmal daran
+gewöhnen, die objekte nicht mehr freizugeben. ich rufe einfach 
+sBroker->RemRoot(obj) für das oberste objekt der hirarchie auf und verlasse
+mich darauf das demnächst aufgeräumt wird. ich mache "cooperative garbage
+collection" und bis jetzt funktioniert das recht gut. der code wird 
+sicherlich kleiner und die vielen addref/release haben auch nicht die 
+performance gesteigert. dafür muß ich hin und wieder sBroker->Free() 
+aufrufen was nicht ganz langsam ist weil der cache nicht schlecht 
+durchgewühlt wird. für intros ist das jedenfalls genial!
+
+
+20020818: ein bischen gui
+
+
+ich glaube, den texturgenerator kann ich auch noch mal neu schreiben. ich
+habe jetzt einen tongenerator geschrieben und es scheint alles noch etwas
+einfacher sein zu können.
+
+auf alle fälle komme ich jetzt nicht mehr ohne gui weiter, es ist einfach
+kein spaß jedesmal neu zu kompilieren. das grundgerüst der guui mit allen
+zeichenfunktionen funktioniert jetzt, und auch das wird sehr viel simpler
+als alles was ich jemals zuvor geschrieben habe: die fenster sind nicht
+einmal hirarchisch, es gibt nur eine liste von rechtecken. das gefällt mir!
+mal sehen wie weit ich damit komme, in der theorie ist alles sehr gut.
+
+
+20020820: richtig gearbeitet
+
+
+da ich die letzten tage sehr viel in der firma gearbeitet habe genehmige ich
+mir heute extremes zuhauseprogrammieren. 
+
+die gui kommt schneller voran als ich das gewohnt bin: nach zwei tagen schon 
+text-edit, splitter windows, floating windows, dialogboxen und alles 
+drumherum. ist natürlich viel pfusch, aber es funktioniert und auch der pfusch
+ist mit  system. das neue prinzip hat funktioniert: die eigentlichen window-
+struktur ist eine lineare liste von wegwerf-rechtecken. zusammengehalten wird 
+alles von einer einfachen linearen layout-prozedur. sehr, sehr praktisch das!
+
+ganz nebenbei habe ich den desktop mit projekt, dokument und objektverwaltung
+designt. kommt auch in der implementierung gut voran: dokumente gehören zu
+einem oder mehreren projekten, und zu jedem dokument gehört ein editor. 
+editor-spezifische dokumente erzeugen allgemein-verlinkbare objekte. mal
+sehen...
+
+
+20020825: ich habe jetzt eine gui
+
+
+um mit der gui weiter zu kommen habe ich einen einfachen bitmap-painter
+gemacht. dazu brauchte ich slider und buttons und solch ein zeug. es klappt.
+der ganze kram ist jetzt sehr viel kompakter als bei den alten guis, man 
+kann die elemente sozusagen eng stapeln und zweidimensional anordnen. ist
+natürlich etwas unübersichtlicher als vorher, aber der nachteil wird durch
+die wesentlich höhere packungsdichte wettgemacht. am ende wird man alle
+operatoren mit allen parametern auf einmal sehen und editieren können, und
+das ist doch was, oder?
+
+jetzt geht es erstmal weiter mit dem desktop. wenn der jetzt auch noch laden
+und speichern kann, dann bin ich fein raus.
+
+
+20020828: was für ein Blur!
+
+
+ich habe ryg's konzept für einen blur übernommen: man nehme einen iterativen
+box-blur und wende ihn mehrfach an. das ergebniss ist (2*) tri und (3*) ein
+gefaketer gauss-blur
+
+
+20021125: alles ist anders
+
+
+habe die gui weggeworfen. zwischenzeitlich habe ich mich mit compilerbau 
+beschäftigt und auch da mehrere konzepte für die tonne probiert. was im moment
+übrig ist ist ein kleiner c to bytecode compiler. der plan ist, eine gui zu
+schreiben bei der man nebeneinander den c-source und eine representation des 
+sources als operator-baum sieht. wenn man das eine ändert, so ändert sich 
+das andere mit. update-probleme werden ignoriert, alles updated immer. das
+sollte ich recht schnell zusammenfummeln können, aber zuerst eine neue gui.
+
+habe eine woche urlaub. plan ist bis morgen die gui klassen zu haben und
+zwei tage später den editor so wie oben beschrieben, wenn auch nur in der
+grobform. danach kommen haufenweise operator, und dann kann es endlich kreativ
+losgehen...
+
+
+20021211: neue meshes
+
+
+so. nun habe ich eine neue mesh-struktur. ich speichere alles in den edges
+und komme auf beiden hälften vor- und rückwärts (das sind 4 pointer pro edge
+für connectivity, also volles programm). ich unterscheide zwischen "corners"
+und "vertices", wobei jede corner mehrere vertices haben kann damit ich nie
+wieder ärger mit wrapping habe. drei routinen, SplitFace(), SplitEdge() und 
+SplitCorn() sollen die gesammte arbeit machen, und wenn mein extrude 
+funktioniert dann habe ich noch nie so einen kurzen extrude gehabt. jetzt
+mache ich noch den subdivide und random select, baue das ganze in die gui
+ein und dann weiß ich ob zwei tage arbeit vergebens waren...
+
+was habe ich eigentlich die letzten zwei wochen gemacht? ich kann mich 
+erinnern, wie ein idiot gearbeitet zu haben, und der ganze compilier-kram
+funktioniert und auch der texturgenerator ist fertig. ich kann direkt in der
+operator-ansicht draggen und sehe wie sich der source UND der bytecode ändert.
+trotzdem sind zwei wochen eine lange zeit, besonders wenn man jeden tag vor 
+dem rechner sitzt und sozialkontakte auf null runterfährt...
+
+
+<--- -------------------------------------------------------------------- --->

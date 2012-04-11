@@ -1,0 +1,39 @@
+[fr-030]
+
+[done]
+
+x TI4200 texture distort
+x GetTime() problems
+x double-buffered locking
+x progressbar
+x precharge
+x check syncing
+x compatiblity check
+
+[chaos]
+
+x cube-scene neu (schwebende frau über meer)
+x water-scene fade in
+x cutscene -> walkcycle fade in 
+x cutscene -> walkcycle timing
+
+- glare resolution
+- fades am anfang zu wenig attack
+- 
+
+- timing of the fades
+- timing of the flash in erste wickelscene
+- wickel2: der anfang hat schlechtes timing
+
+- icon einbauen
+- 63.5 kbyte anstreben
+- sprung timing
+
+[gizmo]
+
+- hautausschlag materialien faken
+- farbtiming
+
+
+[ryg]
+

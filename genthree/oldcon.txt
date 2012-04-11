@@ -1,0 +1,1574 @@
+<--- -------------------------------------------------------------------- --->
+
+                              Texture Generator
+
+<--- -------------------------------------------------------------------- --->
+
+KONZEPT:
+
+Es wird nicht Befehl für Befehl abgearbeitet sonder Pixel für Pixel. Für jede
+Textur wird ein Programm generiert das alle operatoren hintereinander enthält.
+Der Code wird entweder vom Compiler geinlined oder vom Codegenerator erstellt.
+
+
+DIE BEFEHLE
+
+Einige Befehle enthalten Algorithmen, die sich auf das neue system nicht
+leicht umseten lassen. Sie haben meistens etwas damit zu tun, mehrere 
+Quellpixel zu lesen. Bei den entsprechenden Behelen wird das durch einen
+in Klammern gesetzten Buchstaben gekennzeichnet. Später gehe ich auf die 
+implementierung dieser Problemfälle ein.
+
+Die Problemfälle sind:
+
+  - (f) Gefiltertes lesen eines Quellpixels
+  - (a) Dieser Befehl könnte Kantenglättung gebrauchen
+  - (d) Gefiltertes lesen der Quelldaten und berechnen der Steigung
+  - (c) Der Effekt arbeitet mit vielen Quellpixeln 
+  - (i) Der Effekt erzeugt ein Bild als Ganzes (Image)
+  - (o) Dieser Befehl wird nicht mehr gebraucht
+
+Generator-Befehle erzeugen ein Bild:
+
+  - Flat
+  - Rect (a)
+  - Glow
+  - Text (i)
+  - Font (i)
+  - Wolken (i)
+  - Pixels (o)
+  - Import (i)
+  - Cell (i)
+  - Perlin  
+
+Per-Pixel Befehle sind einfach, weil sie nur ein Pixel einlesen und verändern
+ 
+  - Add/Sub/Diff/Mul
+  - Blend
+  - Make Alpha
+  - Color
+  - HSCB
+  - HDR
+
+Die letzte Gruppe liest Pixel von anderen Position aus als der eigenen
+
+  - Distort (d)
+  - Light/Bump (d)
+  - Rotate (f)
+  - Blur (c)
+
+
+DER BASISALGORITHMUS
+
+
+Der Baum der Operatoren wird von der Wurzel in die Zweige und wieder zurück
+durchwandert. Beim weg hinein werden die Sample-Koordinaten verändert. Beim 
+Weg zurück werden die Pixel verrechnet. 
+
+Zum Beispiel:
+
+  void TexCAdd(sOperator *op,sVector &c,sVector &p)
+  {
+    sVector s1,s2;
+
+    op->Input[0]->Handler(op,s1,p);
+    op->Input[1]->Handler(op,s2,p);
+
+    c.Add4(s1,s2);
+  }
+
+
+PROBLEM (i) IMAGE
+
+
+Diese Operatoren erzeugen das Bild in einem Rutsch, zum Beispiel weil sie
+eine Datei importieren, oder weil der Cell und der Wolken Operator vom 
+Algorithmus so ausgelegt sind. Da diese Befehle immer Blätter des Baumes
+sind kann man das Akzeptieren und muß halt das Bild als Ganzes berechnen.
+In den meisten Fällen reicht 8 bis 16 Bit und nur ein Kanal, die nachträglich 
+koloriert werden. Es ergeben sich keine Einschränkungen bezüglich der HDR 
+fähigkeiten des Systems.
+
+
+PROBLEN (f) FILTERING
+
+
+Der Distort-Algorithmus wertet im green/blue modus die Farbe der zweiten 
+Quelle als Pixelkoordinaten-Offset. In der klassischen Implementierung muß die
+erste Quelle mit Filtering gesampled werden. Hier können Pixelkoordinaten mit
+beliebiger Genauigkeit übergeben werden, ein Filtern ist nicht nötig. 
+
+  void TexPDistortGreenBlue(sVector &c,sVector &p,sU32 *para)
+  {
+    sVector s1;
+
+    op->Input[1]->Handler(op,s1,uv);
+    p.x += s1.x*op->DataF[0];
+    p.y += s1.y*op->DataF[0];
+    op->Input[0]->Handler(op,c,uv);
+  }
+
+
+PROBLEM (a) KANTENGLÄTTUNG (ANTI-ALIASING)
+
+
+Ein rechteck darf scharge Kanten haben. Wird das rechteck allerdings 
+gefiltert, so muß eine Kantenglättung durchgeführt werden. Das kann man leight
+einbauen, in dem man den abstand zum rechteck misst und entsprechend 
+zwischentöne erzeugt.
+
+p.x und p.y sind die aktuellen Koordinaten, p.w ist der Umfang in dem 
+Kantenglättung ausgeführt werden soll. Befehle die Zoomen müssen p.w anpassen.
+Durch künstliches verändern von p.w kann geblurred werden. Dann ist es 
+allerdings sinvoll, alle anderen Generator-Befehle auch um die Kantenglättung
+zu erweitern.
+
+
+PROBLEM (d) STEIGUNG BERECHNEN (DELTA, DIFFERENZIEREN)
+
+
+Normalerweise muß man um die Steigung zu berechnen zwei benachbarte Pixel 
+berechnen und diese Interpolieren. Um die Steigung in X und Y zu berechnen muß
+der Baum also 3-4 mal aufgerufen werden, was in unserem Fall nicht akzeptabel 
+ist.
+
+Wie bei der Kantenglättung lassen sich die Generator-Befehle so erweitern, das
+sie auf Anhieb differenzierte bilder liefern. Per-Pixel Befehle sind einfach
+zu differenzieren: Additive Anteile haben keine Auswirkung und Multiplikative
+Anteile werden nach Grau umgerechnet und multipliziert. Die Gruppe mit 
+Sonderbefehlen macht natürlich wieder Ärger: Rotate/Distort müssen nur die
+Drehrichtung und Zoomung des Pixels ändern. Light/Bump und Blur sind nicht 
+lösbare Probleme. 
+
+Es läßt sich natürlich nur ein mal differenzieren, aber das ist keine echte
+Einschränkung.
+
+
+PROBLEM (c) BLUR
+
+
+Ein echter Blur läßt sich nicht implementieren. Aber man kann die Generator-
+Befehle direkt Blurren, genau das macht ja das Kantenglätten. Mehrere Blurs 
+kann man dabei addieren. Was Passiert wenn Blur und Delta gleichzeitig aktiv 
+sind? Die Reihenfolge ist egal! Eine Geblurrte Kante gedeltaed ist etwa das 
+selbe wie eine gedeltate Kante geblurrt.
+
+Wir representieren eine gerichteten Blur durch den Skalar s und den Vektor v.
+s gibt an, um wieviel insgesammt geblurrt wird, v gibt eine zusätliche 
+Blur-Richtung an. Gaussche Blurs ergeben immer irgendwie geartete Elipsen,
+diese Representation reicht also. Um zwei Blurs sa va und sb vb zu addieren,
+rechnen wir:
+
+  s = sa + sb + | va senkrechtzu(vb) + vb senkrechtzu(va) |
+  v = va parallelzu(vb) + vb parallelzu(va)
+
+Um den Blur dann zu zeichnen, blurren wir um |v|+sqrt(s) in richtung des
+Vektors v und um sqrt(s) in die senkrechte richtung.
+
+für den fall das va und vb senkrecht sind erhalten wir:
+
+  s = sa + sb + | va + vb |
+  v = 0
+
+und für den parallelen fall ergibt sich:
+
+  s = sa + sb
+  v = va + va
+
+Beides entspricht unseren Erwartungen.
+
+
+Wie implementiert man ein geblurrtes Rechteck? Wenn man sich auf axxis-
+aligned blur beschränkt, kann man eine Blur-funkton für x und y ablegen
+und diese einfach multiplizieren. Normalerweise muß man für ein Rechteck
+für jede Achse drei Fälle unterscheiden. In diesem fall gibt es nur 
+zwei Fälle: der eine beschreibt den geblurrten Übergang in das Rechteck
+hinein, der ander den Weg hinaus. Wenn man Das Rechteck immer in die Mitte
+legt kann man die beiden Fälle durch Spiegeln erhalten.
+
+
+
+ZUSAMMENFASSUNG
+
+
+Wir unterscheiden zwischen Blatt-Operatoren und Knotenoperatoren. Die Effekte
+die sich nicht effektiv in Knoten implementieren lassen werden beim abstieg
+markiert und gleich mit dem Blatt verrechnet. Alle Operatoren dazwischen 
+müssen die markierung berücksichtigen und entsprechend ändern. Dabei werden
+Ungenauigkeiten und Fehler akzeptiert, die durch zwangsweise entstehen.
+
+Jeder Blatt-Operator muß Delta und Blurring beherrschen. Im Delta-Modus wird
+nicht eine Farbe erzeugt, sondern die Helligkeit nach x und y differenziert.
+Im Blur Modus wird das Bild in X und Y richtung geblurrt. Defaultmäßig wird um
+ein Pixel geblurrt um Antialiasing zu implementieren.
+
+
+EINSCHRÄNKUNGEN:
+
+
+Kein Blur nach destort, rotate, light/bump
+Kein Destort nach light/bump
+
+
+
+DESTORT
+
+
+Der Destort Befehl verändert auf radikale Weise Rotation und Zoom des Bildes.
+Um das zu Berücksichtigen. Die zweite Ableitung der Heightmap gibt auskunft 
+darüber wie Stark: 
+
+<--- -------------------------------------------------------------------- --->
+
+                            Texture Generator II
+
+<--- -------------------------------------------------------------------- --->
+
+Alle Operationen lassen sich auf Grundoperatoren zurückführen:
+
+  - Generator: Erzeugen einer Bitmap ohne Bitmaps als eingabe zu benutzen
+  - Filter: n x m Filter Kernel
+  - Linear: Skalierung und Offset anhand einer Formal  (z.B: beleuchtung)
+  - Clamp: nicht-lineare transformation
+  - Transform: Verändern der UV-Koordinaten
+
+Generatoren werden nicht weiter verändert, sie liefern das Rohmaterial im
+8-Bit format.
+
+Filter und Lineare Transformationen könne in der Reihenfolge beliebig 
+verändert werden, wir können auch alle Filterkernels zusammenfassen und
+erhalten ein gesammt-Filterkernel.
+
+Clamping muß allerdings am Ende geschehen.
+
+ach, das ist alles scheisse:
+
+  - ich will bitmap für bitmap arbeiten
+  - ich will 4 floats per pixel benutzen
+  - ich will im 1st level cache laufen
+
+Dafür gibt es folgende möglichkeiten
+
+  - pixel caching (langsam, nur kleine kernels)
+  - united loop (keine freie verschaltung)
+  - multiple united loop (!)
+  - tile rendering (nur kleine kernels)
+  - rein mathematische beschreibung (hahaha)
+  - alle methoden kombiniert (zu viel arbeit!)
+  - adaptive pixel caching (langsam, nur kleine kernels)
+  - multiple tiled loop (!)
+
+Main-Loop:
+
+Die Textur wird in 16x16 tiles zerlegt. Es wird eine Pixel-Routine für die 
+entsprechenden Pixel aufgerufen.
+
+Cache für kleine Kernels:
+
+Normaler Code:
+
+  n = b[x-1][x-1]*m[0][0]
+    + b[x-1][x  ]*m[0][1]
+    + b[x-1][x+1]*m[0][2]
+    + b[x  ][x-1]*m[1][0]
+    + b[x  ][x  ]*m[1][1]
+    + b[x  ][x+1]*m[1][2]
+    + b[x+1][x-1]*m[2][0]
+    + b[x+1][x  ]*m[2][1]
+    + b[x+1][x+1]*m[2][2];
+
+Neues GetPixel:
+
+  sInt GetPixel(x,y)
+  {
+    if(!map[x>>4][y>>4])
+      FillCache();
+    return map[x>>4][y>>4][(x&15)*16*(y&15)];
+  }
+
+Optimiert (für 256x256):
+
+  xy = (y<<4)|((x&0xf0)<<8)|(x&0x0f);
+
+
+  xy0 = ((xy&0xf00f)-1)&0xf00f) | (xy&0x0ff0);
+  xy2 = ((xy|0x0ff0)+1)&0xf00f) | (xy&0x0ff0);
+  if(!map[(xy2+1)>>8]) FillCache(xy2+1);
+
+  n = map[(xy0-16)>>8][(xy0-16)&0xff] * m[0][0]
+    + map[(xy0   )>>8][(xy0   )&0xff] * m[0][1]
+    + map[(xy0+16)>>8][(xy0+16)&0xff] * m[0][2]
+    + map[(xy -16)>>8][(xy -16)&0xff] * m[1][0]
+    + map[(xy    )>>8][(xy    )&0xff] * m[1][1]
+    + map[(xy +16)>>8][(xy +16)&0xff] * m[1][2]
+    + map[(xy2-16)>>8][(xy2-16)&0xff] * m[2][0]
+    + map[(xy2   )>>8][(xy2   )&0xff] * m[2][1]
+    + map[(xy2+16)>>8][(xy2+16)&0xff] * m[2][2];
+
+  sInt FetchPix
+
+Die letzten 3 zeilen werden gecached. 512*3*16 = 24 KByte
+
+Blur C
+
+
+<--- -------------------------------------------------------------------- --->
+
+                         Interpreter Stack Machine
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+Eine Stack-Maschine verwaltet Objekte (BITMAP/TEXTURE/MESH/MODEL/CAMERA). Das 
+Programm für die Stack-Maschine wird als WordCode abgelegt. Die Objekte werden
+PostFix behandelt, die Parameter für die Operatoren folgen aber inlined. Ein
+Animation-Programm verändert die Parameter. Die Scene wird Animiert indem die
+Objekte sich Zeiger auf die Parameter der Operatoren merken (Model) oder indem
+die WordCodes neu ausgeführt werden.
+
+Der Texturgenerator muß die Konvertierung für Tile-Rendering on the fly machen.
+
+
+BEISPIEL-CODE:
+
+
+var mesh subdiv                   ; create variable "subdiv" of type mesh 
+var mesh subdivanim
+
+func mesh:subdivmulti [ mesh float int -- ]   ; subroutine for multiple subdivision
+  for dup mesh:subdivide next drop 
+  
+auto 0 0 :
+
+  #ff000000 bm:flat
+  0,5 0,5 0,2 0,3 0,04 0,04 #ffffffff bm:rectglow
+  0 tex:texture                     ; convert to texture
+  0 0 mat:basic                     ; ( tex -- tex mat )
+  0 0 mat:addtex                    ; ( tex mat -- mat )
+  mesh:cube                         ; ( mat -- mat mesh )
+  1 mesh:selectall
+  1.0 mesh:subdivide
+  0 mesh:selectall
+  1 mesh:selectface
+  1 mesh:selectface
+  mesh:deleteface
+  1 mesh:selectall
+  mesh:setmaterial                  ; ( mat mesh -- mesh )
+  !subdiv                           ; store mesh to predefind variable
+
+auto 0 0 :
+
+  135,0 sound:metronom              ; create metronom
+  ! song                            ; don't really need to define variables
+
+auto 0 16 :
+
+  @ subdiv                          ; fetch the mesh. actualle, a pointer
+  mesh:copy                         ; ( mesh -- copy_of_mesh ) 
+  time 4.0 * 1.0 % mesh:subdivide   ; animated subdivide
+  ! subdivanim                      ; and store again
+
+auto 0 0 :
+
+  @ subdivanim                      ; build a scene with that mesh
+  0 model:model                     ; do this only once, not every frame
+  0.0 0.0 -5.0 cam:camera           ; since only a pointer is stored
+  !camera
+
+auto 0 16 :
+
+  @ song music:play                 ; play music
+  @ camera cam:draw                 ; and draw scene
+
+  
+SYNTAX:
+
+
+Predefined function words
+
+  ~null
+  var TYPE VAR
+  type TYPE
+  func FUNC [ IN IN -- OUT ] CODE CODE CODE ...
+  call FUNC [ IN IN -- OUT ] CNAME
+  convert FUNC COST [ IN -- OUT ] CNAME
+  control FUNC CNAME
+  if else endif
+  loop breakif endloop
+
+
+
+Prinzipiell kann man jeden String als name benutzen, aber man sollte aufpassen
+das man die Strings nicht mit Ziffern vertauschen kann.
+
+in einer include-datei werden die systemfunktionen definiert, das sieht in etwa
+so aus:
+
+  call + [ int int -- int ] sc_addii
+  call + [ fixed fixed -- fixed ] sc_addff
+  call + [ real real -- real ] sc_addrr
+  call * [ int int -- int ] sc_mulii
+  call * [ fixed fixed -- fixed ] sc_mulff
+  call * [ real real -- real ] sc_mulrr
+  call */ [ int int int -- int ] sc_muldivii
+  call */ [ fixed fixed fixed -- fixed ] sc_muldivff
+  func */ [ real real real -- real ] >r * <r /
+
+die einfachen typen sind
+ 
+  int                 32 bit signed integer
+  fixed               16:16 bit signed fixed point
+  real                32 bit float
+
+vektoren können einfach als 4 floats übergeben werden, rechtecke sind 4 fixed
+und farben sind normale ints. 
+
+neue typen können einfach mit #type erzeugt werden. Jeder typ braucht genau
+32 bit auf dem stack. Die einzige bedeutung für den compiler ist das der name
+des typen in den prototypen erkannt wird. wie die 32 bit zu interpretieren 
+sind ist sache der funktionen.
+
+man kann automatische typenkonvertierungen definieren. immer wenn ein prototyp
+nicht pass wird ausgerechnet, wieviel es kostet ihn passend zu machen. es wird 
+die billigste funktion des entsprechenden namens benutzt, so ist polymorphie
+möglich. Die folgenden kosten bewirken, das für bis zu 15 parameter immer die
+günstigste variante gewählt wird:
+
+  convert int   256 [ fixed -- int  ] sc_cf2i
+  convert int   256 [ real -- int   ] sc_cr2i
+  convert fixed 1   [ int -- fixed  ] sc_ci2f
+  convert fixed 256 [ real -- fixed ] sc_cr2f
+  convert real  16  [ int -- real   ] sc_ci2r
+  convert real  1   [ fixed -- real ] sc_cf2r
+
+Die letzte art von funktion ist die Auto-Funktion. Diese Funktion kann nicht
+direkt aufgerufen werden. Autofunktionen können über einen Namen oder über
+bis zu 4 integer parameter identifiziert werden. Das Laufzeitsystem kann
+darüber entscheiden, wie damit zu verfahren ist. Im falle des Demosystems
+ist es start-takt und anzahl takte. Auto-Funktionen haben werder input noch
+output.
+
+mit @ kann man die nummer einer funktion hohlen. Diese kann man nicht direkt
+verwerten, aber einer C-Routine übergeben die die funktion dann entsprechend
+aufruft, unter berücksichtigung des Stacks. Man kann code schreiben der auf
+ein bestimmtes ereigniss hin ein model erzeugt, das in eine scene einfügt,
+und dem model eine routine übergeben die jeden frame aufgerufen wird und 
+das model steuert und gegebennenfalls vernichtet.
+
+mit !!!cname kann man während des compiles c-codes aufrufen. damit lassen
+sich kontrollstrukturen implementieren.
+
+  control if sc_cif_
+  control else sc_celse_
+  control endif sc_cendif_
+
+cif_() fügt eine leerword in den datenstrom ein. hier wird der sprungoffset
+für cif() gespeichert. celse_() patcht den sprungoffset des letzten if's
+und trägt sich selbst als neues if ein, cendif_() patcht den letzten if oder
+else. cif() iprüft die bedingung und springe, celse() springt immer. cif_()
+muß eine kopie des typenstacks anlegen, damit celse_() mit genau den selben
+typen loslegt. cendif_() muß die beiden resultierenden typenstacks vergleichen
+und eventuell eine fehlermeldung ausgeben.
+
+auf dieselebe art und weise lassen sich auch schleifen implementieren,
+hier muß überprüft werden ob der typenstack vor und nach der schleife gleich 
+ist.
+
+Um Literale vom Code auf den Stack zu kopieren müssen einige funktionen 
+für die verschiedenen varianten definiert werden, die der compiler implizit
+erzeugt:
+
+  [~litl -- int] !!litl        ; 16bit -> int
+  [~lith -- int] !!lith        ; 16bit>>16 -> int
+  [~lit1 -- int] !!lit1        ; 32bit -> int
+  [~lit2 -- int] !!lit2        ; 2x 32bit -> int
+  [~lit3 -- int] !!lit3        ; 3x 32bit -> int
+  [~lit4 -- int] !!lit4        ; 4x 32bit -> int
+
+die jeweiligen typen sind dabei nicht ernstzunehmen, der compiler benutzt
+den selben code um alle typen auf den stack zu pushen.
+
+
+INTERNE STRUKTUR:
+
+
+Für jeden Block [] wird ein Codeblock erzeugt. Alle aktiven [a b] Codeblöcke 
+werden jeden Frame ausgeführt, von Oben nach Unten. 
+
+Der Code ist direkt zu übersetzen. Für literals, load und store werden 
+entsprechende funktionen eingefügt. 
+
+Eine verfeinerung wäre es, wenn ein fname nicht gefunden wurde den ersten
+objekt-typ auf dem stack zu suchen und den entsprechenden typennamen vor
+den fname zu setzten und noch einmal zu suchen. dann kann "music:play" 
+gefunden wernden wenn nur "play" angegeben wurde und auf dem stack ein 
+music-objekt liegt. numerische werte auf dem stack stören dabei nicht.
+
+Der Bitmapgenerator muß tiles rendern. Das geht durch "delayed rendering".
+Ein Bitmapobjekt speichert entweder die pixel oder eine liste von 
+tile-befehlen welche die pixel erzeugen. Ein eintrag besteht aus dem
+code-pointer und einem Zeiger auf Parameter. immer wenn die Pixel wirklich
+benötigt werden wird der code ausgeführt und die Bitmap ist OK. Man kann
+die Tiles auch manuell ausrechnen: eine texturladeroutine kann so direkt
+in das Texturformat konvertieren.
+
+Der Code besteht aus 16-bit worten die indizes in die funktionstabelle sind.
+Eine erste implementierung kann normale C-Funktionssyntax benutzen. Später
+auf threaded code umgestellt werden. literale sind direkt in den code 
+eingefügt.
+
+
+THREADED CODE
+
+
+Beim (eventuellen) Threaded Code müssen alle funktionen in 64 KByte code
+enthalten sein. Dies betrifft vor allem die basisfunktionen und stubs 
+für die größeren c-funktionen, es sollte also genug platz für ein grosses
+system sein.
+
+die register sind wie folgt verteilt:
+
+  eax   tos
+  ebx   stack
+  ecx   unused
+  edx   code
+  esi   rstack
+  edi   code-segment
+  ebp   c-calls
+  esp   c-calls
+
+ein add (i i - i) mit code-threading sieht dann so aus:
+
+  sub   ebx,4
+  add   eax,[ebx]
+  movzx cx,[edx]
+  add   edx,2
+  jmp   [edi,ecx]
+
+
+GUI:
+
+
+Die Codeblöcke lassen sich auch als Operatoren darstellen, mit Load und 
+Store. Das Sortieren kann automatisch erfolgen. Animationscode muß den
+Operatoren entsprechend zugeordnet werden, zum Beispiel über zusatzzeilen
+oder text in den Parameterfenstern.
+
+
+
+<--- -------------------------------------------------------------------- --->
+
+                                  Forth
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+verdammt, ich sollte einmal ein richtiges forth system geschrieben haben 
+damit ich nicht immer diese halben sachen mache. nun ja, ich muß nicht ganz
+so perfekt sein wie echte forth-systeme.
+
+das system besteht aus
+
+  - preprocessor (c)
+  - base system (asm)
+  - compiler (handcompiled forth)
+  - exporter (forth) (optional)
+  - application (forth)
+  
+
+der preprocessor tokenisiert die eingabe. gleiche wörter werden zu gleichen
+tokens. literals verden speziell codiert. die im base system definierten 
+wörter müssen "eingeseeded" werden.
+
+das base system enthält die ganzen code wörter. der compiler ist zwar in 
+forth, aber die von hand mit "dw 01234h" codiert.
+
+danach kann der compiler in normalen forth geladen werden. das system ist 
+bereit.
+
+aber im intro wird nicht das komplette system benötigt. im exporter-mode
+erzeugt der compiler parallel leicht packbaren code ohne dictionary und
+die wörter die nur für den compiler selbst benötigt werden. das base system
+muß doppelt vorhanden sein.
+
+ich lege wert auf ein typisiertes forth.
+
+tokens und zellen sind 32 bit groß. bei den tokens wird allerdings garantiert
+nur 16 bit benutzt, was die komprimierung vereinfacht. 
+
+
+EXECUTION MODEL
+
+
+Warum nicht die standard-implementation mit indirect threaded code? daraus
+kann man sehr leicht exportieren, und der reimporter kann daraus inlined
+subroutine threaded code machen.
+
+das dictionary sieht so aus:
+
+"name#f" LINK * CODE DATA DATA
+
+* markiert die speicherzelle, die im threded code benutzt wird. 
+
+
+<--- -------------------------------------------------------------------- --->
+
+                           Compact Script Language
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE
+
+
+Ich brauche eine kompakte Script-Language die man auch kompilieren kann.
+diese besteht aus 4 ebenen
+
+  source --(parser) -> text --(translator)-> code --(optimizer)-> assembler
+                                              
+der code kann auch direkt interpretiert werden und ist kompakt. 
+
+
+PROBLEME:
+
+
+  - zu viele kryptische worte
+  + booleans
+  - zu viele basisworte
+  - multistack-konzept auf hoher ebene undurchsichtig.
+  - li(0) syntax unbrachbar
+
+eliminierung von typen:
+
+  - nur noch signed
+
+
+CODE
+
+
+es werden folgende typen unterstützt:
+
+	i integer	32 bit signed int
+	f float		32 bit float
+	o object	32 bit ptr 
+	v vector	4x32 bit float vector
+	m matrix	4x4x32 bit float
+
+direct words:
+
+	+	if v		; arithmetics
+	-	if v
+	-r	if v
+	*	if v
+	/	if
+	*/	if
+	%	i
+	/%	i
+	>>	i
+	<<	i
+	~	if
+	&	i
+	|	i
+	!	i
+	<	if
+	>	if
+	=	ifo
+	0=	ifo
+	dot	   v
+	cross	   v
+	scale	   v
+	abs	if v
+	unit       v
+	sign    if
+	max	if v
+	min     if v
+	range   if
+	align   i
+
+	!	ifo		; fetch & store
+	@	ifo
+	!b	i
+	@b	i
+	!w	i
+        @w	i
+	v!	   v
+	v@	   v
+
+	sqrt     f		; advances float
+	isqrt    f	
+	sincos   f
+	atan2    f
+	pow	 f
+
+
+	dup	ifov		; stack
+	swap	ifov
+	over	ifov
+	drop	ifov
+	tuck	ifov
+	nip	ifov
+
+	i>o	i		; move from i-stack to o-stack
+	o>i	i		; move from o-stack to i-stack
+	i2o	i		; copy from i-stack to o-stack
+	o2i	i		; copy from o-stack to i-stack
+
+	i>f			; type conversion
+	f>i
+
+	f>vx f>vy f>vz f>vw f>v	; vector element access
+	vx>f vy>f vz>f vw>f
+
+immediate words:
+
+	pick	i  fov		; pick (constant distance)
+
+	l1 l2 l2h l4		; int constant
+	lf			; float constant
+	la			; address of data/bss element
+
+	if			; conditional jump
+	ifnot			; conditional jump
+	goto			; unconditional jump
+	call			; call ptr
+
+	.			; object address + offset --- odup o> +
+	..			; 2nd object on o-stack
+	m.			; fetch metadata --- odup o> @ + @
+	m..			; 2nd object on o-stack
+
+	:			; define new word 
+	;			; end of word 
+	emit			; copy directly into code space
+	data			; copy directly into data space
+	bss			; reserve in data space (not an own segment!)
+	syscall			; escape to system.
+
+
+colon words:
+
+	mnull			; matrix command
+	meuler
+	mvector
+	mlookat
+	mmul33 mmul44
+	mtrans
+	mtransover
+	mscale
+	mdup
+	mswap
+	mover
+	mdrop
+	m!
+	m@
+	v>mi v>mj v>mk v>ml
+	mi>v mj>v mk>v ml>v
+	mrot33 mrot34 mrot44
+	mrot33t mrot34t mrot44t
+
+
+
+die direct und immediate words belegen die bytecodes 64-255. die colon words
+werden als 16 bit 0x0000-0x3fff codiert, high byte first. vielen immediate-
+words folgen weitere bytes, etwa sprungadresse (1 oder 5 bytes) oder immediate
+data.
+
+es gibt unterschiedliche stacks für 
+
+	isu	integer stack
+	f       float stack
+	o	object stack
+	v	vector stack
+	m	matrix stack
+
+Das system wird normalerweise erst um weitere colon-wörter erweitert und dann
+benutzt. 
+
+beispielcode:
+
+	: nextpower2 ( i --- i )
+	  1 b1(1)
+	  2* bg(-1)
+	  swap drop ;
+	   
+
+	: mrot44 ( v m --- v m ) 
+	  vdup >mi v* 
+	  vdup >mj v* v+ 
+	  vdup >mk v* v+ 
+	       >ml v* v+ ; 
+	: mrot33 ( v m --- v m )
+	  vw>
+	  vdup >mi v* 
+	  vdup >mj v* v+ 
+	       >mk v* v+ >vw ;
+
+
+
+CODE -> ASSEMBLER EINFACH
+
+
+Ein einfacher Compiler erzeugt code für Scripting und in Size-Limited 
+environments. Jedem Primitive wird ein Assembler-Schnipsel zugeordnet. Der
+Compiler braucht eine Tabelle für die Einsprungadressen der Colon-Wörter 
+(dictionary) und eine Tabelle für die addresse jedes einzelnen words einer 
+funktion.
+
+Die eingabe ist der Code, die Ausgabe ist ein code-segment, ein daten-segment
+und eine tabelle mit den addressen der wörter. 
+
+Für jedes Word wird der entsprechende assembler-code in das code-segment 
+kopiert. die immediate wörter haben zusätzliche aktionen wie sprungziel-
+patching, immediate daten einfügen oder colon-words ins dictionary eintragen.
+
+man kann das ganze optimieren in dem man unterprogramme inlined und die den
+fpu-stack bentutzt.
+
+die Register sind
+
+	eax	i-TOS
+	ebx	<free>
+	ecx	<free>
+	edx	o-Stack
+	esi	i-Stack
+	edi	f-Stack
+	ebp     v-Stack
+	esp	call stack
+	st0	f-TOS
+	xmm0	v-TOS
+	xmm4567	m-TOS
+
+wenn xmm befehle nicht verfügbar sind, so wird eine fpu-emulation benutzt.
+v-TOS und m-TOS liegen dann im speicher, seperat vom stack. der
+matrix-stack-pointer wird nicht in einem register gecached.
+
+
+CODE -> ASSEMBLER OPTIMIERT
+
+
+Der Stack-Code jedes direct oder immediate Wortes wird in einen 3-adress-
+instruction umgewandelt. die stack-operationen werden zu virtuellen variablen
+aufgelößt. register werden verteilt, die restlichen virtuellen variablen 
+werden auf den stackframe verteilt. der aufrufende muß die parameter vom
+stack entfernen.
+
+der i- und f-stack werden aufgegeben, die entsprechenden parameter werden
+erst in registern und dann auf dem stack übergeben, zuerst integer, dann 
+float. der f- und m-stack bleiben erhalten, inclusive der in registern 
+gehaltenen TOS werte.
+
+
+	eax	<scratch> <in1> <out1>
+	ebx	<scratch> <in2> <out2>
+	ecx	<keep>
+	edx	<keep>
+	esi	<keep>
+	edi	v-stack
+	ebp	stack frame
+	esp	call stack
+	st0123	<keep> <in1234> <out1234>
+	st4567	<empty>
+	xmm0	v-TOS
+	xmm123	<scratch>
+	xmm4567	m-TOS
+	
+es können also zwei integer und 4 float werte in registern übergeben werden.
+
+der fpu-float-stack wird so benutzt: vier register müssen "empty" sein. die
+vier anderen register müssen entweder unverändert bleiben oder als eingabe
+konsumiert werden. bis zu vier ausgaberegister können gepushed werden. im
+extreem ist der stack also leer (4 eingaben gepoppt) oder voll (keine eingaben
+gepoppt, aber 4 resultate gepushed und 4 register behalten).
+
+für alle routinen, die xmm benutzen gibt es zwei implementationen: eine
+mit echten xmm befehlen und eine mit emulation. beim aufrug einer xmm
+routine aus eine non-xmm routine muß vorher gecheckt werden (mit if).
+die entscheidung kann vom optimizer aus dem inner-loop herausgezogen werden.
+beim aufruf einer xmm routine aus eine xmm routine kann immer automatisch
+die richtige version genommen werden.
+
+der vstack-ptr ist nur innerhalb vom xmm routinen gesetzt. wird eine xmm 
+routine von einer nicht-xmm routine aufgerufen, so muß er vorher geladen 
+und danach gespeichert werden. 
+
+beispiel:
+
+	; 10 test @ 4 + 2 1 
+	; somestuff ( d c b a --- b a )
+	; 1+ * test !
+
+	push	10
+	mov	eax,[test]
+	add	eax,4
+	push	eax
+	mov	ebx,2
+	mov	eax,1
+	call	somestuff
+	add	esp,8
+	add	eax,1
+	mul	eax,ebx
+	mov	[test],eax
+
+damit der compiler korrekten code erzeugen kann, müssen alle codephade die
+datenstack gleichmäßig behandeln: egal, wie der code verläuft, jede zeile hat
+immer den selben stackpointer wert. der prozessorstack darf allerdings
+hoch - und runterlaufen (mit >r / r>). deshalb muß immer ein korrekter 
+stack-frame angelegt werden, und der sp muß direkt nach jedem unterprogramm-
+aufruf korregiert werden.
+
+
+OBJECTS
+
+
+.. to be done ..
+
+
+TEXT
+
+
+die übersetzung vom text format zum code format ist 1:1.  Den worten wird
+jeweils ein typenprexis versehen, nur i oder s können wegbleiben:
+
+	*
+	u*
+	f*
+	dup
+	fdup
+
+immediate-befehle werden mit werten in klammern angegeben. literals können
+auch direkt angegeben werden. sprungzeile sind immer relativ zum nächsten
+befehl, immedatate befehle mit werten in klammern zählen auch als ein befehl.
+lf() erzeugt floats und wird in l4(), l3h() oder l2h() umgesetzt.
+
+	l1(23)
+	l4(43248324)
+	lf(3.14)
+	17
+	2.87
+	l1(2) u* ubg(-2)
+
+neue worte können normal definiert werden
+
+	: test 4 + ;
+	4 test . 
+
+variablen können mit var erzeugt und direkt benutzt werden. konstanten 
+können mit const erzeugt und direkt benutzt wernden.
+
+	4 const vier
+	3.14 fconst pi
+	var int-var
+	fvar float-var
+	: setall vier int-var ! pi float-var ! ;
+	: outall int-var @ . float-var f@ f. ;
+	: all setall outall ;
+
+wenn la=128 am anfang wird daraus
+	
+	data(1)
+	data(1)
+	: setall l1(4) la(128) ! lf(3.14) la(132) ! ;
+	: outall la(128) @ . la(132) f@ f. ;
+	: all setall outall ;
+
+im bytecode wird aus ": name" natürlich nur  ":", da die codes immer 
+aufsteigend vergeben werden. wenn das aktuelle word 0x1234 ist kompiliert
+all zu
+
+	: 0x1234 0x1235 ;
+
+TEXT-Module können nicht einzeln kompiliert und nachträglich gelinkt werden,
+es muß immer ein komplettes system erstellt werden.
+
+structurinformationen werdennicht verwaltet sondern als metadata included
+
+	metadata(1001,16,...)
+
+
+SOURCE
+
+
+Das source-format liefert eine höhere abstraktionsebene als das text-format, 
+ist aber immer noch eindeutig.
+
+es ist immer noch eine stack-sprache und darauf optimiert, sehr kurze 
+unterprogramme zu schreiben.
+
+structurierte programmierung ist möglich
+
+	: sort ( a b --- a b ) > if swap then ;
+	: sortp ( a b --- ) over @ over @ sort 
+	        ( ap bp a b --- ) 2 pick ! nip ! ;
+	: sortr ( a b --- ) over @ over @ -1 sort +1 
+	        ( ap bp a b --- ) 2 pick ! nip ! ;
+	  
+	: nextpower2 ( i --- i )
+	  i>o 1 begin dup o2i <= while repeat odrop ;
+
+eine rechteck-klasse könnte so aussehen
+
+	: !0 null swap ! ;
+	; minp ( ap bp --- ) @ over @ 
+	       ( ap b a ) min swap ! ;
+	; maxp ( ap bp --- ) @ over @ 
+	       ( ap b a ) max swap ! ;
+
+	struct rect
+		var x0
+		var y0
+		var x1
+		var y1
+		: init . x0 !0 . y0 !0 . x1 !0 . y1 !0 ;
+		: sort . x0 . x1 sortr . y0 . y1 sortr ;
+		: or ..= rect 
+		  . x0 .. x0 minp  . y0 .. y0 minp
+		  . x1 .. x1 maxp  . y1 .. y1 maxp ;
+		: and ..= rect 
+		  . x0 .. x0 maxp  . y0 .. y0 maxp
+		  . x1 .. x1 minp  . y1 .. y1 minp ;
+	endstruct
+
+	class bitmap
+		meta
+		1001 constm cid
+		var p
+		var x
+		var y
+		: size . x @ . y @ * 2* ;
+		: init ( x y --- ) . y ! . x ! . size malloc ;
+		: exit ( ) . p @ free ;
+		: clear ( c ) . p @ . size memset4 ;
+		: clear0 ( ) 0 clear ;
+	endclass
+
+
+<--- -------------------------------------------------------------------- --->
+
+                              CForth
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+CForth ist Chaos Forth.
+
+Bei diesem Forth gibt es getrennte Stacks für
+
+- I Integer
+- F Float
+- O Objekts
+- X MMX Vectors
+- V XMM Vectors
+- M 4x4 Float Matrices
+
+Die getrennten Stacks erlauben eine effektive Speicherung des TOS in 
+entsprechenden registern und sorgen für implizite typisierung. Für
+den Objektstack gibt es Typenüberprüfungen zur Laufzeit und Meta-daten,
+die sich für virtuelle funktionsaufrufe benutzen lassen.
+
+
+Für CForth gibt es mehrere Implementierungen:
+
+- CForthA forth to assembler compiler
+- CForthC forth to C compiler
+- CForthN native compiler
+- CForthI interpreter
+
+CForthA erzeugt aus einer Forth-Datei durch einfaches aneinanderhängen von
+assembler-schnipseln nasm code. Parameter werden auf getrennten Stacks 
+übergeben.
+
+CForthC erzeugt für jedes Wort eine C++ Funktion mit C-Style Parameter 
+passing für I F O und getrennte Stacks für X V M.
+
+CForthN funktioniert wie CForthC, nur das direkt assembler-code erzeugt wird.
+
+CForthI erzeugt einen bytecode, der von einem minimalen backend durch das 
+zusammenkopieren von assembler-schnipseln ausgeführt werden kann. CForthI
+kann für sehr kleine executables oder scriptsprachen benutzt werden. CForthN
+ist in der lage, outer-loops als bytecode und inner-loops als assemblercode
+zu generieren, um maximale ausführungsgeschwindigkeit mit minimaler dateigröße
+zu kombinieren.
+
+
+Es gibt drei arten von wörtern:
+
+- IWord: immediate word
+- CWord: code word
+- UWord: user defined word
+
+Die IWords werden während der kompilierung ausgeführt, sie dienen in erster 
+linie dazu, neue Wörter zu definieren.
+
+CWords sind die primitives. Je nach Implementierung definieren sie die 
+Assembler, C oder bytecode-fragmente die zur erzeugung der ausgabe benötigt
+werden. Die compilierung besteht meistens darin, macros in einem string 
+aufzulösen und das ergebnis in die ausgabedatei zu schreiben. Die primitives
+werden also im quellcode und nicht im compiler definiert, was sehr praktisch
+ist wenn man weitere primitives hinzufügen will.
+
+UWords sind die normalen user defined words die das eigentliche programm 
+ausmachen.
+
+
+MMX
+
+
+Ein unterprogramm erwartet entweder, im MMX oder im FPU modus aufgerufen
+zu werden. im MMX modus ist der F-Tos auf dem stack und der X-Tos im register,
+im FPU modus umgekehrt. die ensprechenden push/pop und emms befehle müssen
+vom compiler automatisch eingefügt werden.
+
+
+XMM
+
+
+XMM und MMX/FPU kooperieren gut, ist aber nicht überall vorhanden. CForthI 
+implementiert die intrinsics entsprechend doppelt und entscheided zur laufzeit
+welche variante zu benutzen ist. Die anderen implementierungen müssen routinen
+die XMM benutzen doppelt compilieren. es gibt also drei varianten: XMM, FPU 
+oder EGAL. Entweder werden XMM und FPU erzeugt, oder nur EGAL. wird von
+EGAL ein doppelt implementiertes wort aufgerufen, so muß der code hinzugefügt 
+werden der vor dem aufruf die entsprechende implementierung auswählt. auf 
+diese weise erhält man ein executable das minimale größe hat und doch nicht
+in den innerloops zwischen den implementierungne umschalten muß.
+
+
+
+IWORDS
+
+
+Es gibt nur wenige IWords, der compiler muß also nicht viel tun:
+
+  0123		decimal integer (maybe with positive or negative sign)
+  0x1234	hex integer (maybe with positive or negative sign)
+  0123.45	decimal float (maybe with positive or negative sign)
+  "bla"		string constant
+  ;		end of definition (UWord, CWord, ?Var, MACRO)
+  :		start UWord
+  :A		start CWord for CForthA
+  :C 		start CWord for CForthC
+  :N 		start CWord for CForthN
+  :I		start CWord for CForthI
+
+  :XMM		erzeuge wort doppelt für XMM und FPU
+  :MMX		dieses wort erwartet MMX status
+
+  IVAR		create integer variable
+  FVAR		create float variable
+  OVAR		create object variable, specify type
+  XVAR		create mmx variable
+  VVAR		create vector variable
+  MVAR		create matrix variable
+  MACRO		create constant
+  STRUCT	create class without virtual function ptr's
+  STRUCT;	end class
+  BASE		add baseclass
+
+  .		object scope
+  ..		object scope(2)
+  .=		declare scope
+  ..=		declare scope(2)
+  '		address of word
+
+UWord definitionen sind ganz normal:
+
+	: max over over > if drop else nip then ;
+
+XMM und MMX wörter müssen entsprechend definiert werden:
+
+	:MMX blur ( mmx code ) ;
+	:XMM transform ( xmm code ) ;
+
+CWords werden weiter unten beschrieben.
+
+Globale variablen werden mit den ?VAR worten erzeugt:
+
+	IVAR FrameNumber ;
+	FVAR Time ;
+	IVAR a b c ;
+
+bei Objekten muß die klasse angegeben werden:
+
+	OVAR sRect r ;
+
+Will man ein array haben:
+
+	FVAR 64 array ;
+
+Pointer sind Integer. Punkt. 
+
+Wird das mit ?VAR definiert Wort benutzt, so wird die adresse der variable
+auf den IStack gepackt. Will man darauf zugreifen, so muß man mit "!" und "@" 
+(fetch und store) arbeiten. Array-Zugriffe müssen mit pointer-arithmetik 
+implementiert werden, wobei die pointer immer bytes zählen!
+
+Macros ersetzen ein word durch mehrere andere
+
+	MACRO PI 3.14 ;
+	MACRO TIMESLICE 10 ;
+	MACRO ADD1 1 + ;
+
+Variablen und UWords können auch in klassen definiert werden:
+
+	STRUCT sRect
+	  IVAR x0 y0 x1 y1 ;
+  	  : Init 0 . x0 ! 0 . y0 ! 0 . x1 ! 0 . y1 ! ;
+	  : And ..= sRect
+	    . x0 @ .. x0 @ min .. x0 !
+	    . y0 @ .. y0 @ min .. y0 !
+	    . x1 @ .. x1 @ min .. x1 !
+	    . y1 @ .. y1 @ min .. y1 ! odrop ; 
+	STRUCT;
+
+Der dot "." ist ein scope-prefix, der bedeutet das das wort nicht im globalen
+dictionary sondern im lokalen dictionary des aktuellen objektes vom o-stack
+gesucht werden soll. der doubledot ".." prefix bezieht sich auf das 
+zweitoberste objekt. ".=" und "..=" setzen den typ der auf dem o-stack 
+erwartet wird. ".=" kann bei funktionen einer klasse entfallen, es wird ein
+objekt vom eigenen typ erwartet. operatoren auf dem o-stack werden nicht 
+verstanden, der typ muß entsprechend neu gesetzt werden.
+
+ruft man den typnamen auf, so wird die größe der struktur in bytes auf den
+i-stack geschoben.
+
+Mit BASE kann man die basisklasse einer einfach-vererbenden klasse festlegen.
+dies muß gleich zu anfang geschehen. 
+
+	STRUCT sRectX BASE sRect
+	  IVAR User ;
+	  : Init (O sRectX ) .= sRect . Init 0 .= sRectX . User ! ;
+	STRUCT;
+
+
+Das letzte word eines programms ist das startwort.
+
+
+
+SCANNER
+
+
+Der Scanner muß Wörter, Literals und Prefixe erkennen. Alle wörter sind 
+durch Space getrennt. Nach dem Scannen ist über das wort bekannt:
+
+- Name (or string literal value)
+- Typ (IWord, CWord, UWord, Type, Int-Lit, Float-Lit, String-Lit, NewWord)
+- Value (word-number from list or 32 bit literal value)
+
+Der Scanner entfernt kommentare. Er sucht das Wort in den listen und versucht
+es entsprechend zu klassifizieren. Dabei kann ein Scope übergeben werden um
+in strukturen zu suchen.
+
+taucht es nicht in den listen auf, so muß es ein literal sein. ist es
+auch kein literal, so ist es ein neues wort.
+
+vorher werden prefixe und suffixe entfernt. dies sind (für das word test)
+
+	.test	->	. test
+	..test	->	.. test
+	test!	->	test !
+	test@	->	test @
+
+	.test!	->	. test !
+	.test	->	. test @
+	..test!	->	.. test !
+	..test	->	.. test @
+
+
+FUNTKIONSPTR
+
+
+	IVAR fptr
+	: test + ;
+	: setfptr ' test fptr ! ;
+	: usefptr 1 2 fptr exec print ; 
+
+funktionsptr funktionieren nit mit CFORTHC und CFORTHN. die idee ist also, 
+die outer loops zu interpretieren und die inner loops zu compilieren.
+
+
+VIRTUELLE FUNKTIONEN
+
+
+Dies ist nur ein proposal
+
+	CLASS sObject
+	  META : Init ;
+	  META : Exit ;
+	  META IVAR Cid ;
+	  IVAR SaveId ;
+	CLASS;
+
+
+
+CFORTHA
+
+
+Die Register sind wie folgt verteilt:
+
+	eax	<free>
+	ebx	I-Tos
+	ecx	<free>
+	edx	O-Tos
+	esi	I-Stack
+	edi	F-Stack
+	ebp	O-Stack
+	esp	R-Stack
+	st0	F-Tos
+	xmm0	V-Tos
+	xmm4567	M-Tos
+
+eine CWord wird als assemblercode definiert:
+
+	:A + "add ebx,[esi];sub esi,4;" ;
+
+
+semikolons werden dabei als linefeed interpretiert und vor die befehle wird 
+ein tab gesetzt.
+
+längere codes können in zwei zeilen zerteilt werden
+
+	:A - "sub ebx,[esi];neg ebx;"
+	     "sub esi,4;" ;
+
+XMM wörter brauchen zwei implementierungen, je nach dem ob xmm vorhanden ist
+oder nicht.
+
+	:A v+ "fadd...." XMM "padd..." ;
+
+MMX wörter müssen markiert werden, damit der richtige registersatz aktiv ist.
+MMX muß immer vorhanden sein:
+
+	:A x+ MMX "padd..." ;
+
+
+für strukturierte sprünge gibt es einen label-stack. dieser speichert den
+typ des blockes und eine nummer. der typ wird als einstellige ziffer benannt.
+"if" hat die nummer 0 und "do" die nummer 1. der compiler kann so überprüfen
+ob die befehle richtig verschachtelt sind. 
+
+%>0 pushed den labelstack %<0 poppt ihn. mit %=0 kann man den typ des obersten
+elementes überprüfen. %l0 benutzt das oberste element mit dem richtigen typ
+im label-stack. die nummern werden immer paarweise vergeben, %L0 benutzt die
+nummer plus 1. %+0 erhöht die nummer, aber das geht nur ein einziges mal.
+
+	:A if "%>0sub esi,4;or ebx,ebx;mov ebx,[esi+4];jeq %l0;" ;
+	:A else "jmp %L0;%l0:;%+0" ;
+	:A then "%l0:;%<0" ;
+
+	:A do "%>1%L1:;" ;
+	:A while "sub esi,4;or ebx,ebx;mov ebx,[esi+4];jeq %l1;" ;
+	:A repeat "jmp %L1;%l1:;%<1" ;
+
+literals werden direkt auf den stack gepushed. der code dafür sieht so aus
+
+	 mov [esi],ebx		; 42
+	 add esi,4
+	 mov ebx,42
+
+":" und ";" werden trivial implementiert
+
+	: add + ;
+	: test 1 2 3 if add else + ;
+	
+cwords werden reinkopiert, uwords werden als unterprogramme aufgerufen
+
+	c000:			; add
+	 add ebx,[esi]		; +
+	 sub esi,4
+	 ret			; ;
+
+	c001:			; test
+	 mov [esi],ebx		; 1
+	 add esi,4
+	 mov ebx,1
+	 mov [esi],ebx		; 2
+	 add esi,4
+	 mov ebx,2
+	 mov [esi],ebx		; 3
+	 add esi,4
+	 mov ebx,3
+	 sub esi,4
+	 or ebx,ebx		; if
+	 mov ebx,[esi+4]
+	 jeq l000
+	 call add		; add
+	 jmp l001		; else
+	l000:
+	 add ebx,[esi]		; +
+	 sub esi,4
+	l001:			; then
+	 ret			; ;
+
+globale variablen liegen im datensegment ab dem label "globals". bei
+der benutzung wird die adresse auf den stack gepackt. lokale variablen
+sind relativ zum objekt auf dem objekt-stack. 
+
+	 mov [esi],ebx		; var
+	 add esi,4
+	 lea ebx,[globals+12]
+	 mov [esi],ebx		; type.var
+	 add esi,4
+	 lea ebx,[edx+12]
+	 mov [esi],ebx		; type..var
+	 add esi,4
+	 mov ebx,[edx]
+	 add ebx,12
+	 mov ebx,[ebx]		; @
+	 mov eax,[esi]		; !
+	 mov [ebx],eax
+	 sub esi,8
+	 mov ebx,[esi+4]
+
+es mag sich lohnen die kombinationen aus "." ".." "!" und "@" hardzucoden.
+
+	 mov [esi],ebx		; type..var
+	 add esi,4
+	 mov ebx,[edx]
+	 add ebx,12
+	 mov eax,[esi]		; !
+	 mov [ebx],eax
+	 sub esi,8
+	 mov ebx,[esi+4]
+
+	 mov eax,[edx]		; type..var!
+	 mov [eax+12],ebx
+	 mov ebx,[esi]
+	 sub esi,4
+
+
+CFORTHI
+
+
+Die register sind genau wie bei CFORTHA verteilt, und die assembler-schnipsel 
+sind auch die selben. aber der code wird zur laufzeit zusammengestellt, anhand
+eines bytecode.
+
+die symbole des bytecodes sind
+
+- 0x00 .. 0x18	special
+- 0x18 .. 0x1f  intrinsics for the system
+- 0x10 .. 0xbf	intrinsics for cwords
+- 0xc0 .. 0xff	uword, followed by another byte to access 0x4000 uwords
+
+die specials sind:
+
+- 0x00 dd		l1	load sS8 to IStack
+- 0x01 dd dd		l2	load sU16 to IStack
+- 0x02 dd dd dd dd	l4	load sU32 to IStack
+- 0x03 dd dd dd dd	lf	load sF32 to FStack
+- 0x04			label	mark label
+- 0x05			colon	mark uword
+- 0x06 cd		jxx	jump on condition "c" to "d"
+- 0x07 cd dd		jxx	jump on condition "c" to "d"
+- 0x08 dd dd		var	var address (dddd*4)
+- 0x09 dd		.var	.var address (dd*4)
+- 0x0a dd		..var	..var address (dd*4)
+- 0x0b uu uu		tick	adress of uword
+- 0x0c dd dd		var!	var! (dddd*4)
+- 0x0d dd		.var!	.var! (dd*4)
+- 0x0e dd		..var!	..var! (dd*4)
+- 0x0f nn		sys	syscall
+- 0x10 nn		sysi	syscall with integer result
+
+
+- 0x18			#18	ret
+- 0x19			#19	fpu -> mmx state
+- 0x1a			#1a	mmx -> fpu state
+- 0x1b			#1b	push arg for syscall
+
+cwords are defined as sequences of the specials above or hex code numbers.
+the assembly is coded together with theinterpreter.
+
+	:I + #20 ;
+
+jumps are encoded just like in CFORTHA
+
+	:A if "%>0 #21 jeq %l0;" ;
+	:A else "jmp %L0 label %l0 %+0" ;
+	:A then "label %l0 %<0" ;
+
+	:A do "%>1 label %L1" ;
+	:A while "#21 jeq %l1;" ;
+	:A repeat "jmp %L1 label %l1 %<1" ;
+
+interfacing the system is easy:
+
+	:A PrintC "#1b sys #00" ;
+
+
+CFORTHC
+
+
+dies ist ein richtiger compiler der aus jedem wort ein unterpogramm mit
+c-style calling conventions macht. die I, F und O Stacks werden dabei wie
+ganz normale C datentypen behandelt. dabei werden immer zuerst O, dann I 
+und zuletzt F übergeben. wird mehr als ein ergebniss übergeben, so wird
+es als referenzparameter hintenangehängt.
+
+X, M und V-Stack bleiben unverändert. 
+Parameterübergabe in Multimedia-Registern schafft der c-compiler sowieso
+nicht richtig, wenn performance erwünscht ist muß CFORTHC selber inlinen.
+
+
+Die CWords werden als C-Schnippel dargetstellt. mit %>i0 macros werden
+parameter von den stacks geholt:
+
+- % macro start
+- > pop input
+- < push output
+- i integer
+- f float
+- o object
+- 0 nummer der elements, 0-9
+
+der compiler ersetzt die macros durch vierstellige zahlen. damit kann man
+einfach funktionierenden c-code erzeugen:
+
+	:C - "int %<i0 = %>i0 - %>i1;" ;
+	:C f+  "float %<i0 = %>i1 + %>i0;" ;
+	:C swap "int %<i0 = %>i1; int %<i1 = %>i0;" ;
+	: test swap - ;
+	: test2 1 2 test ;
+
+daraus wird:
+
+	int c0000(int i0000,int i0001)
+	{
+	  int i0002 = i0001; int i0003 = i0000;
+	  int i0004 = i0002 - i0003;
+	  return i0004;
+	}
+	int c0001()
+	{
+	  int i0000 = 1;
+	  int i0001 = 2;
+	  int i0002 = c0000(i0001,i0002);
+	  return i0002;
+	}
+
+aus den stack-macros kann man also den kompletten prototypen generieren.
+
+
+die %>0 %<0 %=0 %+0 %l0 macros dienen der kontrollstruktur-verifizierung, 
+erzeugen aber keinen code.
+
+	:C if "%>0 if(%>i0){" ;
+	:C else "%=0 %+0 }else{" ;
+	:C then "} %<0)" ;
+	:C do "%>1 while(1){" ;
+	:C while "%l1 if(%>i0) break;" ;
+	:C repeat "} %<1" ;
+
+XMM und MMX funktionieren wie bei :A
+
+
+um einenn funktionspointer aufzurufen muß der prototyp bekannt sein.

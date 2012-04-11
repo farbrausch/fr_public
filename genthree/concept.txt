@@ -1,0 +1,2775 @@
+<--- -------------------------------------------------------------------- --->
+
+                               Code Generator
+
+<--- -------------------------------------------------------------------- --->
+
+
+KONZEPT
+
+
+einige ideen benötigen einen flexiblen generator für code:
+
+- textur generator
+- ausdrücke im editor
+
+eine methode wäre es, den code in c zu schreiben über die shell einen compiler
+zu starten und das ergebniss dynamisch zu linken. das hat aber den nachteil,
+das die turnaround-zeiten langsam wären. auch ist das einlinken des 
+generierten codes eventuell schwer. und da der compiler auch mit MMX und ISSE
+klarkommen soll ist die auswahl nicht groß, kommerzielle pakete haben dazu
+lizensnachteile. eventuell macht auch das zusammenpuzzeln des c-sources 
+probleme. 
+
+alternativ kann ich auch mein eigenes optimierendes backend schreiben. merke:
+der code wird hierbei nicht im intro erzeugt, sondern im tool!
+
+ich erwarte dabei nicht zu viel von meinem compiler. es geht um einfache 
+programme  die ausdrücke ausrechnen mit if/else/endif aber ohne schleifen
+(sprünge zurück) und unterprogramme.
+
+
+AUSGABE
+
+
+ausgabe ist ein maschienenprogramm. diesem muß in register EBX ein zeiger 
+auf den "workspace" übergeben werden, in dem alle "variablen" des programms
+enthalten sind. hier kann man startwerte hineinschreiben und ergebnisswerte
+heraushohlen.
+
+da der compiler eventuell optimiert, werden nur die ergebnisswerte garantiert 
+zurückgeschrieben die als resultat markiert wurden. alle anderen werte bleiben 
+möglicherweise in registern. 
+
+das programm rettet selber alle register.
+
+
+EINGABE
+
+
+das programm muß in form einer befehlsliste vorliegen. alle befehle haben
+das format:
+
+  [31...................................0]
+  [76543210][76543210][76543210][76543210]
+   operator  dest      src-a     src-b       
+
+dest, src-a und src-b sind wortoffsets (wort=32 bit) in den workspace. die 
+möglichen operatoren enthalten rechenbefehle, if/else/endif, das garantierte 
+zurückschreiben eines resultats, lesen und schreiben von speicher über zeiger,
+array-adressierung innerhalb des workspace und immediate-ladebefehle.
+
+die immediate ladebefehle sind eine ausnahme vom befelsformat weil die
+immediate daten dirent hinter dem befehl folgen.
+
+die aritmetisch/logischen befehle unterstützen die datentypen int, float,
+4x16 bit mmx und 4x32 bit floats. achtung, bei den vektor-typen wird mehr als 
+ein wort im workspace verbraucht!
+
+einige beispiel-befehle
+ 
+  ; input/output
+  .def.i  x                     
+  .def.i  y
+  .def.i  bitmap
+  .def.v  color
+  ; internal
+  .def.i  index
+  .def.i  ptr
+  .def.i  t0
+  .def.i  t1
+  .def.v  pink
+
+  ; convert pink pixels to alpha
+
+  in.i    x                     ; mark as input
+  in.i    y                     ; (generates no code)
+  in.i    bitmap                ; (just for type-checking)
+
+  imm.i   t0,256                ; xsize = 256
+  mul.i   t0,t0,y               ; adr = x+y*256
+  add.i   index,t0,x
+  imm.i   t1,16                 ; one vector is 16 bytes
+  mul.i   t0,index,t1
+  add.i   t0,t0,bitmap          ; add pointer to scaled index  
+  load.v  color,t0              ; load vector
+
+  imm.v   pink,1.0:1.0:0.0:1.0  ; this is ARGB pink with alpha 1
+  ifeq.v  pink,color            ; if pink
+  imm.v   color,0:0:0:0         ; then make black with alpha 0
+  store.v color,t0
+  endif
+
+  out.v   color                 ; write back result
+  end
+
+
+TYPEN
+
+
+die typen sind:
+
+  name     typ      register                             suffix
+  -------------------------------------------------------------
+  int      sS32     EAX/ECX/EDX/ESI/EDI/EBP               .i
+  float    sF32     st0 .. st7                            .f
+  mmx      sS16[4]  mmx0 .. mmx7                          .x
+  vector   sF32[4]  st0 .. st7 (fpu)                      .v
+                    xmm1 .. xmm7 (isse)
+                    mmx0/mmx1 .. mmx6/mmx7 (3dnow)
+
+sie benötigen 1, 2 oder 4 indizes platz auf dem workspace (4, 8 oder 16 
+bytes). 
+
+da sich mmx und float nicht vertragen kann muß man sich zwischen zwei typen-
+sets entscheiden:
+
+  - int mmx
+  - int float vector
+
+
+REGISTERVERTEILUNG
+
+
+die integer-register sind wie folgt verwendet:
+
+  - EAX: frei
+  - EBX: workspace ptr
+  - ECX: frei, vermeiden wegen shift
+  - EDX: frei
+  - ESI: frei
+  - EDI: frei
+  - EBP: frei
+  - ESI: return stack, eventuell frei :-)
+
+  
+COMPILER PHASE 1: konvertieren
+
+
+die assemblerbefehle werden in ein aufgeblähtes format konvertiert bei dem
+immediate-werte durch indizes ersetzt werden und platz für interne 
+kommentare geschaffen wird. jetzt sind alle befehle gleich lang.
+
+
+COMPILER PHASE 2: isse/3dnow emulation
+
+
+wenn die cpu keine isse oder 3dnow befehle kann, dann müssen alle vector
+operatoren in 4 float operatoren umgewandelt werden. dieser vorgang ist 
+sehr mechanisch und einfach.
+
+
+COMPILER PHASE 3: immediate verteilen
+
+
+die immediate operanden werden nicht mehr in register gespeichert sondern
+direkt dort eingetragen, wo sie gebraucht werden.
+
+
+COMPILER PHASE 4: gleiche befehle in if und else zweig
+
+
+wird ein if mit else zweig gefunden, so kann man eventuell gleiche
+befehle aus diesen zweigen herausziehen und darunter oder darüber 
+schreiben. der algorithmus wird zuerst auf innere if's und dann auf
+äußere angewendet. dazu werden zuerst alle if's mit else erkannt und
+nach verschachtelung sortiert.
+
+dann wird für jeden befehl im if zweig ein binär gleicher im else
+zweig gesucht. dann wird mit der unten beschriebenen methode geprüft
+ob die befehle beide nach oben oder beide nach unten aus dem if 
+verschoben werden können. wenn ja, so wird das getan.
+
+ist der else zweig jetzt leer so wird er entfernt. ist der if zweig
+leer so wird die bedingung umgekehrt und der else zweig zum if zweig.
+sind beide zweige leer so werden if, else und endif entfernt.
+
+
+COMPILER PHASE 5: move befehle
+
+
+prinzipiell kann man bei einem move befehl einfach alle nachfolgenden
+verwendungen von dest durch src-a ersetzen bis dest erneut beschrieben wird.
+
+nur wenn der move befehl in einem if/else zweig steht und nach dem endif dest
+noch gelesen wird und nicht vorher neu geschrieben wurde geht das nicht.
+
+
+COMPILER PHASE 6: dest und src sortieren
+
+
+einige befehle sollten nach oben geschoben werden, damit besserer code
+generiert wird.
+
+  - befehle die dest als src benutzen
+
+von dem befehl an wird nach unten gescannt. dazu wird für jede variable
+ein "verwendet" flag gebraucht, am anfang sind alle flags gelöscht. es
+wird auch ein if-count gebraucht der mit 0 initialisiert wird.
+
+ein befehl kann nach oben geschoben werden wenn
+
+  - der if-count null ist und
+  - dest, src-a und src-b unbenutzt sind
+  - der befehl wird nicht geschoben wenn er ein load oder store befehl
+    ist und ein volatile operator gefunden wurde.
+
+wird der befehl nicht nach oben geschoben so wird:
+
+  - dest, src-a und src-b werden als verwendet gekennzeichnet.
+  - ist der befehl ein IF so wird der if-count erhöht
+  - ist der befehl ein ENDIF so wird der if-count erniedrigt.
+  - geht der if-count unter null so wird abgebrochen
+
+auch über if/else/endif werden die befehle hinweg geschoben,  aber nicht aus 
+if/else/endif hinaus.
+
+
+COMPILER PHASE 7: operator peephole
+
+
+der code wird auf bestimmte sequenzen untersucht die durch einfachere 
+sequenzen ersetzt werden können. dabei wird versucht, die befehle zu 
+verschieben. dabei handelt es sich meistens um spezielle interne opcodes für 
+assembler-tricks. ein beispiel:
+
+  imm.i   t0,4
+  mul.i   t0,t0,i
+  add.i   t0,t0,p
+  load.i  v,t0
+
+wird zu
+
+  load4.i v,i,p
+
+und das ist
+  
+  mov eax,[eax+ecx*4]
+
+
+COMPILER PHASE 8: letze verwendung einer variablen
+
+
+ab jetzt wird die reihenfolge nicht mehr verändert.
+
+von unten nach oben wird überprüft, ob dest-ergebnisse noch gebraucht werden.
+wenn nicht, wird der befehl gelöscht.
+
+von oben nach unten: für src-a und src-b jedes operators wird markiert, ob die
+gelesene variable jemals wieder benötigt wird. eine variable wird nicht mehr 
+benötigt wenn sie nie wieder als src gebraucht wird oder ihre nächste 
+verwendung als dest ist.
+
+der register scheduler kann also das register das die variable enthält sofort
+wieder verwenden, eventuell sogar für das ergebniss.
+
+
+COMPILER PHASE 9a: register verteilen (integer)
+
+
+da es keine inner-loops gibt die bevorzugt behandelt werden müssen können die
+register einfach von oben nach unten verteit werden. dabei werden einfach
+immer register benutzt, und wenn keine mehr frei sind wird LRU eines 
+geflushed. 
+
+für jede variable wird der typ und zustand gespeichert:
+
+  - unbenutzt
+  - gespeichert
+  - register (n)
+  - konstante (n)
+  - illegal (weil dies der hintere teil eines vektors ist)
+
+zusätzlich wird für jedes register gespeichert, welche variable es gerade 
+enthält (oder ob es frei ist).
+
+für jeden befehl können verschiede anforderungen daran gestellt werden,
+wie src-a und src-b addressiert werden können. dazu können mehrere varianten
+für gültige kombinationen gespeichert werden die dann bestimmten befehlsfolgen
+entsprechen. die "billigste" wird dabei zuerst genannt.
+
+die anforderungen für eine src-a und src-b sind jeweils einer von:
+
+  - kein src
+  - irgendein register des richtigen typs
+  - ein spezielles register (für DIV, shift)
+  - das selbe register wie dest
+  - immediate
+  - offset[EBX]
+
+die anforderungen für dest sind:
+
+  - kein dest
+  - irgendein register des richtigen tpys
+  - ein spezielles register (für DIV)
+  - offset[EBX] (für FIST, FILD)
+
+dazu kommt die möglichkeit:
+
+  - src-a und src-b sind vertauschbar (für add, mul)
+  - beim ersten pass nicht verwenden, lieber ein register opfern.
+
+für alle kombinationen wird ausgerechnet, wie viele move-befehle gebraucht
+werden um es benutzen zu können. die billigste variante wird genommen.
+wird eine kommutative vertauschung vorgenommen, so wird das dem codegenerator
+mitgeteilt. der kann dann FSUBR anstelle von FSUB benutzen, z.B..
+
+[...] so genau wie fpu, bitte!
+
+nun geht es los
+
+nachdem alle register als frei und alle variablen als unbenutzt deklariert
+wurden wird pro operator folgende sequenz abgearbeitet:
+
+  - fehler ausgeben wenn input unbenutzt, illegal oder vom falschen typ ist.
+
+  - für out-befehle: wenn die variable bereits gespeichert ist, so kann
+    (und muß) dieser befehl gestrichen werden.
+
+  - ein muster aussuchen
+
+  - merken und mit welcher adressierungsart die src-a, src-b und dest 
+    arbeiten.
+
+  - die nötigen move-befehle einschieben. auch für diese addressierungsarten
+    merken.
+
+jetzt sind alle informationen vorhanden um maschienencode auszugeben.
+
+
+COMPILER PHASE 9b: register verteilen (fpu-stack)
+
+
+leider haben wir mit dem 80386 ganz groß in die scheiße gegriffen...
+
+wir notieren den stack umgekehrt. bei stack-ptr = 3:
+
+  intel      compiler
+  st(3)      f0
+  st(2)      f1
+  st(1)      f2
+  st         f3
+  --         f4
+  --         f5
+  --         f6
+  --         f7
+
+jetzt können wir jeder variable speichern in welchem register sie ist, und für
+jedes register sagen welche variable es tragt ohne ständig alles zu ändern.
+
+es gibt nun folgende befehlesmuster:
+
+  - binär (FADD, FSUB)
+  - unär (FSIN, FCHS)
+  - FCMP
+  - mov.f 
+ 
+mit FLD, FST und FXCH mus der stack so umsortiert werden, daß das 
+befehlsmuster passt. fpu-befehle können nicht direkt mit offset[EBX] und 
+immediate umgehen, so das alle werte auf den stack müssen. 
+
+dazu muß der stack im schlimmsten falle erst einmal aufgeräumt werden. es kann
+sein das sich auf dem stack noch variablen befinden, die gar nicht mehr 
+gebrauch werden (leichen). in diesem falle hilft ein FXCH. ansonsten muß mit
+FXCH FSTP platz gemacht werden, das ist ein FXCH zu viel, den man hätte den
+wert ja auch gleich wegstoren können, aber den stack umzusortieren ist echt
+arbeit...
+
+das laden von immediate muß wie das laden von offset[EBX] mit FLD 
+implementiert werden.
+
+binäre operatoren haben folgende sinvolle möglichkeiten:
+beste:
+
+  parameter (*=discard)   code
+
+   st(n)  st(m)           FLD st(n) FSUB st,st(m)
+   st(n) *st(m)           FLD st(n) FSUBRP st(m),st
+  *st(n)  st(m)           FLD st(m) FSUBP st(n),st
+  *st(n) *st(m)           FXCH st(n) FSUBRP st(m),st
+
+   st(0)  st(m)           FLD st(0) FSUB st,st(m)
+   st(0) *st(m)           FSUBR st(m),st
+  *st(0)  st(m)           FSUB st,st(m)
+  *st(0) *st(m)           FSUBRP st(m),st
+
+   st(n)  st(0)           FLD st(0) FSUB st,st(m)
+   st(n) *st(0)           FSUBR st,st(m)
+  *st(n)  st(0)           FSUB st(m),st
+  *st(n) *st(0)           FSUBRP st(m),st
+
+compare-befehle (FCOM) erzeugen kein ergebniss ausser gesetzten flags. 
+deshalb gelten andere regeln. FCOMR bedeutet in diesem zusammenhang das
+die flags anders-herum interpretiert werden:
+
+  parameter (*=discard)   code
+
+   st(n)  st(m)           FXCH st(n) FCOM st(m)
+   st(n) *st(m)           FXCH st(n) FCOMP st(m)
+  *st(n)  st(m)           FXCH st(m) FCOMRP st(n)
+  *st(n) *st(m)           FXCH st(n) FCOMP st(m) (leiche!)
+
+   st(0)  st(m)           FCOM st(m)
+   st(0) *st(m)           FXCH st(m) FCOMRP st(m)
+  *st(0)  st(m)           FCOMP st(m)
+  *st(0) *st(m)           FCOMPP st(m)
+
+   st(n)  st(0)           FCOMR st(n)
+   st(n) *st(0)           FCOMRP st(n)
+  *st(n)  st(0)           FXCH st(n) FCOMP st(n)
+  *st(n) *st(0)           FCOMRPP st(m)
+
+unäre befehle sind glücklicherweise einfacher:
+
+  parameter (*=discard)   code
+
+   st(n)  -               FLD st(n) FSIN
+   st(0)  -               FLD st(0) FSIN
+  *st(n)  -               FXCH st(n) FSIN
+  *st(0)  -               FSIN
+
+die sonstigen befehle:
+
+  operator      parameter       code
+
+  immediate      -      -       FLD mem
+  load           -      -       FLD mem
+  store          st(n)  -       FXCH st(n) FST mem
+                 st(0)  -       FST mem
+                *st(n)  -       FXCH st(n) FSTP mem
+                *st(0)  -       FSTP mem
+  itof           -      -       FILD mem
+  ftoi           st(n)  -       FXCH st(n) FIST mem
+                 st(0)  -       FIST mem
+                *st(n)  -       FXCH st(n) FISTP mem
+                *st(0)  -       FISTP mem
+
+load und store dienen sowohl als implementation für eben load und store, als
+auch zum laden und speichern von variablen.
+
+
+COMPILER PHASE 10: register peephole
+
+
+eigentlich steht der assemblercode jetzt schon fest. aber vieleicht kann
+man ja doch noch etwas machen. 
+
+die folgende sequenz kann optimiert werden
+ 
+  op ecx,???
+  op eax,???
+  op ecx,???
+  op ???,ecx
+  mov ecx,eax
+
+der move ist überflüssig wenn alle verwendungen von src-a und src-b davor bis 
+zum schreiben keine speziellen registereinschränkungen haben:
+
+  op ecx,???
+  op ecx,???
+  op eax,???
+  op ???,eax
+
+
+
+COMPILER PHASE 11: code ausgabe
+
+
+eigentlich muß jetzt nur noch für jeden befehl unter berücksichtigung der
+addressierungsarten ein stück code ausgegeben werden. für ein-operant
+befehle sind das 3 varianten
+
+  - offset[EBX]
+  - immediate
+  - register
+
+für zwei-operanten sind das prinzipiell die permutationen. aber da immer
+ein register beteidigt sein muß reichen 5 varianten:
+
+  - offset[EBX]  , register
+  - immediate    , register
+  - register     , offset[EBX]
+  - register     , immediate
+  - register     , register
+  
+kommutative operatoren bekommen das register immer als src-a. eventuell
+
+[...]
+
+
+BEFEHLSSATZ ALLE
+
+
+  in.?    d                       ; mark as input
+  out.?   a                       ; mark as output and write back
+  imm.?   d,imm                   ; load immediate data
+  mov.?   d,a                     ; d = a
+  load.?  d,a                     ; d = *a
+  store.? a,b                     ; *a = b
+
+
+BEFEHLSSATZ INTEGER
+
+
+  add.i   d,a,b                   ; d = a + b
+  sub.i   d,a,b                   ; d = a - b
+  mul.i   d,a,b                   ; d = a * b
+  div.i   d,a,b                   ; d = a / b
+  mod.i   d,a,b                   ; d = a % b
+  and.i   d,a,b                   ; d = a & b
+  or.i    d,a,b                   ; d = a | b
+  shr.i   d,a,b                   ; d = a >> b
+  shl.i   d,a,b                   ; d = a << b
+  neg.i   d,a                     ; d = -a
+  not.i   d,a                     ; d = ~a
+  abs.i   d,a                     ; d = |a|
+  addr.i  d,a                     ; d = &a
+
+  ifnot.i a                       ; if(a!=0)
+  if.i    a                       ; if(a==0)
+  ifeq.i  a,b                     ; if(a==b)
+  ifne.i  a,b                     ; if(a!=b)
+  ifgt.i  a,b                     ; if(a>b)
+  ifge.i  a,b                     ; if(a>=b)
+  iflt.i  a,b                     ; if(a<b)   (macro for ifgt b,a)
+  ifle.i  a,b                     ; if(a<=b)  (macro for ifge b,a)
+
+
+BEFEHLSSATZ FLOAT
+
+
+  add.f   d,a,b                   ; d = a + b
+  sub.f   d,a,b                   ; d = a - b
+  mul.f   d,a,b                   ; d = a * b
+  div.f   d,a,b                   ; d = a / b
+  neg.f   d,a                     ; d = -a
+  abs.f   d,a                     ; d = |a|
+
+  sin.f   d,a                     ; d = sin(a)
+  cos.f   d,a                     ; d = cos(a)
+  atan.f  d,a                     ; d = atan(a)
+  sqrt.f  d,a                     ; d = sqrt(a)
+  pow.f   d,a                     ; d = pow(a)
+  atan2.f d,a,b                   ; d = atan2(a,b)
+
+  ifeq.f  a,b                     ; if(a==b)
+  ifne.f  a,b                     ; if(a!=b)
+  ifgt.f  a,b                     ; if(a>b)
+  ifge.f  a,b                     ; if(a>=b)
+  iflt.f  a,b                     ; if(a<b)   (macro for ifgt b,a)
+  ifle.f  a,b                     ; if(a<=b)  (macro for ifge b,a)
+
+
+BEFEHLSSATZ COLOR
+
+
+  add.c   d,a,b                   ; d = a + b (clamped)
+  sub.c   d,a,b                   ; d = a - b (clamped)
+  mul.c   d,a,b                   ; d = a * b (element wise)
+  max.c   d,a,b                   ; d = max(a,b)
+  min.c   d,a,b                   ; d = min(a,b)
+
+
+BEFEHLSSATZ VECTOR
+
+
+  add.v   d,a,b                   ; d = a + b
+  sub.v   d,a,b                   ; d = a - b
+  mul.v   d,a,b                   ; d = a * b (element wise)
+  dot.v   d,a,b                   ; dotproduct (result is float!)
+  cross.v d,a,b                   ; crossproduct
+  scale.v d,a,b                   ; d = a * b (b is scalar!)
+  abs.v   d,a                     ; absolute value (result is float!)
+  unit.v  d,a                     ; unit vector
+
+
+BEFEHLSSATZ GEMISCHTES
+
+
+  volatile                        ; don't move "load" or "store" over this
+
+  else                            ; after if
+  endif                           ; after if or else
+  end                             ; end of program
+
+  ftoi    d,a                     ; (a -> d) float to integer 
+  itof    d,a                     ; (a -> d) integer to float
+  ctov    d,a                     ; (a -> d) color to vector (not implemented)
+  vtoc    d,a                     ; (a -> d) vector to color (not implemented)
+
+  setx    d,a                     ; d.x = a
+  sety    d,a                     ; d.y = a
+  setz    d,a                     ; d.z = a
+  setw    d,a                     ; d.w = a
+  getx    d,a                     ; d = a.x
+  gety    d,a                     ; d = a.y
+  getz    d,a                     ; d = a.z
+  getw    d,a                     ; d = a.w
+
+  setr    d,a                     ; d.r = a
+  setg    d,a                     ; d.g = a
+  setb    d,a                     ; d.b = a
+  seta    d,a                     ; d.a = a
+  getr    d,a                     ; d = a.r
+  getg    d,a                     ; d = a.g
+  getb    d,a                     ; d = a.b
+  geta    d,a                     ; d = a.a
+
+
+ENDE. VIEL SPASS BEIM IMPLEMENTIEREN !!!
+
+
+<--- -------------------------------------------------------------------- --->
+
+                            Texture Generator III
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE
+
+
+Wir haben eine Baumstruktur mit texturoperatoren. es gibt nun zwei typen
+von operatoren: SINGLE operatoren brauchen keine nachbarpixel und
+PAGE operatoren brauchen alle pixel des bildes als eingabe. wir wollen
+die operatoren so umordnen, das die singles auf tiles arbeiten,
+und nur für die page wird die gesammte textur gespeichert. 
+
+Beispiel für eingabe: (s = single, f = page, a = add, d=done)
+
+  s0  s3
+  f1  f4
+  s2  s5
+  aaaaa6
+    s7
+    f8
+    s9
+    dd
+
+die ausgabe besteht aus einer zeile für jeden page operator mit den singles
+die für den page aufgerufen werden. >n speichert die volle textur für
+weitergehende verwendung, und <n holt sich einen tile aus der gespeicherten
+textur.
+
+  s0 : f1 >1
+  s3 : f4 >0
+  <0 s2 <1 s5 a6 s7 : f8 >2
+  <2 s9 : dd
+
+weiteres beispiel:
+
+  s0  s1  s2  s3                s0 : f0 >0
+  f0  f1  f2  f3                s1 : f1 >1
+  aaaaa0  aaaaa1                s2 : f2 >2
+      aaaaaa2                   s3 : f3 >3
+        s4                      <0 <1 a0 <2 <3 a1 a2 s4 : dd 
+        dd                      
+
+
+TRANSFORMATION:
+
+
+die transformation funktioniert so:
+
+es wird ein page-op gesucht der keine weiteren page-op als child hat. der sub-baum
+des page-op wird ausgegen und mit dem page-op und einem buffer ": fn >m" 
+abgeschlossen. dann wird der page-op und seine childs durch "<m" ersetzt. 
+das wird solange getan, bis außer der wurzel keine page-ops mehr 
+vorhanden sind.
+
+beim rückweg aus der baum-rekursion ist der erste gefundene page-op der gesuchte 
+operator.
+
+
+DER DONE OPERATOR
+
+
+Letztendlich muß die textur in das zeilformat konvertiert und in die 
+grafikkarte geschoben werden. ein 1024² textur ist 8MB groß, aber eventuell
+wird sie nur als 16 bit textur gebraucht und es gibt gar keinen page-op,
+die textur muß also niemals vollständig gespeichert werden. also
+bietet es sich an, das der DONE operator die tiles gleich konvertiert und in
+einen Ziel-Texturbuffer konvertiert. der wird dann übertragen und 
+gemip-mapped.
+
+
+BUMP
+
+
+der bump operator braucht einen page-op-input und einen tile-input. wird er 
+als erster page-op gefunden, so wird sein page-child abgeschnitten und mit
+einem nop-page-op versehen, so das der einzige effekt der ">n" ist. der 
+bump op selber behält den anderen input und wird in einen tile-op umgewandelt.
+ungewöhnlich an diesem tile-op ist das er die nummer des ">n" mitgeteilt 
+bekommt um so direkt auf die page zuzugreifen.
+
+
+<--- -------------------------------------------------------------------- --->
+
+                          Anti Aliased Zoomable Gui
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE
+
+
+Die Gui der Zukunft muß Auflösungsunabhängig arbeiten. Je höher die Auflösung,
+desto schärfer werden die Bildelemente abgebildet, aber Alle Linien, Kanten,
+Flächen und Fonts sind in pixelunabhängig Skalierbar. Dadurch lassen sich (a) 
+Fensterinhalte beliebig zoomen und (b) interessante Animationseffekte 
+implementieren.
+
+Im Schnitt lassen sich dadurch alle GUI-ELemente einen halben Pixel kleiner
+zeichnen: Wenn z.b. 16 Pixel zu klein ist und deshalb auf 17 Pixel ausgewichen
+wird, so können bei eine frei skalierbarer GUI 16.5 Pixel benutzt werden.
+Auch kann man schnell zwischen Übersichtsansicht und Arbeitsansicht wechseln.
+Gui-Elemente können sich dazu so konfigurieren, das bei bestimmten Auflösungen
+Details wegfallen.
+
+Schrift und dünne Linien haben nun eine spezielle Auflösung in der sie am 
+besten zu lesen sind. Sollte sich erweisen das man darauf rücksicht nehmen 
+muß so kann man Nach dem umzoomen der Oberfläche "scharf" rendern, in dem die
+Koordinaten langsam in richtung ganze Zahlen gezogen werden.
+
+Man kann auch die ganze Oberfläche echt in 3d gestalten, und dann Schatten 
+"in echt" hinein rechnen. Gerendert wird das ganze Orthogonal von oben, aber
+wer will kann das teil auch drehen...
+
+
+DATENSTRUKTUR
+
+
+Das, was gezeichnet werden muß, besteht aus:
+
+  - Rechtecken
+  - Schrift
+  - Horizontalen und Vertikalen Linien
+  - Spline-Kurven
+  - Design-Elementen
+  - Bitmaps
+
+Spline-Kurven werden für einen Spline-Editor benötigt. Da es nur 
+horizontale und vertikale Linien gibt können Splines nicht aus primitives
+zusammengesetzt werden. Die Verwendung von Bitmaps ist unbedingt zu vermeiden, 
+weil sie naturgemäß nicht in eine frei Skalierbare Welt passen. Trotzdem wären 
+Buttons mit abgerundeten Ecken und Schatten nicht schlecht, dafür muß also 
+eine eigene Darstellungsart gefunden werden, eventuell Spline basiert.
+
+Der Bildschirminhalt wird durch eine Draw-List dargestellt. Jedes Draw-Element
+definiert eine Liste von Primitives, Die äußere Bounding-Box die sagt was 
+überschrieben werden könnte und die innere Bounding-Box die sagt was 
+garantiert überschrieben wird. Der Gui-Code muß nur die sich jeweils 
+ändernden Elemente neu definieren. Es wird allerdings jeden Frame alles
+gezeichnet was nicht komplett verdeckt ist. Eventuell werden die Draw-Elements
+noch optimiert.
+
+
+<--- -------------------------------------------------------------------- --->
+
+                             Mesh Generator         
+
+<--- -------------------------------------------------------------------- --->
+
+IDEE
+
+
+Die Operatoren werden in einen index und einen vertex teil zerlegt. in der
+precalc phase werden die indexlisten erstellt und für jede Vertex wird ein
+programm gebaut. In der Runtime phase werden die vertex-programme 
+ausgeführt.
+
+Zum Beispiel:
+
+  - Torus
+  - Select Random
+  - Extrude
+  - Normalise
+  - Subdivide
+
+In der Precalc-Phase
+
+  - Torus Vertices und Faces erstellen
+  - Select Random auf Faces
+  - Extrude erzeugt neue Faces und vertices
+    für jede neue vertex wird gespeichert, wie die koordinate aus den alten 
+    berechnet werden soll
+  - Subdivide erzeugt neue Faces und vertices
+    für jede neue vertex wird gespeichert, wie die koordinate aus den alten 
+    berechnet werden soll
+  - Normalize erzeugt informationen wie eine face-normal-liste erstellt werden
+    soll und trägt in die vertices ein wie aus der face-normal-liste vertex 
+    normalen erzeugt werden sollen.
+  - aus den faces werden indexlisten erstellt und optimiert.
+ 
+In der Runtime Phase
+
+  - für jede gespeicherten listen werden abgearbeitet
+
+
+DER RUNTIME INTERPRETER
+
+
+es handelt sich nicht um vertex-programme im herkömmlichen sinne da für jede 
+vertex informationen über die nachbarvertices verwendet werden können.
+deswegen macht es wenig sinn, den loop pro vertex abzuarbeiten. Der 
+algorithmus "frisst" sich durch ein array von floats das linear geschrieben
+wird. dabei ist es egal ob die floats nun position, normale, farbe oder 
+texturkoordinaten enthalten, egal ob es 2, 3 oder 4-stellige vectoren sind,
+egal ob diese als 32 bit float oder 32 / 16 / 8 bit integer gespeichert 
+werden. die zuletzt geschriebenen daten werden in den vertex-buffer kopiert.
+
+
+die kommandos sind
+
+  00 : END
+  01 : COPYVB   ab jetzt gibt OUT in den vertex-buffer aus!
+  02 : COLOR    store value directly to stream, or with 0xff000000
+  03 : EMIT     store value directly to stream, shift with <<8
+
+  10 : UNIT     Normalize Vector
+  11 : ROT      Rotate Vector with Parameter-Matrix
+  12 : SCALE    Scale Vector with Parameter-Scalar
+  13 : ADD      Add Vector with Parameter-Vector
+
+  20 : LCX      Load constant to x
+  21 : LCY      Load constant to y 
+  22 : LCZ      Load constant to z
+  23 : LCW      Load constant to w
+  24 : LC       Load same constant to xyzw
+  25 : LCS      Load constant to scale
+  26 : LOOP     führe die befehle entsprechend oft aus
+  27 : REWIND   rewind the output stream 
+
+  30 : READS    read scale per vertex from program data
+  31 : READO    read offset per vertex from program data
+
+  8x : LD       Load Vector from offset
+  9x : LDS      Load and Scale Vector from offset
+  ax : LA       Add Vector from offset
+  bx : LAS      Add and Scale from offset
+  cx : STORE    Store Vector at offset
+  dx : OUT      Store vector at stream
+
+
+jedes Kommando kann einen typ haben
+
+  00 : .b       unsigned 8 bit int
+  01 : .s       signed 16 bit int
+  02 : .i       signed 32 bit int
+  03 : .f       32 bit float
+
+und der vektor hat eine länge von 1 bis 4.
+
+Das Befehlsformat ist also:
+
+  0ccccccc vvvvvvvv vvvvvvvv vvvvvvvv -> simple format
+  1cccttos 00000000 00000000 000000ll -> special format
+
+  t = typ
+  l = vector size
+  c = command
+  v = offset, count or 24 upper bits of a float value
+  s = read new scale factor
+  o = read new offset
+
+parallel zum programm wird ein datenstrom generiert der offsets in den float
+buffer und skalierungswerte enthält. mit dem 'o' bit wird der offset-zeiger 
+neu gesetzt, dazu wird ein langwort gelesen und als zeiger interpretiert.
+'s' lädt den scale-wert mit einem float. das ist zwar verschwendung von 
+bandbreite, aber ich will auch keine integer->float conversion im inner-loop!
+wenn beides angegeben ist wird zuerst der offset geladen.
+
+Die Implementation sieht so aus:
+
+  sU32 *sCreateVectorProgram(sU32 *Program,sU32 *Para);
+  void sExecuteVectorProgram(
+    sU32 *PrgHandle,    // handle returned by sCreateVectorProgram()
+    sU32 *PrgData,      // scale and offset
+    sF32 *source,       // source data to be copied into work area
+    sInt sourcesize,    // anzahl floats
+    sF32 *dest,         // zeiger auf den zu füllenden vertex buffer
+    sF32 *para          // animation parameters, like matrices etc.
+  );
+
+BEISPIELE 
+
+
+das programm zum normalisieren könnte so aussehen:
+  
+  LDS.f3os      ; face normals for faces with 4 vertices
+  LAS.f3os
+  LAS.f3os
+  LAS.f3os
+  OUT.f3
+  LOOP 42
+
+  LDS.f3os      ; face normals for faces with 3 vertices
+  LAS.f3os
+  LAS.f3os
+  OUT.f3
+  LOOP 42
+
+  LDS.f3os      ; calc normals for vertices with 4 neighbours
+  LAS.f3os
+  LAS.f3os
+  LAS.f3os
+  UNIT
+  STORE.f3o
+  LOOP 42
+
+  LDS.f3os      ; calc normals for vertices with 3 neighbours
+  LAS.f3os
+  LAS.f3os
+  UNIT
+  STORE.f3o
+  LOOP 42
+
+  REWIND 42*2*3 ; throw away face normals
+  END
+
+extrude srt by normal, 3 times :
+
+  LD.f3o                ; load normal
+  SCALE         48      ; scale
+  LA.f3o                ; add position
+  ROT           0       ; srt
+  STORE.f3
+  LOOP          42      ; 1st level
+
+  LD.f3o                ; load normal
+  SCALE         49      ; scale
+  LA.f3o                ; add position
+  ROT           16      ; srt
+  STORE.f3
+  LOOP          42      ; 2nd level
+
+  LD.f3o                ; load normal
+  SCALE         50      ; scale
+  LA.f3o                ; add position
+  ROT           32      ; srt
+  STORE.f3
+  LOOP          42      ; 3rd level
+
+  END
+
+<--- -------------------------------------------------------------------- --->
+
+                               Flat Gui         
+
+<--- -------------------------------------------------------------------- --->
+
+
+TECHNISCHE UMSETZUNG
+
+
+Die Applikation erzeugt eine Liste von Rechtecken. Jedes Rechteck enthält
+
+  - Position
+  - Scrolling
+  - Flags
+  - User-Ptr
+  - User-Code
+  - User-Local
+  - OnPaint-Code
+  - OnDrag-Code
+  - OnKey-Code
+
+Es gibt keine Hirarchische Window-Struktur. Die Rechtecke sind in "z-order"
+angeordnet, aber sie müssen nicht verschachtelt sein. Für OnPaint() wird
+die liste von oben nach unten abgearbeitet, für OnDrag() oder OnKey() von
+unten nach oben. Um z.B. eine Dialogbox zu erzeugen muß man diese nur 
+"hinten" an die liste heranhängen, sie wird zuletzt gezeichnet und bekommt
+user-input als erstes.
+
+Das erste rect is das "app level rect". es kann jeden focus bekommen und
+muß OnLayout() und OnCmd() verarbeiten.
+
+Wenn sich die position des rechteckes ändert oder das HIDE flag, dann muß
+die rechteck-liste nicht neu aufgebaut werden. wenn aber das layout 
+grundlegender geändert wird, zum beispiel weil ein popup-menü dazukommt, 
+dann muß die rechteck-liste komplett neu gesetzt werden.
+
+Wird mit einer Maustaste in den bildschirm geklickt, so wird der "Focus Point"
+gesetzt. die liste der rechtecke wird rückwärts abgearbeitet, bis ein rechteck
+mit BLOCKFOCUS getroffen wird. alle getroffenen rechtecke mit GETSECFOCUS
+bekommen einen sekundären focus, was soviel bedeutet wie "ein child window
+hat den focus". damit kann man zum beispiel die rahmenfarbe ändern oder
+so. das erste getroffene fenster (von hinten) mit GETKEYFOCUS kann den 
+(exklusiven) OnKey() focus bekommen, das selbe gilt für GETDRAGFOCUS und 
+OnDrag().
+
+Um einen scrollenden bereich zu implementieren muß man von hand die positionen
+aller zu scrollender rechtecke manipulieren. da hierfür nur addition und 
+subtraktion von integer-zahlen nötig ist kann man diese werte beliebig oft
+überschreiben ohne gefahr zu laufen das sie ungenau werden. um ein "schlaues"
+scrollendes fenster mit scrollbars und automatischer größenanpassung zu 
+implementieren müssen viele rechtecke zusammenarbeiten. das parent-rect 
+enthält childs und die dekoration. wenn die tastaturkommandos hier verarbeitet
+werden können sie auch dann noch gegeben werden wenn die slider den fokus 
+haben. die slider bekommen nur die drag-kommando und kommunizieren über eine 
+private struktur, die auch speichert welcher bereich von rechtecken als 
+"childs" betrachtet werden und welches rect den "client" bereich markiert.
+die slider müssen sich selbst vom client bereich abziehen und können aus childs
+ermitteln wie groß die zu scrollende fläche ist.
+
+um zum beispiel mehrere ebenen scrollender fenster zu implementieren kann ein
+"clipping stack" verwendet werden. ein rect kann einen level dieses stacks
+setzen, wodurch alle tieferen level deaktiviert werden. dadurch ist ein
+hirarchisches clipping möglich ohne stack-typische push/pop befehle, denn wir
+haben ja keinen fenster-baum!
+
+
+MODULAR DOCUMENT DRIVEN
+
+
+Ich habe keine lust mehr große monolithische applikationen zu schreiben. 
+Neuer ansatz: 
+
+  - viele kleine applikationen für jeweils einen dateityp
+  - Alles ist integriert in ein Executable.
+  - objekttyp gibt an wofür eine datei verwendet werden kann
+  - documenttyp gibt an, mit welchem programm die datei verändert werden kann
+  - caching für aus dokumenten entstandenen objektem
+  - linken von objekten in dokumente
+  - viele kleine dateien. jede textur, jedes model, eine eigene datei
+  - dateien organisiert in projekte
+  - dateien über GUID verknüpft, man kann nahmen also ändern
+  - dateien können in mehreren projekten geshared werden
+
+Die trennung zwischen datentyp und documenttyp ermöglicht es zum beispiel, für
+bitmaps einen generator und einen pixel-painter zu haben. man kann mit dem
+einen programm natürlich nicht die dateien des anderen verändern, aber ein
+model-programm kann beide dateien linken und als bitmap benutzen. es kann 
+sinvoll sein, für jede dokumentdatei eine objektdatei zu halten, in der das
+gecachte objekt enthalten ist.
+
+schneller wechsel zwischen den applikationen ist wichtig. deshalb sind alle
+applikationen in ein executable integriert. außerdem werden dokumente und 
+objekte im RAM gecached.
+
+die daten sind nicht einfach in einem dateisystem gespeichert. Es wird 
+unterschieden zwischen projekt-dateien, document-dateien, objekt-dateien und
+konfigurations-dateien. die projekte entsprechen traditionellen 
+verzeichnissen. dokumente enthalten editierbare daten und objekte das 
+"kompilat" das von anderen dokumenten gelinkt werden kann, ohne das das 
+dokument jedes mal neu kompiliert werden muß. manche applikationen wollen
+konfigurationsdateien speichern, diese sind immer global für alle projekte.
+die dateiendungen sind *.frp *.frd *.fro und *.frc (project, doc, object, 
+config).
+
+der header für dokumente ist genormt und enthält informationen über die zu
+verwendende applikation, den typ des objektes, die GUID und den namen des
+objektes (was nicht der dateiname ist). um den programmstart zu beschleunigen
+gibt es eine index-datei die alle informationen enthält, diese ist jedoch 
+redundant so das bei verlust nicht alles verloren ist. außerdem wird 
+explizit gespeichert welche anderen GUID's referenziert werden. dadurch können
+GUID's vom system geändert werden ohne das der genaue aufbau der dokumentdatei
+bekannt ist.
+
+es ist nicht möglich, dateien außerhalb eines projektes zu referenzieren. aber
+man kann dateien zwischen den projekten "sharen".
+
+der anwender kann mehrere projekte gleichzeitig offen halten, dann werden 
+jeweils alle zu diesem projekt gehörenden dokument-header gelesen und 
+verwaltet. deshalb müssen projekte geöffnet werden, sonst würde das programm
+immer langsamer werden je mehr projekte existieren. wird ein projekt 
+geschlossen so werden alle eventuell geöffneten dokumente gespeichert und 
+aus dem speicher entfernt.
+
+die dokumente und objekte werden bei bedarf "delayed" geladen.
+laden und speichern von dokumenten wird vom desktop verwaltet, die applikation
+muß sich nicht darum kümmern. so kann source-control, version history, session
+undo und ähnliches systemweit implementiert werden. man kann einfach alle 
+möglichen dateien ändern, und sich dann entscheiden ob man die änderungen 
+speichern oder verwerfen will.
+
+
+DESKTOP
+
+
+durch druck auf die windows-taste kommt man in den desktop-screen. in der 
+obersten zeile kann man zwischen verschiedenen ansichten wählen.
+
+in der projekt-ansicht kann man projekte öffnen, schließen, erzeugen und
+löschen. ein projekt ist immer das aktuelle projekt. um dateien zwischen
+zwei projekten zu sharen gibt es ein "sekundäres projekt".
+
+in der dokument-ansicht hat man eine liste aller dokumente des aktuellen
+projektes und kann sie öffnen, schließen, änderungen schreiben, änderungen
+verwerfen, share to sec. projekt, break share, kopieren, umbenennen, und
+neue dokumente erzeugen. zu jedem dokument werden detaillierte informationen
+und vielleicht ein preview angezeigt. von hier aus kann man zum editor
+springen. von hier aus können auch tools gestartet werden die sich auf ein
+dokument beziehen, etwa eine hex-dump anzeigen.
+
+in der tool-ansicht können tool-programme gestartet werden. diese programme
+hängen nicht mit einem dokument zusammen und können deshalb auch nicht von
+der dokument-ansicht gestartet werden. solche programme sind zum beispiel
+der taschenrechner und programme zum ändern der system-konfiguration.
+
+
+ALTERNATIVE WINDOWS-INTEGRATION
+
+
+man kann natürlich den desktop über bord werfen und alle daten eines 
+projektes in einer datei speichern, um einen besonders gelungenen
+editor "fürs volk" zur verfügung zu stellen. dadurch geht natürlich
+das projektmanagement verloren.
+
+
+UNDO
+
+
+Das system unterstützt die implementierung von forward-undo. der editor kann
+dem system jede aktion für ein dokument als "action" übergeben. die aktionen
+werden gespeichert und zu manchen aktionen wird auch eine kopie des dokumentes
+NACH der aktion gespeichert. im falle eines UNDO wird die zuletzt gespeicherte
+kopie genommen, alle eventuellen aktionen ausgeführt bis auf die letzte. REDO
+kann entsprechend implementiert werden. läßt sich eine aktion nicht sinvoll 
+aufzeichnen so wird einfach das dokument VOR der aktion kopiert, wenn 
+allerdings wichtige aktionen nicht aufzeichenbar sind wird das system sehr 
+ineffektiv.
+
+da der undo-stack eventuell sehr klein ist, kann das system in regelmäßigen 
+abständen eine schnellspeicherung durchführen, was bei eventuellen häufigen
+abstürzen sehr zur zufriedenheit der anwender beiträgt. dies kann auch 
+durch eine öffene datei implementiert werden an die immer drangehängt wird
+(mit flush). dann gibt es gar keinen datenverlust mehr.
+
+aktionen können als "langsam" oder "wichtig" markiert wernden. "langsam"
+fordert das anlegen einer kopie NACH der aktion, damit undo-schritte 
+schneller funktionieren. "wichtig" forderd explizit eine schnellspeicherung,
+damit eventuell aufwendige änderungen bei abstürzen nicht verloren gehen.
+
+das system kann den undo-stack auch in der desktop-document-ansicht anzeigen.
+undo-schritte können gelabelt werden damit man gleichzeitig über viele 
+dokumente undo rückgängig machen kann. prinzipiell kann die versionsverwaltung
+den unterscheid zwischen und-schritten und gespeicherten versionen 
+verschleiern, aber das würde verwirren. in einer perfekten welt muß man nicht
+explizit speichern, aber es tut halt eben doch gut es zu tun...
+
+
+<--- -------------------------------------------------------------------- --->
+
+                             Texture Compression
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE
+
+
+Angenommen, die Ursprungstextur ist 
+
+- 1024 x 1024 x 32bit (4MB)
+
+daraus machen wir eine 1/4 augelöste high-color textur und eine voll 
+aufgelöste 8 bit intensity textur. die grobe textur wird gefiltert und mit
+der feinen textur modulatex2 multipliziert:
+
+- Fine   1024 x 1024 x  8 bit = 1024KB
+- Color   256 x  256 x 16 bit =  128KB
+- total                         1152KB
+
+also etwa 1:4 texturkomprimierung!
+
+zum vergleich
+
+- DXT1    1024 x 1024 x 4 bit = 512KB
+- DXT3/5  1024 x 1024 x 8 bit = 1024KB
+
+auf der PS kann man folgendes machen
+
+- fine    1024 x 1024 x 4 bit = 512 KB
+- color    256 x  256 x 8 bit =  64 KB
+- palette  256 x       16 bit =   0.5 KB
+- total                         576.5 KB
+
+auf dem PC kann man DXT1 für die fein aufgeloste textur benutzen:
+
+- Fine   1024 x 1024 x  4 bit =  512KB
+- Color   256 x  256 x 16 bit =  128KB
+- total                          640KB
+
+
+OPEN TOPICS
+
+- pixel addressing
+- mip-mapping
+
+
+<--- -------------------------------------------------------------------- --->
+
+                             MeshProcessing
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE
+
+
+Ein komplexes Mesh wird aus einem BaseMesh erzeugt. 
+
+Das BaseMesh enthält die grobe Geometrie und Markierungen, und kann auch 
+für den Kollisionstest benutzt werden. Anhand der Markierungen wird das 
+Grundmesh verfeinert, texturiert, dekoriert und beleuchtet.
+
+Verfeinerungen sind:
+
+- subdivide auf eine Gruppe von verbundenen Flächen
+- Tesselate auf eine Gruppe von verbundenen Flächen
+- Bevel auf eine Gruppe von verbundenen Kanten
+- Randomize auf eine Gruppe von Punkten
+
+Schon im Grundmesh werden für jede Fläche die UV-Koordinaten gespeichert, und 
+zwar pro "Sample", also pro Verwendung der Vertex in der Fläche.
+Bei der Verfeinerung werden sie aktualisiert. Je nach Komplexität des 
+Materials werden aus den groben UV's die endgültigen UV's für alle Texturlayer
+berechnet.
+
+Dekorationen sind zusätzliche, traditionell gemodelte Objekte die an Punkte, 
+Flächen oder entlang von Linienzügen verteilt werden. Sie haben keine 
+Kollision.
+
+Die so erstellte Scene wird dann statisch beleuchtet.
+
+
+DEFINITION
+
+
+Mesh - Vertices und Indices
+MeshProcessing - Verfeinerung, Texturierung, Dekoration und Beleuchtung
+MeshMarks - Markierungen für das MeshProcessing 
+Kollision - Information für Kollision und Visibility
+Zellen, Cells - Grundelemente der Kollision
+BaseMesh - grobes Mesh, Kollision und MeshMarks
+
+
+KOLLISION
+
+
+Die Kollisionsdaten sind verbundenen konvexen Zellen. Jede Fläche einer Zelle 
+ist entweder komplett mit einer anderen Zelle verbunden (Tür) oder ist eine
+Wand die nicht überschritten werden kann. Eine Zelle hat höchstens 8 Flächen,
+so das mit 8 Dot-Produkten festgestellt werden kann ob ein Punkt innerhalb 
+oder außerhalb der Zelle ist, und wenn außerhalb so ist sofort bekannt in
+Welcher Zelle weitergesucht werden sollte. Damit läßt sich auf für hunderte
+von Partikeln eine Kollision implementieren.
+
+Eine degenerierte Zelle ist völlig Flach und hat das Volumen 0. Sie kann dazu
+dienen, eine kleine Tür in eine große Wand zu tun. 
+
+Zusätzlich können Kollisionsobjekte in die Szene gestellt werden, etwa Säulen.
+Diese müssen allerdings Sparsam verwendet werden weil die Kollision an ihnen
+nicht genau ist. insbesondere dürfen sie nicht zu dicht beieinander stehen, so
+das ein Objekt mit mehreren von ihnen gleichzeitig kollidieren kann.
+
+Die Kollision kann auch benutzt werden um festzustellen, welche Teile der 
+Szene gezeichnet werden muß. Jede Zelle weiß, welche Meshes ihn ihnen stehen.
+Dazu gehöhren Kollisionsobjekte, Dekorationen und die direkt aus dem BaseMesh
+entstandenden Meshes. Ein Objekt kann sich über mehrere Zellen erstrecken.
+Da die verbindung der Zellen bekannt ist, kann man ausrechnen welche Zellen
+von einer bestimmten Position aus zu sehen sind. Und dann braucht man nur die
+Meshes zu zeichnen die in diesen Zellen enthalten sind, und nicht die 
+verdeckten.
+
+
+MODELLIERUNG DES BASEMESH
+
+
+Das BaseMesh beginnt als Cube, den man mit Extrude, Tesselate, Transform,
+Merge, Randomize, Mark und Copy bearbeiten kann. Es ist zu beachten das diese
+Befehle nicht Flächen und Vertices erzeugen, sondern verbundene Zellen. Jede
+Zelle ist ein (eventuell degenerierter oder verzerrter) Würfel, und die 
+Verbindung der Würfel wird gespeichert. 
+
+Die Befehle im einzelnen:
+
+Extrude:
+
+Dies ist der wichtigste Befehl. Dazu wird jeweils eine Gruppe
+von Flächen ausgewählt und in eine Richtung herausgezogen. Die neu 
+entstandenden Punkte können Skaliert werden. Die Extrude-Entfernung kann Null 
+sein (Degenerierte Zelle), darf aber nicht negativ sein (in das BaseMesh 
+zurück). 
+
+Merge:
+
+Extrude kann natürlich die Verbindung der neu entstandenen Zellen mit den 
+Zellen aus denen sie herausgezogen wurden automatisch erzeugen. Wenn man 
+allerdings einen Ring erzeugt, so muß dieser von Hand geschlossen werden, 
+sonst bleibt an der Nahtstelle eine Kollision. Dazu müssen die zwei zu 
+verschmelzenden Flächen selektiert werden, der Merge-Operator erzeugt die
+Verbindung.
+ 
+Mark:
+
+Wenn man mit Extrud oder Tesselate neue Flächen, Kanten und Punkte erzeugt
+kann man diesen automatisch Markierungen zuweisen. Mit Mark kann man
+weitere Markierungen von Hand hinzufügen. Diese Markierungen bestimmmen 
+das MeshProcessing.
+
+Transform, Randomize:
+
+Hiermit kann man eine Gruppe von Vertices nachbearbeiten.
+
+Tesselate:
+
+Hiermit kann man eine Gruppe von Zellen in eine Richtung unterteilen.
+Dabei ist zu beachten, das man nicht einzelne Flächen unterteilen kann,
+und das eventuell die benachbarten Zellen auch unterteilt werden um
+den Übergang zu schaffen, dadurch wird deren Struktur eventuell 
+so sehr verstümmelt das die Markierungen beim MeshProcessing nicht mehr
+richtig Funktionieren.
+
+Copy:
+
+Man kann auch eine Gruppe von Zellen Kopieren und verschieben. Wird eine
+Nachbarzelle nicht mitkopiert, so wird in der Kopie die entsprechnde
+Fläche zur Wand. Das ergebniss ist immer ein in sich geschlossener 
+Zellkomplex ohne Verbindung zu den anderen Zellen. Diese Verbindung 
+muß gegebenenfalls mit Merge hergestellt werden.
+
+
+MESHMARKS
+
+
+Das MeshProcessing führt vordefinierte Operationen auf markierte Flächen,
+Kanten und Ecken aus. Die Markierung besteht dabei aus zwei Teilen:
+
+  - Zahl von 0 bis 255
+  - 8 Schalter
+
+Jeder MeshProcessing Operator hat demensprechend auch eine Zahl und 8 
+Schalter. Eine Element gehört dazu, wenn
+
+  - Die Zahl des Operator 0 ist oder gleich der Zahl des Elements
+  und
+  - Alle Flags die im Operator gesetzt sind auch im Element gesetzt sind
+
+
+VERFEINERUNG:
+
+
+Die BaseMesh Datenstruktur dient zwei Zielen: Der Kollision und der Optik.
+Vor der Verfeinerung wird das BaseMesh das aus Kollisionszellen besteht
+in ein richtiges Mesh umgewandelt, das keine Volumen-Information mehr 
+enthält. Die Zellen werden für die Kollision unverändert aufgehoben.
+Das bedeutet das die Kollision von den Verfeinerungen nichts weiß und
+entsprechend ungenau wird. Verfeinerungen an der Decke sind also nicht
+so schlimm wie Verfeinerungen an Stellen mit denen man warscheinlich 
+öfters kollidiert.
+
+Die Meshdatenstruktur enthält auch beständige Kanteninformationen, so das
+jederzeit auf Nachbarflächen zugegriffen werden kann und man auch Flags
+in den Kanten dauerhaft speichern kann.
+
+Neben den Primitiven Operatoren Transform und Randomize stehen einige
+komplexe Operatoren zur Verfügung:
+
+Transform:
+
+Bewegt eine Gruppe von Punkten
+
+Randomize:
+
+Bewegt eine Gruppe von Punkten um zufälle Werte in eine einstellbare 
+Richtung.
+
+Extrude:
+
+Nimmt eine Selektion von Flächen und extrudiert sie.
+
+Subdivide:
+
+Catmull-Clark Subdivision Surfaces mit Extrem-Alpha. Es ist auch möglich,
+nicht geschlossene oder teilweise selektierte Meshes zu Subdividen.
+
+Bevel:
+
+Nimmt einen Linienzug und fügt verschiedene arten von Kanten und Stufen 
+in diesen Linienzug ein. Kann auch mehrmals auf den selben Linienzug
+angewendet werden um sehr komplexe Formen zu erzeugen.
+
+Tesselate:
+
+Unterteilt eine selektion von Flächen weiter, zum Beispiel um auf Randomize 
+vorzubereiten oder besserer Color-Vertices zu erhalten. Kann im gegenzatz zu 
+Subdivide auch um beliebige Zahlen unterteilen (3 oder 5, nicht nur 2 4 8 16).
+
+
+TEXTURIERUNG:
+
+
+
+
+DEKORATION:
+
+
+
+
+BELEUCHTUNG:
+
+
+
+
+ZUSÄTZLICHE MESH BEFEHLE FÜR DEKORATIONSMESHES, IMPLEMENTATIONSHINWEISE:
+
+
+Die Dekorationsmeshes haben die selbe Datenstruktur wie die Processed Meshes. 
+
+Allerdings werden noch Operatoren zum erstellen von Cube, Torus, Sphere und
+Cylinder benötigt. Die implementierung läßt sich durch die Verwendung von
+Tesselate für Cube, Sphere und Cylinder vereinfachen.
+
+Meshes kann man auch Komplett aus Softimage reinladen,
+Informationen über Animation und Bone-Weights werden unverändert 
+weitergereicht, lediglich die Gewichte werden zusammen mit den UV-Koordinaten
+interpoliert.
+
+Extrude läßt sich als Bevel implementieren, und Subdivide eventuell als 
+besseres Tesselate. Die Gemeinsamkeiten von Mesh und Kollision lassen sich nur
+schwer ausnutzen.
+
+
+<--- -------------------------------------------------------------------- --->
+
+                        Object Management, neuer anlauf
+
+<--- -------------------------------------------------------------------- --->
+
+
+
+IDEE:
+
+
+Das Demo ist ein Baum von Operatoren unterschiedlichen Typs. Die Operatoren 
+haben keine Position auf einer Seite. Man kann sich verschiedene Ansichten des
+Baumes ausgeben. Es gibt keine Load/Store Befehle, nur Childs und Parents. 
+Allerdings sind die Childs nicht ungeordnet sondern können von 
+unterschiedlichem Typ und Bedeutung sein, der typische Add Operator mit 
+beliebig vielen gleichwertigen Eingängen ist eine Sonderform. Ein Operator
+kann auch Child von mehreren Parents sein, er wird in diesem Falle mehrfach 
+im Baum angezeigt. 
+
+
+ANSICHTEN:
+
+
+Die Ansicht des Baumes unterscheided sich in der Auswahl und der Darstellung
+der Operatoren. 
+
+Die Auswahl wird bestimmt durch den Root-Operator und die
+darzustellenden Typen. Der Root-Operator kann frei gewählt werden, oder es
+kann ein "virtueller" Root operator benutzt werden um alle Texturen, alle
+Meshes oder das ergebniss einer Suche darzustellen. Außerdem können Typen 
+ausgeblendet werden, damit man sich nicht immer die Materialien mit ihren 
+Texturen ansehen muß wenn man an Meshes arbeitet. In diesem Falle wird immer
+nur der erste Operator des ausgeblendeten Typs dargestellt, aber nicht seine
+Kinder.
+
+Die Operatoren können wahlweise traditionell als Kasten, im Birdseye Modus 
+oder mit allen Parametern angezeigt werden. 
+
+Wenn Operatoren mehrfach im Baum vorkommen, so kann man die doppelten 
+ausblenden um mehr übersicht zu gewinnen.
+
+Es werden auch immer die Parents des Root-Operators angezeigt. Damit ist
+es möglich den Context zu erkennen und einen Parent als neuen Root auszuwählen
+um im Baum zum Stamm zu wandern.
+
+
+DIRECT EDITING:
+
+
+Einer der Operatoren ist der aktuelle Operator. Dies kann der Root sein, aber
+keiner der Parents des Roots. Durch SHIFT+Taste wird ein neuer Operator unter
+dem Edit-Op eingefügt. Durch ungeshiftete Tasten und Draggen im View kann man
+abhöngig vom Operator viele Parameter direkt ändern. Man kann also Arbeiten,
+ohne den Baum zu berühren, sogar ohne den Baum zu sehen. Mit den Cursortasten
+kann man sich im Baum frei bewegen um schnell zwischen den Operatoren zu
+wechseln.
+
+
+SPARES und LIBARIES:
+
+
+Unbenutzte Operatoren die man dennoch vorläufig behalten möchte kann man als
+Spare "zur Seite schieben". Spares werden über ihrem Parent angezeigt, sind
+aber nicht mit ihm verbunden. Spares können genauso hirarchien bilden, 
+betrachtet und editiert werden, gehören aber nicht zum Hauptbaum.
+
+Der Library Operator erlaubt es, ähnlich wie Spares Teilbäume zu verwalten 
+die nicht wirklich zum Hauptbaum gehören, sieht aber besser aus da die
+Verbindung zwischen dem Library Op und seinen Childs angezeigt wird. Das
+ist vor allem dann Praktisch, wenn man hirarchien von Library-Ops bauen 
+möchte um seine Library zu organisieren.
+
+
+ZEIT, LEBEN UND INTERAKTIVITÄT
+
+
+Eine statische Welt hat folgende Typenhirarchie:
+
+  demo - timeline - camera - model - mesh - material - texture - bitmap
+       - score - instrument
+
+Die Timeline Operatoren schalten bestimmte Teile der Welt an und aus. Jeder
+Parameter läßt sich mit einer Animation verknüpfen. Durch das gleichzeitige
+Aktivieren mehrerer Kameras kann man Layern. Auch Soundeffekte kann man 
+prinzipiell überall einfügen.
+
+Um eine lebendige Welt zu schaffen muß die Anzahl der Objekte sich dynamisch
+ändern Können. Hierzu ist eine andere Hirarchie nötig:
+
+  demo - timeline - camera - world
+       - mark - model - mesh - material - texture - bitmap
+              - score - instrument
+       - score - instrument
+
+Der World-Operator enthält die Simulation einer interaktiven Welt. Mit Mark
+kann man Teilbäume so Markieren das die World darauf zugreifen kann. Nach 
+außen verhält sich die World wie ein großer Model-Add operator. Über einen
+Speziellen Kameramodus übernimmt die Kamera die Position des ersten Models
+und kann somit von der World gesteuert werden. Die World kann jedem seiner
+Meshes eine eigene Zeit für die Animation geben, so das Operator-Animationen
+mit den gecodeten Simulationen zusammenarbeiten, auch Soundeffekte kann man
+den markieren Teilbäumen zuordnen.
+
+
+ANIMATION:
+
+
+Im Spline-Modus wird für jeden Float-Parameter eines Operators eine Spline-
+Kurve angelegt. Man kann jetzt die Parameter verändern und Keypoints setzten. 
+Im detailierten Spline-Editor können überflüssige Keys und Curves gelöscht 
+werden. 
+
+Wenn ein Operator im Spline-Modus ist bekommt er eine zusätliche Zeile, in
+der die Spline-Optionen Anwählbar sind.
+
+Alternativ kann man auch einzelne Parameter mit eine Expresssion Animieren.
+Auch dazu wird eine zusätzliche Zeile angezeigt in der man eine Postfix-
+Expression für einen einzelnen Float eingeben kann.
+
+
+TEAMWORK:
+
+
+Ein Projekt kann aus mehreren Dateien Bestehen. Jeder Operator gehört einer
+Datei. Eine Datei übernimmt die Rolle des "Masters", die anderen sind 
+"Slaves". Diese Aufteilung läßt sich nicht mehr ändern. Das Programm merkt
+sich, ob die Dateien einen Schreibzugriff erlauben (frei) oder nicht 
+(gesperrt).
+
+Jeder Operator weiß zu welcher Datei er gehört. Er kann nur verändert
+werden, wenn die Datei frei ist. Man kann einen Operator nur hinzufügen, 
+oder entfernen, wenn der Parent und alle Childs in freien Dateien liegen. 
+Man kann die zugehörigkeit zu einer Datei nur ändern, wenn sowohl die alte
+als auch die neue Datei frei sind.
+
+Damit kann das Programm zusammen mit einer Source-Control-Software benutzt
+werden. 
+
+
+TYPEN:
+
+
+  - project
+
+Der Projekttyp erlaubt es, in einer Datei mehrere demos zu lagern. .
+
+  - demo
+
+Der Demooperator hält das Demo zusammen.
+
+  - camera
+
+Die Kamera steht zwischen demo und scene
+
+  - scene
+
+Die Scene enthält Operatoren die etwas Zeichnen. Die umwandlung vom
+mesh zum vertexbuffer geschieht hier, und somit auch sonderfunktionen wie
+glows und flat-shading.
+
+  - mesh
+
+Viele scene-operatorn benötigen ein mesh. das mesh ist bereits mit
+materialien versehen. Ein mesh kann auch animationssplines enthalten
+um bone-meshes zu animieren.
+
+  - material
+
+Scenen und meshes brauchen Materialien um die Grafikhardware zu 
+initialisieren.
+
+  - texture
+
+Enthält die Information, wie eine Bitmap in die Grafikhardware zu
+laden ist.
+
+  - Bitmap
+
+Wird letztendlich als Textur verwendet, kann aber auch als grundlage
+für geometrie dienen
+
+  - score
+
+kann zwischen instrument und demo geschaltet werden um melodien zu 
+erzeugen
+
+  - instrument
+
+spielt einen ton ab. kann ein kompletter softsynth sein.
+
+
+TYPENLOSE OPERATOREN
+
+
+  - timeline
+
+schaltet operatoren abhängig von der globalen zeit an und aus und setzt die
+lokale Zeit.
+
+  - mark
+
+markiert operatoren um sie von hardgecodeten scenen aus zu benutzen. der 
+operator wird mit exportiert, ist aber nicht wirklich mit dem baum verbunden
+
+  - library
+
+hält operatoren im baum, verhindert aber den export
+
+
+ARHCHITEKTUR
+
+
+Für das Intro muß die Baumstruktur in eine Commandstruktur umgebaut werden.
+
+Zuerst wird bestimmt, welche Operatoren dynamisch sind. Das Dynamisch-Attribut
+wird bei animierten Operatoren gesetzt und von oben nach unten durchgereicht.
+Ein Operator kann für bestimmte Inputs "blocken", und bestimmte Parameter
+auch statisch animieren.
+
+Dann werden die "done" operatoren bestimmt. Das sind die untersten Ops eines
+Typs. Für jeden done-Operator wird eine Befehlsliste erzeugt die im Intro
+interpretiert wird. 
+
+Für jeden Timeline-Operator werden die Animatonen die sich darüber befinden
+in eine Animationsliste eingetragen. jede Animation wird nur einem timeline-op
+zugeordnet, die dazugehörige Befehlsliste wird in der animationsliste 
+vermerkt, so das eine befehlsliste auch in mehreren animationslisten stehen 
+kann.
+
+die animationslisten, befehlslisten und parameter werden exportiert.
+
+im intro werden zuerst alle animationslisten mit zeit 0 ausgeführt. dann
+werden alle befehlslisten sortiert nach typ ausgeführt. dann geht die zeit 
+los und jeden frame werden alle animationen und die befehlslisten die
+eine aktive timeline haben. 
+
+kamera-operatoren sind immer dynamisch und werden somit immer ausgeführt,
+was die scene zeichnet. 
+
+<--- -------------------------------------------------------------------- --->
+
+                         Scripted Demo System
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+Das Demo nicht Operator-basierend sondern prozedural designen. Es gibt ein 
+Init-Script und ein On-Frame Script. Man kann animationen coden in dem man
+formeln in das Script einsetzt, und Unterprogramme gehen natürlich auch. Da
+die Scriptsprache nur sehr wenige Elemente enthält kann man eine GUI drum
+herum bauen die sich nicht weit von der Operator-Gui unterscheidet.
+
+
+BYTECODE:
+
+
+Es gibt 3 Stacks: I-Stack für Integer, O-Stack für Objekte und R-Stack gür
+Unterprogramme und Schleifen. Alle Zahlen sind 16:16 bit Integer. Die 
+verschiedenen Einheiten sind wie folgt normiert:
+
+- Boolean	0 -> FALSE;
+- Auswahl	(x>>16) -> Auswahl
+- Farbe		0x00000000 .. 0x0000ffff
+- Winkel	0x00000000 .. 0x00010000
+- Scale		0x00010000 = einheit
+- Normalen	0x00010000 = einheit
+- Raum-Position 0x00010000 = eins
+
+Konstanten reichen nur von -0x40000000 .. 0x3fffffff. 
+
+Intern wird das Skript als Wortcode gespeichert
+
+- 00000000	nop
+- 00000001	rts
+- 00000002	i31 (toggle the missing bit of 31 bit immediate)
+- 00000003	add +
+- 00000004	sub -
+- 00000005	mul *
+- 00000006	div /
+- 00000007	mod %
+- 00000008	min
+- 00000009	max
+- 0000000a	and
+- 0000000b	or
+- 0000000c	sin
+- 0000000d	cos
+- 0000000e	saw
+
+- 0001cccc	code (call primitive)
+- 0002wwww	user (call subroutine)
+- 0003wwww	func (start of subroutine)
+- 00040svv	store 
+- 00050svv      fetch 
+
+- 01oooooo      if 
+- 02oooooo      else
+- 03000000      then
+- 04000000      do 
+- 05oooooo      while
+- 06oooooo      repeat
+
+- 8iiiiiii	Konstante pushen
+
+
+-  iiiiiii	31 bit signed integer immediate
+-     cccc	code primitve
+-     wwww	user word
+-     oooo	index in code for controll structures
+-       vv	variable number
+-      s        variable scope and type
+
+- s=0		O-Var
+- s=1		I-Var
+- s=0		Local
+- s=2		Global
+- s=4		Environment
+- s=6		<free>
+
+
+ASCII REPRESENTATION
+
+
+Formeln werden in Infix-Notation eingegeben, der Postfix-Code wird generiert. 
+Der O-Stack wird automatisch verwaltet und muß im prototypen angegeben werden.
+
+
+Beispiel:
+
+	func void ExtrudeSubdiv(int dist,int level,int smooth=1)
+	ostack mesh to mesh
+	{
+          Extrude(4,dist=dist);
+	  Subdivide(level,smooth);
+	  Subdivide(1,1);
+	}
+
+complete syntax
+
+	programm: 
+	  statement*
+
+	statement:
+	  type name ';'
+	  type name varlist [ ostack ] [ '=' literal ] ( block | ';' )
+	  const type name '=' cexpr ';'
+	  RESULT '=' expr ';'
+	  IF '(' expr ')' block [ ELSE block ]
+	  WHILE '(' expr ')' block
+	  DO block WHILE '(' expr ')' ';'
+	  LOAD var ';'
+	  STORE var ';'
+	  DROP ';'
+
+	varlist:
+	  '(' varentry*, ')'
+
+	varentry:
+	  type name [ '=' constexpr ]
+	  
+	ostack:
+	  OSTACK object*, TO object*,
+
+	block:
+	  statement
+	  '{' statement* '}'
+	  	  
+
+        arg:
+	  name '=' expr
+	  expr
+
+	expr:
+	  cexpr
+
+	cexpr:
+	  bexpr '?' expr ':' expr 
+	  bexpr
+
+	bexpr:
+	  uexpr [ binary uexpr ]*
+
+	binary:
+	  '+'
+	  '-'
+	  '*'
+	  '/'
+	  '%'
+	  '='
+	  AND
+	  OR
+
+	uexpr:
+	  '(' expr ')'
+	  literal
+	  '[' expr*; ']'
+	  . ( 'x' | 'y' | 'z' | 'w' | 'a' | 'r' | 'g' | 'b'  )
+	  name '(' varentry*, ')'
+	  name 
+
+	constexpr:
+	  literal
+	 
+	type:
+	  VOID
+	  INT
+	  INT2
+	  INT3
+	  INT4
+	  OBJECT
+
+	object:
+	  BITMAP
+	  MESH
+
+	name: 
+	  abcd000
+	literal: 
+	  1234.567 -1235.56 
+	  0x1234.567
+	  #ff00dd00
+
+Keywords
+
+	GLOBAL FUNC OSTACK TO VAR 
+	IF ELSE WHILE DO RESULT 
+	LOAD STORE DROP
+	AND OR
+	INT INT2 INT3 INT4 OBJECT VOID
+	( ) { } [ ] =
+	+ - * / % .
+
+limited keyowrds:
+
+	BITMAP MESH
+	X Y Z W A R G B 
+	SIN COS RANGE MIN MAX
+	ONINIT ONFRAME ONSOUND
+	  
+
+
+
+GUI REPRESENTATION
+
+
+<--- -------------------------------------------------------------------- --->
+
+                               Mesh Representation
+
+<--- -------------------------------------------------------------------- --->
+
+
+Ich benötige folgende primitive operationen:
+
+- selections
+- transform linear
+- transform srt
+- ring
+  erzeuge einen geschlossenen ring aus 2 flächen
+- extrude
+  nimm eine flächenselektion und ziehe sie heraus
+- cut
+  spalte vertices und flächen an einer ebene
+- divide
+  nimm eine flächenselektion und spalte als geschlossenes objekt ab
+- merge
+  verschmelze zwei flächen und schließe objekt neu (torus)
+
+folgende spezialoperationen werden gebraucht:
+
+- subdivide
+  cattmull-clark
+- csg
+  boolsche operationen auf objekte
+- calcnormals
+- displace
+
+daraus baue ich
+
+- cube
+- torus
+- cylinder
+- sphere
+
+folgende spezialfälle sind wichtig:
+
+- löcher
+- scharfe kanten
+- uv-wrapping
+- interpretiere als punktwolke
+- interpretiere als spline
+- volumen / kollisions / visibility test
+
+eine vertex benötigt (manchmal):
+
+- position
+- normal
+- 2 x color
+- 4 x uv
+- bone weight & matrix palette skinning
+
+
+IDEEN:
+
+
+- vertices als structure of arrays
+- verdoppelte vertices für wrapping / crease
+- bei calcnormals wrapping und crease unterschiedlich behandeln!
+
+
+Wenn man von flächen ausgehrm dann hat man immer magische maximal-konstanten:
+wieviele vert oder edge per face? in bezug auf 2-manifold sind edges immer
+mit 2 vert und 2 face definiert!
+
+
+
+
+KOLLISION:
+
+
+Punkt-kollisionen kann man am besten mit verbundenen volumen machen. 
+
+um eine kante in einem volumen zu testen, muß man einen vektor durch die
+volumen bewegen. dann kann sich das objekt aber immer noch aufspießen.
+
+kollision kann sicher mit einem CSG test ermittelt werden: jede fläche mit
+jeder fläche schneiden. das berücksichtigt aber nicht die bewegung und 
+erkennt nicht, wenn man auf der falschen seite ist. und ist langsam.
+
+ok: ich mach den volumenansatz
+
+- zuerst werden die punkte an die neue position bewegt. tritt dabei koolision
+  auf zu stoppt die bewegung. je nach dem, wie viele punkte kollidieren haben
+  wir eine corn / edge  oder face collision
+- dann werden die kanten überprüft. tritt kollision auf so wird mit binärer 
+  suche der kollisionspunkt ermittelt (4-fach pro frame reicht dicke!). 
+  dies ist ein sonderfall der edge collision, weil die edge nicht durch
+  corn des objektes geht!
+- die physik berücksichtigt die einschränkung durch die kollision. dabei wird
+  nur ein constraint berücksichtigt.
+
+
+<--- -------------------------------------------------------------------- --->
+
+                    Overview over new Tool (kleiner ansatz)
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+Mehrere Tools arbeiten zusammen. Alle Tools geben einen CSL source aus.
+alle sources zusammen ergeben das demo.
+
+die tools sind:
+
+- project
+- viewport
+- ops für texturen, meshes, materials und scenes
+- parameter editor
+- painter
+- modeller
+- material editor
+- scene editor
+- demo-root
+- sound
+- timeline
+- splines
+- Source
+
+Jedes Tool hat EIN fenster. die fenster können vom user beliebig gedockt 
+werden.  die applikation ist ein leeres gerippe für die docking-fenster. Sie
+stellt einige globale variablen zur verfügung über die die fenster 
+kommunizieren können, sowie globale funktionalität wie load/save/export die 
+von allen fenstern verwendet wird. Die applikation "weiss", welches Fenster 
+gerade Viewport ist und welches Parameter editiert.
+
+
+WINDOWS:
+
+
+Von jedem Window-Typ kann es mehrere geben. der User arrangiert die windows
+wie er will mit docking views und tabs. In der Titelzeile jedes Windows 
+kommen zuerst die Tabs: hier stehen typ des fensters und name des aktuell 
+editierten objektes, zum Beispiel "page:texturen", "page:technoblob", 
+"view:glow4", "spline:cam2". 
+
+Die Anordnung der Fenster wird von einem kleinen Script erledigt, das der User
+wärend der Laufzeit editieren und neustarten kann. Später wird es einen Editor
+für dieses Skript geben.
+
+Die Applikation merkt sich alle Fenster sortiert nach Kategorie, und merkt 
+sich für jede Kategorie das zuletzt aktivierte. Die einzelnen Fenster 
+kommunizieren in dem sie sich von der applikation das jeweils zuletzt 
+aktivierte Fenster einer Kategorie geben lassen. Wird ein Fenster angefordert
+für das es keine Kategorie gibt, so wird ein floating-window erzeugt.
+
+
+DOCUMENTS:
+
+
+Die Applikation wird zusammengehalten von dem projekt-window. Es entspricht
+der Page-Liste traditioneller fr-tools. Es verwaltet eine liste von documents.
+Jedem Window ist ein Document zugeordnet. natürlich braucht man nur ein Page
+Window um viele Page-Documents zu editieren. Aber es gibt auch andere 
+documents, zum beispiel ist die window-anordnung auch nur ein document. 
+
+
+OBJECTS:
+
+
+Bei einem generator-tool geht es letztendlich darum, objekte zu generieren.
+das sind Texturen, Meshes, Materials, Scenes und viel mehr. Nich alles, was
+editiert wird sind jedoch objekte, einige dinge werden vom tool anders 
+verwaltet, etwa die globalen Einstellungen für Screen-Resolution, Window-
+Management und die Projektverwaltung. Die Objekte sind alles, was im Script
+mit load und store geladen und gespeichert wird. Jedes Objekt hat einen Namen, 
+einen Typ und natürlich das eigentliche objekt. Die Namen sind global und
+dürfen auch mit unterschiedlichem Typ nur einmal vorkommen. 
+
+Ein Document kann 
+ein Objekt zur verfügung stellen, es erzeugt die Objekt struktur und 
+registriert es bei der applikation. Das Dokument kann das Skript erzeugen, das
+ein Objekt erstellt. Das Objekt kann bei bedarf mit dem Script erzeugt werden
+und wird gecached. Das Dokument muß rmitteln obj das Objekt noch aktuell ist
+oder ob es neu erezeugt werden muß.
+
+
+ANIMATION:
+
+
+Ein Objekt kann nicht nur von anderen Objekten abhängen, sondern auch von 
+Globalen Variablen wie etwa der Zeit. Solche objekte müssen IMMER aktualisiert
+werden. 
+
+
+OPERATORS:
+
+
+Die standard-funktionalität für Operator sieht für den user normal aus.
+Zentrale ist das Op-Window. Hier können Operatoren arrangiert werden. Wird
+auf einen Operator Doppeltgeklickt, so wird dem aktuellen Para-Window dies mitgeteilt.
+Ändert sich ein Parameter, so wird dies allen Operator-Windows mitgeteilt.
+Dem aktuellen View-Window wird der code gegeben, der zum erzeugen des Operators 
+benötigt wird. 
+
+
+<--- -------------------------------------------------------------------- --->
+
+                          Material / Light / Scene
+
+<--- -------------------------------------------------------------------- --->
+
+
+ANFORDERUNG:
+
+
+Ein Material definiert, wie eine fläche zu zeichnen ist. Ein Material ist 
+sehr komplex, deshalb muß es mit mehreren texturen verwendbar sein. 
+Folgende Objekte sind definiert:
+
+Diese Objekte definieren sowohl WAS als auch WIE gezeichnet werden soll.
+das muß ich noch aufdröseln. Bei dem WAS gibt es zwei ansätze: Ein Script
+oder eine Datenstruktur. Ich entscheide mich für Datenstruktur, weil ich
+mich dann dynamisch je nach sichtbarkeit anpassen kann. Auch ist es mühselig,
+alle sonderfälle in einem Script zu berücksichtigen (Siehe stencil-verfahren).
+Man kann immer noch elemente mit einem Script hinzufügen.
+
+- Mesh
+  - enthält mehrere Cluster mit unterschiedlichen materialien
+  - Welches Material, material-parameter
+  - Welche Texturen
+  - Renderpass-Basis
+  - LightMask
+  
+- Licht
+  - Materialien KÖNNEN auf lichtquellen reagieren
+  - Position / Richtung / Winkel / Typ
+  - Diffuse Color
+  - Attenuation
+  - Schattenflag
+  - Special-Flags
+  
+- Material
+  - Mehrere Implementierungen, je nach hardware und entfernung
+  - je nach entfernung passes weglassen oder umschalten
+  - Mehrere Passes mit eigenen renderstates
+  - Mapping der Material-Texturen auf die Slots
+  - Eigene Texturen
+  - Renderpass-Bias
+  - material fordert vorbereitete geometrie per pass vom mesh an
+  - material kann zusätliche passes pro lichtquelle einbauen
+  - oder lichtparameter per fixed-function-pipeline erledigen
+  - die passes müssen auch entsprechend der stencil-buffer sortiert werden!
+  - jeder pass pro cluster ist ein paintjob
+  - die paintjobs können in unterschiedliche rendertargets gelegt werden um 
+    später zusammencomposited zu werden
+  
+  
+- PaintJob
+  - vertex/indexbuffer (statisch/dynamisch) mit dazugehörigen bone-matrixen
+  - texture-stack
+  - renderstates
+  - lichtmaske
+  - transform-matrix, texture-transform-matrices
+
+- Scene
+  - Position aller Lichter und Meshes
+  - Eventuell für mehrere Cameras benutzbar, um mehrere Ansichten zu rendern 
+
+- Camera
+  - Legt die Projektionsmatrix fest.
+  - Z-Buffer nur innerhalb einer Kamera gültig, 
+  - Color-Buffer ist innerhalb des Viewports und drüber hinaus gültig!
+  - D3DDev->Clear(); D3Dev->SetTransform(Proj); D3Dev->SetTransform(View)
+
+- FXChain
+  - verbinden mehrere rendertargets für 2d-compositing effekte
+  
+- Viewport
+  - Physikalische Bildschirmgröße wird festgelegt
+  - kann Screenbuffer oder Texture (Rendertarget) sein
+  - D3Dev->BeginScene()  D3Dev->EndScene()
+  
+  
+- Screen
+  - alles, was diesen frame gerendert wird.
+  - D3Dev->Present(0,0,0,0);
+
+
+WIE ZEICHNEN:
+
+
+- FXChain
+- Viewport
+- Scene
+- Camera
+- Material
+- MaterialPass
+- Mesh
+
+Zentrales Element ist die FXChain. Sie ist ein Netzwerk von 
+Offscreen-surfaces die durch Blit-Vorgänge verbunden sind. Eingabe sind 
+mehrere Camera/Scene paare, Ausgabe sind mehrere Vieworts die in der
+richtigen Reihenfolge gezeichnet werden müssen. 
+
+Im einfachsten Falle wird die Camera/Scene direkt in den Viewport gerendert.
+Es können aber auch mehrere Camera/Scene paare in Buffer gerendert werden
+um unterschiedlich compositet in verschiedenen Viewports zu landen.
+
+Die Scene ist eine Liste von Mesh/Matrix paaren die vom Script 
+zusammengestellt wurde. Mit boundingbox-tests werden die benötigten
+Meshes ausgewählt.
+
+Das Camera/Scene paar stellt fest, welche Cluster gezeichnet werden müssen.
+Jeder Cluster enthält ein Material und die benötigten Texturen und Parameter.
+Das Material stellt die benötigten Paintjobs zusammen und fordert die Vertex/
+Indexbuffer von Mesh an. 
+
+Ein Material besteht aus mehreren Passes, für jeden Pass wird ein Paintjob
+angelegt. Der Pass enthält neben den normalen Renderstates das mapping der
+Mesh-texturen und anderer Materialabhängiger texturen auf die Texturestages,
+Entscheidungsfunktionen ob ein Pass übersprungen werden soll, 
+Geometrie-Effekte und FVF-Codes. Man kann lichtquellen gezielt auswählen 
+und passes abhängig von den gefundenen lichtquellen wiederholt ausführen.
+Die passes können absolut positionert werden, oder auch abhängig von der 
+lichtquelle oder dem RenderPass der im Cluster angegeben ist.
+
+Die Geometrie-Effekte lassen sich in zwei gruppen aufteilen: extrude,
+subdivide, randomize, bones und flatshading sind kameraunabhängig; 
+shadow-volume, outlines, formglows, thicklines und pointsprites sind
+abhängig von der kamera oder anderen zur laufzeit veränderten matrizen.
+All diese effekte müssen sich im recorder aufzeichenen und kombinieren 
+lassen. Das Material kann von dem Mesh zusätzliche Geometrieeffekte und den 
+endgültigen FVF anfordern. Das Mesh versucht, so viel wie möglich davon 
+statisch anzulegen
+
+
+MAPPING AUF SCRIPT:
+
+
+Die FXChain kann direkt als liste von Blit-Befehlen dargestellt werden.
+Sie kann als unterprogramm vom OnFrame() aufgerufen werden.
+
+Die Scene muß sowieso jeden frame neu aufgebaut werden. Sie kann also
+als unterprogramm von zeichenbefehlen implementiert werden. Nur das die
+zeichenbefehle nicht sofort ausgeführt werden sondern ersteinmal nur
+in eine liste eingetragen werden: NewScene(); AddScene(); AddScene(); store x;
+
+Die FXChain Setzt also die Camera und den Viewport und Painted dann die Scene.
+Die Scene initialisiert die Paintjob-liste, läßt die materialien die
+Paintjobs eintragen, sortiert die Paintjobs und führt sie aus, wozu von den
+meshes noch einiges an dynamischer geometrie erzeugt werden muß. man braucht
+also immer eine Scene um ein Material zu benutzen. notfalls tippt man:
+NewScene(); AddScene(); PaintScene(); drop;
+
+Materialien sind unangenehm große strukturen. Die MaterialPasses müssen
+als eigene klasse gehandhabt werden. MaterialPasses sind parameterlisten in
+denen mit script-befehlen beliebíg herumeditiert werden kann. materialien
+sind nur listne von materialpasses.
+
+Die Scene liest die MaterialPasses, wertet die bedingung aus, fordert die
+geometrie an und erzeugt den paintjob.
+
+
+GEOMETRIE-EFFEKTE:
+
+
+Frei kombinierbare "effekte" sind:
+
+- extrude
+- subdivide
+- randomize
+- perlin 4d
+- transform
+- normalize
+- bones
+- enlarge
+- twirl
+- displacement
+
+dazu kommt immer einer der "finalizer", der den eigentlichen vertexbuffer 
+erstellt
+
+- polys
+- lines
+- pointsprite
+- thicklines
+- landscape
+- outlines
+- formglow
+- shadow-volume
+
+Die effekte werden durch mesh-operator spezifiziert und recordet. jeder effekt
+hat seinen eigenen code im player. in den record-buffer wernden index- und 
+scale werte gespeichert.
+
+Die effekte arbeiten in-place, zerstören also das original. man kann alle 
+vertices als "static" markieren um zu erzwingen, das eine kopie der vertex
+angelegt wird. nur dann kann man die recordeten effekte jeden frame erneut
+ausführen.
+
+Die finalizer werden vom material spezifiziert. sie streamen direkt in den
+vertexbuffer. dazu müssen sie nicht nur die quell-FVF sondern auch die 
+ziel-FVF kennen. der indexbuffer wird jedesmal kopiert (ich spar mir die 
+optimierung für später). der finalizer weiß, welche vertices er erzeugen muß, 
+überspringt also unbenutze source-vertices, und der index-buffer berücksichtig
+dies bereits.
+
+effekte können keine topologie (indexbuffer) animieren. finalizer können das,
+für formglows und shadow-volumes ist dies auch dringend nötig.
+
+
+
+<--- -------------------------------------------------------------------- --->
+
+                 Dynamische und Statische Vertex/Index Buffer
+
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+Das Interface für statische und dynamische VB's ist das selbe. Die anwendung
+muß jederzeit bereit sein, jede geometrie neu zu laden. Der einzige
+unterschied ist, daß das bei dynamischen VB's häufiger passiert...
+
+
+INTERFACE:
+
+
+Jede Geometrie (ob statisch oder dynamisch) bekommt ein handle. BeginGeo() und 
+EndGeo() erzeugen eine geometrie (entsprechend lock und unlock). DrawGeo() 
+zeichnet sie. RemGeo() gibt sie frei. FlushGeo() gibt alle statischen 
+geometrieen frei. 
+
+Nun wird zuerst DrawGeo() aufgerufen. Wenn die geometrie bereist hochgeladen 
+wurde, so wird sie sofort gezeichnet und sFALSE zurückgegeben. Liegt die 
+geometrie nicht vor, oder wurde ein nullhandle übergeben, so wird sTRUE 
+zurückgegeben, die anwendung muß BeginGeo() und EndGeo() aufrufen um die 
+geometrie hochzuladen. In diesem fall zeichnet EndGeo() die geometrie.
+
+Statische Geometrieen müssen einmal nach dem start und nach AltTab hochgeladen 
+werden.
+
+Dynamische Geometrieen müssen nach jedem Vertexbufferlock mit DISCARD neu 
+geladen werden, Present() schliest DISCARD ein.
+
+
+BEISPIEL:
+
+int dhandle=0;
+int shandle=0;
+
+void Dynamic()
+{
+  int handle;
+  handle = sSystem->BeginGeo(...,DYNAMIC,vp,ip);
+  *vp++ = ...;
+  *ip++ = ...;
+  sSystem->EndGeo(handle);
+  sSystem->RemGeo(handle);
+}
+
+void Static()
+{
+  if(sSystem->DrawGeo(shandle))
+  {
+    shandle = sSystem->BeginGeo(...,STATIC,vp,ip);
+    *vp++ = ...;
+    *ip++ = ...;
+    sSystem->EndGeo(shandle);
+  }
+}
+
+
+void Dynamic2()
+{
+  if(sSystem->DrawGeo(dhandle))
+  {
+    dhandle = sSystem->BeginGeo(...,DYNAMIC,vp,ip);
+    *vp++ = ...;
+    *ip++ = ...;
+    sSystem->EndGeo(dhandle);
+  }
+  /* optional aufräumen damit nicht so viele handles verschwendet werden... */
+  sSystem->RemGeo(dhandle);
+  dhandle = 0;
+}
+
+
+STATIC BUFFER MANAGEMENT:
+
+
+In der einfachsten implementierung bekommt jede statische geometrie ihre
+eigenen index- und vertexbuffer. RemGeo() funktioniert wie erwartet, 
+FlushGeo() ist nicht nötig, funktioniert aber auch (zwischen leveln).
+
+Wenn man mehrere VB's zusammenfassen will, ist RemGeo() nur ein dummy.
+mit FlushGeo() können alle buffer gelöscht werden. 
+
+Man kann sich auch pro zusammengefassten VB merken wie viele bytes alloziert
+sind. RemGeo() funktioniert wie erwartet, aber der VB wird erst released
+wenn genausoviele bytes alliziert wie freigegeben wurden. erst dann kann
+er wiederverwendet werden.
+
+
+PROBLEME:
+
+
+Statische geometrien werden "just in time" hochgeladen. Da wir sowieso 
+die caches aufwärmen müssen macht das kein problem. wenn das demo nach
+alt-tab fortgesetzt wird müssen wir die caches erneut aufwärmen oder ruckeln
+in kauf nehmen.
+
+Beim hochladen werden die statischen buffer mehrmals pro frame gelocked. das
+soll man nicht.
+
+
+ERWEITERUNGEN:
+
+
+Für Quads kann ein statischer Indexbuffer mit dem entsprechenden inhalt 
+angelegt werden.
+
+Wenn es nicht nur einen sondern zwei dynamische buffer gibt die abwechselnd
+DISCARDED werden, dann kann man garantieren das man immer auf eine bestimmte 
+anzahl vertices direkt zugreifen kann, man kann zwischen mehreren dynamischen
+vb's cyclen.
+
+Es kann einen zweiten dynamischen vertexbuffer geben für dynamische objekte
+die in unterschiedlichen renderpasses benötigt werden. wenn dieser buffer
+groß genug ist, muß das objekt nur einmal erzeugt werden. zwischendurch 
+können dann millionen von partikeln gezeichnet werden ohne das der zweite
+buffer DISCARDED wird.
+
+Bei sehr großen game-welten kann das budget für statische buffer festgelegt
+werden. die caches werden nicht aufgewärmt. im laufe des spieles werden immer
+mehr statische buffer angelegt, bis das budget voll ist. dann werden alte 
+buffer LRU gelöscht. das neu-anlegen ist automatisch.
+
+Man kann statische IB's und dynamische VB's erlauben. In diesem falle muß
+der anwendung mitgeteilt werden welche der buffer neu geladen werden
+müssen. Das werde ich erstmal nicht implementieren, statiche IB's für 
+dynamische quads sind sehr einfach und lösen die schlimmsten probleme auch.
+
+
+HERKUNFT:
+
+
+Ich habe das system fast wie beschrieben in der firmenengine gecoded, aber
+ein paar fehler gemacht: anstatt handles benutze ich sGeometry strukturen.
+Bei dynamischen buffern sind das aber eigentlich nur dummies, und das ist
+sehr nervig die dinger immer zu allozieren und wieder freizugeben. das muß
+natürlich gecached werden, einmal hab ich das vergessen und das war
+schrecklich...
+
+Die möglichkeit einen dynamischen vertexbuffer mehrmals zu zeichnen habe 
+ich selten benutzt, die möglichkeit "mit hoher warscheinlichkeit" zwischen
+den letzten paar dynamischen buffern zu cyclen habe ich noch nie gebraucht.
+ich konnte also nie den vorteil dieses systems ausnutzen. 
+
+
+<--- -------------------------------------------------------------------- --->
+
+                              Timeline und so...
+ 
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+Wie will ein grafiker vorgehen? 
+
+- er will die einzelteile des demos zusammenbauen und sie dann per 
+  "drag and drop" auf der timeline plazieren.
+- er möchte in der timeline keyframes setzen.
+- er möchte die splines nur selten sehen, es soll alles automatisch gehen.
+- er möchte events verteilen wie "blitzer" oder "shaker"
+- er möchte jeden parameter animieren können
+
+
+WELCHE PARAMETER SIND ANIMIERBAR?
+
+
+Alle Attribute. Manche Parameter von Operatoren setzen einfach nur Variablen 
+in der Struktur des Objektes, das sind Attribute. Diese Variablen lassen sich
+auch nach dem Operator noch ändern. Zum Beispiel Material-Parameter, die 
+Matrix eines Meshes, die Farbe einer Lichtquelle. Andere Parameter eines 
+Operators lassen sich nicht nach dem Operator ändern, etwa die Anzahl der
+Subdivides, die Tesselierung eines Meshes oder die Selektion von Flächen.
+
+Der Grafiker will ein Objekt in der Scene anfassen, ein Attribut auswählen 
+und dies mit einer Spline animieren. 
+
+
+OPERATOREN UND OBJEKTE
+
+
+Operatoren stellen eine Hirarchie von Befehlen dar. Objekte sind eine andere
+Hirarchie. Im Falle eines Scene-Graphen für Forward-Kinematik sind diese 
+Hirarchien zufällig identisch, für das Modelling und die Texturgenerierung
+gibt es aber keine zur Operator-Hirarchie analige Objekt-Hirarchie. 
+
+Ein Objekt kann auch Zeiger oder Listen auf andere Objekte enthalten. Diese
+sind keine Attribute, um das richtige Objekte für die Animation zu finden
+müssen sie aber gelesen werden.
+
+In der Operatorhirachie werden die Objekte merfach kopiert. Nach "store"
+kann ein Objekt mehrmals geladen werden, Attributänderungen in einem 
+Zweig dürfen sich nicht im anderen Spiegeln. wird das Objekt jedoch
+mehrmals unverändert benutzt, so erwartet der Grafiker das dieses Objekt
+auch nur einmal Resourcen verbraucht.
+
+Für die Auswahl der Objekte zur Animation ist die Objekthirarchie nötig. 
+Zum Erstellen der Objekte im Intro ist die Operatorhirarchie nötig.
+
+Die Trennung der Hirarchien ist für den Grafiker unangenehm. Er möchte ein
+Attribut direkt beim Operator zur Animation selektieren. Dazu muß das Tool
+den "Animation-Request" durch den Operatorbaum verfolgen, dann kann code
+erzeugt werden der unabhängig von den Operatoren das Attribut im richtigen
+Objekt ändert. Wird das Objekt mehrmals geladen und verändert so muß das
+Attribut das einmal als Operator animiert wurde in mehreren Objekten verändert
+werden.
+
+Die "billige" Lösung ist den Grafiker zu nötigen, alle animierten Operatoren
+so weit wie möglich in der Hirarchie nach unten zu schieben und alle 
+Operatoren ab dem Ersten animierten jeden Frame anzuwenden. 
+
+
+TIMELINE
+
+
+Meshes, Effekte, Kameras können in der Timeline plaziert werden.
+Die Meshes sind der Kamera zugeordnet, unter der sie stehen. Meshes über der 
+obersten Kamera sind ein Fehler. Effekte sind Dinge wie Partikelsysteme, 
+2d-Layer, Scroller, oder Blubber-Dinger, die genauso wie Meshes wissen wie
+sie sich zu zeichnen haben und über animierbare Attribute verfügen. Wird
+ein Attribut animiert, so wird eine Spline dafür erzeugt. Die Spline wird
+zwar Gui-seitig beim Operator definiert, wird aber vom Skript her mit
+dem Objekt ausgeführt. Deshalb kann die "Zeitvariable" abhängig vom Demo,
+der Kamera oder dem Mesh/Effekt, der Mausposition oder Event-Parametern 
+sein. Eventuell kann ein Parameter auch von mehreren Splines abhängig sein.
+Man könnte auch Dummy-Objekte in die Timeline packen die mehreren 
+Splines einen zeitlichen Kontext unäbhängig von anderen Timeline-Objekten 
+geben.
+
+
+EVENTS
+
+
+Meshes, Effekte und Kameras können mehrfach in der Timeline auftauchen.
+Wenn ein Effekt relativ zu sich selbst getimed ist so kann er als Event
+eingesetzt werden. Jedem Timeline-Objekt können Event-Parameter übergeben
+werden. Die Event-Parameter sind genormt: Zwei Vektoren "Pos" und "Dir", zwei
+Skalare "Velocity" und "Modulation" sowie ein "EventText" und ein "EventObject".
+
+
+SCRIPT
+
+
+Objekte brauchen Membervariablen für Attribute und Memberfunktionen um
+Zeiger und Listen auszulesen. Operatoren die nur Attribute setzen (etwa
+für Materialien) lassen sich leicht scripten. Membervariablen werden direkt
+durch ihren Offset in die Klasse definiert, ohne Stubs.
+
+Die "Saubere" todo-Liste
+
+- unified Object and int storage
+- remove object stack
+- structure declaration
+- read and write structures with dot notation
+- class declaration 
+- read and write member-variables with dot notation
+- faked member-functions
+- object pointers in structures/classes
+
+Die "schmutzige" lösung:
+
+- class declaration has hacked table in c++-source
+- add set/get function for attributes
+- add special function to change material / materialpass parameters
+  when only a pointer to the mesh / effect is given.
+
+dirty phase 2
+
+- class declaration in system.txt, only used by gui
+- dot-notation to change 
+
+
+NEUES PROBLEM:
+
+
+Wie verknüpfe ich die Timeline mit den Objekten? Wenn ich ein Mesh store und dann 
+in die Scene loade, bekommt die Scene eine KOPIE des objektes. Die Kopie ist in dem
+Falle nötig, in dem ein Store mehrmals geloaded wird. Um Einheitlichkeit zu gewärleisten
+muß vor JEDEM Load ein Copy kommen. 
+
+
+
+<--- -------------------------------------------------------------------- --->
+
+                              FX-Chain
+ 
+<--- -------------------------------------------------------------------- --->
+
+
+IDEE:
+
+
+Eigentlich gibt es nur ein problem: Wenn ein FX-Chain Operator mehr als ein
+Output hat, dann darf er sein temporäres Rendertarget nicht freigeben. 
+Optimalerweise gibt er es erst dann frei, wenn jeder Output darauf 
+zugegriffen hat. Um die Rendertargets "on the fly" zu verwalten muß der 
+Operator die anzahl Outputs kennen, was ein neues Konzept ist. 
+
+Mit den Function-Modifier "outputcount" schreibt der Codegenerator in den 
+letzten Parameter. Dieser wird in der GUI nicht mehr dargestellt.
+
+
+ALLGEMEINE PARAMETER DER FXCHAIN:
+
+
+(Fast) Jeder FXChain Operator hat folgende Parameter:
+
+- Rendertarget-Size
+- Color, Modulate*2/4, Zoom und Filter für das lesen der Quelltextur
+- Anzahl Outputs (versteckt)
+
+Zu Systemstart wird eine feste Anzhal Rendertargets alloziert. Die größe 
+hängt von der Auflösung ab. Non-Power2 Texturen wären ein tip... Die
+Angaben bezehen sich auf eine Auflösung von 1024x512 und 800x600:
+
+- 1*full (1024x512) (800x600)
+- 3*large (512x256) (512x256)
+- 3*medim (256x128) (256x128)
+- 3*small (128x64) (128x64)
+
+Die normale vorgehensweise ist das die Kamera in den full-buffer rendert,
+das Ergebniss wird vom buffer auf den screen geblittet, dann werden in
+kleineren buffern die effecte ausgerechnet und in den screen addiert.
+
+Kurz vor Release kann das noch einmal für eine Production speziell angepassst
+werden.
+
+
+BUFFER MANAGEMENT:
+
+
+Jeder Buffer hat einen RefCount. Der Operator sucht sich einen Buffer mit
+RefCount==0. Wird kein Buffer der richtigen größe gefunden so wird 
+SCRIPTVERIFY() aufgerufen. Der OuputCount des Operators wird in den RefCount 
+des Buffer geschrieben. Für jeden Input wird der RefCount verringert.
+
+Es kann vorkommen das der Codegenerator zu hohe OutputCounts erzeugt, weil
+die FXChain von mehreren verschiedenen Stores heraus in die Timeline 
+eingebaut wurde. Das führt zu tolerierbaren,
+ineffektiven Buffermanagement.
+
+
+P.S.
+
+
+Wenn du (ryg) dieses Konzept übernehmen willst, kannst du erst einmal den 
+OutputCount als normalen Parameter einbauen, und ich werde dann den 
+Codegenerator entsprechend anpassen. Der OutputCount muß jeweils der letzte
+Parameter sein. Wenn der Parameter für die Größe des RenderTargets immer 
+der Erste ist (Wert von 0-3 für full/large/medium/small), dann kann ich in
+den Codegenerator Code einfügen der die Anzahl der Benötigten RenderTargets
+ausrechnet und mit Scriptbefehlen alloziert, das aber erst nach der BP.
+
+
+<--- -------------------------------------------------------------------- --->
+
+                           Particle System
+
+<--- -------------------------------------------------------------------- --->
+
+IDEE:
+
+
+Ein Partikelsystem besteht aus folgenden teilen:
+
+- Source
+  - Starting Position and Speed
+- Force
+  - f(pos,speed,time)
+  - mirror-planes
+- Life
+  - color
+  - size
+  - rotation
+- System
+  - Particles/Second
+
+
+SOURCE:
+
+
+Mit möglichst wenigen Parametern muß eine möglichst komplexe Form
+beschrieben werden.
+
+- SCALE (3)
+- ROTATE (3)
+- TRANSLATE (3)
+- SURFACE (1)
+- SCATTER (1)
+- HEMISPHERE (bool)
+
+Für jeden  neuen Partikel wird ein Zufallsvektor in einer Kugel gesucht. Mit
+SURFACE wird die Position in einen Einheitsvektor umgeblendet. HEMISPHERE
+schaltet die untere hälfte aus. Die Startgeschwindigkeit wird mit SCATTER 
+gemorpth: 0 ist ein zufallsvector, nach -1 wird zur position
+geblendet und nach +1 wird zu einem up-vector geblendet. 
+
+Danach wird SCALE / ROTATE / TRANSLATE auf Position und Speed angewendet.
+Speed wird normalisiert und mit SPEED multipliziert. Die Partikel befinden 
+sich in Weltkoordinaten, SRT wird nicht noch einmal verwendet.
+
+
+FORCE
+
+
+Hiermit kann man den verlauf der Partikel beeinflussen
+
+- GRAVITY (3)
+- FORCE1 (3)
+- FORCE2 (3)
+- DAMPING (1)
+- MIRROR (1)
+- ATTRACT (2)
+- TANGENT (2)
+
+
+Die GRAVITY ist die grundkraft und wirkt immer in eine richtung.
+Das DAMPING wirkt immer der Geschwindigkeit entgegen. MIRROR stellt
+die höhe der Spiegelebene ein. Um sie auszuschalten muß man sie weit 
+nach unten ziehen.
+
+Mit FORCE kann eine Kraftquelle gesetzt werdern. ATTRACT stellt 
+die Anziehungskraft ein. TANGENT drängt das Partikel in eine Kreisbahn
+
+
+LIFE
+
+
+Es muß Rotation, Größe, Farbe und Aspekt animiert werden.
+
+- ROTSTART (1)
+- ROTRAND (1)
+- ROTSPEED (2)
+- SIZE (2)
+- SIZETIME (1)
+- ASPECT (2)
+- COLOR (3)
+- COLORTIME (3)
+
+Die Startrotation kann direkt eingestellt werden, ein Zufallswert wird
+hinzuaddiert. Dazu kann eine Rotationsgewschwindigkeit für Start und Ende
+der Lebensspanne festgelegt werden.
+
+Es können zwei Sizes einem Zeitpunkt im Leben des Partikels zugeordnet 
+werden. Am Start und End ist die Size 0
+
+Der Aspekt kann nur zwischen Start- und Endwert interpoliert werden.
+
+Es können drei Farben einem Zeitpunkt im Leben des Partikels zugeordnet 
+werden. Am Start und Ende ist die Farbe #00000000.
+
+
+SYSTEM
+
+
+Die Geschwindigkeit mit der Partikel generiert werden muß hier eingestellt 
+werden. 
+
+- RATE (1)
+- RATERAND (1)
+- MAX (1)
+- LIFETIME (1)
+- LIFERAND (1)
+
+RATE gibt die Ausstoßrate in Partikeln pro Sekunde an. Wenn RATERAND null
+ist zu entstehen die Partikel am Exakt richtigen Moment. Mit RATERAND = 1
+wird die Position der Partikel entlang der Bewegungsrichtung so gestreut
+das die Partikel zufällig zu enstehen scheinen. Der Entsteungszeitpunkt
+ist jedoch in jedem Falle exakt definiert.
+
+LIFETIME und LIFERAND legen die Haltbarkeit der Partikel fest. 
+
+Mit MAX läßt sich das Partikelsystem begrenzen. Wird die Rate auf einen
+sehr hohen Wert gestellt, so erzeugt das system einen Partikelstoß. Wenn die
+Lifetime zuende ist entsteht ein weiterer Partikelstoß.
+
+<--- -------------------------------------------------------------------- --->

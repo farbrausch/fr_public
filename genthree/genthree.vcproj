@@ -1,0 +1,1069 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="genthree"
+	SccProjectName="&quot;$/genthree&quot;, TEAAAAAA"
+	SccAuxPath=""
+	SccLocalPath="."
+	SccProvider="MSSCCI:Microsoft Visual SourceSafe">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory=".\Release"
+			IntermediateDirectory=".\Release"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="2"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				ProgramDatabaseFile=".\Release/genthree.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/genthree.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1031"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="VTune|Win32"
+			OutputDirectory=".\genthree___Win32_VTune"
+			IntermediateDirectory=".\genthree___Win32_VTune"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="1"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS"
+				StringPooling="TRUE"
+				RuntimeLibrary="4"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\genthree___Win32_VTune/genthree.pdb"
+				GenerateMapFile="TRUE"
+				MapExports="TRUE"
+				MapLines="TRUE"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\genthree___Win32_VTune/genthree.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1031"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\Debug"
+			IntermediateDirectory=".\Debug"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /base:0x600000"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\Debug/genthree.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/genthree.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1031"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Player Debug|Win32"
+			OutputDirectory="Player Debug"
+			IntermediateDirectory="Player Debug"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_PLAYER"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\Player Debug/genthree.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/genthree.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1031"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Player Release|Win32"
+			OutputDirectory="Player Release"
+			IntermediateDirectory="Player Release"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/QIfist"
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="2"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="2"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_PLAYER"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="0"
+				AssemblerOutput="4"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="0"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /OPT:ICF=16"
+				AdditionalDependencies="odbc32.lib odbccp32.lib dsound.lib winmm.lib d3d9.lib"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				IgnoreAllDefaultLibraries="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\Player Release/genthree.pdb"
+				GenerateMapFile="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				FunctionOrder=""
+				BaseAddress="0x430000"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/genthree.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Packing and analyzing..."
+				CommandLine="kkrunchy --best &quot;$(TargetPath)&quot; --refsize 64"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1031"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="System"
+			Filter="">
+			<File
+				RelativePath=".\_config.hpp">
+			</File>
+			<File
+				RelativePath="_mp3.cpp">
+			</File>
+			<File
+				RelativePath="_mp3.hpp">
+			</File>
+			<File
+				RelativePath="_ogg.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="_ogg.hpp">
+			</File>
+			<File
+				RelativePath=".\_start.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AssemblerOutput="4"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AssemblerOutput="4"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_start.hpp">
+			</File>
+			<File
+				RelativePath=".\_startdx.cpp">
+			</File>
+			<File
+				RelativePath=".\_startdx.hpp">
+			</File>
+			<File
+				RelativePath=".\_startgdi.cpp">
+			</File>
+			<File
+				RelativePath=".\_startgdi.hpp">
+			</File>
+			<File
+				RelativePath=".\_startgl.cpp">
+			</File>
+			<File
+				RelativePath=".\_startgl.hpp">
+			</File>
+			<File
+				RelativePath="_startintro.cpp">
+			</File>
+			<File
+				RelativePath="_startintro.hpp">
+			</File>
+			<File
+				RelativePath=".\_startprv.hpp">
+			</File>
+			<File
+				RelativePath=".\_types.cpp">
+			</File>
+			<File
+				RelativePath=".\_types.hpp">
+			</File>
+			<File
+				RelativePath="_viruz2.cpp">
+			</File>
+			<File
+				RelativePath="_viruz2.hpp">
+			</File>
+			<File
+				RelativePath="_viruz2a.asm">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="VTune|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="_xsi.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="_xsi.hpp">
+			</File>
+			<File
+				RelativePath="codecoverage.hpp">
+			</File>
+			<File
+				RelativePath="ronan.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Player"
+			Filter="">
+			<File
+				RelativePath=".\genbitmap.cpp">
+			</File>
+			<File
+				RelativePath=".\genbitmap.hpp">
+			</File>
+			<File
+				RelativePath="gencode.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="gencode.hpp">
+			</File>
+			<File
+				RelativePath="genfx.cpp">
+			</File>
+			<File
+				RelativePath="genfx.hpp">
+			</File>
+			<File
+				RelativePath=".\genmaterial.cpp">
+			</File>
+			<File
+				RelativePath=".\genmaterial.hpp">
+			</File>
+			<File
+				RelativePath=".\genmesh.cpp">
+			</File>
+			<File
+				RelativePath=".\genmesh.hpp">
+			</File>
+			<File
+				RelativePath=".\genmisc.cpp">
+			</File>
+			<File
+				RelativePath=".\genmisc.hpp">
+			</File>
+			<File
+				RelativePath=".\genplayer.cpp">
+			</File>
+			<File
+				RelativePath=".\genplayer.hpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Desktop"
+			Filter="">
+			<File
+				RelativePath=".\_diskitem.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_diskitem.hpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_gui.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_gui.hpp">
+			</File>
+			<File
+				RelativePath=".\_util.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\_util.hpp">
+			</File>
+			<File
+				RelativePath="assembler.asm">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="system.txt"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="VTune|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="system.txt"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="system.txt"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="system.txt"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="system.txt"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="introasm.asm">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="c:\nxn\genthree\default.pac; c:\nxn\genthree\babe.mesh"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="VTune|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="c:/nxn/genthree/babe.mesh;c:/nxn/genthree/default.raw;c:/nxn/genthree/josie.v2m"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="nasmw -f win32 -o &quot;$(OutDir)/$(InputName).obj&quot; &quot;$(InputPath)&quot;
+"
+						AdditionalDependencies="c:/nxn/genthree/default.pac;c:/nxn/genthree/babe.mesh;default.raw;josie.v2m"
+						Outputs="&quot;$(OutDir)/$(InputName).obj&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\main.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\main.hpp">
+			</File>
+			<File
+				RelativePath="mainplayer.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="VTune|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="mainplayer.hpp">
+			</File>
+			<File
+				RelativePath=".\system.txt">
+			</File>
+		</Filter>
+		<Filter
+			Name="ChaosScriptingLanguage"
+			Filter="">
+			<File
+				RelativePath=".\cslce.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\cslce.hpp">
+			</File>
+			<File
+				RelativePath=".\cslrt.cpp">
+			</File>
+			<File
+				RelativePath=".\cslrt.hpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Apps"
+			Filter="">
+			<File
+				RelativePath="appbabewatch.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="appbabewatch.hpp">
+			</File>
+			<File
+				RelativePath=".\appbrowser.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appbrowser.hpp">
+			</File>
+			<File
+				RelativePath=".\appcube.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appcube.hpp">
+			</File>
+			<File
+				RelativePath=".\appfractal.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appfractal.hpp">
+			</File>
+			<File
+				RelativePath=".\appprefs.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\appprefs.hpp">
+			</File>
+			<File
+				RelativePath=".\apptext.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\apptext.hpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Tool"
+			Filter="">
+			<File
+				RelativePath="AppTool.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="AppTool.hpp">
+			</File>
+			<File
+				RelativePath="winpage.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="winpage.hpp">
+			</File>
+			<File
+				RelativePath="winpara.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="winpara.hpp">
+			</File>
+			<File
+				RelativePath="winproject.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="winproject.hpp">
+			</File>
+			<File
+				RelativePath="wintime.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="wintime.hpp">
+			</File>
+			<File
+				RelativePath="winview.cpp">
+				<FileConfiguration
+					Name="Player Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Player Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="winview.hpp">
+			</File>
+		</Filter>
+		<File
+			RelativePath=".\concept.txt">
+		</File>
+		<File
+			RelativePath=".\diary.txt">
+		</File>
+		<File
+			RelativePath=".\fr_64k.ico">
+		</File>
+		<File
+			RelativePath=".\genthree.rc">
+			<FileConfiguration
+				Name="Player Debug|Win32">
+				<Tool
+					Name="VCResourceCompilerTool"
+					PreprocessorDefinitions="_PLAYER"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Player Release|Win32">
+				<Tool
+					Name="VCResourceCompilerTool"
+					PreprocessorDefinitions="_PLAYER"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\oldcon.txt">
+		</File>
+		<File
+			RelativePath=".\resource.h">
+		</File>
+		<File
+			RelativePath=".\todo.txt">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

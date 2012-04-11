@@ -1,0 +1,4598 @@
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   General Globals                                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+class bitmap      = 0x0100.0009;
+class mesh        = 0x0100.000b;
+class material    = 0x0100.0008;
+class scene       = 0x0100.000c 
+{
+  float3 scale = [1.0,1.0,1.0][*0.01];
+  float3 rotate = [0.0,0.0,0.0][*0.001];
+  float3 translate = [0.0,0.0,0.0][*0.01];
+  int count = 1 [ 1..256 ];
+};
+class matpass     = 0x0100.000d
+{
+  float aspect;
+  float size;
+  int renderpass;
+  int4 color;
+  float enlarge;
+};
+class fxchain     = 0x0100.000e
+{
+  int4 color = #ff808080["rgba"];
+  int2 zoom = [1.0,1.0][[0.001,0.001] .. [1000.0,1000.0] *0.01];
+  int rotate = 0.0 [-100.0 .. 100.0 *0.001];
+  float2 center = [0.5,0.5][[-100.0,-100.0] .. [100.0,100.0] *0.01];
+  float3 campos = [0.0,0.0,0.0][*0.01];
+  float3 camrot = [0.0,0.0,0.0][*0.001];
+};
+class matrix      = 0x0100.000f
+{
+  float3 scale = [1.0,1.0,1.0][*0.01];
+  float3 rotate = [0.0,0.0,0.0][*0.001];
+  float3 translate = [0.0,0.0,0.0][*0.01];
+};
+class spline      = 0x0100.0010;
+class player      = 0x0100.0007;
+class meshanim    = 0x0100.0011
+{
+  int3 scale = [1.0,1.0,1.0][*0.01];
+  int3 rotate = [0.0,0.0,0.0][*0.001];
+  int3 translate = [0.0,0.0,0.0][*0.01];
+  int3 vector = [0.0,0.0,0.0][*0.01];
+  int parameter = 0.0[*0.01];
+};
+class light       = 0x0100.0012 
+{
+  int4 diffuse = #ff808080["rgba"];
+  int4 ambient = #ff404040["rgba"];
+  int4 specular = #ffffffff["rgba"];
+  float range = 1.0 [ 0.0 .. 256 ];
+  float rangecut = 0.25 [ 0.01 .. 1.00 ];
+  float amplify = 1.0 [ 0.0 .. 256 ];
+  float spotfalloff = 0.0 [ 0.0 .. 1.0 ];
+  float spotinner = 0.0 [ 0.0 .. 1.0 ];
+  float spotouter = 0.25 [ 0.0 .. 1.0 ];
+};
+class particles		= 0x0100.0013;
+
+/****************************************************************************/
+
+void OnInit() = 1;
+void OnFrame() = 2;
+void OnSound() = 3;
+void OnGenerate() = 4;                  // used by tool only
+
+/****************************************************************************/
+
+int SystemTime;                         // global #0
+int SystemBeat;                         // global #1
+int SystemTicks;                        // global #2
+int SystemBPM;                          // global #3
+int SystemBeatMax;                      // global #4
+player SystemPlayer;                    // global #5
+int SystemMouseX;                       // global #6
+int SystemMouseY;                       // global #7
+                                        // global #8 is first operator-object!!
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh Generator                                                     ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+
+void Cube(
+  int x = 3 [ 1 .. 64 ] ,
+  int y = 3 [ 1 .. 64 ] ,
+  int z = 3 [ 1 .. 64 ] ,
+  int crease = 1 [ "cycle:smooth shading|hard shading" ],
+) ( mesh -- mesh ) = -0x01,"mod rowa",'q';
+
+void SelectAll(
+  int maskset = 0 [ "mask24:efv" ],
+  int maskclr = 0 [ "mask24:efv" ],
+) ( mesh -- mesh ) = -0x02,"mod";
+
+void SelectCube(
+  float3 center = [0.0,0.0,0.0][*0.001],
+  float3 size = [1.0,1.0,1.0][*0.01],
+  int flags = 0 [ "cycle:add|set" ],
+  int maskset = 0 [ "mask24:efv" ],
+  int maskclr = 0 [ "mask24:efv" ],
+) ( mesh -- mesh ) = -0x03,"mod",'Q';
+
+void Subdivide(
+  int mask = 0 [ "mask8:f" ],
+  float alpha = 1.0 [*0.01],
+  int count = 1 [ "cycle:off|1|2|3|4|5|6" ],
+)( mesh -- mesh ) = -0x04,"mod rowc",'u';
+
+void Extrude(
+  int inputmask = 0 [ "mask8:f" ],
+  int mode = 0 [ "cycle:normal|groups|faces|indface" ],
+  int outputmask = 0 [ "mask8:v" ],
+) ( mesh -- mesh ) = -0x05,"mod rowc",'e';
+
+void Transform(
+  int mask = 0 [ "mask8:v" ],
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01],
+) ( mesh -- mesh ) = -0x06,"mod",'t';
+
+void Cylinder(
+  int x = 3 [ 3 .. 64 ],
+  int y = 3 [ 3 .. 64 ],
+) ( mesh -- mesh ) = -0x09,"mod rowa",'c';
+
+void NewMesh(
+  int dummy0 = 0 [ 0 .. 3],
+  int dummy1 = 0 [ 0 .. 3],
+//  int colorSets = 0 [ "cycle:0|1" ],
+//  int uvSets = 0 [ "cycle:1|2|3|4 "]
+) ( -- mesh ) = -0x0a,"mod",'n';
+
+void MeshMaterial(
+  int id = 1 [ 1 .. 255 ],
+  int mask = 0 [ "mask8:f" ],
+) ( mesh material -- mesh ) = -0x0b,"mod link2",'m';
+
+void TransformEx(
+  int mask = 0 [ "mask8:v" ],
+  int sj = 0 [ "cycle:pos|norm|tangent|color0|color1|uv0|uv1|uv2|uv3" ],
+  int dj = 0 [ "cycle:pos|norm|tangent|color0|color1|uv0|uv1|uv2|uv3" ],
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01],
+) ( mesh -- mesh ) = -0x0d,"mod",'T';
+
+void Crease(
+  int mask = 0 [ "mask8:f" ],
+  int what = 2 [ "cycle:*1|norm:*2|tangent:*3|color0:*4|color1:\n*5|uv0:*6|uv1:*7|uv2:*8|uv3" ],
+  int selType = 0 [ "cycle:face|edge" ],
+) ( mesh -- mesh ) = -0x0e,"mod";
+
+void UnCrease(
+  int mask = 0 [ "mask8:f" ],
+  int what = 2 [ "cycle:*1|norm:*2|tangent:*3|color0:*4|color1:\n*5|uv0:*6|uv1:*7|uv2:*8|uv3" ],
+  int selType = 0 [ "cycle:face|edge" ],
+) ( mesh -- mesh ) = -0x0f,"mod";
+
+void CalcNormals(
+  int ignoreCreases = 0 [ "cycle:no|yes" ],
+  int mask = 0 [ "mask8:f" ],
+  int calcWhat = 1 [ "cycle:|normals:*1|tangents" ]
+) ( mesh -- mesh ) = -0x10,"mod";
+
+void Torus(
+  int x = 8 [ 3 .. 64 ],
+  int y = 4 [ 3 .. 64 ],
+  float radiusi = 0.333 [*0.001],
+  int phase = 0.0 [*0.01],
+  float arclen = 1.0 [ 0.0 .. 1.0 *0.001],
+) ( mesh -- mesh ) = -0x11,"mod rowa",'o';
+
+void Sphere(
+  int x = 12 [ 3 .. 64 ],
+  int y = 6 [ 3 .. 64 ],
+) ( mesh -- mesh ) = -0x12,"mod rowa",'h';
+
+void Triangulate(
+  int threshold = 5 [ 4 .. 64 ],
+  int mask = 0 [ "mask8:f" ],
+  int tesselation = 0 [ "cycle:quad->4tris|quad->2tris" ],
+) ( mesh -- mesh ) = -0x13,"mod rowc";
+
+void Cut(
+  float2 direction = [0.0,0.0][*0.01],
+  float offset = 0.0 [*0.01],
+  int mode = 1 [ "cycle:clip|cut" ],
+) ( mesh -- mesh ) = -0x14,"mod rowc";
+
+void ExtrudeNormal(
+  float distance = 0.125 [*0.005],
+  int mask = 0 [ "mask8:v" ],
+) ( mesh -- mesh ) = -0x15,"mod";
+
+void Displace(
+  float amplitude = 0.125 [*0.005],
+  int mask = 0 [ "mask8:v" ],
+) ( mesh bitmap -- mesh ) = -0x16,"mod",'D';
+
+void Bevel(
+  float elevation = 0.125 [*0.005],
+  float pullin = 0.125 [*0.005],
+  int inputmask = 0 [ "mask8:f" ],
+  int mode = 1 [ "cycle:normal|groups|faces|indface" ],
+  int outputmask = 0 [ "mask8:v" ],
+) ( mesh -- mesh ) = -0x17,"mod rowc",'b';
+
+void Perlin3D(
+	int mask = 0 [ "mask8:v" ],
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01],
+  float3 amplitude = [0.100,0.100,0.100][*0.001],
+) ( mesh -- mesh ) = -0x18,"mod",'p';
+
+void Add(
+) ( mesh mesh -- mesh ) = -0x19,"mod copy2 multi",'a';
+
+void DeleteFaces(
+  int mask = 0 [ "mask8:f" ],
+) ( mesh -- mesh ) = -0x1a,"mod rowc",'d';
+
+void Babe(
+  string file = 0 [ "string" ],
+//  int colorSets = 0 [ "cycle:0|1" ],
+//  int uvSets = 0 [ "cycle:1|2|3|4" ],
+  int dummy0 = 0 [ 0 .. 3],
+  int2 animrange = [0,16][*0.125],
+  int animphase = 0.0[*0.001],
+  int animation = 0 [ "cycle:on|off" ],
+) ( -- mesh ) = -0x1b,"mod";
+
+void BeginRecord(
+) ( mesh -- mesh ) = -0x1c,"mod rowb";
+
+void AnimLabel(
+  int label = 0 ["label"],
+  int flags = 0 [ "cycle:|double" ],
+) ( mesh -- mesh ) = -0x1d,"mod rowb";
+
+void SelectRandom(
+  int ratio = 128 [ 0 .. 255 ],
+  int seed = 123 [ 0 .. 255 ],
+  int maskset = 0 [ "mask24:efv" ],
+  int maskclr = 0 [ "mask24:efv" ],
+) ( mesh -- mesh ) = -0x1f,"mod";
+
+void MeshMultiply(
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01],
+  int count = 1 [ 1 .. 256 ],
+) ( mesh -- mesh ) = -0x20,"copy";
+
+void SelectAngle(
+  float angle = 0.8 [ 0.0 .. 1.0 *0.01],
+  int maskset = 0 [ "mask8:e" ],
+  int maskclr = 0 [ "mask8:e" ]
+) ( mesh -- mesh ) = -0x21,"mod";
+
+void ExtrudeWK(
+  int mask = 0 [ "mask8:f" ],
+  int mode = 0 [ "cycle:normal|groups|faces|indface" ],
+  int count = 1 [ 1 .. 256 ],
+  float distance = 1.0 [ *0.01 ],
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  int scalemode = 0 [ "cycle:local|global" ]
+) ( mesh -- mesh ) = -0x22,"mod";
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Misc                                                               ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+void PrintDez(int num) = -0x51;
+void PrintHex(int num) = -0x52;
+void Print(string str) = -0x53;
+// void Show() ( object -- object ) = -0x54;
+void Copy() ( object -- object ) = -0x55;
+void LoadSong(player pl,string name,int mode=0["cycle:v2m|ogg|mp3"]) = -0x56;
+void PlaySong(player pl,int songnr) = -0x57;
+object FindLabel(string name) = -0x58;
+int Pow(int a,int b) = -0x59;
+
+/****************************************************************************/
+
+void CamFrustrum(int near,int far) = -0x61;
+void CamMat() ( matrix -- )  = -0x66;
+void ObjMat() ( matrix -- )  = -0x67;
+
+// obsolete....
+void CamPos(int3 pos,int3 rot) = -0x62;
+void CamSet() = -0x63;
+void ObjPos(int3 scale,int3 rot,int3 trans) = -0x64;
+void ObjSet() = -0x65;
+
+/****************************************************************************/
+
+void MatrixGenerate(float3 s,float3 r,float3 t,int mode) ( -- matrix )= -0x71;
+void MatrixModify(float3 s,float3 r,float3 t,int mode) ( matrix -- matrix ) = -0x72;
+void MatrixLabel(int label) = -0x73;
+
+void SplineKey4(
+  int time = 0.0 [ 0 .. 1 *0.01 ],
+  int4 v = [0.0,0.0,0.0,1.0] [ *0.01 ]
+) ( spline -- spline ) = -0x46,"mod" ; 
+
+void Spline(int count,int tension,int continuity) ( -- spline ) = -0x41;
+void SplineSort() ( spline -- ) = -0x42;
+void SplineKey1(int time,int v) ( spline -- spline ) = -0x43; 
+void SplineKey2(int time,int2 v) ( spline -- spline ) = -0x44; 
+void SplineKey3(int time,int3 v) ( spline -- spline ) = -0x45; 
+int  SplineCalc1(int time) ( spline -- ) = -0x47;
+int2 SplineCalc2(int time) ( spline -- ) = -0x48;
+int3 SplineCalc3(int time) ( spline -- ) = -0x49;
+int4 SplineCalc4(int time) ( spline -- ) = -0x4a;
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Texture Generator                                                  ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+void SetSize(
+  int x = 8 [ "cycle:1|2|4|8|16|32|64|128|256|512|1024|2048" ],
+  int y = 8 [ "cycle:1|2|4|8|16|32|64|128|256|512|1024|2048" ]
+)  ( -- ) = -0x81;
+
+void MakeTexture(
+)  ( bitmap -- bitmap ) = -0x82,"mod",'m';
+
+void SetTexture(
+  int nr = 0 [ 0 .. 8 ]
+)  ( bitmap -- bitmap ) = -0x83;
+
+void Flat(
+  int4 color = [0,0,0,0]["rgba"]
+)  ( -- bitmap ) = -0x84,"mod",'f';
+
+void Merge(
+  int mode = 0 [ "cycle:add|sub|mul|diff|makealpha" ]
+)  ( bitmap bitmap -- bitmap ) = -0x85,"mod copy2",'a';
+
+void Color(
+  int mode = 0 [ "cycle:mul|add|sub|gray|invert|scale" ],
+  int4 color = #ff808080["rgba"]
+)  ( bitmap -- bitmap ) = -0x86,"mod",'c';
+
+void GlowRect(
+  float2 center = [0.5,0.5][*0.001],
+  float2 radius = [0.25,0.25][[0,0]*0.001],
+  float2 size = [0.0,0.0][[0,0]*0.001],
+  int4 color = #ffffffff["rgba"],
+  float alpha = 1.0 [0*0.001],
+  float power = 0.5 [0*0.001]
+)  ( bitmap -- bitmap ) = -0x87,"mod",'g';
+
+void Dots(
+  int4 col0 = #ff000000["rgba"],
+  int4 col1 = #ffffffff["rgba"],
+  int count = 16 [ 0 .. 32767 ],
+  int seed = 0 [ 0 .. 32767 ]
+)  ( bitmap -- bitmap ) = -0x88,"mod";
+
+void Blur(
+  int order = 1 ["cycle:off|box|triangle|gauss"],
+  int2 size = [0.1,0.1][[0,0]*0.001],
+  int amp = 1.0[0*0.01]
+)  ( bitmap -- bitmap ) = -0x89,"mod",'b';
+
+void Mask(
+)  ( bitmap bitmap bitmap -- bitmap ) = -0x8a,"mod mod2";
+
+void HSCB(
+  int h = 0.0 [*0.01],
+  int s = 1.0 [*0.01],
+  int c = 1.0 [0*0.01],
+  int b = 1.0 [*0.01]
+)  ( bitmap -- bitmap ) = -0x8b,"mod",'h';
+
+void Rotate(
+  float angle = 0.0 [*0.001],
+  float2 zoom = [1.0,1.0][*0.001],
+  int2 center = [0.5,0.5][*0.001],
+  int border = 0 ["cycle:wrapu|clampu|mirroru:*2wrapv|clampv|mirrorv"]
+)  ( bitmap -- bitmap ) = -0x8c,"mod",'r';
+
+void Distort(
+  int str = 0.1 [*0.01],
+  int border = 0 ["cycle:wrapu|clampu|mirroru:*2wrapv|clampv|mirrorv"]
+)  ( bitmap bitmap -- bitmap ) = -0x8d,"mod copy2",'d';
+
+void Normals(
+  int str = 0.1 [*0.01],
+  int mode = 0 ["cycle:2d|3d:*1normal|tangent"]
+)  ( bitmap -- bitmap ) = -0x8e,"mod",'n';
+
+void Light(
+  int mode = 0 [ "cycle:spot|point|directional" ],
+  float3 pos = [0.5,0.5,0.25][*0.001],
+  float2 dir = [0.0,0.25][*0.001],
+  int4 diffuse = #ffff0000["rgba"],
+  int4 ambient = #ff404040["rgba"],
+  float outer = 0.8 [0 .. 1*0.001],
+  float falloff = 1.0 [0 .. 16*0.01],
+  float amp = 1.0[*0.01]
+)  ( bitmap -- bitmap ) = -0x8f,"mod",'l';
+
+void Bump(
+  int mode = 0 [ "cycle:spot|point|directional" ],
+  float3 pos = [0.5,0.5,0.25][*0.001],
+  float2 dir = [0.0,0.25][*0.001],
+  int4 diffuse = #ffff0000["rgba"],
+  int4 ambient = #ff404040["rgba"],
+  float outer = 0.8 [0 .. 1*0.001],
+  float falloff = 1.0 [0 .. 16*0.01],
+  float amp = 1.0[*0.01],
+  int4 specular = #ff000000["rgba"],
+  float spow = 16.0 [0*0.1],
+  int samp = 1.0[0..16*0.01]
+)  ( bitmap bitmap -- bitmap ) = -0x90,"mod copy2",'B';
+
+void Text(
+  int2 pos = [0.1,0.1][*0.001],
+  int height = 0.1[*0.001],
+  int width = 0.0[*0.001],
+  int4 color = #ffffffff["rgba"],
+  string text = 0 ["string"]
+)  ( bitmap -- bitmap ) = -0x91,"mod",'t';
+
+void Wavelet(
+  int mode = 0 ["cycle:encode|decode"],
+  int steps = 1 ["cycle:0|1|2|3|4|5|6|7|8"]
+)  ( bitmap -- bitmap ) = -0x94,"mod";
+
+void Perlin(
+  int frequency = 2 [ 1 .. 12 ],
+  int octaves = 3 [ 1 .. 12 ],
+  float fadeoff = 0.5 [ 0*0.001],
+  int seed = 0 [ 0 .. 255 ],
+  int mode = 0 [ "cycle:normal|abs|sin|sin&abs" ],
+  float amp = 1.0 [ 0*0.001],
+  float gamma = 1.0 [ 0*0.001],
+  int4 c0 = #ff000000["rgba"],
+  int4 c1 = #ffffffff["rgba"]
+)  ( -- bitmap ) = -0x92,"mod",'p';
+
+void Cell(
+  int4 c0 = #ffff0000["rgba"],
+  int4 c1 = #ffffffff["rgba"],
+  int4 cb = #ff000000["rgba"],
+  int count = 16 [ 1 .. 256 ],
+  int seed = 0 [ 0 .. 32767 ],
+  float amp = 1.0 [ *0.001],
+  float gamma = 0.5 [ 0*0.001],
+  int mode = 1 [ "cycle:out|in:*1range|color:*2normal|invert" ]
+)  ( -- bitmap ) = -0x93,"mod",'C';
+
+void Gradient(
+  int4 c0 = #ff000000["rgba"],
+  int4 c1 = #ffffffff["rgba"],
+  int offset = 0.0 [*0.005],
+  float angle = 0.125 [*0.001],
+  float len = 1.414 [*0.003]
+)  ( -- bitmap ) = -0x95,"mod";
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Material (and scene)                                               ***/
+/***                                                                      ***/
+/****************************************************************************/
+/*
+void NewScene                         // obsolete
+(
+)  ( -- scene ) = -0xc0;
+*/
+void Scene
+(
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01]
+)  ( mesh -- scene ) = -0xc1,"link",'n';
+
+void TransScene
+(
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01]
+)  ( scene -- scene ) = -0xc2,"link",'t';
+
+void Multiply
+(
+  float3 s = [1.0,1.0,1.0][*0.01],
+  float3 r = [0.0,0.0,0.0][*0.001],
+  float3 t = [0.0,0.0,0.0][*0.01],
+  int count = 1 [ 1 .. 256 ]  
+)  ( scene -- scene ) = -0xc3,"link",'m';
+
+void AddScene
+(
+)  ( scene scene -- scene ) = -0xc4,"link multi",'a';
+
+void PaintScene
+(
+)  ( scene -- scene ) = -0xc5;
+
+void LabelScene
+(
+  int label = 0 ["label"],
+)  ( scene -- scene ) = -0xc6,"mod",'l';
+
+void LightScene
+(
+  float3 scale = [1.0,1.0,1.0][*0.01],
+  float3 rotate = [0.0,0.0,0.0][*0.001],
+  float3 translate = [0.0,0.0,0.0][*0.01],
+  int mode = 0 ["cycle:point|spot|dir|ambient:*3world space|camera space"],
+  int mask = 0 [ 0 .. 23 ],
+  int label = 0 ["label"],
+  float range = 1.0 [ 0.0 .. 256 ],
+  float rangecut = 0.25 [ 0.01 .. 1.00 *0.01],
+  float amplify = 1.0 [ 0.0 .. 256 *0.01 ],
+  float spotfalloff = 1.0 [ 0.0 .. 16.0 *0.01],
+  float spotinner = 0.0 [ 0.0 .. 1.0 *0.01],
+  float spotouter = 0.25 [ 0.0 .. 1.0 *0.01],
+  int4 diffuse = #ff808080["rgba"],
+  int4 ambient = #ff404040["rgba"],
+  int4 specular = #ffffffff["rgba"]
+) ( -- scene ) = -0xc7,"link",'L';
+/*
+void PaintSceneLater
+(
+)  ( scene -- scene ) = -0xc8;
+*/
+void PartScene
+(
+)  ( particles -- scene ) = -0xc9,"link",'p';
+
+/****************************************************************************/
+
+void NewMaterial
+(
+)  ( -- material ) = -0xe0,"mod",'n';
+
+void MatBase
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int flags = 0x0300 ["cycle:singlesided|doublesided:*1|renormalize:*2light off|light on:*3diffuse|tfactor:*8zoff|zwrite|zread|zon:*12blendoff|blendalpha|blendadd|blendmul|blendsmooth:*4counterclockwise|clockwise:*11draw|only z/stencil"],
+  int mode = 2 ["cycle:off|flat|tex|add|mul|addsmooth"],
+  int renderpass = 0 [ 0 .. 255 ],
+  int4 color = #ffff8080["rgba"]
+)  ( material -- material ) = -0xe1,"mod",'b';
+
+void MatTexture
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int stage = 0 [ 0 .. 7 ],
+  int flags = 7 ["cycle:filter off|filter min|filter mag|filter on:*2mip off|mip on:*3tile|clamp:*8uv0|uv1|uv2|uv3|uv4|uv5|uv6|uv7|envi|specular|eye space|world space|model space"]
+)  ( material bitmap -- material ) = -0xe2,"mod link2",'t';
+
+void MatFinalizer
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int program = 1 ["cycle:off|static|dynamic|sprites|trees|thicklines|outlines|shadow|spikes|finns" ],
+  float aspect = 1.0 [ 0.001 .. 16 *0.001], 
+  float size = 0.01 [ 0.001 .. 16 *0.001],
+  float enlarge = 0.00 [ 0.000 .. 256 *0.001],
+)  ( material -- material ) = -0xe3,"mod",'f';
+
+void MatLabel
+(
+  int label = 0 ["label"],
+  int mpass = 0 [ 0 .. 15 ]
+)  ( material -- material ) = -0xe4,"mod";
+
+void MatTexTrans
+(
+  int label = 0 ["label"],
+  int mpass = 0 [ 0 .. 15 ],
+  int stage = 0 [ 0 .. 7 ],
+  float3 scale = [1.0,1.0,1.0][*0.01],
+  float3 rotate = [0.0,0.0,0.0][*0.001],
+  float3 translate = [0.0,0.0,0.0][*0.01]
+) ( material -- material ) = -0xe5,"mod";
+
+void MatDX7
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int color0 = 32 [ "cycle:diffuse|current|texture|tfactor:*2..|invert|alpha|invalpha:*8disable|selectarg1|selectarg2|modulate|modulate2x|modulate4x|add|addsigned|addsigned2x|subtract|addsmooth|blenddiffusealpha|blendtexturealpha|blendfactoralpha|blendtexturealphapm|blendcurrentalpha|---|modulatealph_addcolor|modulatecolor_addalpha|modulateinvalpha_addcolor|modulateinvcolor_addalpha|---|---|dotproduct3|---|---:*4diffuse|current|texture|tfactor|specular:*6..|invert|alpha|invalpha" ],
+  int color1 = 33 [ "cycle:diffuse|current|texture|tfactor:*2..|invert|alpha|invalpha:*8disable|selectarg1|selectarg2|modulate|modulate2x|modulate4x|add|addsigned|addsigned2x|subtract|addsmooth|blenddiffusealpha|blendtexturealpha|blendfactoralpha|blendtexturealphapm|blendcurrentalpha|---|modulatealph_addcolor|modulatecolor_addalpha|modulateinvalpha_addcolor|modulateinvcolor_addalpha|---|---|dotproduct3|---|---:*4diffuse|current|texture|tfactor|specular:*6..|invert|alpha|invalpha" ],
+  int alpha0 = 32 [ "cycle:diffuse|current|texture|tfactor:*2..|invert:*8disable|selectarg1|selectarg2|modulate|modulate2x|modulate4x|add|addsigned|addsigned2x|subtract|addsmooth:*4diffuse|current|texture|tfactor|specular:*6..|invert" ],
+  int alpha1 = 33 [ "cycle:diffuse|current|texture|tfactor:*2..|invert:*8disable|selectarg1|selectarg2|modulate|modulate2x|modulate4x|add|addsigned|addsigned2x|subtract|addsmooth:*4diffuse|current|texture|tfactor|specular:*6..|invert" ]
+) ( material -- material ) = -0xe6,"mod";
+
+void MatBlend
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int alphatest = 4 [ "cycle:never|less|equal|lessequal|greater|notequal|greaterequal|always" ],
+  int alpharef = 4 [ 0 .. 255 ],
+  int source = 1 [ "cycle:zero|one|srccolor|invsrccolor|srcalpha|invsrcalpha|destalpha|invdestalpha|destcolor|invdestcolor|srcaplhasat" ],
+  int op = 0 [ "cycle:off|add|subtract|revsubtract|min|max" ],
+  int dest = 1 [ "cycle:zero|one|srccolor|invsrccolor|srcalpha|invsrcalpha|destalpha|invdestalpha|destcolor|invdestcolor" ]
+) ( material -- material ) = -0xe7,"mod";
+
+void MatStencil
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int stenciltest = 7 [ "cycle:never|less|equal|lessequal|greater|notequal|greaterequal|always" ],
+  int stencilref = 0 [ 0 .. 255 ],
+
+  int stencilfail = 0 [ "cycle:keep|zero|replace|incrsat|decrsat|invert|incr|decr" ],
+  int zfail = 0 [ "cycle:keep|zero|replace|incrsat|decrsat|invert|incr|decr" ],
+  int pass = 0 [ "cycle:keep|zero|replace|incrsat|decrsat|invert|incr|decr" ]
+) ( material -- material ) = -0xe8,"mod";
+
+void MatLight
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int diffusesource = 0 [ "cycle:material|vertex" ],
+  int specularsource = 0 [ "cycle:material|vertex" ],
+  int ambientsource = 0 [ "cycle:material|vertex" ],
+  int emissivesource = 0 [ "cycle:material|vertex" ],
+  int4 diffuse = #ffffffff["rgba"],
+  int4 specular = #ffffffff["rgba"],
+  int4 ambient = #ffffffff["rgba"],
+  int4 emissive = #00000000["rgba"],
+  float specularity = 0.0 [0 .. 64 *0.02],
+  int specular = 0 ["cycle:off|on"],
+  int mask = 1 [ "mask24" ]
+) ( material -- material ) = -0xe9,"mod";
+
+/****************************************************************************/
+
+void MeshMatBase
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int flags = 0x0300 ["cycle:singlesided|doublesided:*1|renormalize:*2light off|light on:*3diffuse|tfactor:*8zoff|zwrite|zread|zon:*12blendoff|blendalpha|blendadd|blendmul|blendsmooth:*4counterclockwise|clockwise:*11draw|only z/stencil"],
+  int mode = 2 ["cycle:off|flat|tex|add|mul|addsmooth"],
+  int renderpass = 0 [ 0 .. 255 ],
+  int4 color = #ffff8080["rgba"]
+)  ( mesh -- mesh ) = -0xf1,"mod rowb";
+
+void MeshMatTexture
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int stage = 0 [ 0 .. 7 ],
+  int flags = 7 ["cycle:filter off|filter min|filter mag|filter on:*2mipmap off|mipmap on:*3tile|clamp:*8uv0|uv1|uv2|uv3|uv4|uv5|uv6|uv7|envi|specular|eye space|world space|model space"]
+)  ( mesh bitmap -- mesh ) = -0xf2,"mod rowb link2";
+
+void MeshMatFinalizer
+(
+  int mpass = 0 [ 0 .. 15 ],
+  int program = 1 ["cycle:off|static|dynamic|sprites|trees|thicklines|outlines|shadow|spikes|finns" ],
+  float aspect = 1.0 [ 0.001 .. 16 *0.001], 
+  float size = 0.01 [ 0.001 .. 16 *0.001], 
+  float enlarge = 0.00 [ 0.000 .. 256 *0.001], 
+)  ( mesh -- mesh ) = -0xf3,"mod rowb";
+
+void MeshMatLabel
+(
+  int label = 0 ["label"],
+  int mpass = 0 [ 0 .. 15 ]
+)  ( mesh -- mesh ) = -0xf4,"mod rowb";
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   FX Chain and post-processing effects                               ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+void NewFXChain
+(
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int4 color = #ff000000["rgba"]
+)  ( -- fxchain ) = -0x100,"mod fxalloc",'n';
+
+void BeginViewport
+(
+  int3 pos = [0.0,0.0,-5.0][*0.01],
+  int3 parm2 = [0.0,0.0,0.0][*0.01],
+  int aspect = 1.0 [ 0.0 .. 100.0 *0.01],
+  int mode = 0 [ "cycle:none|color|z|both:*2rotate|lookat" ],
+  int ocount = 0,
+  int4 color = #ff000000 ["rgba"],
+  int zoom = 1.0 [ 0.001 .. 1000.0 *0.01]
+)  ( fxchain -- fxchain ) = -0x101;//,"link",'v';
+
+void RenderChain
+(
+)  ( fxchain -- ) = -0x102;
+
+void Layer2D
+(
+  int4 color = #ffff0000["rgba"],
+  int4 screenrect = [0.5,0.5,1.0,1.0][*0.01],
+  int4 uvrect = [0.0,0.0,1.0,1.0][*0.01],
+  int z = 1.0 [ 0.0 .. 1.0 * 0.0005],
+  int clear = 0 [ "cycle:none|color|z|both" ],
+  int ocount = 0,
+  float2 zoom = [1.0,1.0][[0.0625,0.0625] .. [100.0,100.0] *0.01],
+  int rotate = 0.0 [ -100.0 .. 100.0 *0.01],
+  float2 center = [0.5,0.5][[-100.0,-100.0] .. [100.0,100.0] *0.01]
+)  ( fxchain material -- fxchain ) = -0x103,"link",'l';
+
+void FXMerge
+(
+  int mode = 0 [ "cycle:add|mul|blend|sub|addsmooth" ],
+  int param = 0.0 [ 0.0 .. 1.0 * 0.01],
+  float2 zoom = [1.0,1.0][[0.0625,0.0625] .. [100.0,100.0] *0.01],
+  int rotate = 0.0 [ -100.0 .. 100.0 *0.01],
+  float2 center = [0.5,0.5][[-100.0,-100.0] .. [100.0,100.0] *0.01],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0
+)  ( fxchain fxchain -- fxchain ) = -0x104,"link fxalloc",'a';
+
+void FXColor
+(
+  int mode = 0 [ "cycle:add|mul|blend|sub" ],
+  int4 color = #ff808080["rgba"],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  float2 zoom = [1.0,1.0][[0.0625,0.0625] .. [100.0,100.0] *0.01],
+  int rotate = 0.0 [ -100.0 .. 100.0 *0.01],
+  float2 center = [0.5,0.5][[-100.0,100.0] .. [100.0,100.0] *0.01],
+  int lighten = 0.0 [ -1.0 .. 3.0 * 0.01]
+)  ( fxchain -- fxchain ) = -0x105,"link fxalloc",'c';
+
+void EndViewport
+(
+  int ocount = 0
+)  ( fxchain -- fxchain ) = -0x106;//,"link",'e';
+
+void FXPaintScene
+(
+  int ocount = 0
+)  ( fxchain scene -- fxchain ) = -0x0107;//,"link",'p';
+
+void Blend4x
+(
+  float4 rect0 = [0.0,0.0,1.0,1.0][*0.01],
+  float4 rect1 = [0.0,0.0,1.0,1.0][*0.01],
+  float4 rect2 = [0.0,0.0,1.0,1.0][*0.01],
+  float4 rect3 = [0.0,0.0,1.0,1.0][*0.01],
+  int coords = 0 [ "cycle:absolute|relpix" ],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 4.0 *0.01]
+)  ( fxchain -- fxchain ) = -0x109,"link fxalloc";
+
+void Viewport
+(
+  int3 pos = [0.0,0.0,-5.0][*0.01],
+  int3 parm2 = [0.0,0.0,0.0][*0.01],
+  int aspect = 1.0 [ 0.0 .. 100.0 * 0.01],
+  int mode = 0 [ "cycle:none|color|z|both:*2rotate|lookat" ],
+  int ocount = 0,
+  int4 color = #ff000000 ["rgba"],
+  int zoom = 1.0 [ 0.001 .. 1000.0 *0.01]
+)  ( fxchain scene -- fxchain ) = -0x10a,"link",'v';
+
+void FXResetAlloc
+(
+)  = -0x10b;//,"link",'f';
+
+void LabelChain
+(
+  int label = 0 ["label"],
+  int ocount = 0
+)  ( fxchain -- fxchain ) = -0x10c,"link",'l';
+
+/****************************************************************************/
+/****************************************************************************/
+
+void Particles
+(
+  float rate = 25.0 [ 0 .. 1024 * 0.1 ],
+  float jitter = 0.0 [ 0 .. 1 * 0.01 ],
+  int max = 1000 [ 16 .. 16384 * 1 ],
+  float life = 2.0 [ 0 .. 1024 * 0.1 ],
+  float3 gravity = [0.0,0.0,0.0] [ *0.001 ],
+)  ( material -- particles ) = -0x120,"link",'n';
+
+void PartEmitter
+(
+  float3 scale = [1.0,1.0,1.0][*0.01],
+  float3 rotate = [0.0,0.0,0.0][*0.001],
+  float3 translate = [0.0,0.0,0.0][*0.01],
+  int flags = 0 [ "cycle:sphere|hemisphere" ],
+  float surface = 0.0 [ 0 .. 1 * 0.01 ],
+  float scatter = 0.0 [ -1 .. 1 * 0.01 ],
+  float speed = 0.0 [ *0.01 ],
+  float speedrand = 0.0 [ *0.001 ],
+)  ( particles -- particles ) = -0x121,"mod",'e';
+
+void PartRotate
+(
+  float RotStart = 0.0 [ 0 .. 1 *0.01 ],
+  float RotRand = 0.0 [ 0 .. 1 *0.01 ],
+  float RotSpeed = 0.0 [ 0 .. 1 *0.01 ],
+)  ( particles -- particles ) = -0x122,"mod",'r';
+
+void PartLife
+(
+  float2 Size = [ 0.1,0.1 ] [ [0,0] .. [16,16] * 0.01 ],
+  float2 SizeTime = [ 0.1,0.9 ] [ [0,0] .. [1,1] *0.01 ],
+  float Aspect = 1 [ 0.01 .. 100.0 *0.01 ],
+  int4 Color0=#ffffc0c0["rgba"],
+  int4 Color1=#ffc0ffc0["rgba"],
+  int4 Color2=#ffc0c0ff["rgba"],
+  float3 ColorTime = [0.125,0.5,0.875] [ [0,0,0] .. [1,1,1] * 0.01 ],
+)  ( particles -- particles ) = -0x123,"mod",'l';
+
+void PartSpline
+(
+  int mode = 0 ["cycle:off|move|follow"],
+  float force = 0.01 [ 0.000 .. 1.000 * 0.001 ],
+)  ( particles spline -- particles ) = -0x124,"mod";
+
+/****************************************************************************/
+/****************************************************************************/
+
+// Material Base Flags
+
+const int MBF_DOUBLESIDED = 0x0001;
+const int MBF_RENORMALIZE = 0x0002;
+const int MBF_LIGHT       = 0x0004;
+
+const int MBF_ZOFF        = 0x0000;
+const int MBF_ZWRITE      = 0x0100;
+const int MBF_ZREAD       = 0x0200;
+const int MBF_ZON         = 0x0300;
+
+const int MBF_BLENDOFF    = 0x0000;
+const int MBF_BLENDALPHA  = 0x1000;
+const int MBF_BLENDADD    = 0x2000;
+const int MBF_BLENDMUL    = 0x3000;
+
+/****************************************************************************/
+
+// Material Base Mode
+
+const int MBM_FLAT        = 1;
+const int MBM_TEX         = 2;
+const int MBM_ADD         = 3;
+const int MBM_MUL         = 4;
+
+/****************************************************************************/
+
+// Material Texture Flags
+
+const int MTF_FILTERMIN   = 0x0001;
+const int MTF_FILTERMAG   = 0x0002;
+const int MTF_FILTER      = 0x0003;
+const int MTF_MIPMAP      = 0x0004;
+const int MTF_CLAMP       = 0x0008;
+
+const int MTF_UV0         = 0x0000;
+const int MTF_UV1         = 0x0100;
+const int MTF_UV2         = 0x0200;
+const int MTF_UV3         = 0x0300;
+const int MTF_UV4         = 0x0400;
+const int MTF_UV5         = 0x0500;
+const int MTF_UV6         = 0x0600;
+const int MTF_UV7         = 0x0700;
+const int MTF_UVENVI      = 0x0800;
+const int MTF_UVSPEC      = 0x0900;
+const int MTF_UVPOS       = 0x0a00;
+
+/****************************************************************************/
+/****************************************************************************/
+/*
+void ExtrudeSRT(
+  int mask = 0 [ "mask8:f" ],
+  int mode = 0 [ "cycle:normal|groups|faces|indface" ],
+  int3 s = [1.0,1.0,1.0][*0.01],
+  int3 r = [0.0,0.0,0.0][*0.001],
+  int3 t = [0.0,0.0,0.0][*0.01],
+  int count = 1 [ 1 .. 64 ],
+) ( mesh -- mesh ),"mod rowc"
+{
+  int i;
+  i=0;
+  while(i<count)
+  {
+    Extrude(mask,mode,1);
+    Transform(1,s,r,t);
+    i = i+1;
+  }
+}  
+*/
+void ExtrudeSRT() {}
+
+void Flatshade(
+  int mask = 0 [ "mask8:f" ]
+) ( mesh -- mesh ),"mod"
+{
+  Crease(mask,2,2);
+}
+
+void Crashzoom(
+  int steps = 3 [ 1 .. 9 ],
+  int zoom = 1.5 [ 1.0 .. 20.0 *0.005],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 4.0 *0.01]
+) ( fxchain -- fxchain ),"link fxalloc",'z'
+{
+  int oc;
+  int z1;
+  int z2;
+  int z3;
+  int amp;
+  
+  while(steps>0)
+  {
+    oc = 1;
+    amp = 1.0;
+    if(steps==1)
+    {
+      oc = ocount;
+      amp = amplify;
+    } 
+	    
+    z1 = Pow(zoom,Pow(4.0,-steps));
+    z1 = z1;
+    z2 = z1*z1;
+    z3 = z2*z1;
+    steps = steps-1;
+	    
+    Blend4x([0,0,1,1],
+	    [0.5-0.5/z1,0.5-0.5/z1,0.5+0.5/z1,0.5+0.5/z1],
+	    [0.5-0.5/z2,0.5-0.5/z2,0.5+0.5/z2,0.5+0.5/z2],
+	    [0.5-0.5/z3,0.5-0.5/z3,0.5+0.5/z3,0.5+0.5/z3],
+	    0,size,oc,amp);
+  }
+}
+
+void FXWideBlur(
+  int radius = 12.0 [ 1.0 .. 128.0 ],
+  int minradius = 1.0 [ 1.0 .. 128.0 ],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 4.0 *0.01 ],
+  int shape = 1 [ "cycle:diamond|square "]
+) ( fxchain -- fxchain ),"link fxalloc",'b'
+{
+  int oc;
+  int amp;
+  int r;
+
+  r = radius;
+  while(r>=minradius)
+    r = r*0.5;
+  amplify = amplify / 2;
+
+  while(r<radius)
+  {
+    oc = 1;
+    amp = 1.0;
+    if(r*2>=radius)
+    {
+      oc = ocount;
+      amp = amplify;
+    }
+
+    if(shape==0)
+      Blend4x([-r,0,-r,0],[r,0,r,0],[0,-r,0,-r],[0,r,0,r],1,size,oc,amp);
+    else
+      Blend4x([-r,-r,-r,-r],[r,-r,r,-r],[-r,r,-r,r],[r,r,r,r],1,size,oc,amp);
+			
+    r = r * 2;
+  }
+}
+
+void FXNop(
+) ( fxchain -- fxchain ),"nop",'N'
+{
+}
+
+void FXBlur8(
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 2.0 *0.01]
+) ( fxchain -- fxchain ),"link fxalloc"
+{
+  Blend4x([-2.5,0,-2.5,0],[-0.5,0,-0.5,0],[1.5,0,1.5,0],[3.5,0,3.5,0],1,size,1,1.0);
+  Blend4x([0,-2.5,0,-2.5],[0,-0.5,0,-0.5],[0,1.5,0,1.5],[0,3.5,0,3.5],1,size,ocount,amplify);
+}
+
+void Matrix() ( -- matrix ) 
+{ MatrixGenerate([1,1,1],[0,0,0],[0,0,0],0); }
+void MatrixSRT(int3 s,int3 r,int3 t) ( -- matrix )
+{ MatrixGenerate(s,r,t,0); }
+void MatrixOrbit(int3 s,int3 r,int3 t) ( -- matrix )
+{ MatrixGenerate(s,r,t,1); }
+void MatrixLockAt(int3 v) ( matrix -- matrix )
+{ MatrixModify([1,1,1],[0,0,0],v,2); }
+void MatrixMulSRT(int3 s,int3 r,int3 t) ( matrix -- matrix )
+{ MatrixModify(s,r,t,3); }
+void MatrixTranspose() ( matrix -- matrix )
+{ MatrixModify([1,1,1],[0,0,0],[0,0,0],4); }
+
+void SplineNew(
+  int tension = 0.0 [ 0 .. 1 *0.01 ],
+  int continuity = 0.0 [ 0 .. 1 *0.01 ]
+) ( -- spline ),"mod" 
+{
+  Spline(4,tension,continuity);
+}
+
+void FXResample(
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0
+) ( fxchain -- fxchain),"link fxalloc",'r'
+{
+  FXColor(0,#00000000,size,ocount,[1.0,1.0],0.0,[0.5,0.5],0);
+}
+
+/*
+void ExtrudeWKOld(
+  int mask = 0 [ "mask8:f" ],
+  int mode = 0 [ "cycle:normal|groups|faces|indface" ],
+  int count = 1 [ 1 .. 64 ],
+  int distance = 1.0 [ *0.01 ],
+  int3 s = [1.0,1.0,1.0][*0.01],
+  int3 r = [0.0,0.0,0.0][*0.001]
+) ( mesh -- mesh ),"mod rowc"
+{
+  int i;
+  i=0;
+  while(i<count)
+  {
+    Extrude(mask,mode,1);
+    ExtrudeNormal(distance,1);
+    Transform(1,s,r,[0,0,0]);
+    TransformEx(1,1,1,[1.0,1.0,1.0],r,[0.0,0.0,0.0]);
+    i = i+1;
+  }
+}
+*/
+void ExtrudeWKOld() {}
+
+void FXChaosBlur(
+  int radius = 12.0 [ 1.0 .. 128.0 ],
+  int stages = 1 [ 1 .. 8 ],
+  int size = 3 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 4.0 *0.01 ],
+  int shape = 1 [ "cycle:diamond|square "]
+) ( fxchain -- fxchain ),"link fxalloc",0
+{
+  int oc;
+  int i;
+  int r;
+
+  r = radius;
+  i = stages;
+  while(i>0)
+  {
+    r = r / 2;
+    i = i - 1;
+  }
+    
+  while(stages>0)
+  {
+    oc = 1;
+    if(stages==1)
+      oc = ocount;
+
+    if(shape==0)
+      Blend4x([-r,0,-r,0],[r,0,r,0],[0,-r,0,-r],[0,r,0,r],1,size,oc,amplify);
+    else
+      Blend4x([-r,-r,-r,-r],[r,-r,r,-r],[-r,r,-r,r],[r,r,r,r],1,size,oc,amplify);
+			
+    r = r * 2;
+    stages = stages -1;
+  }
+}
+
+/*
+void FXChaosCrash(
+  int steps = 3 [ 1 .. 9 ],
+  int zoom = 1.5 [ 1.0 .. 20.0 *0.005],
+  int size = 0 [ "cycle:full|large|medium|small" ],
+  int ocount = 0,
+  int amplify = 1.0 [ 0.0 .. 4.0 *0.01],
+  int fadeoff = 1.0 [ 0.0 .. 2.0 *0.01]
+) ( fxchain -- fxchain ),"link fxalloc",0
+{
+  int oc;
+  int z1;
+  int z2;
+  int z3;
+  int amp;
+
+  amp = amplify;  
+  while(steps>0)
+  {
+    oc = 1;
+    if(steps==1)
+      oc = ocount;
+
+    z1 = Pow(zoom,Pow(4.0,-steps));
+    z1 = z1;
+    z2 = z1*z1;
+    z3 = z2*z1;
+    steps = steps-1;
+	    
+    Blend4x([0,0,1,1],
+	    [0.5-0.5/z1,0.5-0.5/z1,0.5+0.5/z1,0.5+0.5/z1],
+	    [0.5-0.5/z2,0.5-0.5/z2,0.5+0.5/z2,0.5+0.5/z2],
+	    [0.5-0.5/z3,0.5-0.5/z3,0.5+0.5/z3,0.5+0.5/z3],
+	    0,size,oc,amp);
+	    
+    amp = amp * fadeoff;
+  }
+}
+*/
+fxchain blau_raum_fx9; // global #8
+material kissen_mat; // global #9
+scene blau_raum2; // global #10
+scene daten; // global #11
+fxchain bunt; // global #12
+scene fightclubraum; // global #13
+mesh fightclub; // global #14
+material rotate_mat; // global #15
+material blender; // global #16
+fxchain real_end; // global #17
+material blue_room_babe_mat; // global #18
+fxchain walk_scene_fx1; // global #19
+scene walk_scene_babe; // global #20
+material blender_white; // global #21
+fxchain walk_scene_fx2; // global #22
+scene walk_scene_babe2; // global #23
+material blu; // global #24
+fxchain babe_sprung_scene_fx1; // global #25
+scene walk_scene_room; // global #26
+material blend_black; // global #27
+fxchain rotate_josie_fx; // global #28
+scene kissen; // global #29
+fxchain blau_raum_fx8; // global #30
+scene fx8_scene; // global #31
+scene blau_raum; // global #32
+fxchain blau_raum_fx8_2; // global #33
+fxchain bday; // global #34
+material babe_wire_mat; // global #35
+fxchain zusammenbruch; // global #36
+scene z1; // global #37
+fxchain zusammenbruch2; // global #38
+fxchain zusammenbruch3; // global #39
+fxchain water; // global #40
+mesh waterface; // global #41
+fxchain blau_raum_fx1; // global #42
+material blue_room_babe_mat_static; // global #43
+fxchain blau_raum_fx5; // global #44
+fxchain start004; // global #45
+fxchain start003; // global #46
+fxchain start01; // global #47
+fxchain start02; // global #48
+fxchain start; // global #49
+fxchain blau_raum_fx0; // global #50
+material glow2; // global #51
+fxchain blau_raum_fxs; // global #52
+material glow; // global #53
+fxchain _temp0000; // global #54
+mesh _temp0001; // global #55
+bitmap _temp0002; // global #56
+bitmap _temp0003; // global #57
+mesh _temp0004; // global #58
+bitmap _temp0005; // global #59
+bitmap _temp0006; // global #60
+mesh _temp0007; // global #61
+bitmap _temp0008; // global #62
+bitmap _temp0009; // global #63
+bitmap _temp0010; // global #64
+bitmap _temp0011; // global #65
+fxchain _temp0012; // global #66
+mesh _temp0013; // global #67
+bitmap _temp0014; // global #68
+bitmap _temp0015; // global #69
+mesh _temp0016; // global #70
+bitmap _temp0017; // global #71
+bitmap _temp0018; // global #72
+fxchain _temp0019; // global #73
+mesh _temp0020; // global #74
+mesh _temp0021; // global #75
+bitmap _temp0022; // global #76
+fxchain _temp0023; // global #77
+mesh _temp0024; // global #78
+mesh _temp0025; // global #79
+bitmap _temp0026; // global #80
+bitmap _temp0027; // global #81
+fxchain _temp0028; // global #82
+mesh _temp0029; // global #83
+mesh _temp0030; // global #84
+bitmap _temp0031; // global #85
+bitmap _temp0032; // global #86
+fxchain _temp0033; // global #87
+mesh _temp0034; // global #88
+mesh _temp0035; // global #89
+fxchain _temp0036; // global #90
+mesh _temp0037; // global #91
+mesh _temp0038; // global #92
+bitmap _temp0039; // global #93
+bitmap _temp0040; // global #94
+fxchain _temp0041; // global #95
+fxchain _temp0042; // global #96
+mesh _temp0043; // global #97
+bitmap _temp0044; // global #98
+bitmap _temp0045; // global #99
+mesh _temp0046; // global #100
+fxchain _temp0047; // global #101
+mesh _temp0048; // global #102
+fxchain _temp0049; // global #103
+fxchain _temp0050; // global #104
+fxchain _temp0051; // global #105
+mesh _temp0052; // global #106
+mesh _temp0053; // global #107
+bitmap _temp0054; // global #108
+bitmap _temp0055; // global #109
+bitmap _temp0056; // global #110
+fxchain _temp0057; // global #111
+mesh _temp0058; // global #112
+bitmap _temp0059; // global #113
+bitmap _temp0060; // global #114
+mesh _temp0061; // global #115
+fxchain _temp0062; // global #116
+mesh _temp0063; // global #117
+fxchain _temp0064; // global #118
+mesh _temp0065; // global #119
+fxchain _temp0066; // global #120
+mesh _temp0067; // global #121
+fxchain _temp0068; // global #122
+mesh _temp0069; // global #123
+fxchain _temp0070; // global #124
+mesh _temp0071; // global #125
+fxchain _temp0072; // global #126
+fxchain _temp0073; // global #127
+mesh _temp0074; // global #128
+mesh _temp0075; // global #129
+bitmap _temp0076; // global #130
+fxchain _temp0077; // global #131
+mesh _temp0078; // global #132
+mesh _temp0079; // global #133
+bitmap _temp0080; // global #134
+void OnGenerate()
+{
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[9,10],0x0000.0000,0);
+  AnimLabel(1,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,774,2,0,#ffff8080);
+  Flat(#0000000f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.a8a8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0002;
+  load _temp0002;
+  MatTexture(0,0,2055);
+  MatLight(0,0,0,0,0,#ffd3d3d3,#ffffffff,#ff000000,#00000000,
+    0x0001.7000,1,0x0000.0001);
+  MatFinalizer(0,2,0x0002.9100,0x0000.0082,0x0000.0000);
+  MatBase(1,17158,2,0,#ffff8080);
+  Perlin(2,2,0x0000.8000,0,2,0x0001.2400,0x0003.7900,#ff1b0311,
+    #ffc49667);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.8c6d,0x0000.8961],
+    [0x0000.0000,0x0000.0000],#ffbd9989,0x0000.f38f,0x0000.292a);
+  GlowRect([0x0000.318b,0x0000.4cf7],[0x0000.3411,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0000.f8a3,0x0000.3b31);
+  GlowRect([0x0000.c89e,0x0000.524c],[0x0000.3925,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0000.f34e,0x0000.3b31);
+  GlowRect([0x0000.3bb3,0x0000.bd72],[0x0000.4000,0x0000.0aef],
+    [0x0000.0000,0x0000.0000],#ffaa907e,0x0001.0d00,0x0000.3b31);
+  GlowRect([0x0000.bdb3,0x0000.be76],[0x0000.3f7e,0x0000.09eb],
+    [0x0000.0000,0x0000.0000],#ffab8779,0x0001.0800,0x0000.3d39);
+  MakeTexture();
+  store _temp0003;
+  load _temp0003;
+  MatTexture(1,0,2055);
+  MatLight(0,0,0,0,0,#ff6455ff,#ff4a6fa4,#ff000000,#002929b3,
+    0x0005.8400,1,0x0000.0001);
+  MatFinalizer(1,2,0x0001.cf00,0x0000.0104,0x0000.0000);
+  MatTexTrans(0,1,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfffe.61ff,0x0000.0000]);
+  store kissen_mat;
+  load kissen_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0001;
+  load _temp0001;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0002.2300,0x0000.0000],
+    [0x0000.1eb4,0x0000.47a4,0x0000.ab6d]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.e5d9,0x0000.3511,0x0001.4700],
+    [0x0012.2800,0x000a.3c00,0xffe7.cdff],2,0,0,0x00a8.6000,0x0000.fac7,
+    0x0000.5204,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffffffff,
+    #ff000000,#ff5e5ea1);
+  LabelScene(2);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.bdfc,0xffff.d8e6,0x0000.1b2b],
+    [0x0003.3200,0x0003.4700,0xffff.a673],2,0,0,0x000e.6000,0x0000.fac7,
+    0x0000.3afd,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffcf00cf,
+    #ff009000,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.9f84,0x0000.e2fe,0xfffe.aeff],
+    [0xffe2.f9ff,0xfff6.e5ff,0x000f.8f00],2,0,0,0x0100.0000,0x0000.f838,
+    0x0001.7000,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffffb75f,
+    #ff000000,#ffd6d6d6);
+  AddScene();
+  NewMesh(1,19);
+  Cube(2,2,2,0);
+  SelectRandom(39,66,0x0000.0100,0x0000.0000);
+  ExtrudeWK(0x0000.0001,3,2,0x0000.0a60,[0x0001.8c00,0x0001.8c00,0x0001.8c00],
+    [0x0000.0000,0x0000.0000,0x0000.0000],1);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,1);
+  Transform(0x0000.0000,[0xffff.00ff,0xffff.5c29,0xffff.00ff],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  NewMaterial();
+  MatBase(0,774,5,0,#ffff8080);
+  Flat(#00060508);
+  Text([0x0000.08d7,0x0000.1999],0x0000.3de8,0xffff.bfc3,#ffa5a5a5,
+    "030");
+  MakeTexture();
+  store _temp0005;
+  load _temp0005;
+  MatTexture(0,0,2567);
+  MatFinalizer(0,2,0x0000.ac36,0x0000.061d,0x0000.0000);
+  MatTexTrans(0,0,0,[0x0000.386e,0x0000.2685,0x0000.386e],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  MatBase(1,17158,2,0,#ffff8080);
+  Flat(#0032181a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.9140,0x0000.8eb6],
+    [0x0000.1040,0x0000.2616],#ff591482,0x0001.5900,0x0000.0fff);
+  MakeTexture();
+  store _temp0006;
+  load _temp0006;
+  MatTexture(1,0,2055);
+  MatFinalizer(1,1,0x0000.01c7,0x0000.0041,0x0000.0000);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0004;
+  load _temp0004;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0029.f500,0x0029.1900,0x0029.ed00],[0x0000.1aea,0x0000.20c1,0x0000.334a],
+    [0xffff.4f75,0x0001.d400,0x0001.3f00]);
+  LabelScene(3);
+  store blau_raum2;
+  load blau_raum2;
+  TransScene([0x0003.1e00,0x0003.1b00,0x0002.cc00],[0x0000.685b,0x0000.e3c1,0x0001.2c00],
+    [0x0000.0000,0x0020.f100,0x0000.0000]);
+  AddScene();
+  NewMesh(0,3);
+  Cube(1,2,1,0);
+  Subdivide(0x0000.0000,0x0000.c7b6,0);
+  Transform(0x0000.0000,[0x0000.75d6,0x0001.a300,0x0000.7347],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  NewMaterial();
+  MatBase(1,17152,5,0,#ffff8080);
+  Flat(#00000000);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.4000,0x0000.4000],
+    [0x0000.0000,0x0000.0000],#ff89ff99,0x0001.0000,0x0000.4a24);
+  MakeTexture();
+  store _temp0008;
+  load _temp0008;
+  MatTexture(1,0,2055);
+  MatFinalizer(1,1,0x000c.8300,0x0000.0041,0x0000.0000);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0007;
+  load _temp0007;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.35d4,0x0000.0000],
+    [0x0000.0000,0x0009.a200,0x0000.0000],3);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.2512,0x0000.0000],
+    [0x0000.0000,0x0010.0a00,0x0000.0000],2);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xffe2.58ff,0x0000.0000],2);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.a406,0x0000.0000],
+    [0x0000.0000,0x0006.cb00,0x0002.e000],3);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.6757,0x0000.0000],
+    [0xffff.8530,0x0000.0000,0x0001.7000],2);
+  store daten;
+  load daten;
+  TransScene([0x0000.4539,0x0000.4539,0x0000.4539],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.9466,0x0000.3ff7,0x0001.6100]);
+  LabelScene(4);
+  load daten;
+  TransScene([0x0000.4539,0x0001.1100,0x0000.4539],[0x0000.0000,0x0000.6716,0x0000.0000],
+    [0x0000.9c13,0x0000.3ff7,0x0001.f800]);
+  LabelScene(5);
+  AddScene();
+  TransScene([0x0000.2167,0x0000.2167,0x0000.4ce6],[0x0000.0df7,0x0000.0104,0x0000.01c7],
+    [0x0000.879b,0xffff.a155,0xffff.2167]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  Viewport([0xffff.fa80,0x0000.c442,0xffff.6187],[0xffff.990f,0x000d.3100,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.0000);
+  LabelChain(6,2);
+  store _temp0000;
+  load _temp0000;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0000;
+  FXColor(2,#ff00002c,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.8500);
+  Crashzoom(4,0x0001.9d00,3,1,0x0001.7100);
+  FXColor(3,#ff215f70,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0001.4900);
+  FXMerge(4,0x0000.91d7,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  store blau_raum_fx9;
+  FXResetAlloc();
+  NewFXChain(0,-1,#ff000000);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2a26,0xffff.daad,0x0000.13ce],
+    [0x000e.a400,0x001e.bb00,0xffd4.74ff],0,0,0,0x00a8.6000,0x0000.fac7,
+    0x0000.7865,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffd60058,
+    #ff3b2546,#ff000000);
+  NewMesh(1,19);
+  Cube(1,2,2,1);
+  Transform(0x0000.0000,[0xffff.00ff,0xffff.7d5f,0xffff.3ad9],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0xffff.ee17,0x0000.0000]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(1,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,774,3,0,#ffff8080);
+  Flat(#00000000);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0001.6100,0x0001.3800],
+    [0x0000.0000,0x0000.0000],#ff9a7989,0x0000.8bb6,0x0000.00cb);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff651900,0x0000.4624,0x0000.155c);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ff8b8cc5,0x0000.aec0,0x0000.059e);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.685f],
+    [0x0000.0000,0x0000.0000],#ff8a9ed2,0x0000.a24f,0x0000.0828);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.3cf4,0x0000.2453],
+    [0x0000.0000,0x0000.0f3c],#ff741d00,0x0000.b0c8,0x0000.1395);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.1cb5,0x0000.1d78],
+    [0x0000.6243,0x0000.650e],#ff487e97,0x0000.5727,0x0000.3b31);
+  MakeTexture();
+  store _temp0009;
+  load _temp0009;
+  MatTexture(0,0,2055);
+  MatTexTrans(0,0,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  MatFinalizer(0,2,0x0000.ac36,0x0000.061d,0x0000.0000);
+  MatBase(1,8966,2,0,#ffff8080);
+  Flat(#00060508);
+  Text([0x0000.08d7,0x0000.1999],0x0000.3de8,0xffff.bfc3,#ffa7a9a7,
+    "030");
+  MakeTexture();
+  store _temp0010;
+  load _temp0010;
+  MatTexture(1,0,2567);
+  MatLight(0,0,0,0,0,#ffffffff,#ffffffff,#ffececec,#00616161,
+    0x0035.bb00,0,0x0000.0001);
+  MatFinalizer(1,1,0x0001.cf00,0x0000.0104,0x0000.0000);
+  MatTexTrans(7,1,0,[0x0000.8012,0x0000.8012,0x0000.8012],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.7fee,0x0000.7fee,0x0000.7fee]);
+  store rotate_mat;
+  load rotate_mat;
+  MeshMaterial(1,0x0000.0000);
+  store fightclub;
+  load fightclub;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x000f.2c00,0x0009.d000,0x000f.9c00],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0003.4200,0x0000.bd56,0x0000.0000]);
+  store fightclubraum;
+  load fightclubraum;
+  TransScene([0x0006.3f00,0x0008.5800,0x000a.fc00],[0x0001.9900,0xfffe.93ff,0x0000.ad6b],
+    [0x0000.879b,0x0006.e000,0x0000.0000]);
+  LabelScene(8);
+  AddScene();
+  Viewport([0x0001.5400,0x0000.985e,0x0000.bf5e],[0x0000.29cc,0x000a.6a00,0x0000.0000],
+    0x0001.0000,0,-1,#ff000000,0x0002.4200);
+  NewMaterial();
+  MatBase(0,12290,2,0,#ffff8080);
+  Flat(#00ffffff);
+  MakeTexture();
+  store _temp0011;
+  load _temp0011;
+  MatTexture(0,0,7);
+  MatFinalizer(0,1,0x0001.0000,0x0000.028f,0x0000.0000);
+  store blender;
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store bunt;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.0524,0xffff.cd38,0xffff.02db],
+    [0xffe2.f9ff,0xfff6.e5ff,0x000f.8f00],2,0,0,0x0100.0000,0x0000.f838,
+    0x0001.1e00,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffff8497,
+    #ff000000,#ff969696);
+  Babe("babe.mesh",3,[3,3],0x0000.0249,0);
+  AnimLabel(1,0);
+  Transform(0x0000.0000,[0x0000.19ba,0x0000.19ba,0x0000.19ba],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0xffff.3d8c,0x0000.0000]);
+  AnimLabel(10,0);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,774,2,0,#ffff8080);
+  Flat(#0000000f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.a8a8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0014;
+  load _temp0014;
+  MatTexture(0,0,2055);
+  MatLight(0,0,0,0,0,#ffd3d3d3,#ffffffff,#ff000000,#00000000,
+    0x0001.7000,1,0x0000.0001);
+  MatFinalizer(0,2,0x0002.9100,0x0000.0082,0x0000.0000);
+  MatBase(1,17156,2,0,#ffff8080);
+  Perlin(2,3,0x0000.8000,0,2,0x0001.2400,0x0000.9a70,#ff1b0311,
+    #ffc49667);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.8c6d,0x0000.8961],
+    [0x0000.0000,0x0000.0000],#ffbd9989,0x0000.f38f,0x0000.292a);
+  GlowRect([0x0000.318b,0x0000.4cf7],[0x0000.3411,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.c89e,0x0000.524c],[0x0000.3925,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.3bb3,0x0000.bd72],[0x0000.4000,0x0000.0aef],
+    [0x0000.0000,0x0000.0000],#ffaa907e,0x0001.b200,0x0000.3b31);
+  GlowRect([0x0000.bdb3,0x0000.be76],[0x0000.3f7e,0x0000.09eb],
+    [0x0000.0000,0x0000.0000],#ffab8779,0x0001.b200,0x0000.3b31);
+  MakeTexture();
+  store _temp0015;
+  load _temp0015;
+  MatTexture(1,0,7);
+  MatLight(0,0,0,0,0,#ff3755ff,#ff9c9c9c,#ff000000,#00292929,
+    0x0010.0000,1,0x0000.0001);
+  MatFinalizer(1,2,0x0001.cf00,0x0000.0104,0x0000.0000);
+  MatTexTrans(0,1,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfffe.61ff,0x0000.0000]);
+  store blue_room_babe_mat;
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0013;
+  load _temp0013;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.6600,0x0000.0000,0x0000.5c1c]);
+  AddScene();
+  NewMesh(0,0);
+  Cube(3,3,3,1);
+  Transform(0x0000.0000,[0x0003.ce00,0x0000.f5c4,0xffff.a408],
+    [0xffff.df3f,0xffff.fdb7,0x0000.0efb],[0x0003.0500,0xffff.615e,0xffff.b0af]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  NewMaterial();
+  MatBase(0,770,2,0,#ffff8080);
+  Flat(#00000000);
+  GlowRect([0x0000.7d76,0x0000.9248],[0x0001.0400,0x0000.0496],
+    [0x0002.6f00,0x0000.0000],#ffffffff,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0017;
+  load _temp0017;
+  MatTexture(0,0,3079);
+  MatFinalizer(0,1,0x0002.9100,0x0000.0082,0x0000.0000);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0016;
+  load _temp0016;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0002.2300,0x0000.0000],
+    [0xffff.b5cd,0x0001.6d00,0x0000.0000]);
+  Viewport([0xffff.33f6,0x0004.8000,0xfff9.13ff],[0x0000.7d71,0x0000.539c,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0003.5400);
+  NewMaterial();
+  MatBase(0,8960,3,0,#ffffffff);
+  Flat(#00000000);
+  Text([0xffff.ff72,0x0000.0508],0x0000.5b9d,0x0000.1289,#ffffffff,
+    "chaos  ryg");
+  Text([0x0000.0d69,0x0000.574c],0x0000.46cb,0x0000.1040,#ffffffff,
+    "    giZMo");
+  Text([0x0000.02bf,0x0000.8d20],0x0000.7173,0x0000.1207,#ffffffff,
+    "           kb");
+  store _temp0018;
+  load _temp0018;
+  MatTexture(0,0,7);
+  Layer2D(#ffffffff,[0x0000.bad9,0x0000.d6fe,0x0001.1e00,0x0001.3300],
+    [0x0000.0000,0x0000.0000,0x0000.fd71,0x0001.0000],0x0001.0000,
+    2,2,[0x0000.baeb,0x0000.7af4],0x0000.028f,[0x0000.70a6,0x0000.5710]);
+  store _temp0012;
+  load _temp0012;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0012;
+  FXColor(2,#ff000091,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.8500);
+  Crashzoom(4,0x0001.8f00,3,1,0x0001.bd00);
+  FXColor(3,#ff20797d,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.8a06);
+  FXMerge(4,0x0000.91d7,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.828f,0x0000.8000]);
+  LabelChain(9,-1);
+  store real_end;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[24,38],0x0000.0000,0);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0020;
+  load _temp0020;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0xfffd.aeff,0x0000.0000],
+    [0x0000.0000,0xffff.70b8,0x0000.0000]);
+  store walk_scene_babe;
+  load walk_scene_babe;
+  TransScene([0x0001.8500,0x0001.8500,0x0001.8500],[0x0000.0b2c,0xffff.f9e8,0xffff.ff3d],
+    [0xffff.b33e,0xffff.ee17,0x0000.07ad]);
+  LabelScene(12);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0x0006.8900,0x0006.e000,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.598d,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff8f537d,
+    #ff00111b,#ff000000);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.1b6c,0x0000.171b,0xffff.e390],
+    [0xfffc.e1ff,0x000b.0b00,0x000f.8f00],2,0,0,0x0100.0000,0x0000.e8de,
+    0x0000.2685,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff0000ff,
+    #ff680000,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.7200,0xffff.82a1,0x0002.c700],0,0,0,0x0100.0000,0x0000.4000,
+    0x0000.1c49,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff8b2fff,
+    #ff000000,#ffffffff);
+  AddScene();
+  NewMesh(1,19);
+  Cube(1,2,2,0);
+  Transform(0x0000.0000,[0x0000.a155,0x0001.3300,0x0001.8a00],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0xffff.d710,0xffff.ee17,0x0000.0000]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(1,0x0000.0000,0);
+  SelectRandom(128,123,0x0000.0100,0x0000.0000);
+  BeginRecord();
+  ExtrudeWK(0x0000.0000,3,4,0x0000.f0a6,[0x0000.e66a,0x0000.f335,0x0000.f853],
+    [0x0000.08e3,0x0000.134c,0x0000.2698],0);
+  AnimLabel(13,0);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(1,0x0000.0000,0);
+  load kissen_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0021;
+  load _temp0021;
+  Scene([0x0001.0000,0x0000.b5cd,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.9900,0x0001.1400,0x0003.3d00],[0xffff.a9ed,0xffff.bf82,0xffff.0afb],
+    [0xffff.149c,0xffff.120d,0xfffd.a6ff]);
+  LabelScene(14);
+  TransScene([0x001b.2500,0x0006.5d00,0x000c.1f00],[0x0000.04d3,0x0000.23cd,0x0000.13ce],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.ed77,0xffff.f28b,0xffff.f619],
+    [0x0000.1996,0x0000.35bb,0xffff.a155]);
+  Viewport([0x0000.b714,0xffff.982d,0x0000.997e],[0x0000.2357,0xfffe.1aff,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.0000);
+  LabelChain(15,2);
+  store _temp0019;
+  load _temp0019;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0019;
+  FXColor(0,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0002.0000);
+  FXChaosBlur(0x0012.8000,2,2,1,0x0001.7500,0);
+  FXColor(1,#ffa0593a,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0001.6900);
+  FXMerge(0,0x0000.47c8,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  NewMaterial();
+  MatBase(0,8962,2,0,#ffff8080);
+  Flat(#00ffffff);
+  MakeTexture();
+  store _temp0022;
+  load _temp0022;
+  MatTexture(0,0,7);
+  MatFinalizer(0,1,0x0001.0000,0x0000.028f,0x0000.0000);
+  store blender_white;
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(16,-1);
+  store walk_scene_fx1;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[24,38],0x0000.0000,0);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.42aa,0x0000.42aa,0x0000.42aa],
+    [0x0000.08a2,0x0000.8241,0xffff.f862],[0xfffd.9fff,0xfffc.daff,0x0000.23d2]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load kissen_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0024;
+  load _temp0024;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0xfffd.aeff,0x0000.0000],
+    [0x0000.0000,0xffff.70b8,0x0000.0000]);
+  store walk_scene_babe2;
+  load walk_scene_babe2;
+  TransScene([0x0000.debd,0x0000.debd,0x0000.debd],[0x0000.0861,0x0000.6a22,0xffff.febb],
+    [0x0000.1478,0x0001.1e00,0xffff.d481]);
+  LabelScene(17);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0003.e500,0xffff.5ecf,0x0000.5eab],0,0,0,0x0100.0000,0x0000.4000,
+    0x0000.948a,0x0001.0000,0x0000.0000,0x0000.4000,#ff782200,
+    #ff000000,#ffff3a00);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0003.e500,0xffff.5ecf,0x0000.5eab],2,0,0,0x0100.0000,0x0000.4000,
+    0x0000.7347,0x0001.0000,0x0000.0000,0x0000.4000,#ffff3fff,
+    #ff000000,#ff00ff00);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xfffd.f9ff,0x0001.1400,0xfffe.ebff],
+    [0xffea.52ff,0xfff1.20ff,0xffd4.e9ff],2,0,0,0x0100.0000,0x0000.4000,
+    0x0000.2143,0x0001.0000,0x0000.0000,0x0000.4000,#ff22b5ff,
+    #ff8d7e95,#ff00baff);
+  AddScene();
+  NewMesh(1,19);
+  Cube(1,2,2,0);
+  Transform(0x0000.0000,[0x0000.f0a6,0x0001.1e00,0x0000.d481],
+    [0x0000.0596,0x0000.5307,0x0000.0000],[0x0000.0000,0xffff.ee17,0x0000.0000]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(1,0x0000.0000,0);
+  SelectRandom(23,115,0x0000.0100,0x0000.0000);
+  BeginRecord();
+  ExtrudeWK(0x0000.0001,0,29,0x0003.fd00,[0x0000.e3db,0x0000.e66a,0x0000.f335],
+    [0x0001.6900,0x0000.c1fc,0xffff.bf00],0);
+  AnimLabel(13,0);
+  CalcNormals(1,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,8454,3,0,#ffff8080);
+  Flat(#0000000f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.a8a8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0026;
+  load _temp0026;
+  MatTexture(0,0,2567);
+  MatLight(0,0,0,0,0,#ffd3d3d3,#ffffffff,#ff000000,#00000000,
+    0x0001.7000,1,0x0000.0001);
+  MatFinalizer(0,5,0x0002.9100,0x0000.0082,0x0000.0000);
+  MatBase(1,17156,3,0,#ffff8080);
+  Perlin(2,3,0x0000.8000,0,2,0x0001.2400,0x0000.9a70,#ff1b0311,
+    #ffc49667);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.8c6d,0x0000.8961],
+    [0x0000.0000,0x0000.0000],#ffbd9989,0x0000.f38f,0x0000.292a);
+  GlowRect([0x0000.318b,0x0000.4cf7],[0x0000.3411,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.c89e,0x0000.524c],[0x0000.3925,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.3bb3,0x0000.bd72],[0x0000.4000,0x0000.0aef],
+    [0x0000.0000,0x0000.0000],#ffaa907e,0x0001.b200,0x0000.3b31);
+  GlowRect([0x0000.bdb3,0x0000.be76],[0x0000.3f7e,0x0000.09eb],
+    [0x0000.0000,0x0000.0000],#ffab8779,0x0001.b200,0x0000.3b31);
+  MakeTexture();
+  store _temp0027;
+  load _temp0027;
+  MatTexture(1,0,2567);
+  MatLight(0,0,0,0,0,#ff3755ff,#ff9c9c9c,#ff000000,#00292929,
+    0x0005.8400,1,0x0000.0001);
+  MatFinalizer(1,2,0x0001.cf00,0x0000.0104,0x0000.0000);
+  MatTexTrans(0,1,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfffe.61ff,0x0000.0000]);
+  store blu;
+  load blu;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0025;
+  load _temp0025;
+  Scene([0x0001.0000,0x0000.b5cd,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.b000,0x0002.2600,0x0001.7a00],[0x0000.3a25,0xfffc.dcff,0x0000.348f],
+    [0xffff.9c37,0x0000.b5a9,0x0009.0100]);
+  LabelScene(18);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0xffff.6bb8,0x0000.0000],
+    [0xffff.baeb,0x0000.d6ec,0x0000.0000]);
+  Viewport([0xffff.083d,0x0001.f000,0x0000.39b7],[0x0000.1336,0x0008.9b00,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.4700);
+  LabelChain(15,2);
+  store _temp0023;
+  load _temp0023;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0023;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0001.6900);
+  FXBlur8(3,1,0x0002.0000);
+  FXWideBlur(0x0006.a000,0x0001.0000,3,1,0x0004.0000,1);
+  FXColor(1,#ff43230e,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0003.0000);
+  FXMerge(0,0x0000.f335,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store walk_scene_fx2;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  NewMesh(1,19);
+  Cube(1,2,2,1);
+  Transform(0x0000.0000,[0xffff.00ff,0xffff.332c,0xffff.00ff],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0xffff.ee17,0x0000.0000]);
+  Subdivide(0x0000.0000,0x0001.0000,3);
+  CalcNormals(1,0x0000.0000,0);
+  load rotate_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0029;
+  load _temp0029;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0004.f700,0x000a.1800,0x000a.da00],[0x0000.0000,0xffff.e3d1,0x0000.0000],
+    [0xfffe.f8ff,0x0001.d400,0x0001.3f00]);
+  LabelScene(3);
+  store walk_scene_room;
+  load walk_scene_room;
+  TransScene([0x0004.3a00,0x0003.f700,0x0004.9300],[0xffff.87e7,0x0000.0000,0x0000.0000],
+    [0x0000.51e0,0x0000.a131,0x0000.bd56]);
+  Babe("babe.mesh",19,[16,23],0x0000.0000,0);
+  AnimLabel(19,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,1);
+  SelectRandom(1,100,0x0000.0100,0x0000.0000);
+  ExtrudeWK(0x0000.0001,0,16,0x0000.0000,[0x0000.ae20,0x0000.ae20,0x0000.ae20],
+    [0x0000.0000,0x0000.0000,0x0000.0000],0);
+  AnimLabel(20,0);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  Copy();
+  MatBase(3,8202,3,0,#ff000000);
+  Flat(#0000000f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.a8a8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0031;
+  load _temp0031;
+  MatTexture(3,0,2567);
+  MatLight(3,0,0,0,0,#ffd3d3d3,#ffffffff,#ff000000,#00000000,
+    0x0001.7000,1,0x0000.0001);
+  MatFinalizer(3,5,0x0001.0000,0x0000.018b,0x0000.0000);
+  MatLabel(21,3);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0030;
+  load _temp0030;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0xfffc.e5ff,0x0000.0000],
+    [0x0000.56fe,0xffff.e14c,0x0000.0000]);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.1b6c,0xffff.fb6e,0xffff.e390],
+    [0xfffb.9aff,0xfff6.e5ff,0x000f.8f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.e66a,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff29001d,
+    #ff1b1b41,#ffa1a1a1);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xfffe.90ff,0x0002.1c00,0x0003.6100],
+    [0xfff9.1fff,0xfffc.00ff,0x0066.5800],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.ccd4,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff000000,
+    #ff667227,#ff000000);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.7200,0xffff.82a1,0x0002.c700],0,0,0,0x0018.8000,0x0000.4000,
+    0x0000.debd,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff000000,
+    #ff000000,#ffb3b3b3);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0001.c200,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff822b5e,
+    #ff000035,#ff585858);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(22);
+  Viewport([0xffff.a19f,0x0001.a100,0xffff.2c29],[0x0000.f144,0x0000.56db,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.0000);
+  store _temp0028;
+  load _temp0028;
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0028;
+  FXBlur8(2,1,0x0001.2300);
+  FXChaosBlur(0x000f.4000,3,2,1,0x0001.3500,0);
+  FXColor(3,#ff647c41,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXMerge(2,0x0000.c7b6,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  NewMaterial();
+  MatBase(0,13058,2,0,#ffff8080);
+  Flat(#00ffffff);
+  MakeTexture();
+  store _temp0032;
+  load _temp0032;
+  MatTexture(0,0,7);
+  MatFinalizer(0,1,0x0001.0000,0x0000.028f,0x0000.0000);
+  store blend_black;
+  load blend_black;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store babe_sprung_scene_fx1;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[7,7],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0a69,0x0000.0082],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0034;
+  load _temp0034;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0208,0x0001.c600,0xffff.f619],
+    [0xffff.d710,0x0000.2e0e,0x0000.0000]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.cbb2,0x0000.381d,0xffff.ff7e],
+    [0x0013.3f00,0xfffa.d0ff,0x000a.2f00],2,0,0,0x0033.a000,0x0000.fac7,
+    0x0000.2914,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffffffff,
+    #ff000000,#ffdeffde);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2616,0x0000.8d6d,0x0000.0fbe],
+    [0x0015.9100,0x0011.1e00,0xffed.75ff],2,0,0,0x009f.2000,0x0000.fac7,
+    0x0000.2e32,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffffffff,
+    #ff000028,#ffe0ffc0);
+  AddScene();
+  NewMesh(1,19);
+  Cube(1,1,1,0);
+  Transform(0x0000.0000,[0x0000.c298,0x0000.f5c4,0x0001.0c00],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0xffff.c7b6,0xffff.d710]);
+  CalcNormals(0,0x0000.0000,0);
+  SelectRandom(8,123,0x0000.0100,0x0000.0000);
+  ExtrudeWK(0x0000.0001,3,9,0x0002.4a00,[0x0000.dc2e,0x0001.2300,0x0000.dc2e],
+    [0x0000.b405,0xffff.dfc1,0xffff.ebf1],1);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load kissen_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0035;
+  load _temp0035;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.baeb,0x0000.baeb,0x0000.baeb],[0x0000.2512,0xffff.dfc1,0x0000.4920],
+    [0x0000.0000,0xffff.ae20,0x0000.0000]);
+  store kissen;
+  load kissen;
+  TransScene([0x0003.a600,0x0003.0200,0x0001.0000],[0xffff.f24a,0xffff.bb72,0xffff.56e6],
+    [0xfffe.5cff,0xfffd.17ff,0x0000.4f51]);
+  AddScene();
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.550f,0x0000.0000],
+    [0xffff.8012,0x0000.0a3c,0x0003.1b00],3);
+  load daten;
+  TransScene([0x0000.4539,0x0000.4539,0x0000.4539],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.9466,0x0000.3ff7,0x0001.6100]);
+  LabelScene(4);
+  AddScene();
+  load daten;
+  TransScene([0x0000.4539,0x0001.1100,0x0000.4539],[0x0000.0000,0x0000.6716,0x0000.0000],
+    [0x0000.9c13,0x0000.3ff7,0x0001.f800]);
+  LabelScene(5);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0xfffe.f8ff,0x0002.c700,0xfffe.a4ff]);
+  LabelScene(23);
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0xfff5.00ff,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(24);
+  load fightclubraum;
+  TransScene([0x0005.d800,0x0008.aa00,0x0003.5100],[0xffff.0c40,0xfffe.76ff,0xfffe.c2ff],
+    [0x0001.3300,0x0000.a8de,0x0001.6d00]);
+  LabelScene(25);
+  AddScene();
+  Viewport([0x0002.7200,0x0005.4b00,0x0002.1500],[0x0000.d118,0x0029.9500,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.6b00);
+  LabelChain(15,2);
+  store _temp0033;
+  load _temp0033;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0033;
+  FXColor(0,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.0000);
+  FXWideBlur(0x0008.0000,0x0004.2000,2,1,0x0002.f500,0);
+  FXColor(1,#ff324537,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0002.8500);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store rotate_josie_fx;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[5,5],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0037;
+  load _temp0037;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  load kissen;
+  TransScene([0x0001.7500,0x0001.6100,0x0000.dc2e],[0xffff.e6dd,0x0000.2184,0xffff.f71d],
+    [0x0000.35bb,0xfffd.8dff,0xfffe.d9ff]);
+  Multiply([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfffe.c5ff,0x0000.0000],4);
+  AddScene();
+  load kissen;
+  TransScene([0x0001.7f00,0x0003.7000,0x0000.ab91],[0x0000.5389,0x0000.fce4,0xffff.f71d],
+    [0x0000.ccb0,0xfffe.00ff,0xffff.f853]);
+  AddScene();
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0xffff.f9e8,0x0003.1800,0x0000.0bef],
+    [0x0000.56fe,0x0000.9c13,0xffff.a902]);
+  LabelScene(26);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.138d,0x0000.379b,0xffff.814d],
+    [0x0013.3f00,0xfffa.d0ff,0x000a.2f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.ca21,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff4418a0,
+    #00000000,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.7cec,0x0001.0b00,0xffff.2112],
+    [0x0015.9100,0x0011.1e00,0xffed.75ff],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.47c8,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff7f90a0,
+    #ff602690,#ffffff70);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2616,0xffff.d69d,0x0000.0fbe],
+    [0x0015.9100,0xfff2.41ff,0xffed.75ff],0,0,0,0x009f.2000,0x0000.fac7,
+    0x0000.4539,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff0094b4,
+    #ff000000,#ffffffff);
+  AddScene();
+  NewMesh(1,19);
+  Cube(2,2,2,0);
+  SelectRandom(151,120,0x0000.0100,0x0000.0000);
+  ExtrudeWK(0x0000.0001,3,1,0xffff.a697,[0x0000.f0a6,0x0000.f0a6,0x0000.f0a6],
+    [0x0000.0000,0x0000.0000,0x0000.0000],1);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,1);
+  Transform(0x0000.0000,[0xffff.00ff,0xffff.5c29,0xffff.00ff],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  NewMaterial();
+  MatBase(0,774,2,0,#ffff8080);
+  Perlin(2,3,0x0000.8000,0,0,0x0001.0000,0x0001.0000,#ff3e3e3e,
+    #ff282828);
+  Text([0x0000.05cb,0x0000.a643],0x0000.3811,0x0000.3fbb,#ffababab,
+    "farb");
+  Text([0xffff.fe2d,0xffff.eff5],0x0000.3d25,0x0000.25d5,#ffbcbcbc,
+    "rausch");
+  MakeTexture();
+  store _temp0039;
+  load _temp0039;
+  MatTexture(0,0,2567);
+  MatFinalizer(0,2,0x0000.ac36,0x0000.061d,0x0000.0000);
+  MatTexTrans(0,1,0,[0x0000.0a60,0x0000.0a60,0x0000.0a60],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  MatBase(1,17158,2,0,#ffff8080);
+  Perlin(1,1,0x0000.8000,2,1,0x0007.1800,0x0001.0000,#ff878787,
+    #ff3a3a3a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.8c6d,0x0000.8961],
+    [0x0000.0000,0x0000.0000],#ff672756,0x0000.f38f,0x0000.14da);
+  MakeTexture();
+  store _temp0040;
+  load _temp0040;
+  MatTexture(1,0,2567);
+  MatTexTrans(0,0,0,[0x0000.2914,0x0000.2914,0x0000.2914],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  MatLabel(27,1);
+  MatFinalizer(1,1,0x0000.1923,0x0000.0041,0x0000.0000);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0038;
+  load _temp0038;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0029.f500,0x0029.1900,0x0029.ed00],[0x0000.1aea,0x0000.20c1,0x0000.334a],
+    [0xffff.4ce6,0x0001.d100,0x0001.3d00]);
+  LabelScene(3);
+  store blau_raum;
+  load blau_raum;
+  TransScene([0x0002.fd00,0x0002.9b00,0x0003.5b00],[0x0000.3697,0x0001.7d00,0xffff.0114],
+    [0x0001.4200,0x0000.a8de,0x0001.6d00]);
+  LabelScene(28);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  store fx8_scene;
+  load fx8_scene;
+  Viewport([0x0003.6b00,0x0001.fa00,0xffff.1fc8],[0x0000.6081,0x000b.6c00,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.8700);
+  LabelChain(15,2);
+  store _temp0036;
+  load _temp0036;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0036;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.b800);
+  Crashzoom(4,0x0001.9d00,3,1,0x0001.5100);
+  FXColor(3,#ffaf7b21,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.544b);
+  FXMerge(4,0x0000.b31a,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store blau_raum_fx8;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  load fx8_scene;
+  Viewport([0xffff.48f9,0x0001.aa00,0x0000.c5ec],[0x0000.9731,0x0008.5b00,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.8700);
+  store _temp0041;
+  load _temp0041;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0041;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.b800);
+  Crashzoom(4,0x0001.9d00,3,1,0x0001.5100);
+  FXColor(3,#ff34362d,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.d6c8);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(29,-1);
+  store blau_raum_fx8_2;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[3,3],0x0000.0000,1);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,774,2,0,#ffff8080);
+  Flat(#0026112f);
+  GlowRect([0x0000.8000,0x0000.9554],[0x0000.47df,0x0000.44d3],
+    [0x0000.0000,0x0000.0000],#ffffe5e7,0x0000.f38f,0x0000.292a);
+  GlowRect([0x0000.39ab,0x0000.779f],[0x0000.2b2e,0x0000.6490],
+    [0x0000.0000,0x0000.0000],#ffffffff,0x0001.4000,0x0000.3cf8);
+  MakeTexture();
+  store _temp0044;
+  load _temp0044;
+  MatTexture(0,0,2055);
+  MatLight(0,0,0,0,0,#ff6b6b6b,#ffacacac,#ff383838,#00323232,
+    0x0015.1b00,1,0x0000.0001);
+  MatFinalizer(0,2,0x0002.9100,0x0000.0082,0x0000.0000);
+  MatBase(1,8710,2,0,#ffff8080);
+  Flat(#00073675);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.4000,0x0000.4000],
+    [0x0000.0000,0x0000.0000],#ffffffff,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0045;
+  load _temp0045;
+  MatTexture(1,0,2823);
+  MatTexTrans(30,1,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  MatFinalizer(1,5,0x0003.7000,0x0000.00c3,0x0000.0000);
+  store babe_wire_mat;
+  load babe_wire_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0043;
+  load _temp0043;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.d481,0x0000.d481,0x0000.d481],[0x0000.130b,0xfffd.15ff,0x0000.22c9],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.e14c,0x0000.e14c,0x0000.e14c],[0x0000.130b,0xfffd.15ff,0x0000.22c9],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(31);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.3b6a,0x0000.2963,0xffff.e6dd],
+    [0x0001.f200,0xffff.82a1,0x0002.c700],2,0,0,0x0018.8000,0x0000.4000,
+    0x0000.a3e4,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff9d713d,
+    #ff0095d3,#ffbcbcbc);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.ccd4,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff0000ff,
+    #ff0b0b40,#ff8bfdff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000],0,0,0,0x0067.e000,0x0000.4000,
+    0x0000.82a1,0x0001.0000,0x0000.0000,0x0000.4000,#ff380077,
+    #ffc11015,#ffffffd3);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x001a.c900,0x0005.d800,0x000b.c300],[0x0000.038e,0x0000.479a,0xffff.d599],
+    [0xfffb.15ff,0xffff.91fb,0x0000.0000]);
+  AddScene();
+  NewMesh(1,19);
+  Cube(1,2,2,0);
+  Transform(0x0000.0000,[0x0000.f0a6,0x0001.1e00,0x0000.d481],
+    [0x0000.0596,0x0000.5307,0x0000.0000],[0x0000.0000,0xffff.ee17,0x0000.0000]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(1,0x0000.0000,0);
+  SelectRandom(18,74,0x0000.0100,0x0000.0000);
+  BeginRecord();
+  ExtrudeWK(0x0000.0001,0,29,0x0003.fd00,[0x0000.baeb,0x0000.948a,0x0000.f335],
+    [0xffff.961f,0x0000.c1fc,0xffff.bf00],0);
+  AnimLabel(13,0);
+  SelectRandom(24,123,0x0000.0200,0x0000.0000);
+  ExtrudeWK(0x0000.0002,3,1,0x0000.401b,[0x0001.0000,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000],0);
+  CalcNormals(1,0x0000.0000,0);
+  load blu;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0046;
+  load _temp0046;
+  Scene([0x0001.0000,0x0000.b5cd,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.b000,0x0002.2600,0x0001.7a00],[0x0000.3a25,0xfffc.dcff,0x0000.348f],
+    [0x0002.ce00,0xfffa.08ff,0x0005.7c00]);
+  LabelScene(18);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.ed77,0xffff.f28b,0xffff.f619],
+    [0x0000.1996,0x0000.35bb,0xffff.a155]);
+  Viewport([0xfffe.f6ff,0x0000.1197,0xfffc.87ff],[0x0000.19ad,0x0006.8800,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.a100);
+  store _temp0042;
+  load _temp0042;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0042;
+  FXColor(0,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.b800);
+  Crashzoom(4,0x0002.f900,2,1,0x0001.5c00);
+  FXColor(3,#ff20797d,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.544b);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store bday;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[11,15],0x0000.0000,0);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0048;
+  load _temp0048;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0xfffd.aeff,0x0000.0000],
+    [0x0000.0000,0xffff.70b8,0x0000.0000]);
+  store z1;
+  load z1;
+  TransScene([0x0001.8500,0x0001.8500,0x0001.8500],[0x0000.0b2c,0xffff.f9e8,0xffff.ff3d],
+    [0xffff.b33e,0xffff.ee17,0x0000.07ad]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0003.1e00,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff5e115e,
+    #ff000035,#ff585858);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.1b6c,0x0000.171b,0xffff.e390],
+    [0xfffc.e1ff,0x000b.0b00,0x000f.8f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0001.b500,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff541014,
+    #ff000026,#ffa1a1a1);
+  LabelScene(32);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xfffe.90ff,0x0002.1c00,0x0003.6100],
+    [0xfff9.1fff,0xfffc.00ff,0x0066.5800],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.ccd4,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff4f2b00,
+    #ff667227,#ff000000);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.7200,0xffff.82a1,0x0002.c700],0,0,0,0x0018.8000,0x0000.4000,
+    0x0000.debd,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff000000,
+    #ff000000,#ffb3b3b3);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x001b.2500,0x0006.5d00,0x000c.1f00],[0x0000.04d3,0x0000.23cd,0x0000.13ce],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.ed77,0xffff.f28b,0xffff.f619],
+    [0x0000.1996,0x0000.35bb,0xffff.a155]);
+  Viewport([0x0000.d469,0x0001.3400,0xfffe.4bff],[0x0000.1678,0xffff.4564,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.a100);
+  store _temp0047;
+  load _temp0047;
+  FXNop();
+  FXNop();
+  load _temp0047;
+  FXWideBlur(0x0004.8000,0x0001.0000,3,1,0x0002.eb00,0);
+  FXColor(3,#ffffa350,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  store zusammenbruch;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  load z1;
+  TransScene([0x0001.8500,0x0001.8500,0x0001.8500],[0x0000.1aa9,0xffff.edf9,0xffff.fc31],
+    [0xffff.b33e,0xffff.ee17,0x0000.07ad]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0003.4400,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff2b0808,
+    #ff000622,#ff2679a1);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xfffe.90ff,0x0002.1c00,0x0003.6100],
+    [0xfff9.1fff,0xfffc.00ff,0x0066.5800],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.d710,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff4f2b00,
+    #ff000000,#ff000000);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.7200,0xffff.82a1,0x0002.c700],0,0,0,0x0018.8000,0x0000.4000,
+    0x0000.debd,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff000000,
+    #ff000000,#ff2a2a2a);
+  AddScene();
+  load kissen;
+  TransScene([0x0005.0c00,0x0000.9719,0x000b.c100],[0x0000.1595,0xffff.f0c4,0xffff.fe39],
+    [0xfffe.4dff,0xfffb.caff,0xffff.b33e]);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x001b.2500,0x0006.5d00,0x000c.1f00],[0x0000.04d3,0x0000.23cd,0x0000.13ce],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.ed77,0xffff.f28b,0xffff.f619],
+    [0x0000.1996,0x0000.35bb,0xffff.a155]);
+  Viewport([0xffff.5e84,0xffff.4ba1,0x0005.e900],[0x0000.4049,0x0003.5400,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.a100);
+  LabelChain(33,2);
+  store _temp0049;
+  load _temp0049;
+  FXNop();
+  FXNop();
+  load _temp0049;
+  FXWideBlur(0x0004.8000,0x0001.0000,3,1,0x0004.0000,0);
+  FXColor(3,#ffffd51a,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXMerge(0,0x0000.ae20,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store zusammenbruch2;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  load z1;
+  TransScene([0x0001.8500,0x0001.8500,0x0001.8500],[0x0000.1aa9,0xffff.edf9,0xffff.fc31],
+    [0xffff.b33e,0xffff.ee17,0x0000.07ad]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.707b,0xffff.c496,0x0000.22c9],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.eb64,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff5e115e,
+    #ff000035,#ff585858);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.1b6c,0x0000.171b,0xffff.e390],
+    [0xfffc.e1ff,0x000b.0b00,0x000f.8f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0002.4200,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff541014,
+    #ff000017,#ffa1a1a1);
+  LabelScene(32);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xfffe.90ff,0x0002.1c00,0x0003.6100],
+    [0xfff9.1fff,0xfffc.00ff,0x0066.5800],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.ccd4,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff4f2b00,
+    #ff667227,#ff000000);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0001.7200,0xffff.82a1,0x0002.c700],0,0,0,0x0018.8000,0x0000.4000,
+    0x0002.b800,0x0001.0000,0x0000.0000,0x0000.ccb9,#ffff0000,
+    #ff000000,#ffb3b3b3);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x001b.2500,0x0006.5d00,0x000c.1f00],[0x0000.04d3,0x0000.23cd,0x0000.13ce],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.ed77,0xffff.f28b,0xffff.f619],
+    [0x0000.1996,0x0000.35bb,0xffff.a155]);
+  Viewport([0xfffd.bdff,0xfffd.a8ff,0x0002.1c00],[0xffff.e96e,0x0003.5a00,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.a100);
+  store _temp0050;
+  load _temp0050;
+  FXNop();
+  FXNop();
+  load _temp0050;
+  FXWideBlur(0x0004.8000,0x0001.0000,3,1,0x0002.7000,0);
+  FXColor(3,#ffffff06,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store zusammenbruch3;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",3,[6,8],0x0000.0000,0);
+  AnimLabel(34,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0186,0x0000.0000,0xffff.f79f],[0x0000.7841,0xfffd.d2ff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0052;
+  load _temp0052;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.66d5,0x0000.603b,0xffff.50ce],
+    [0x0000.0000,0x0001.1400,0x0000.0000]);
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(31);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.16da,0x0000.2963,0xffff.e6dd],
+    [0x0001.f200,0xffff.82a1,0x0002.c700],2,0,0,0x0018.8000,0x0000.4000,
+    0x0001.3d00,0x0001.0000,0x0000.0000,0x0000.ccb9,#ff9e827d,
+    #f71e0000,#ffbcbcbc);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.86d3,0xffff.ac36,0xffff.fe39],
+    [0xfffb.9aff,0x0013.0700,0x000f.8f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.615e,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff000000,
+    #ff000000,#ff8bfdff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2490,0x0000.1c70,0x0000.6db0],
+    [0x0000.0000,0x0000.0000,0x0000.0000],2,0,0,0x0067.e000,0x0000.4000,
+    0x0000.63ed,0x0001.0000,0x0000.0000,0x0000.4000,#ff380077,
+    #ff4f184f,#ffffffd3);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x0010.8a00,0x000c.fb00,0x000d.a400],[0x0000.038e,0x0000.c17a,0xffff.d599],
+    [0xfffb.15ff,0xffff.91fb,0x0000.0000]);
+  AddScene();
+  NewMesh(1,19);
+  Cube(3,1,3,0);
+  Transform(0x0000.0000,[0x0001.0000,0x0001.0000,0x0001.0000],
+    [0x0000.3ffc,0x0000.0000,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SelectCube([0x0000.0000,0x0000.fff0,0x0000.0000],[0x0001.0000,0x0001.0000,0x0001.0000],
+    0,0x0000.0100,0x0000.0000);
+  Transform(0x0000.0000,[0x0055.3300,0x0015.fa00,0x0055.3300],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.0000,0xfff6.6fff,0x0000.0000]);
+  Subdivide(0x0000.0001,0x0001.0000,2);
+  BeginRecord();
+  Perlin3D(0x0000.0000,[0x0000.0f7e,0x0000.0f7e,0x0000.0f7e],
+    [0xffff.ab32,0xffff.9ab1,0xffff.ccb6],[0xfff4.5bff,0x0000.2b7f,0x0000.0000],
+    [0x0000.e4fa,0x0005.f400,0x0000.e4fa]);
+  AnimLabel(35,0);
+  Subdivide(0x0000.0001,0x0001.0000,2);
+  store waterface;
+  load waterface;
+  Copy();
+  SelectRandom(245,160,0x0000.0000,0x0000.0100);
+  SelectCube([0x0000.0000,0x0000.0000,0x0000.0000],[0x000e.e400,0x000e.e400,0x000e.e400],
+    0,0x0000.0000,0x0000.0100);
+  CalcNormals(0,0x0000.0001,1);
+  ExtrudeWK(0x0000.0001,0,6,0x0000.0000,[0x0000.fd71,0x0000.fd71,0x0000.fd71],
+    [0x0000.0000,0x0000.0000,0x0000.0000],0);
+  AnimLabel(36,0);
+  CalcNormals(0,0x0000.0000,1);
+  Perlin3D(0x0000.0000,[0x0000.172b,0x0000.172b,0x0000.172b],
+    [0xffff.d454,0xffff.ac77,0x0000.0000],[0xfffb.e1ff,0x0000.2b7f,0x0000.0000],
+    [0x0000.e4fa,0x0002.2e00,0x0000.e4fa]);
+  AnimLabel(37,0);
+  CalcNormals(1,0x0000.0001,0);
+  NewMaterial();
+  MatBase(0,768,2,0,#ffff8080);
+  Flat(#002d5f7f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.b4d8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  Color(0,#ff646464);
+  MakeTexture();
+  store _temp0054;
+  load _temp0054;
+  MatTexture(0,0,2311);
+  Flat(#00000000);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.6657,0x0000.6657],
+    [0x0000.19a5,0x0000.19a5],#ffffffff,0x0001.0200,0x0000.318b);
+  store _temp0055;
+  load _temp0055;
+  MatTexture(0,1,7);
+  MatFinalizer(0,2,0x0001.0000,0x0000.028f,0x0000.0000);
+  MatBase(1,17152,2,0,#ffff8080);
+  MatFinalizer(1,5,0x0001.0000,0x0000.1559,0x0000.0cf3);
+  Flat(#00000000);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.6657,0x0000.6657],
+    [0x0000.19a5,0x0000.19a5],#ffffffff,0x0001.0000,0x0000.4c75);
+  store _temp0056;
+  load _temp0056;
+  MatTexture(1,0,7);
+  MeshMaterial(1,0x0000.0000);
+  store _temp0053;
+  load _temp0053;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfff9.feff,0x0000.0000]);
+  LabelScene(18);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0xffff.e3d1,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(38);
+  Viewport([0x0000.0000,0x0000.0000,0xfff6.85ff],[0x0000.0000,0xffff.5c40,0x0000.0000],
+    0x0001.0000,4,2,#ff000000,0x0001.a100);
+  store _temp0051;
+  load _temp0051;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0051;
+  FXColor(3,#ff252525,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0002.0000);
+  FXChaosBlur(0x0004.8000,2,2,1,0x0001.0c00,1);
+  FXColor(3,#ff246960,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.d439);
+  FXMerge(4,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store water;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[39,39],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  NewMaterial();
+  MatBase(0,774,2,0,#ffff8080);
+  Flat(#0000000f);
+  GlowRect([0x0000.b1c4,0x0000.5bb1],[0x0002.6c00,0x0000.d3c6],
+    [0x0000.0000,0x0000.0000],#ffccabbb,0x0000.a8a8,0x0000.008a);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.7df4,0x0000.789f],
+    [0x0000.0000,0x0000.0000],#ff95ffff,0x0000.4624,0x0000.18ea);
+  GlowRect([0x0000.3762,0x0000.a698],[0x0000.71c4,0x0000.c200],
+    [0x0000.0000,0x0000.0000],#ffacade6,0x0000.abf5,0x0000.0620);
+  GlowRect([0x0000.a102,0x0000.c141],[0x0000.789f,0x0000.475d],
+    [0x0000.0000,0x0000.0000],#ffb7cbff,0x0001.6b00,0x0000.0620);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.638c,0x0000.2453],
+    [0x0000.0000,0x0000.0000],#ffeaf8d5,0x0001.5800,0x0000.18ea);
+  MakeTexture();
+  store _temp0059;
+  load _temp0059;
+  MatTexture(0,0,2311);
+  MatLight(0,0,0,0,0,#ffd3d3d3,#ffffffff,#ff000000,#00000000,
+    0x0001.7000,1,0x0000.0001);
+  MatFinalizer(0,1,0x0002.9100,0x0000.0082,0x0000.0000);
+  MatBase(1,17158,2,0,#ffff8080);
+  Perlin(2,3,0x0000.8000,0,0,0x0001.0000,0x0001.0000,#ff000000,
+    #fff4d8b3);
+  GlowRect([0x0000.318b,0x0000.4cf7],[0x0000.3411,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.c89e,0x0000.524c],[0x0000.3925,0x0000.6d73],
+    [0x0000.0000,0x0000.0000],#ffffbe79,0x0001.2e00,0x0000.3b31);
+  GlowRect([0x0000.3bb3,0x0000.bd72],[0x0000.4000,0x0000.0aef],
+    [0x0000.0000,0x0000.0000],#ffaa907e,0x0001.b200,0x0000.3b31);
+  GlowRect([0x0000.bdb3,0x0000.be76],[0x0000.3f7e,0x0000.09eb],
+    [0x0000.0000,0x0000.0000],#ffab8779,0x0001.b200,0x0000.3b31);
+  GlowRect([0x0000.8000,0x0000.8000],[0x0000.8c6d,0x0000.8961],
+    [0x0000.0000,0x0000.0000],#ffbd9989,0x0000.f38f,0x0000.292a);
+  MakeTexture();
+  store _temp0060;
+  load _temp0060;
+  MatTexture(1,0,7);
+  MatLight(0,0,0,0,0,#ff3755ff,#ff9c9c9c,#ff000000,#00292929,
+    0x0005.8400,1,0x0000.0001);
+  MatFinalizer(1,1,0x0001.cf00,0x0000.0104,0x0000.0000);
+  MatTexTrans(0,1,0,[0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xfffe.61ff,0x0000.0000]);
+  store blue_room_babe_mat_static;
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0058;
+  load _temp0058;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0xffff.febb,0x0000.3921,0x0000.0000],
+    [0xffff.e8f9,0x0000.4f51,0xffff.5c40]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0xffff.a902,0x0000.0000,0x0001.2100],0,0,0,0x00c9.0000,0x0000.4000,
+    0x0001.0000,0x0001.0000,0x0000.0000,0x0000.4000,#ffdc2a1a,
+    #ff000000,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0006.a800,0x0000.0000,0xfffa.92ff],0,0,0,0x00c9.0000,0x0000.4000,
+    0x0000.a902,0x0001.0000,0x0000.0000,0x0000.4000,#ff5fffff,
+    #ff0000b0,#ffffffff);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x0004.ff00,0x0001.cc00,0x0004.8400],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  NewMesh(1,19);
+  Cube(9,6,14,0);
+  SelectRandom(5,123,0x0000.0100,0x0000.0000);
+  ExtrudeWK(0x0000.0001,3,4,0x0001.3300,[0x0001.7f00,0x0001.7f00,0x0001.7f00],
+    [0x0000.038e,0x0000.49a2,0xffff.ff7e],0);
+  CalcNormals(1,0x0000.0000,0);
+  CalcNormals(1,0x0000.0000,0);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(1,0x0000.0000,0);
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0061;
+  load _temp0061;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0002.1100,0x0000.8a4e,0x0002.1600],[0x0000.0000,0xffff.f821,0x0000.0000],
+    [0xffff.4f75,0xfffd.76ff,0x0000.1478]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0xfffd.73ff,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  LabelScene(39);
+  Viewport([0xffff.28aa,0xffff.65fe,0x0002.3700],[0xffff.f321,0x0002.b600,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.0000);
+  store _temp0057;
+  load _temp0057;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0057;
+  FXColor(3,#ff900000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.0a00);
+  FXChaosBlur(0x0006.c000,3,3,1,0x0001.2900,1);
+  FXColor(3,#ff37d637,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0001.a300);
+  FXMerge(4,0x0000.baeb,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blend_black;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(40,-1);
+  store blau_raum_fx1;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[1,1],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffc.cdff,0x0001.0a00]);
+  SelectRandom(5,75,0x0000.0100,0x0000.0080);
+  Triangulate(4,0x0000.0000,1);
+  BeginRecord();
+  ExtrudeWK(0x0000.0001,3,12,0x0000.75d6,[0x0000.f5c4,0x0001.1900,0x0000.fae2],
+    [0x0000.0000,0x0000.0000,0x0000.0000],1);
+  AnimLabel(13,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0001);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,1);
+  load blu;
+  MeshMaterial(2,0x0000.0001);
+  store _temp0063;
+  load _temp0063;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ab91,0x0000.ab91,0x0000.ab91],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.4286,0x0000.0000]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0xffff.a902,0x0000.0000,0x0001.2100],0,0,0,0x00c9.0000,0x0000.4000,
+    0x0000.546f,0x0001.0000,0x0000.0000,0x0000.4000,#ff9d9f8d,
+    #ff000000,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0006.a800,0x0000.0000,0xfffa.92ff],2,0,0,0x00c9.0000,0x0000.4000,
+    0x0000.7841,0x0001.0000,0x0000.0000,0x0000.4000,#ff5f5fff,
+    #ff000000,#ffffffff);
+  LabelScene(41);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x0004.3a00,0x0003.f700,0x0004.9300],[0xffff.87e7,0x0000.0000,0x0000.0000],
+    [0x0000.51e0,0x0000.a131,0x0000.bd56]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0xfff5.f5ff,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  LabelScene(39);
+  Viewport([0x0001.8e00,0x0000.0032,0xfffe.39ff],[0xffff.e30c,0x0005.9400,0x0000.0000],
+    0x0001.0000,0,1,#ff000000,0x0001.0000);
+  LabelChain(33,2);
+  store _temp0062;
+  load _temp0062;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0062;
+  FXColor(3,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.0a00);
+  FXChaosBlur(0x0006.c000,3,3,1,0x0001.2900,1);
+  FXColor(3,#ff27ff25,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0001.a300);
+  FXMerge(4,0x0000.baeb,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blend_black;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(40,-1);
+  store blau_raum_fx5;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[10,3],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0065;
+  load _temp0065;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.598d,0x0000.0000]);
+  LabelScene(42);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.175c,0xffff.adfd,0x0000.13ce],
+    [0x0012.2800,0x000b.3100,0xffe7.cdff],2,0,0,0x00a8.6000,0x0000.fac7,
+    0x0000.70b8,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff8aba7a,
+    #ff3b4fff,#ffff0093);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2a26,0xffff.e20a,0x0000.175c],
+    [0x0003.3200,0x0003.4700,0xffff.a673],0,0,0,0x000e.6000,0x0000.fac7,
+    0x0000.8cdd,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffedb17c,
+    #ff000000,#ff5f855f);
+  AddScene();
+  load fightclubraum;
+  TransScene([0x0002.db00,0x0002.3000,0x0002.f500],[0xffff.bb31,0x0000.2cb0,0xffff.4e85],
+    [0x0000.879b,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.1100,0x0001.1100,0x0001.1100],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.e8d5,0x0000.0000]);
+  Viewport([0x0001.5400,0x0000.985e,0x0000.bf5e],[0x0000.29cc,0x000a.6a00,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0002.4200);
+  store _temp0064;
+  load _temp0064;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0064;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.6e00);
+  FXWideBlur(0x0006.0000,0x0001.0000,3,1,0x0003.3500,0);
+  FXColor(3,#ffc48bd7,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0xffff.d481);
+  FXMerge(0,0x0000.0000,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],1,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store start004;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[3,3],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0067;
+  load _temp0067;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.598d,0x0000.0000]);
+  LabelScene(43);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2a26,0xffff.e20a,0x0000.13ce],
+    [0x0012.2800,0x000b.3100,0xffe7.cdff],0,0,0,0x00a8.6000,0x0000.fac7,
+    0x0000.7865,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffd08bc8,
+    #ff454492,#ff95a695);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2a26,0xffff.e20a,0x0000.175c],
+    [0x0003.3200,0x0003.4700,0xffff.a673],0,0,0,0x000e.6000,0x0000.fac7,
+    0x0000.75d6,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffff637c,
+    #ff000000,#ffa85f5f);
+  AddScene();
+  load fightclubraum;
+  TransScene([0x0004.1b00,0x000a.9000,0x000e.b800],[0x0000.5348,0x0000.1d33,0xffff.ae7f],
+    [0x0000.879b,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.1100,0x0001.1100,0x0001.1100],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  Viewport([0x0001.2800,0x0001.3200,0xffff.0d0f],[0x0000.5069,0x0005.7d00,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.f300);
+  store _temp0066;
+  load _temp0066;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0066;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.6e00);
+  FXWideBlur(0x0006.0000,0x0001.0000,3,1,0x0003.3500,0);
+  FXColor(3,#ffc48bd7,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0xffff.d99f);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store start003;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[4,4],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0069;
+  load _temp0069;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.598d,0x0000.0000]);
+  LabelScene(44);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.d823,0x0000.3511,0x0001.4700],
+    [0x0012.2800,0x000a.3c00,0xffe7.cdff],2,0,0,0x00a8.6000,0x0000.fac7,
+    0x0000.c7b6,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffc05aff,
+    #ff293729,#ffa1b2c0);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.09a6,0x0000.7f76,0x0000.991b],
+    [0x0003.3200,0x0003.4700,0xffff.a673],2,0,0,0x000e.6000,0x0000.fac7,
+    0x0000.91fb,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff87637c,
+    #ff1f0036,#ffdc0004);
+  AddScene();
+  load fightclubraum;
+  TransScene([0x000e.3e00,0x000c.a400,0x000e.3e00],[0x0000.0fff,0xffff.ff7e,0xffff.ae7f],
+    [0x0000.879b,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.1100,0x0001.1100,0x0001.1100],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  Viewport([0x0000.b3d1,0x0001.8100,0x0001.1700],[0x0000.19bb,0x0003.ae00,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.f300);
+  store _temp0068;
+  load _temp0068;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0068;
+  FXColor(0,#ff000000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.6e00);
+  FXWideBlur(0x0006.0000,0x0001.0000,3,1,0x0003.3500,0);
+  FXColor(3,#ffbf86d2,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0xffff.a3e4);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store start01;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",19,[5,5],0x0000.0000,1);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.7841,0xfffd.2eff,0x0001.0a00]);
+  Subdivide(0x0000.0000,0x0001.0000,2);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat_static;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0071;
+  load _temp0071;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.c527,0x0000.c527,0x0000.c527],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.598d,0x0000.0000]);
+  LabelScene(45);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0a28,0xffff.ddfa,0x0000.0fbe],
+    [0xffef.61ff,0x0008.f400,0x0009.6200],0,0,0,0x0022.6000,0x0000.fac7,
+    0x0000.4539,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff398ef5,
+    #ff4f5aa8,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0xffff.bcb7,0xffff.ddfa,0x0000.134c],
+    [0x0007.6a00,0xfffd.69ff,0xffff.a673],0,0,0,0x000e.6000,0x0000.fac7,
+    0x0000.b33e,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff7467ff,
+    #ffad1f38,#ff94a6d3);
+  AddScene();
+  load fightclubraum;
+  TransScene([0x0001.c700,0x0001.c700,0x0001.c700],[0x0000.960f,0x0001.3f00,0xffff.77e8],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.1100,0x0001.1100,0x0001.1100],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.f082,0x0000.0000]);
+  Viewport([0x0000.7a88,0x0001.bc00,0x0000.8a31],[0x0000.303e,0x0003.f500,0x0000.0000],
+    0x0001.0000,0,2,#ff000000,0x0001.f300);
+  store _temp0070;
+  load _temp0070;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0070;
+  FXColor(0,#ff0b0000,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(3,1,0x0001.bd00);
+  FXWideBlur(0x0006.0000,0x0001.0000,3,1,0x0002.5b00,0);
+  FXColor(3,#ffc8659f,3,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.dbe6);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store start02;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  load daten;
+  TransScene([0x0001.7000,0x0001.7000,0x0001.7000],[0x0000.3f39,0x0000.5613,0xffff.fefc],
+    [0xffde.e5ff,0x0000.07ad,0x0013.fd00]);
+  LabelScene(5);
+  load daten;
+  TransScene([0x0001.7000,0x0001.7000,0x0001.7000],[0x0000.3f39,0x0000.5695,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(4);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.b9dc,0x0000.138d,0xffff.3f08],
+    [0x0013.3f00,0xfff8.18ff,0x000a.2f00],2,0,0,0x0100.0000,0x0000.fac7,
+    0x0001.0a00,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff50ffff,
+    #ff29748b,#ff636bae);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2b6b,0xffff.dcf6,0x0000.0fbe],
+    [0xffd4.36ff,0x0011.e600,0x0008.f700],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0001.0400,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff5e37cb,
+    #ff140314,#ff20251e);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.2616,0xffff.ddfa,0x0000.0fbe],
+    [0x0000.c792,0xffff.87bf,0xffff.35df],0,0,0,0x0100.0000,0x0000.fac7,
+    0x0000.0f5a,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffff9cb4,
+    #ff04151b,#ffecffff);
+  AddScene();
+  load walk_scene_room;
+  TransScene([0x0032.7300,0x0002.c700,0x0002.5900],[0xffff.0565,0xfffe.93ff,0x0000.0104],
+    [0x0000.7fee,0xfffd.21ff,0xfffc.e1ff]);
+  LabelScene(46);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LabelScene(22);
+  Viewport([0xfff9.a7ff,0x0003.3100,0xffff.32a9],[0x0000.7704,0x0001.7100,0x0000.0000],
+    0x0001.0000,4,1,#ff000000,0x0001.0000);
+  LabelChain(47,2);
+  store _temp0072;
+  load _temp0072;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0072;
+  FXColor(0,#ff0b0000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXChaosBlur(0x000c.0000,3,2,1,0x0001.1100,1);
+  FXBlur8(2,1,0x0001.bd00);
+  FXColor(3,#ffc8659f,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.dbe6);
+  FXMerge(0,0x0000.b5cd,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  store start;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  Babe("babe.mesh",43,[19,23],0x0000.0000,0);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.1eb4,0xfffd.29ff,0x0000.91d7]);
+  SelectRandom(0,80,0x0000.0100,0x0000.0080);
+  Triangulate(4,0x0000.0000,0);
+  ExtrudeWK(0x0000.0001,3,9,0x0006.8c00,[0x0001.3f00,0x0001.8c00,0x0000.e8f9],
+    [0x0000.3309,0x0001.0200,0x0000.1aea],1);
+  Subdivide(0x0000.0000,0x0001.0000,1);
+  CalcNormals(0,0x0000.0000,0);
+  load blue_room_babe_mat;
+  MeshMaterial(1,0x0000.0000);
+  store _temp0074;
+  load _temp0074;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0xfffd.aeff,0x0000.0000],
+    [0x0000.0000,0xffff.70b8,0x0000.0000]);
+  LabelScene(48);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.3a66,0xffff.ddfa,0x0000.0fbe],
+    [0x0000.8a2a,0xfffd.f3ff,0xffff.35df],0,0,0,0x0100.0000,0x0000.c79b,
+    0x0001.e300,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff2059ff,
+    #ff003a00,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.cadf,0x0000.640a,0x0000.82c3],
+    [0x0000.8a2a,0x0000.309d,0xffff.35df],2,0,0,0x0100.0000,0x0000.4000,
+    0x0000.9ea2,0x0001.0000,0x0000.3ff7,0x0001.0000,#ffff0000,
+    #ff9c00ff,#ff00ffff);
+  AddScene();
+  NewMesh(0,0);
+  Cube(9,3,8,1);
+  NewMaterial();
+  MatBase(1,8452,4,0,#ffff8080);
+  Flat(#00000000);
+  GlowRect([0x0000.b142,0x0000.6f3e],[0x0000.27a0,0x0000.2822],
+    [0x0000.0000,0x0000.0000],#ff40603e,0x0002.cf00,0x0000.3929);
+  MakeTexture();
+  store _temp0076;
+  load _temp0076;
+  MatTexture(1,0,7);
+  MatFinalizer(1,3,0x0000.9281,0x0000.6d33,0x0000.0000);
+  store glow2;
+  load glow2;
+  MeshMaterial(1,0x0000.0000);
+  Transform(0x0000.0000,[0x0004.3700,0xfffb.52ff,0x0002.e800],
+    [0x0000.08e3,0x0000.1450,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store _temp0075;
+  load _temp0075;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.8cb9,0x0000.0000]);
+  Viewport([0x0001.b900,0x0001.2e00,0xfffe.deff],[0xffff.78c2,0x0005.5700,0x0000.b089],
+    0x0001.0000,0,1,#ff000000,0x0001.0000);
+  LabelChain(15,2);
+  store _temp0073;
+  load _temp0073;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0073;
+  FXColor(0,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.6100);
+  FXWideBlur(0x0008.0000,0x0004.1900,2,1,0x0001.df00,1);
+  FXColor(1,#ff52356c,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0003.0000);
+  FXMerge(4,0x0000.c298,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(29,-1);
+  store blau_raum_fx0;
+  FXResetAlloc();
+  NewFXChain(0,1,#ff000000);
+  NewMesh(0,0);
+  Cube(4,4,4,1);
+  load glow2;
+  MeshMaterial(1,0x0000.0000);
+  Transform(0x0000.0000,[0x0004.3700,0xfffb.52ff,0x0002.e800],
+    [0x0000.08e3,0x0000.1450,0x0000.0000],[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store _temp0078;
+  load _temp0078;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.3a66,0x0000.375a,0x0000.4cae],
+    [0x0008.da00,0xfffb.b6ff,0xfffe.69ff],0,0,0,0x0100.0000,0x0000.c79b,
+    0x0001.2600,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff2059ff,
+    #ff003a00,#ffffffff);
+  AddScene();
+  LightScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.d138,0x0000.640a,0x0000.7aa3],
+    [0x0000.8a2a,0x0000.309d,0xffff.35df],2,0,0,0x0100.0000,0x0000.4000,
+    0x0001.8700,0x0001.0000,0x0000.3ff7,0x0001.0000,#ff6000ff,
+    #ff0000ff,#ff00ffff);
+  AddScene();
+  Babe("babe.mesh",43,[8,9],0x0000.0000,0);
+  AnimLabel(11,0);
+  Transform(0x0000.0000,[0x0000.3afd,0x0000.3afd,0x0000.3afd],
+    [0x0000.0000,0x0000.0000,0x0000.0000],[0x0000.1eb4,0xfffd.29ff,0x0000.91d7]);
+  Triangulate(4,0x0000.0000,0);
+  CalcNormals(0,0x0000.0000,1);
+  SelectRandom(0,69,0x0000.0100,0x0000.0080);
+  load blu;
+  MeshMaterial(1,0x0000.0001);
+  ExtrudeWK(0x0000.0001,0,2,0x0000.ae20,[0x0000.e8f9,0x0000.e8f9,0x0000.e8f9],
+    [0x0000.1658,0xffff.fa29,0x0000.0186],0);
+  Subdivide(0x0000.0000,0x0001.0000,0);
+  CalcNormals(0,0x0000.0000,0);
+  NewMaterial();
+  MatBase(1,8452,4,0,#ffff8080);
+  Flat(#00000000);
+  GlowRect([0x0000.9b2b,0x0000.7b2d],[0x0000.3f7e,0x0000.4000],
+    [0x0000.0041,0x0000.0000],#ff6262ff,0x0001.2500,0x0000.1ec1);
+  Text([0xffff.fb62,0x0000.478e],0x0000.62fa,0x0000.275b,#ff6493ff,
+    ".oO3o.");
+  MakeTexture();
+  store _temp0080;
+  load _temp0080;
+  MatTexture(1,0,7);
+  MatFinalizer(1,3,0x0000.eebc,0x0000.40c4,0x0000.0000);
+  store glow;
+  load glow;
+  MeshMaterial(2,0x0000.0001);
+  store _temp0079;
+  load _temp0079;
+  Scene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.0000,0x0000.0000]);
+  TransScene([0x0000.ae20,0x0000.ae20,0x0000.ae20],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0xffff.70b8,0x0000.0000]);
+  LabelScene(48);
+  AddScene();
+  TransScene([0x0001.0000,0x0001.0000,0x0001.0000],[0x0000.0000,0x0000.0000,0x0000.0000],
+    [0x0000.0000,0x0000.8cb9,0x0000.0000]);
+  Viewport([0x0001.7600,0x0000.7a91,0xfffe.adff],[0xffff.e2ec,0xfff2.74ff,0x0000.b087],
+    0x0001.0000,0,1,#ff000000,0x0001.0000);
+  LabelChain(15,2);
+  store _temp0077;
+  load _temp0077;
+  FXNop();
+  FXNop();
+  FXNop();
+  FXNop();
+  load _temp0077;
+  FXColor(0,#ff000000,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0000.0000);
+  FXBlur8(2,1,0x0001.3d00);
+  FXWideBlur(0x0008.1900,0x0004.0000,2,1,0x0002.2600,1);
+  FXColor(1,#ff52356c,2,1,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0x0003.0000);
+  FXMerge(4,0x0000.c298,[0x0001.0000,0x0001.0000],0x0000.0000,
+    [0x0000.8000,0x0000.8000],0,-1);
+  load blender;
+  Layer2D(#ffffffff,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(9,-1);
+  load blender_white;
+  Layer2D(#ff000000,[0x0000.0012,0x0000.0012,0x0001.0000,0x0001.0000],
+    [0x0000.0000,0x0000.0000,0x0001.0000,0x0001.0000],0x0001.0000,
+    2,-1,[0x0001.0000,0x0001.0000],0x0000.0000,[0x0000.8000,0x0000.8000]);
+  LabelChain(29,-1);
+  store blau_raum_fxs;
+}
+scene start02_start02_anim;
+spline Spline_0;
+fxchain start02_blend;
+spline Spline_1;
+matrix start02_anim030;
+spline Spline_2;
+scene start01_start01_anim;
+spline Spline_3;
+fxchain start01_blend;
+spline Spline_4;
+matrix start01_anim030;
+spline Spline_5;
+scene start003_start003_anim;
+spline Spline_6;
+fxchain start003_blend;
+spline Spline_7;
+matrix start003_anim030;
+spline Spline_8;
+scene start004_start004_anim;
+spline Spline_9;
+spline Spline_10;
+fxchain start004_blend;
+spline Spline_11;
+matrix start004_anim030;
+spline Spline_12;
+fxchain bunt_blend;
+spline Spline_13;
+scene bunt_blubber;
+spline Spline_14;
+scene start_start_raum;
+spline Spline_15;
+fxchain start_start_cam;
+spline Spline_16;
+fxchain start_blend;
+spline Spline_17;
+scene start_daten1;
+spline Spline_18;
+scene start_daten2;
+spline Spline_19;
+meshanim walk_scene_fx1_babe_walk;
+spline Spline_20;
+fxchain walk_scene_fx1_blend;
+spline Spline_21;
+scene walk_scene_fx1_walk_scene_glitter;
+spline Spline_22;
+fxchain walk_scene_fx1_scroll;
+spline Spline_23;
+fxchain walk_scene_fx1_blend_black;
+spline Spline_24;
+meshanim walk_scene_fx2_babe_walk;
+spline Spline_25;
+scene walk_scene_fx2_rock;
+spline Spline_26;
+fxchain walk_scene_fx2_blend;
+spline Spline_27;
+fxchain walk_scene_fx2_scroll;
+spline Spline_28;
+meshanim walk_scene_fx2_extrude;
+spline Spline_29;
+spline Spline_30;
+spline Spline_31;
+scene rotate_josie_fx_rotate_josie;
+spline Spline_32;
+scene rotate_josie_fx_rotate_josie_raum;
+spline Spline_33;
+fxchain rotate_josie_fx_scroll;
+spline Spline_34;
+spline Spline_35;
+fxchain rotate_josie_fx_blend;
+spline Spline_36;
+scene rotate_josie_fx_daten1;
+spline Spline_37;
+scene rotate_josie_fx_daten2;
+spline Spline_38;
+scene bday_walk_room_anim;
+spline Spline_39;
+scene bday_starmove;
+spline Spline_40;
+fxchain bday_blend;
+spline Spline_41;
+meshanim bday_extrude;
+spline Spline_42;
+spline Spline_43;
+meshanim blau_raum_fxs_babe_walk;
+spline Spline_44;
+fxchain blau_raum_fxs_scroll;
+spline Spline_45;
+fxchain blau_raum_fxs_blend;
+spline Spline_46;
+meshanim zusammenbruch_babe_walk;
+spline Spline_47;
+scene zusammenbruch_walk_room_anim;
+spline Spline_48;
+scene blau_raum_fx0_rot_baby;
+spline Spline_49;
+spline Spline_50;
+fxchain blau_raum_fx0_blend;
+spline Spline_51;
+spline Spline_52;
+fxchain blau_raum_fx0_blend2;
+spline Spline_53;
+fxchain blau_raum_fx0_scroll;
+spline Spline_54;
+meshanim blau_raum_fx0_babe_walk;
+spline Spline_55;
+scene water_wat_cam;
+spline Spline_56;
+meshanim water_wat_perl1;
+spline Spline_57;
+meshanim water_wat_perl2;
+spline Spline_58;
+meshanim water_wat_bab;
+spline Spline_59;
+spline Spline_60;
+meshanim water_wat_extr1;
+spline Spline_61;
+spline Spline_62;
+fxchain water_blend;
+spline Spline_63;
+scene water_starmove;
+spline Spline_64;
+spline Spline_65;
+spline Spline_66;
+scene blau_raum_fx8_2_fx8_josie;
+spline Spline_67;
+spline Spline_68;
+scene blau_raum_fx8_2_schweb_raum;
+spline Spline_69;
+fxchain blau_raum_fx8_2_blend;
+spline Spline_70;
+fxchain blau_raum_fx8_2_blend2;
+spline Spline_71;
+meshanim blau_raum_fx9_open_heart;
+spline Spline_72;
+scene blau_raum_fx9_daten1;
+spline Spline_73;
+scene blau_raum_fx9_daten2;
+spline Spline_74;
+scene blau_raum_fx9_light;
+spline Spline_75;
+spline Spline_76;
+meshanim zusammenbruch2_babe_walk;
+spline Spline_77;
+scene zusammenbruch2_walk_room_anim;
+spline Spline_78;
+fxchain zusammenbruch2_cam;
+spline Spline_79;
+spline Spline_80;
+fxchain zusammenbruch2_blend;
+spline Spline_81;
+scene blau_raum_fx8_schweb_raum;
+spline Spline_82;
+scene blau_raum_fx8_fx8_josie;
+spline Spline_83;
+spline Spline_84;
+fxchain blau_raum_fx8_blend;
+spline Spline_85;
+fxchain blau_raum_fx8_scroll;
+spline Spline_86;
+fxchain real_end_blend;
+spline Spline_87;
+meshanim real_end_end_rot;
+spline Spline_88;
+scene blau_raum_fx5_schwimm;
+spline Spline_89;
+meshanim blau_raum_fx5_extrude;
+spline Spline_90;
+spline Spline_91;
+fxchain blau_raum_fx5_cam;
+spline Spline_92;
+scene blau_raum_fx5_licht;
+spline Spline_93;
+fxchain blau_raum_fx5_blend_white;
+spline Spline_94;
+fxchain blau_raum_fx5_blend;
+spline Spline_95;
+meshanim zusammenbruch3_babe_walk;
+spline Spline_96;
+scene zusammenbruch3_walk_room_anim;
+spline Spline_97;
+fxchain zusammenbruch3_blend;
+spline Spline_98;
+meshanim babe_sprung_scene_fx1_babe_sprung;
+spline Spline_99;
+scene babe_sprung_scene_fx1_sprung_raum;
+spline Spline_100;
+meshanim babe_sprung_scene_fx1_sprungextrude;
+spline Spline_101;
+spline Spline_102;
+fxchain babe_sprung_scene_fx1_blend;
+spline Spline_103;
+matpass babe_sprung_scene_fx1_sprungmat;
+spline Spline_104;
+spline Spline_105;
+fxchain blau_raum_fx1_blend;
+spline Spline_106;
+scene blau_raum_fx1_schwimm;
+spline Spline_107;
+spline Spline_108;
+fxchain blau_raum_fx1_blend_white;
+spline Spline_109;
+void timeline_OnInit()
+{
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.ff00,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.2100,0x0000.0b00,0x0000.2100]);
+  store Spline_0;
+  Spline(4,0x0000.f800,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xffff.00ff,0xfffe.feff,0xfffe.fdff,0xfffe.ffff]);
+  SplineKey4(0x0000.2fbd,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.9b00,[0xffff.fb00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.1dff,0xfffe.1cff,0xfffe.1dff,0xfffe.1bff]);
+  store Spline_1;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0002.1300,0x0000.0000,0x0000.0000]);
+  store Spline_2;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.fe00,0x0000.0100,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.f800,0xffff.fb00,0x0000.0000]);
+  store Spline_3;
+  Spline(4,0x0000.de00,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffe.ffff,0xfffe.ffff,0xfffe.feff,0xffff.0500]);
+  SplineKey4(0x0000.3116,[0xffff.fe00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.8180,[0xffff.fb00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffd.aeff,0xfffd.acff,0xfffd.afff,0xfffe.33ff]);
+  store Spline_4;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xfffd.c7ff,0x0000.0000,0x0000.0000]);
+  store Spline_5;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.f100,0xffff.fc00,0xffff.ff00]);
+  SplineKey3(0x0001.0000,[0x0000.0400,0x0000.0200,0x0000.0000]);
+  store Spline_6;
+  Spline(4,0x0000.d000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffe.feff,0xfffe.feff,0xfffe.feff,0xfffe.f6ff]);
+  SplineKey4(0x0000.30a0,[0xffff.fe00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.8200,[0xffff.e200,0xffff.e700,0xffff.e200,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffd.60ff,0xfffd.58ff,0xfffd.58ff,0xfffe.4eff]);
+  store Spline_7;
+  Spline(3,0xffff.fe00,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0002.0700,0x0000.0000,0x0000.0000]);
+  store Spline_8;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.d500,0x0000.3700,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.1600,0xffff.b800,0x0000.0000]);
+  store Spline_9;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xffff.f300,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0100,0x0000.1400,0x0000.0000]);
+  store Spline_10;
+  Spline(4,0x0001.3600,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffe.ffff,0xfffe.ffff,0xfffe.feff,0xffff.0900]);
+  SplineKey4(0x0000.304e,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.7f80,[0xffff.ec00,0xffff.f100,0xffff.fb00,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.a1ff,0xfffe.9cff,0xfffe.9cff,0xfffe.9cff]);
+  store Spline_11;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xfffe.78ff,0x0000.0000,0x0000.0000]);
+  store Spline_12;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffc.0eff,0xfffb.ffff,0xfffb.ffff,0xfffc.07ff]);
+  SplineKey4(0x0000.3521,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.7de2,[0xfffe.5dff,0xffff.1500,0xffff.de00,0xfffe.c1ff]);
+  SplineKey4(0x0000.ce45,[0xfffe.48ff,0xffff.c400,0xffff.4300,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffc.0dff,0xfffb.feff,0xfffc.03ff,0x0000.1300]);
+  store Spline_13;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xfffe.85ff,0x0000.0000,0x0000.0000]);
+  store Spline_14;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0066,[0x0000.0700,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.a2b1,[0xffac.93ff,0xfffe.5dff,0x0030.2c00]);
+  SplineKey3(0x0001.0000,[0xff54.61ff,0xfffc.b4ff,0x0062.7300]);
+  store Spline_15;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xfff8.28ff,0xfffa.56ff,0x0000.0000]);
+  SplineKey3(0x0000.415f,[0xfffa.c5ff,0x0000.6f00,0xffff.9000]);
+  SplineKey3(0x0000.c791,[0x000e.7b00,0x0002.2d00,0xfff7.b9ff]);
+  SplineKey3(0x0001.0000,[0x003e.b100,0xfffc.a8ff,0xffde.94ff]);
+  store Spline_16;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xffff.4200,0xffff.3500,0x0000.0000,0x0000.0000]);
+  store Spline_17;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffc5.7dff,0x0000.0000,0x001f.d900]);
+  SplineKey3(0x0001.0000,[0x0021.fd00,0x0000.4300,0xffeb.15ff]);
+  store Spline_18;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffea.7aff,0x0000.0000,0x000f.db00]);
+  SplineKey3(0x0001.0000,[0x0023.1d00,0x0000.0000,0xffe9.58ff]);
+  store Spline_19;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.4000);
+  SplineKey1(0x0001.0000,0x0004.0600);
+  store Spline_20;
+  Spline(4,0x0000.9a00,0x0000.0400);
+  SplineKey4(0x0000.0000,[0x0000.0900,0x0000.0900,0x0000.0900,0x0000.0900]);
+  SplineKey4(0x0000.f60d,[0x0000.0800,0x0000.0600,0x0000.0900,0x0000.0d00]);
+  SplineKey4(0x0001.0000,[0x0001.d500,0x0001.e200,0x0001.d900,0x0001.df00]);
+  store Spline_21;
+  Spline(3,0x0000.9a00,0x0000.0400);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.4300,0x0000.c100,0x0000.0000]);
+  store Spline_22;
+  Spline(3,0x0000.9a00,0x0000.0400);
+  SplineKey3(0x0000.0000,[0xfffe.c4ff,0x0000.3f00,0x0001.2e00]);
+  SplineKey3(0x0000.8e80,[0x0000.0900,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0900,0x0000.0400,0x0000.0900]);
+  store Spline_23;
+  Spline(4,0x0000.9a00,0x0000.0400);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.3700,[0x0001.1500,0x0001.1000,0x0001.1b00,0x0000.0000]);
+  store Spline_24;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.0000);
+  SplineKey1(0x0001.0000,0x0004.0400);
+  store Spline_25;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.9f00,0x0001.d900,0x0000.3c00]);
+  store Spline_26;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0001.c500,0x0001.c500,0x0001.c100,0x0000.0000]);
+  SplineKey4(0x0000.1200,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.d000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0001.db00,0x0001.d700,0x0001.1800,0x0000.0000]);
+  store Spline_27;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.e080,[0xffff.ed00,0x0000.0400,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.ed00,0x0001.0200,0xffff.7c00]);
+  store Spline_28;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xfffe.55ff,0x0000.5700,0x0000.df00]);
+  SplineKey3(0x0000.7080,[0xfffe.eeff,0xfffe.92ff,0xffff.3c00]);
+  SplineKey3(0x0001.0000,[0xffff.5f00,0xfffe.c4ff,0xffff.c100]);
+  store Spline_29;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0xfffd.24ff);
+  SplineKey1(0x0000.d1a5,0x0000.0000);
+  SplineKey1(0x0001.0000,0x0000.7200);
+  store Spline_30;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.1f00,0x0000.0a00,0xffff.a500]);
+  store Spline_31;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.005f,[0x0000.0000,0x0000.4a00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0xfffe.54ff,0x0000.0000]);
+  store Spline_32;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0029,[0x0000.0000,0xffff.8300,0xffff.de00]);
+  SplineKey3(0x0001.0000,[0xffff.ff00,0xffff.5b00,0xffff.7500]);
+  store Spline_33;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.006c,[0xfffc.b2ff,0xfff9.1aff,0xffef.b1ff]);
+  SplineKey3(0x0000.3ad4,[0xffff.1800,0x0001.1600,0x0001.cb00]);
+  SplineKey3(0x0000.7230,[0x0000.7d00,0x0001.2700,0x0001.4200]);
+  SplineKey3(0x0000.9622,[0x0001.4b00,0xffff.7f00,0x0000.3b00]);
+  SplineKey3(0x0000.c454,[0x0001.2300,0xffff.2400,0x0000.7d00]);
+  SplineKey3(0x0001.0000,[0xffff.8a00,0x0000.0000,0x0000.0000]);
+  store Spline_34;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.6200,[0xffff.ec00,0xffff.f600,0x0000.2600]);
+  SplineKey3(0x0000.bf00,[0xffff.b100,0x0000.3500,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_35;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.01e8,[0xffff.fc00,0xffff.ff00,0x0000.0300,0x0000.0000]);
+  SplineKey4(0x0000.1de9,[0x0000.f400,0x0001.0100,0x0001.0100,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.ed00,0x0000.fd00,0x0001.2500,0x0000.0000]);
+  store Spline_36;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.00a8,[0x0000.0000,0x0009.8d00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0400,0xfffa.d2ff,0x0000.0000]);
+  store Spline_37;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xffe3.1cff,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0017.7100,0x0000.0000]);
+  store Spline_38;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0004.5500,0x0000.0000]);
+  store Spline_39;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.9e00,[0xffff.8900,0x0000.4b00,0xffff.2a00]);
+  SplineKey3(0x0001.0000,[0xffff.2f00,0x0002.0400,0xfffc.c7ff]);
+  store Spline_40;
+  Spline(4,0xffff.dc00,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.1000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.e500,[0x0000.3a00,0x0000.3a00,0x0000.3a00,0x0000.3700]);
+  SplineKey4(0x0001.0000,[0x0001.b800,0x0001.b800,0x0001.b800,0x0001.b400]);
+  store Spline_41;
+  Spline(3,0xffff.dc00,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xfffe.ddff,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0001.c000,0x0000.0000,0x0000.0000]);
+  store Spline_42;
+  Spline(3,0xffff.dc00,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0xfffd.6eff,0x0000.0000]);
+  store Spline_43;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.7900);
+  SplineKey1(0x0000.9880,0x0000.0900);
+  SplineKey1(0x0000.ff98,0x0000.8b00);
+  store Spline_44;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0001.4300,0x0000.9f00,0xfffe.f6ff]);
+  SplineKey3(0x0000.5f00,[0x0000.2b00,0xffff.ca00,0x0000.2b00]);
+  SplineKey3(0x0000.b081,[0xffff.f400,0xffff.7200,0x0000.1f00]);
+  SplineKey3(0x0001.0000,[0x0000.1800,0xffff.f900,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.9f00,0x0000.1300,0xffff.4800]);
+  store Spline_45;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xffff.5900,0xffff.5900,0xffff.6600,0x0000.0000]);
+  SplineKey4(0x0000.3439,[0x0000.c200,0x0000.b400,0x0000.c200,0x0000.0000]);
+  SplineKey4(0x0000.d746,[0xffff.f200,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.f7ff,0xfffe.dbff,0xfffe.f7ff,0x0000.0000]);
+  store Spline_46;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.0000);
+  SplineKey1(0x0001.0000,0x0000.4200);
+  store Spline_47;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0600,0x0000.2700,0x0000.0000]);
+  store Spline_48;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0800,0xffff.9f00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.f700,0xfffd.e4ff,0x0000.0000]);
+  store Spline_49;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xfffd.03ff,0x0000.0000]);
+  SplineKey3(0x0000.44a4,[0xffff.f700,0xffff.c200,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0003.ac00,0x0000.0000]);
+  store Spline_50;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffe.f1ff,0xfffe.fbff,0xfffe.fbff,0xffff.1300]);
+  SplineKey4(0x0000.30f5,[0xffff.f800,0xffff.f700,0xffff.f900,0xffff.fb00]);
+  SplineKey4(0x0000.4eb7,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.8034,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.c1bd,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.dc14,[0xffff.f500,0xffff.f500,0xffff.f500,0xffff.f300]);
+  SplineKey4(0x0001.0000,[0xffff.0800,0xffff.0800,0xffff.0800,0xfffe.fcff]);
+  store Spline_51;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.1d21,[0xffff.e100,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.3b86,[0xffff.a800,0x0000.0300,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.7e2c,[0xffff.4200,0xffff.9e00,0x0000.2100,0x0000.0000]);
+  SplineKey4(0x0000.7ff3,[0xffff.f900,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_52;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.80e5,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.85a3,[0x0000.d100,0x0000.d100,0x0000.9100,0x0001.0700]);
+  SplineKey4(0x0000.908d,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_53;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.4278,[0x0000.0000,0xffff.9400,0xffff.df00]);
+  SplineKey3(0x0000.9822,[0xffff.5c00,0x0001.6200,0x0000.e400]);
+  SplineKey3(0x0000.d755,[0xffff.b900,0x0000.2500,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.9400,0xffff.b000,0x0000.c800]);
+  store Spline_54;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0xffff.1200);
+  SplineKey1(0x0000.4580,0xffff.e300);
+  SplineKey1(0x0000.8900,0xffff.7200);
+  SplineKey1(0x0000.cc00,0xffff.eb00);
+  SplineKey1(0x0001.0000,0xffff.0800);
+  store Spline_55;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xffff.d500,0x0000.0000]);
+  SplineKey3(0x0000.803f,[0x0000.0000,0xffff.eb00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.1b00,0x0000.0000]);
+  store Spline_56;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0003.1d00,0xfffd.01ff,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_57;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0002.a700,0xfffd.7cff]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_58;
+  Spline(1,0x0000.f000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.4900);
+  SplineKey1(0x0000.8eb8,0x0000.8800);
+  SplineKey1(0x0001.0000,0x0000.f900);
+  store Spline_59;
+  Spline(3,0x0000.3400,0x0000.3e00);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.a480,[0x0000.0000,0x0000.0000,0xffff.8900]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0xfffc.24ff]);
+  store Spline_60;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.3c03,0x0000.0000);
+  SplineKey1(0x0000.40e8,0x0000.0000);
+  SplineKey1(0x0000.4bf5,0x0000.5400);
+  SplineKey1(0x0000.b576,0x000a.c600);
+  SplineKey1(0x0001.0000,0x0014.cb00);
+  store Spline_61;
+  Spline(3,0x0000.5400,0x0000.e400);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.6685,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.74c1,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.7716,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.c115,[0xffff.e000,0xffff.e400,0xffff.df00]);
+  SplineKey3(0x0001.0000,[0xffff.d300,0xffff.d300,0xffff.d200]);
+  store Spline_62;
+  Spline(4,0x0000.5400,0x0000.e400);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.1800,[0x0001.1500,0x0001.0600,0x0001.0b00,0x0000.0000]);
+  store Spline_63;
+  Spline(3,0x0000.5400,0x0000.e400);
+  SplineKey3(0x0000.0000,[0x0000.1100,0x0000.1c00,0xffff.d000]);
+  SplineKey3(0x0001.0000,[0x0000.1200,0x0000.0000,0x0000.2f00]);
+  store Spline_64;
+  Spline(3,0x0000.5400,0x0000.e400);
+  SplineKey3(0x0000.0000,[0xffff.ba00,0x0001.1b00,0x0000.3300]);
+  SplineKey3(0x0001.0000,[0xffff.cc00,0xffff.5600,0xfffe.ecff]);
+  store Spline_65;
+  Spline(3,0x0000.5400,0x0000.e400);
+  SplineKey3(0x0000.0000,[0xffff.de00,0x0000.0000,0x0010.f300]);
+  SplineKey3(0x0000.2fef,[0xfff9.86ff,0x0000.4800,0x0003.df00]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_66;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xfffd.6eff,0x0000.6400,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0003.5500,0xfffe.4bff,0xffff.2900]);
+  store Spline_67;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.ce00,[0xffff.e800,0x0000.1700,0xffff.e300]);
+  SplineKey3(0x0001.0000,[0xffff.e100,0x0000.1e00,0xffff.d000]);
+  store Spline_68;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.1e00,0x0000.5700,0x0000.0000]);
+  store Spline_69;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0001.2b00,0x0000.f600,0x0000.ff00,0x0000.0000]);
+  SplineKey4(0x0000.2d00,[0x0000.2500,0xffff.f500,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.e780,[0xffff.ec00,0x0000.0900,0xffff.f400,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0001.0400,0x0001.2100,0x0001.1800,0x0000.0000]);
+  store Spline_70;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0001.0e00,0x0001.0300,0x0000.fe00,0x0000.0000]);
+  SplineKey4(0x0000.b100,[0x0000.f800,0x0000.f700,0x0001.0900,0x0000.0000]);
+  SplineKey4(0x0000.dd00,[0x0000.6500,0x0000.b200,0x0001.0400,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.9500,0x0001.2100,0x0001.5600,0x0000.0000]);
+  store Spline_71;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.3f26,0x0000.d900);
+  SplineKey1(0x0000.fe80,0x0000.fa00);
+  store Spline_72;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xfffd.bdff,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0009.a800,0x0000.0000]);
+  store Spline_73;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xfff8.c3ff,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x000d.0000,0x0000.0000]);
+  store Spline_74;
+  Spline(3,0x0000.0000,0x0000.0a00);
+  SplineKey3(0x0000.00f2,[0x0000.2000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.2b30,[0xffff.ea00,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.493a,[0x0000.0a00,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.3100,0x0000.0000,0x0000.0000]);
+  store Spline_75;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0xffff.c900,0x0000.0000]);
+  SplineKey3(0x0000.3995,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.6a6c,[0x0000.0000,0xffff.cd00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0xffff.cd00,0x0000.0000]);
+  store Spline_76;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.2a00);
+  SplineKey1(0x0000.5e00,0x0000.5d00);
+  SplineKey1(0x0000.9980,0x0000.ea00);
+  SplineKey1(0x0001.0000,0x0000.f400);
+  store Spline_77;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.7180,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0100,0x0000.0300,0x0000.0100]);
+  store Spline_78;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xfffe.53ff,0xffff.7b00,0xfffd.25ff]);
+  SplineKey3(0x0000.7bfe,[0xfffd.71ff,0xfffe.cbff,0xfffd.16ff]);
+  SplineKey3(0x0001.0000,[0xfffe.64ff,0xfffe.fdff,0xfffc.04ff]);
+  store Spline_79;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.2500,0xffff.5600,0x0000.5000]);
+  SplineKey3(0x0000.86f6,[0xffff.7700,0xffff.7500,0xffff.6700]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_80;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.bf80,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.eeff,0xfffe.f8ff,0xfffe.f3ff,0x0000.0000]);
+  store Spline_81;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.e700,0x0000.2b00,0x0000.0000]);
+  store Spline_82;
+  Spline(3,0xfffd.0400,0x0000.0800);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.379e,[0xffff.c200,0x0000.3c00,0x0000.4200]);
+  SplineKey3(0x0000.7d5a,[0x0000.4000,0xffff.dc00,0xffff.f800]);
+  SplineKey3(0x0000.e228,[0xffff.c400,0xffff.d500,0x0000.4700]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_83;
+  Spline(3,0xfffd.0400,0x0000.0800);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.63dd,[0x0000.0300,0xffff.f800,0x0000.0000]);
+  SplineKey3(0x0000.b1e8,[0xffff.fa00,0x0000.0600,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_84;
+  Spline(4,0xffff.ca00,0x0000.0800);
+  SplineKey4(0x0000.0000,[0xffff.e700,0xffff.c500,0xffff.9500,0x0000.0000]);
+  SplineKey4(0x0000.3e55,[0xffff.bb00,0xffff.f500,0xffff.d800,0x0000.0000]);
+  SplineKey4(0x0000.cb91,[0x0000.0700,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0001.2200,0x0001.2100,0x0001.3500,0x0000.0000]);
+  store Spline_85;
+  Spline(3,0xffff.ca00,0x0000.0800);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.71b4,[0xfffe.02ff,0x0000.0900,0x0000.5400]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_86;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xfffe.daff,0xfffe.d0ff,0xfffe.d5ff,0xfffe.daff]);
+  SplineKey4(0x0000.6000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.9da2,[0x0000.0100,0x0000.0100,0xffff.ff00,0xffff.1200]);
+  SplineKey4(0x0000.a105,[0xffff.0600,0xffff.0c00,0xffff.0900,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.edff,0xfffe.cbff,0xfffe.b4ff,0xfffe.97ff]);
+  store Spline_87;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.1500,0x0000.0000]);
+  store Spline_88;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.2a00,0x0000.a500,0xffff.d500]);
+  store Spline_89;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0xffff.a300);
+  SplineKey1(0x0000.1980,0xffff.d900);
+  SplineKey1(0x0000.2380,0x0000.8c00);
+  SplineKey1(0x0000.3f00,0x0001.5c00);
+  SplineKey1(0x0000.7500,0x0001.d000);
+  SplineKey1(0x0000.8880,0x0000.a400);
+  SplineKey1(0x0000.9c00,0xffff.6e00);
+  SplineKey1(0x0000.cb80,0xffff.fb00);
+  SplineKey1(0x0000.e180,0x0000.fc00);
+  SplineKey1(0x0001.0000,0x0001.d300);
+  store Spline_90;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.1f00,0xfffe.feff,0xffff.fb00]);
+  SplineKey3(0x0000.2480,[0xffff.5900,0xffff.2a00,0xffff.a300]);
+  SplineKey3(0x0000.5100,[0xffff.9e00,0xffff.6e00,0xffff.9900]);
+  SplineKey3(0x0000.8a80,[0x0000.0500,0x0000.3500,0xffff.9900]);
+  SplineKey3(0x0000.c780,[0x0000.1800,0x0000.9b00,0xffff.ca00]);
+  SplineKey3(0x0001.0000,[0xffff.e700,0x0001.3300,0xffff.9400]);
+  store Spline_91;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0xffff.9500,0x0000.8700,0x0000.2100]);
+  SplineKey3(0x0000.2300,[0xffff.6400,0x0001.1400,0x0000.7900]);
+  SplineKey3(0x0000.5986,[0x0000.0000,0x0000.b400,0x0000.0000]);
+  SplineKey3(0x0000.c994,[0xffff.e400,0x0000.e000,0xffff.fc00]);
+  SplineKey3(0x0001.0000,[0xffff.7800,0x0000.bd00,0x0000.9100]);
+  store Spline_92;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.ab00,0x0000.0000]);
+  SplineKey3(0x0000.1880,[0x0000.0000,0x0000.4000,0x0000.0000]);
+  SplineKey3(0x0000.393a,[0x0000.0000,0x0000.2a00,0x0000.0000]);
+  SplineKey3(0x0000.5e87,[0x0000.0000,0x0000.2000,0x0000.0000]);
+  SplineKey3(0x0000.d7a3,[0x0000.0000,0x0000.eb00,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.7900,0x0000.0000]);
+  store Spline_93;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.5f09,[0xffff.3f00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.9c5b,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.e051,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xfffe.ffff,0xfffe.f5ff,0xfffe.f5ff,0x0000.0000]);
+  store Spline_94;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.1300,[0x0001.0d00,0x0001.1100,0x0001.0d00,0x0000.0000]);
+  SplineKey4(0x0000.f100,[0x0001.0d00,0x0001.1900,0x0001.0900,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_95;
+  Spline(1,0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.fb00);
+  SplineKey1(0x0000.45d2,0x0000.f800);
+  SplineKey1(0x0000.aebf,0x0000.fa00);
+  SplineKey1(0x0001.0000,0x0000.fa00);
+  store Spline_96;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0xffff.fd00,0x0000.0000,0x0000.0000]);
+  store Spline_97;
+  Spline(4,0x0000.fe00,0x0000.0000);
+  SplineKey4(0x0000.0000,[0xffff.f400,0xffff.f900,0xffff.f400,0x0001.0900]);
+  SplineKey4(0x0000.2800,[0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0001.0400]);
+  SplineKey4(0x0001.0000,[0xffff.fb00,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_98;
+  Spline(1,0x0000.0e00,0xffff.fe00);
+  SplineKey1(0x0000.007e,0x0000.7500);
+  SplineKey1(0x0000.1e67,0x0000.6500);
+  SplineKey1(0x0000.5480,0x0000.1a00);
+  SplineKey1(0x0000.6b7c,0x0000.7a00);
+  SplineKey1(0x0000.7bdb,0x0000.a000);
+  SplineKey1(0x0000.84a3,0x0000.d600);
+  SplineKey1(0x0000.9752,0x0000.fc00);
+  SplineKey1(0x0000.dbce,0x0000.dd00);
+  SplineKey1(0x0001.0000,0x0000.5700);
+  store Spline_99;
+  Spline(3,0x0000.0200,0xffff.ea00);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.2300,0x0000.0000]);
+  SplineKey3(0x0000.ffa8,[0x0000.1f00,0xfffe.64ff,0x0000.0000]);
+  store Spline_100;
+  Spline(1,0xffff.fe00,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0002.0400);
+  SplineKey1(0x0000.538d,0x0001.bb00);
+  SplineKey1(0x0000.75a2,0x0000.6100);
+  SplineKey1(0x0000.86e1,0x0000.0000);
+  SplineKey1(0x0000.9594,0x0000.0000);
+  SplineKey1(0x0001.0000,0x0000.0000);
+  store Spline_101;
+  Spline(3,0xffff.fe00,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0200,0x0000.c900,0x0000.3000]);
+  SplineKey3(0x0000.5b3c,[0xffff.ff00,0x0000.6d00,0x0000.0000]);
+  SplineKey3(0x0000.7d8c,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0000.89ce,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_102;
+  Spline(4,0xffff.fe00,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.1100,[0x0001.4900,0x0001.4d00,0x0001.4900,0x0000.0000]);
+  SplineKey4(0x0000.ef00,[0x0001.2500,0x0001.1d00,0x0001.1900,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_103;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0080,[0x0000.d400,0x0000.cf00,0x0000.c300,0x0000.0000]);
+  SplineKey4(0x0000.8538,[0x0000.ec00,0x0000.eb00,0x0000.eb00,0x0000.0000]);
+  SplineKey4(0x0000.9458,[0x0000.3700,0x0000.3000,0x0000.3300,0x0000.0000]);
+  SplineKey4(0x0000.c188,[0x0000.0000,0x0000.0200,0x0000.0200,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_104;
+  Spline(1,0xffff.fe00,0x0000.0000);
+  SplineKey1(0x0000.0000,0x0000.0000);
+  SplineKey1(0x0000.7480,0x0000.0000);
+  SplineKey1(0x0000.8600,0x0000.2400);
+  SplineKey1(0x0000.ae00,0x0002.5400);
+  store Spline_105;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.37a4,[0x0000.ff00,0x0001.0700,0x0001.0a00,0x0001.0300]);
+  SplineKey4(0x0000.5345,[0x0000.c900,0x0000.b100,0x0000.9600,0x0000.ae00]);
+  SplineKey4(0x0000.8a7e,[0x0001.7e00,0x0000.9e00,0x0000.c500,0x0000.c500]);
+  SplineKey4(0x0000.b9e3,[0x0000.aa00,0x0001.5400,0x0000.c900,0x0000.a600]);
+  SplineKey4(0x0001.0000,[0x0001.0300,0x0001.0700,0x0001.0e00,0x0001.0e00]);
+  store Spline_106;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.6800,0x0000.0000]);
+  SplineKey3(0x0000.8b44,[0x0000.0000,0x0000.c000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.0000,0x0000.d600,0x0000.0000]);
+  store Spline_107;
+  Spline(3,0x0000.0000,0x0000.0000);
+  SplineKey3(0x0000.0000,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey3(0x0001.0000,[0x0000.df00,0x0000.0000,0xfffe.e9ff]);
+  SplineKey3(0x0001.0c00,[0x0000.0000,0x0000.0000,0x0000.0000]);
+  store Spline_108;
+  Spline(4,0x0000.0000,0x0000.0000);
+  SplineKey4(0x0000.0080,[0x0000.0000,0x0000.0000,0x0000.0000,0x0000.0000]);
+  SplineKey4(0x0000.c300,[0xffff.fb00,0xffff.f600,0xffff.fb00,0x0000.0000]);
+  SplineKey4(0x0001.0000,[0xffff.0400,0xffff.00ff,0xffff.0900,0xffff.00ff]);
+  store Spline_109;
+  load start02; FindLabel(45); store start02_start02_anim;
+  load start02; FindLabel(9); store start02_blend;
+  load start02; FindLabel(7); store start02_anim030;
+  load start01; FindLabel(44); store start01_start01_anim;
+  load start01; FindLabel(9); store start01_blend;
+  load start01; FindLabel(7); store start01_anim030;
+  load start003; FindLabel(43); store start003_start003_anim;
+  load start003; FindLabel(9); store start003_blend;
+  load start003; FindLabel(7); store start003_anim030;
+  load start004; FindLabel(42); store start004_start004_anim;
+  load start004; FindLabel(9); store start004_blend;
+  load start004; FindLabel(7); store start004_anim030;
+  load bunt; FindLabel(9); store bunt_blend;
+  load bunt; FindLabel(8); store bunt_blubber;
+  load start; FindLabel(46); store start_start_raum;
+  load start; FindLabel(47); store start_start_cam;
+  load start; FindLabel(9); store start_blend;
+  load start; FindLabel(4); store start_daten1;
+  load start; FindLabel(5); store start_daten2;
+  load walk_scene_fx1; FindLabel(11); store walk_scene_fx1_babe_walk;
+  load walk_scene_fx1; FindLabel(9); store walk_scene_fx1_blend;
+  load walk_scene_fx1; FindLabel(14); store walk_scene_fx1_walk_scene_glitter;
+  load walk_scene_fx1; FindLabel(15); store walk_scene_fx1_scroll;
+  load walk_scene_fx1; FindLabel(16); store walk_scene_fx1_blend_black;
+  load walk_scene_fx2; FindLabel(11); store walk_scene_fx2_babe_walk;
+  load walk_scene_fx2; FindLabel(18); store walk_scene_fx2_rock;
+  load walk_scene_fx2; FindLabel(9); store walk_scene_fx2_blend;
+  load walk_scene_fx2; FindLabel(15); store walk_scene_fx2_scroll;
+  load walk_scene_fx2; FindLabel(13); store walk_scene_fx2_extrude;
+  load rotate_josie_fx; FindLabel(24); store rotate_josie_fx_rotate_josie;
+  load rotate_josie_fx; FindLabel(25); store rotate_josie_fx_rotate_josie_raum;
+  load rotate_josie_fx; FindLabel(15); store rotate_josie_fx_scroll;
+  load rotate_josie_fx; FindLabel(9); store rotate_josie_fx_blend;
+  load rotate_josie_fx; FindLabel(4); store rotate_josie_fx_daten1;
+  load rotate_josie_fx; FindLabel(5); store rotate_josie_fx_daten2;
+  load bday; FindLabel(3); store bday_walk_room_anim;
+  load bday; FindLabel(31); store bday_starmove;
+  load bday; FindLabel(9); store bday_blend;
+  load bday; FindLabel(13); store bday_extrude;
+  load blau_raum_fxs; FindLabel(11); store blau_raum_fxs_babe_walk;
+  load blau_raum_fxs; FindLabel(15); store blau_raum_fxs_scroll;
+  load blau_raum_fxs; FindLabel(9); store blau_raum_fxs_blend;
+  load zusammenbruch; FindLabel(11); store zusammenbruch_babe_walk;
+  load zusammenbruch; FindLabel(3); store zusammenbruch_walk_room_anim;
+  load blau_raum_fx0; FindLabel(48); store blau_raum_fx0_rot_baby;
+  load blau_raum_fx0; FindLabel(9); store blau_raum_fx0_blend;
+  load blau_raum_fx0; FindLabel(29); store blau_raum_fx0_blend2;
+  load blau_raum_fx0; FindLabel(15); store blau_raum_fx0_scroll;
+  load blau_raum_fx0; FindLabel(11); store blau_raum_fx0_babe_walk;
+  load water; FindLabel(38); store water_wat_cam;
+  load water; FindLabel(35); store water_wat_perl1;
+  load water; FindLabel(37); store water_wat_perl2;
+  load water; FindLabel(34); store water_wat_bab;
+  load water; FindLabel(36); store water_wat_extr1;
+  load water; FindLabel(9); store water_blend;
+  load water; FindLabel(31); store water_starmove;
+  load blau_raum_fx8_2; FindLabel(26); store blau_raum_fx8_2_fx8_josie;
+  load blau_raum_fx8_2; FindLabel(28); store blau_raum_fx8_2_schweb_raum;
+  load blau_raum_fx8_2; FindLabel(9); store blau_raum_fx8_2_blend;
+  load blau_raum_fx8_2; FindLabel(29); store blau_raum_fx8_2_blend2;
+  load blau_raum_fx9; FindLabel(1); store blau_raum_fx9_open_heart;
+  load blau_raum_fx9; FindLabel(4); store blau_raum_fx9_daten1;
+  load blau_raum_fx9; FindLabel(5); store blau_raum_fx9_daten2;
+  load blau_raum_fx9; FindLabel(2); store blau_raum_fx9_light;
+  load zusammenbruch2; FindLabel(11); store zusammenbruch2_babe_walk;
+  load zusammenbruch2; FindLabel(3); store zusammenbruch2_walk_room_anim;
+  load zusammenbruch2; FindLabel(33); store zusammenbruch2_cam;
+  load zusammenbruch2; FindLabel(9); store zusammenbruch2_blend;
+  load blau_raum_fx8; FindLabel(28); store blau_raum_fx8_schweb_raum;
+  load blau_raum_fx8; FindLabel(26); store blau_raum_fx8_fx8_josie;
+  load blau_raum_fx8; FindLabel(9); store blau_raum_fx8_blend;
+  load blau_raum_fx8; FindLabel(15); store blau_raum_fx8_scroll;
+  load real_end; FindLabel(9); store real_end_blend;
+  load real_end; FindLabel(10); store real_end_end_rot;
+  load blau_raum_fx5; FindLabel(39); store blau_raum_fx5_schwimm;
+  load blau_raum_fx5; FindLabel(13); store blau_raum_fx5_extrude;
+  load blau_raum_fx5; FindLabel(33); store blau_raum_fx5_cam;
+  load blau_raum_fx5; FindLabel(41); store blau_raum_fx5_licht;
+  load blau_raum_fx5; FindLabel(40); store blau_raum_fx5_blend_white;
+  load blau_raum_fx5; FindLabel(9); store blau_raum_fx5_blend;
+  load zusammenbruch3; FindLabel(11); store zusammenbruch3_babe_walk;
+  load zusammenbruch3; FindLabel(3); store zusammenbruch3_walk_room_anim;
+  load zusammenbruch3; FindLabel(9); store zusammenbruch3_blend;
+  load babe_sprung_scene_fx1; FindLabel(19); store babe_sprung_scene_fx1_babe_sprung;
+  load babe_sprung_scene_fx1; FindLabel(22); store babe_sprung_scene_fx1_sprung_raum;
+  load babe_sprung_scene_fx1; FindLabel(20); store babe_sprung_scene_fx1_sprungextrude;
+  load babe_sprung_scene_fx1; FindLabel(9); store babe_sprung_scene_fx1_blend;
+  load babe_sprung_scene_fx1; FindLabel(21); store babe_sprung_scene_fx1_sprungmat;
+  load blau_raum_fx1; FindLabel(9); store blau_raum_fx1_blend;
+  load blau_raum_fx1; FindLabel(39); store blau_raum_fx1_schwimm;
+  load blau_raum_fx1; FindLabel(40); store blau_raum_fx1_blend_white;
+}
+void timeline_OnFrame()
+{
+  int time;
+  int t0;
+  int t1;
+  t0=0x0038.0000;t1=0x0048.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_0; start02_start02_anim.translate = start02_start02_anim.translate + SplineCalc3(time);
+    load Spline_1; start02_blend.color = start02_blend.color + SplineCalc4(time);
+    load Spline_2; start02_anim030.translate = start02_anim030.translate + SplineCalc3(time);
+    load start02; RenderChain();
+  }
+  t0=0x0028.0000;t1=0x0038.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_3; start01_start01_anim.rotate = start01_start01_anim.rotate + SplineCalc3(time);
+    load Spline_4; start01_blend.color = start01_blend.color + SplineCalc4(time);
+    load Spline_5; start01_anim030.translate = start01_anim030.translate + SplineCalc3(time);
+    load start01; RenderChain();
+  }
+  t0=0x0018.0000;t1=0x0028.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_6; start003_start003_anim.rotate = start003_start003_anim.rotate + SplineCalc3(time);
+    load Spline_7; start003_blend.color = start003_blend.color + SplineCalc4(time);
+    load Spline_8; start003_anim030.translate = start003_anim030.translate + SplineCalc3(time);
+    load start003; RenderChain();
+  }
+  t0=0x0008.0000;t1=0x0018.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_9; start004_start004_anim.translate = start004_start004_anim.translate + SplineCalc3(time);
+    load Spline_10; start004_start004_anim.rotate = start004_start004_anim.rotate + SplineCalc3(time);
+    load Spline_11; start004_blend.color = start004_blend.color + SplineCalc4(time);
+    load Spline_12; start004_anim030.translate = start004_anim030.translate + SplineCalc3(time);
+    load start004; RenderChain();
+  }
+  t0=0x0000.0000;t1=0x0008.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_13; bunt_blend.color = bunt_blend.color + SplineCalc4(time);
+    load Spline_14; bunt_blubber.scale = bunt_blubber.scale + SplineCalc3(time);
+    load bunt; RenderChain();
+  }
+  t0=0x0048.0000;t1=0x0054.8000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_15; start_start_raum.translate = start_start_raum.translate + SplineCalc3(time);
+    load Spline_16; start_start_cam.campos = start_start_cam.campos + SplineCalc3(time);
+    load Spline_17; start_blend.color = start_blend.color + SplineCalc4(time);
+    load Spline_18; start_daten1.translate = start_daten1.translate + SplineCalc3(time);
+    load Spline_19; start_daten2.translate = start_daten2.translate + SplineCalc3(time);
+    load start; RenderChain();
+  }
+  t0=0x0059.0000;t1=0x0068.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_20; walk_scene_fx1_babe_walk.parameter = walk_scene_fx1_babe_walk.parameter + SplineCalc1(time);
+    load Spline_21; walk_scene_fx1_blend.color = walk_scene_fx1_blend.color + SplineCalc4(time);
+    load Spline_22; walk_scene_fx1_walk_scene_glitter.rotate = walk_scene_fx1_walk_scene_glitter.rotate + SplineCalc3(time);
+    load Spline_23; walk_scene_fx1_scroll.campos = walk_scene_fx1_scroll.campos + SplineCalc3(time);
+    load Spline_24; walk_scene_fx1_blend_black.color = walk_scene_fx1_blend_black.color + SplineCalc4(time);
+    load walk_scene_fx1; RenderChain();
+  }
+  t0=0x0068.0000;t1=0x0078.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_25; walk_scene_fx2_babe_walk.parameter = walk_scene_fx2_babe_walk.parameter + SplineCalc1(time);
+    load Spline_26; walk_scene_fx2_rock.rotate = walk_scene_fx2_rock.rotate + SplineCalc3(time);
+    load Spline_27; walk_scene_fx2_blend.color = walk_scene_fx2_blend.color + SplineCalc4(time);
+    load Spline_28; walk_scene_fx2_scroll.campos = walk_scene_fx2_scroll.campos + SplineCalc3(time);
+    load Spline_29; walk_scene_fx2_extrude.rotate = walk_scene_fx2_extrude.rotate + SplineCalc3(time);
+    load Spline_30; walk_scene_fx2_extrude.parameter = walk_scene_fx2_extrude.parameter + SplineCalc1(time);
+    load Spline_31; walk_scene_fx2_extrude.scale = walk_scene_fx2_extrude.scale + SplineCalc3(time);
+    load walk_scene_fx2; RenderChain();
+  }
+  t0=0x0054.8000;t1=0x0055.3000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_3; start01_start01_anim.rotate = start01_start01_anim.rotate + SplineCalc3(time);
+    load Spline_4; start01_blend.color = start01_blend.color + SplineCalc4(time);
+    load Spline_5; start01_anim030.translate = start01_anim030.translate + SplineCalc3(time);
+    load start01; RenderChain();
+  }
+  t0=0x0058.0000;t1=0x0059.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_0; start02_start02_anim.translate = start02_start02_anim.translate + SplineCalc3(time);
+    load Spline_1; start02_blend.color = start02_blend.color + SplineCalc4(time);
+    load Spline_2; start02_anim030.translate = start02_anim030.translate + SplineCalc3(time);
+    load start02; RenderChain();
+  }
+  t0=0x0098.0000;t1=0x00b3.7000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_32; rotate_josie_fx_rotate_josie.rotate = rotate_josie_fx_rotate_josie.rotate + SplineCalc3(time);
+    load Spline_33; rotate_josie_fx_rotate_josie_raum.rotate = rotate_josie_fx_rotate_josie_raum.rotate + SplineCalc3(time);
+    load Spline_34; rotate_josie_fx_scroll.campos = rotate_josie_fx_scroll.campos + SplineCalc3(time);
+    load Spline_35; rotate_josie_fx_scroll.camrot = rotate_josie_fx_scroll.camrot + SplineCalc3(time);
+    load Spline_36; rotate_josie_fx_blend.color = rotate_josie_fx_blend.color + SplineCalc4(time);
+    load Spline_37; rotate_josie_fx_daten1.translate = rotate_josie_fx_daten1.translate + SplineCalc3(time);
+    load Spline_38; rotate_josie_fx_daten2.translate = rotate_josie_fx_daten2.translate + SplineCalc3(time);
+    load rotate_josie_fx; RenderChain();
+  }
+  t0=0x00e8.0000;t1=0x00f5.6000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_39; bday_walk_room_anim.scale = bday_walk_room_anim.scale + SplineCalc3(time);
+    load Spline_40; bday_starmove.translate = bday_starmove.translate + SplineCalc3(time);
+    load Spline_41; bday_blend.color = bday_blend.color + SplineCalc4(time);
+    load Spline_42; bday_extrude.rotate = bday_extrude.rotate + SplineCalc3(time);
+    load Spline_43; bday_extrude.rotate = bday_extrude.rotate + SplineCalc3(time);
+    load bday; RenderChain();
+  }
+  t0=0x0078.0000;t1=0x0088.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_44; blau_raum_fxs_babe_walk.parameter = blau_raum_fxs_babe_walk.parameter + SplineCalc1(time);
+    load Spline_45; blau_raum_fxs_scroll.campos = blau_raum_fxs_scroll.campos + SplineCalc3(time);
+    load Spline_46; blau_raum_fxs_blend.color = blau_raum_fxs_blend.color + SplineCalc4(time);
+    load blau_raum_fxs; RenderChain();
+  }
+  t0=0x00f5.6000;t1=0x00f8.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_47; zusammenbruch_babe_walk.parameter = zusammenbruch_babe_walk.parameter + SplineCalc1(time);
+    load Spline_48; zusammenbruch_walk_room_anim.rotate = zusammenbruch_walk_room_anim.rotate + SplineCalc3(time);
+    load zusammenbruch; RenderChain();
+  }
+  t0=0x0088.0000;t1=0x0098.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_49; blau_raum_fx0_rot_baby.rotate = blau_raum_fx0_rot_baby.rotate + SplineCalc3(time);
+    load Spline_50; blau_raum_fx0_rot_baby.translate = blau_raum_fx0_rot_baby.translate + SplineCalc3(time);
+    load Spline_51; blau_raum_fx0_blend.color = blau_raum_fx0_blend.color + SplineCalc4(time);
+    load Spline_52; blau_raum_fx0_blend.color = blau_raum_fx0_blend.color + SplineCalc4(time);
+    load Spline_53; blau_raum_fx0_blend2.color = blau_raum_fx0_blend2.color + SplineCalc4(time);
+    load Spline_54; blau_raum_fx0_scroll.campos = blau_raum_fx0_scroll.campos + SplineCalc3(time);
+    load Spline_55; blau_raum_fx0_babe_walk.parameter = blau_raum_fx0_babe_walk.parameter + SplineCalc1(time);
+    load blau_raum_fx0; RenderChain();
+  }
+  t0=0x00d8.0000;t1=0x00e8.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_56; water_wat_cam.rotate = water_wat_cam.rotate + SplineCalc3(time);
+    load Spline_57; water_wat_perl1.translate = water_wat_perl1.translate + SplineCalc3(time);
+    load Spline_58; water_wat_perl2.translate = water_wat_perl2.translate + SplineCalc3(time);
+    load Spline_59; water_wat_bab.parameter = water_wat_bab.parameter + SplineCalc1(time);
+    load Spline_60; water_wat_cam.translate = water_wat_cam.translate + SplineCalc3(time);
+    load Spline_61; water_wat_extr1.parameter = water_wat_extr1.parameter + SplineCalc1(time);
+    load Spline_62; water_wat_extr1.scale = water_wat_extr1.scale + SplineCalc3(time);
+    load Spline_63; water_blend.color = water_blend.color + SplineCalc4(time);
+    load Spline_64; water_starmove.rotate = water_starmove.rotate + SplineCalc3(time);
+    load Spline_65; water_starmove.translate = water_starmove.translate + SplineCalc3(time);
+    load Spline_66; water_starmove.translate = water_starmove.translate + SplineCalc3(time);
+    load water; RenderChain();
+  }
+  t0=0x00c8.0000;t1=0x00d8.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_67; blau_raum_fx8_2_fx8_josie.translate = blau_raum_fx8_2_fx8_josie.translate + SplineCalc3(time);
+    load Spline_68; blau_raum_fx8_2_fx8_josie.rotate = blau_raum_fx8_2_fx8_josie.rotate + SplineCalc3(time);
+    load Spline_69; blau_raum_fx8_2_schweb_raum.rotate = blau_raum_fx8_2_schweb_raum.rotate + SplineCalc3(time);
+    load Spline_70; blau_raum_fx8_2_blend.color = blau_raum_fx8_2_blend.color + SplineCalc4(time);
+    load Spline_71; blau_raum_fx8_2_blend2.color = blau_raum_fx8_2_blend2.color + SplineCalc4(time);
+    load blau_raum_fx8_2; RenderChain();
+  }
+  t0=0x00b3.7000;t1=0x00b8.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_72; blau_raum_fx9_open_heart.parameter = blau_raum_fx9_open_heart.parameter + SplineCalc1(time);
+    load Spline_73; blau_raum_fx9_daten1.translate = blau_raum_fx9_daten1.translate + SplineCalc3(time);
+    load Spline_74; blau_raum_fx9_daten2.translate = blau_raum_fx9_daten2.translate + SplineCalc3(time);
+    load Spline_75; blau_raum_fx9_light.rotate = blau_raum_fx9_light.rotate + SplineCalc3(time);
+    load Spline_76; blau_raum_fx9_light.rotate = blau_raum_fx9_light.rotate + SplineCalc3(time);
+    load blau_raum_fx9; RenderChain();
+  }
+  t0=0x00f8.0000;t1=0x00fe.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_77; zusammenbruch2_babe_walk.parameter = zusammenbruch2_babe_walk.parameter + SplineCalc1(time);
+    load Spline_78; zusammenbruch2_walk_room_anim.rotate = zusammenbruch2_walk_room_anim.rotate + SplineCalc3(time);
+    load Spline_79; zusammenbruch2_cam.campos = zusammenbruch2_cam.campos + SplineCalc3(time);
+    load Spline_80; zusammenbruch2_cam.camrot = zusammenbruch2_cam.camrot + SplineCalc3(time);
+    load Spline_81; zusammenbruch2_blend.color = zusammenbruch2_blend.color + SplineCalc4(time);
+    load zusammenbruch2; RenderChain();
+  }
+  t0=0x00b8.0000;t1=0x00c8.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_82; blau_raum_fx8_schweb_raum.rotate = blau_raum_fx8_schweb_raum.rotate + SplineCalc3(time);
+    load Spline_83; blau_raum_fx8_fx8_josie.translate = blau_raum_fx8_fx8_josie.translate + SplineCalc3(time);
+    load Spline_84; blau_raum_fx8_fx8_josie.rotate = blau_raum_fx8_fx8_josie.rotate + SplineCalc3(time);
+    load Spline_85; blau_raum_fx8_blend.color = blau_raum_fx8_blend.color + SplineCalc4(time);
+    load Spline_86; blau_raum_fx8_scroll.campos = blau_raum_fx8_scroll.campos + SplineCalc3(time);
+    load blau_raum_fx8; RenderChain();
+  }
+  t0=0x019a.0000;t1=0x01bb.6000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_87; real_end_blend.color = real_end_blend.color + SplineCalc4(time);
+    load Spline_88; real_end_end_rot.rotate = real_end_end_rot.rotate + SplineCalc3(time);
+    load real_end; RenderChain();
+  }
+  t0=0x0118.0000;t1=0x0158.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_89; blau_raum_fx5_schwimm.rotate = blau_raum_fx5_schwimm.rotate + SplineCalc3(time);
+    load Spline_90; blau_raum_fx5_extrude.parameter = blau_raum_fx5_extrude.parameter + SplineCalc1(time);
+    load Spline_91; blau_raum_fx5_extrude.rotate = blau_raum_fx5_extrude.rotate + SplineCalc3(time);
+    load Spline_92; blau_raum_fx5_cam.campos = blau_raum_fx5_cam.campos + SplineCalc3(time);
+    load Spline_93; blau_raum_fx5_licht.rotate = blau_raum_fx5_licht.rotate + SplineCalc3(time);
+    load Spline_94; blau_raum_fx5_blend_white.color = blau_raum_fx5_blend_white.color + SplineCalc4(time);
+    load Spline_95; blau_raum_fx5_blend.color = blau_raum_fx5_blend.color + SplineCalc4(time);
+    load blau_raum_fx5; RenderChain();
+  }
+  t0=0x00fe.0000;t1=0x0108.d000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_96; zusammenbruch3_babe_walk.parameter = zusammenbruch3_babe_walk.parameter + SplineCalc1(time);
+    load Spline_97; zusammenbruch3_walk_room_anim.rotate = zusammenbruch3_walk_room_anim.rotate + SplineCalc3(time);
+    load Spline_98; zusammenbruch3_blend.color = zusammenbruch3_blend.color + SplineCalc4(time);
+    load zusammenbruch3; RenderChain();
+  }
+  t0=0x0158.0000;t1=0x019a.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_99; babe_sprung_scene_fx1_babe_sprung.parameter = babe_sprung_scene_fx1_babe_sprung.parameter + SplineCalc1(time);
+    load Spline_100; babe_sprung_scene_fx1_sprung_raum.rotate = babe_sprung_scene_fx1_sprung_raum.rotate + SplineCalc3(time);
+    load Spline_101; babe_sprung_scene_fx1_sprungextrude.parameter = babe_sprung_scene_fx1_sprungextrude.parameter + SplineCalc1(time);
+    load Spline_102; babe_sprung_scene_fx1_sprungextrude.rotate = babe_sprung_scene_fx1_sprungextrude.rotate + SplineCalc3(time);
+    load Spline_103; babe_sprung_scene_fx1_blend.color = babe_sprung_scene_fx1_blend.color + SplineCalc4(time);
+    load Spline_104; babe_sprung_scene_fx1_sprungmat.color = babe_sprung_scene_fx1_sprungmat.color + SplineCalc4(time);
+    load Spline_105; babe_sprung_scene_fx1_sprungmat.enlarge = babe_sprung_scene_fx1_sprungmat.enlarge + SplineCalc1(time);
+    load babe_sprung_scene_fx1; RenderChain();
+  }
+  t0=0x0056.0000;t1=0x0056.b000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_6; start003_start003_anim.rotate = start003_start003_anim.rotate + SplineCalc3(time);
+    load Spline_7; start003_blend.color = start003_blend.color + SplineCalc4(time);
+    load Spline_8; start003_anim030.translate = start003_anim030.translate + SplineCalc3(time);
+    load start003; RenderChain();
+  }
+  t0=0x0056.b000;t1=0x0057.7000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_3; start01_start01_anim.rotate = start01_start01_anim.rotate + SplineCalc3(time);
+    load Spline_4; start01_blend.color = start01_blend.color + SplineCalc4(time);
+    load Spline_5; start01_anim030.translate = start01_anim030.translate + SplineCalc3(time);
+    load start01; RenderChain();
+  }
+  t0=0x0108.d000;t1=0x0118.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_106; blau_raum_fx1_blend.color = blau_raum_fx1_blend.color + SplineCalc4(time);
+    load Spline_107; blau_raum_fx1_schwimm.rotate = blau_raum_fx1_schwimm.rotate + SplineCalc3(time);
+    load Spline_108; blau_raum_fx1_schwimm.translate = blau_raum_fx1_schwimm.translate + SplineCalc3(time);
+    load Spline_109; blau_raum_fx1_blend_white.color = blau_raum_fx1_blend_white.color + SplineCalc4(time);
+    load blau_raum_fx1; RenderChain();
+  }
+  t0=0x0057.7000;t1=0x0058.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_9; start004_start004_anim.translate = start004_start004_anim.translate + SplineCalc3(time);
+    load Spline_10; start004_start004_anim.rotate = start004_start004_anim.rotate + SplineCalc3(time);
+    load Spline_11; start004_blend.color = start004_blend.color + SplineCalc4(time);
+    load Spline_12; start004_anim030.translate = start004_anim030.translate + SplineCalc3(time);
+    load start004; RenderChain();
+  }
+  t0=0x0055.3000;t1=0x0056.0000;if((SystemBeat>=t0) & (SystemBeat<t1))
+  {
+    time = (SystemBeat-t0)/(t1-t0);
+    load Spline_9; start004_start004_anim.translate = start004_start004_anim.translate + SplineCalc3(time);
+    load Spline_10; start004_start004_anim.rotate = start004_start004_anim.rotate + SplineCalc3(time);
+    load Spline_11; start004_blend.color = start004_blend.color + SplineCalc4(time);
+    load Spline_12; start004_anim030.translate = start004_anim030.translate + SplineCalc3(time);
+    load start004; RenderChain();
+  }
+  start02_start02_anim.translate = [0x0000.0000,0x0000.598d,0x0000.0000];
+  start02_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start02_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start01_start01_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start01_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start01_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start003_start003_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start003_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start003_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start004_start004_anim.translate = [0x0000.0000,0x0000.598d,0x0000.0000];
+  start004_start004_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start004_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start004_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  bunt_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  bunt_blubber.scale = [0x0006.3f00,0x0008.5800,0x000a.fc00];
+  start_start_raum.translate = [0x0000.7fee,0xfffd.21ff,0xfffc.e1ff];
+  start_start_cam.campos = [0xfff9.a7ff,0x0003.3100,0xffff.32a9];
+  start_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start_daten1.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start_daten2.translate = [0xffde.e5ff,0x0000.07ad,0x0013.fd00];
+  walk_scene_fx1_babe_walk.parameter = 0x0000.0000;
+  walk_scene_fx1_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  walk_scene_fx1_walk_scene_glitter.rotate = [0xffff.a9ed,0xffff.bf82,0xffff.0afb];
+  walk_scene_fx1_scroll.campos = [0x0000.b714,0xffff.982d,0x0000.997e];
+  walk_scene_fx1_blend_black.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  walk_scene_fx2_babe_walk.parameter = 0x0000.0000;
+  walk_scene_fx2_rock.rotate = [0x0000.3a25,0xfffc.dcff,0x0000.348f];
+  walk_scene_fx2_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  walk_scene_fx2_scroll.campos = [0xffff.083d,0x0001.f000,0x0000.39b7];
+  walk_scene_fx2_extrude.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  walk_scene_fx2_extrude.parameter = 0x0000.0000;
+  walk_scene_fx2_extrude.scale = [0x0001.0000,0x0001.0000,0x0001.0000];
+  start01_start01_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start01_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start01_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start02_start02_anim.translate = [0x0000.0000,0x0000.598d,0x0000.0000];
+  start02_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start02_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  rotate_josie_fx_rotate_josie.rotate = [0x0000.0000,0xfff5.00ff,0x0000.0000];
+  rotate_josie_fx_rotate_josie_raum.rotate = [0xffff.0c40,0xfffe.76ff,0xfffe.c2ff];
+  rotate_josie_fx_scroll.campos = [0x0002.7200,0x0005.4b00,0x0002.1500];
+  rotate_josie_fx_scroll.camrot = [0x0000.d118,0x0029.9500,0x0000.0000];
+  rotate_josie_fx_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  rotate_josie_fx_daten1.translate = [0x0000.9466,0x0000.3ff7,0x0001.6100];
+  rotate_josie_fx_daten2.translate = [0x0000.9c13,0x0000.3ff7,0x0001.f800];
+  bday_walk_room_anim.scale = [0x0004.f700,0x000a.1800,0x000a.da00];
+  bday_starmove.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  bday_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  bday_extrude.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  bday_extrude.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  blau_raum_fxs_babe_walk.parameter = 0x0000.0000;
+  blau_raum_fxs_scroll.campos = [0x0001.7600,0x0000.7a91,0xfffe.adff];
+  blau_raum_fxs_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  zusammenbruch_babe_walk.parameter = 0x0000.0000;
+  zusammenbruch_walk_room_anim.rotate = [0x0000.0000,0xffff.e3d1,0x0000.0000];
+  blau_raum_fx0_rot_baby.rotate = [0x0000.0000,0xfffd.aeff,0x0000.0000];
+  blau_raum_fx0_rot_baby.translate = [0x0000.0000,0xffff.70b8,0x0000.0000];
+  blau_raum_fx0_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  blau_raum_fx0_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  blau_raum_fx0_blend2.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  blau_raum_fx0_scroll.campos = [0x0001.b900,0x0001.2e00,0xfffe.deff];
+  blau_raum_fx0_babe_walk.parameter = 0x0000.0000;
+  water_wat_cam.rotate = [0x0000.0000,0xffff.e3d1,0x0000.0000];
+  water_wat_perl1.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  water_wat_perl2.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  water_wat_bab.parameter = 0x0000.0000;
+  water_wat_cam.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  water_wat_extr1.parameter = 0x0000.0000;
+  water_wat_extr1.scale = [0x0001.0000,0x0001.0000,0x0001.0000];
+  water_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  water_starmove.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  water_starmove.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  water_starmove.translate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  blau_raum_fx8_2_fx8_josie.translate = [0x0000.56fe,0x0000.9c13,0xffff.a902];
+  blau_raum_fx8_2_fx8_josie.rotate = [0xffff.f9e8,0x0003.1800,0x0000.0bef];
+  blau_raum_fx8_2_schweb_raum.rotate = [0x0000.3697,0x0001.7d00,0xffff.0114];
+  blau_raum_fx8_2_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  blau_raum_fx8_2_blend2.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  blau_raum_fx9_open_heart.parameter = 0x0000.0000;
+  blau_raum_fx9_daten1.translate = [0x0000.9466,0x0000.3ff7,0x0001.6100];
+  blau_raum_fx9_daten2.translate = [0x0000.9c13,0x0000.3ff7,0x0001.f800];
+  blau_raum_fx9_light.rotate = [0xffff.e5d9,0x0000.3511,0x0001.4700];
+  blau_raum_fx9_light.rotate = [0xffff.e5d9,0x0000.3511,0x0001.4700];
+  zusammenbruch2_babe_walk.parameter = 0x0000.0000;
+  zusammenbruch2_walk_room_anim.rotate = [0x0000.0000,0xffff.e3d1,0x0000.0000];
+  zusammenbruch2_cam.campos = [0xffff.5e84,0xffff.4ba1,0x0005.e900];
+  zusammenbruch2_cam.camrot = [0x0000.4049,0x0003.5400,0x0000.0000];
+  zusammenbruch2_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  blau_raum_fx8_schweb_raum.rotate = [0x0000.3697,0x0001.7d00,0xffff.0114];
+  blau_raum_fx8_fx8_josie.translate = [0x0000.56fe,0x0000.9c13,0xffff.a902];
+  blau_raum_fx8_fx8_josie.rotate = [0xffff.f9e8,0x0003.1800,0x0000.0bef];
+  blau_raum_fx8_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  blau_raum_fx8_scroll.campos = [0x0003.6b00,0x0001.fa00,0xffff.1fc8];
+  real_end_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  real_end_end_rot.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  blau_raum_fx5_schwimm.rotate = [0x0000.0000,0xfff5.f5ff,0x0000.0000];
+  blau_raum_fx5_extrude.parameter = 0x0000.0000;
+  blau_raum_fx5_extrude.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  blau_raum_fx5_cam.campos = [0x0001.8e00,0x0000.0032,0xfffe.39ff];
+  blau_raum_fx5_licht.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  blau_raum_fx5_blend_white.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  blau_raum_fx5_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  zusammenbruch3_babe_walk.parameter = 0x0000.0000;
+  zusammenbruch3_walk_room_anim.rotate = [0x0000.0000,0xffff.e3d1,0x0000.0000];
+  zusammenbruch3_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  babe_sprung_scene_fx1_babe_sprung.parameter = 0x0000.0000;
+  babe_sprung_scene_fx1_sprung_raum.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  babe_sprung_scene_fx1_sprungextrude.parameter = 0x0000.0000;
+  babe_sprung_scene_fx1_sprungextrude.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  babe_sprung_scene_fx1_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  babe_sprung_scene_fx1_sprungmat.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  babe_sprung_scene_fx1_sprungmat.enlarge = 0x0000.0000;
+  start003_start003_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start003_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start003_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start01_start01_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start01_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start01_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  blau_raum_fx1_blend.color = [0x0000.0000,0x0000.0000,0x0000.0000,0x0000.ff00];
+  blau_raum_fx1_schwimm.rotate = [0x0000.0000,0xfffd.73ff,0x0000.0000];
+  blau_raum_fx1_schwimm.translate = [0x0000.0000,0x0000.f082,0x0000.0000];
+  blau_raum_fx1_blend_white.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start004_start004_anim.translate = [0x0000.0000,0x0000.598d,0x0000.0000];
+  start004_start004_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start004_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start004_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+  start004_start004_anim.translate = [0x0000.0000,0x0000.598d,0x0000.0000];
+  start004_start004_anim.rotate = [0x0000.0000,0x0000.0000,0x0000.0000];
+  start004_blend.color = [0x0000.ff00,0x0000.ff00,0x0000.ff00,0x0000.ff00];
+  start004_anim030.translate = [0x0000.7fee,0x0000.7fee,0x0000.7fee];
+}
+// new text
+// please code something cool
+
+void OnInit()
+{
+  LoadSong(SystemPlayer,"josie_.v2m",0);
+    PlaySong(SystemPlayer,0);
+  SystemBPM = 132.0;
+  SystemBeatMax = 420;
+  timeline_OnInit();
+}
+
+void OnFrame()
+{
+  timeline_OnFrame();
+}

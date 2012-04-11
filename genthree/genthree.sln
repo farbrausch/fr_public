@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genthree", "genthree.vcproj", "{16C7A186-94C0-426C-92D0-74D8EF440786}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Player Debug = Player Debug
+		Player Release = Player Release
+		Release = Release
+		VTune = VTune
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Debug.ActiveCfg = Debug|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Debug.Build.0 = Debug|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Player Debug.ActiveCfg = Player Debug|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Player Debug.Build.0 = Player Debug|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Player Release.ActiveCfg = Player Release|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Player Release.Build.0 = Player Release|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Release.ActiveCfg = Release|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.Release.Build.0 = Release|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.VTune.ActiveCfg = VTune|Win32
+		{16C7A186-94C0-426C-92D0-74D8EF440786}.VTune.Build.0 = VTune|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
