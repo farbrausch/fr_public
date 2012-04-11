@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="kkrunchy"
+	ProjectGUID="{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}"
+	RootNamespace="kkrunchy"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/kkrunchy.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/kkrunchy.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				OmitFramePointers="TRUE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/kkrunchy.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				GenerateMapFile="TRUE"
+				MapExports="TRUE"
+				MapLines="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				BaseAddress="0x600000"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
+			<File
+				RelativePath="_config.hpp">
+			</File>
+			<File
+				RelativePath="_startconsole.cpp">
+			</File>
+			<File
+				RelativePath="_startconsole.hpp">
+			</File>
+			<File
+				RelativePath="_types.cpp">
+			</File>
+			<File
+				RelativePath="_types.hpp">
+			</File>
+			<File
+				RelativePath=".\debuginfo.cpp">
+			</File>
+			<File
+				RelativePath=".\debuginfo.hpp">
+			</File>
+			<File
+				RelativePath=".\depack2.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="depacker.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)"
+						CommandLine="nasmw -f bin -o $(OutDir)\$(InputName).bin $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).bin"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="depacker.cpp">
+			</File>
+			<File
+				RelativePath="depacker.hpp">
+			</File>
+			<File
+				RelativePath=".\depacker_a.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath)"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath)"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath)
+"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\dis.cpp">
+			</File>
+			<File
+				RelativePath=".\dis.hpp">
+			</File>
+			<File
+				RelativePath="exepacker.cpp">
+			</File>
+			<File
+				RelativePath="exepacker.hpp">
+			</File>
+			<File
+				RelativePath="incdata.asm">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DPACKNAME=&quot;\&quot;$(OutDir)\depacker.bin\&quot;&quot; -DPACKNAME2=&quot;\&quot;$(OutDir)\depack2.bin\&quot;&quot;"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DPACKNAME=&quot;\&quot;$(OutDir)\depacker.bin\&quot;&quot; -DPACKNAME2=&quot;\&quot;$(OutDir)\depack2.bin\&quot;&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DPACKNAME=&quot;\&quot;$(OutDir)\depacker.bin\&quot;&quot; -DPACKNAME2=&quot;\&quot;$(OutDir)\depack2.bin\&quot;&quot;"
+						CommandLine="nasmw -f win32 -o $(OutDir)\$(InputName).obj $(InputPath) -DPACKNAME=&quot;\&quot;$(OutDir)\depacker.bin\&quot;&quot; -DPACKNAME2=&quot;\&quot;$(OutDir)\depack2.bin\&quot;&quot;
+"
+						AdditionalDependencies="$(OutDir)\depacker.bin;$(OutDir)\depack2.bin"
+						Outputs="$(OutDir)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="main.cpp">
+			</File>
+			<File
+				RelativePath="mapfile.cpp">
+			</File>
+			<File
+				RelativePath="mapfile.hpp">
+			</File>
+			<File
+				RelativePath="packer.cpp">
+			</File>
+			<File
+				RelativePath="packer.hpp">
+			</File>
+			<File
+				RelativePath=".\pdbfile.cpp">
+			</File>
+			<File
+				RelativePath=".\pdbfile.hpp">
+			</File>
+		</Filter>
+		<File
+			RelativePath="fvs32.ico">
+		</File>
+		<File
+			RelativePath="resource.h">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
