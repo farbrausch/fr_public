@@ -28,10 +28,11 @@ So what do we have in here? Here's the basic directory structure:
   ktg/                  - OpenKTG texture generator. See below.
   lekktor/              - May summon Eldritch Abominations. Handle with care.
   RG2/                  - RauschGenerator 2. Used for several 64k intros.
+    einschlag/          - data file for fr-022: ein.schlag
     flybye/             - data file for fr-013: flybye
     welcome_to/         - data files for fr-024: welcome to...
   werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
-    data/               - Data for kkrieger, Project: Snowblind and others.
+    data/               - Data for kkrieger and some test projects.
       debris/           - Source data for fr-041: debris.
     w3texlib/           - Werkkzeug 3 texture lib. Piece of crap. :)
     wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
@@ -52,19 +53,19 @@ So, here's the sightseeing tips:
 Contributors (in alphabetical order):
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
   werkkzeug3, werkkzeug3_kkrieger.
-* Sebastian "Wayfinder" Grillmaier: debris, Project: Snowblind, kkrieger.
+* Sebastian "Wayfinder" Grillmaier: ein.schlag, debris, kkrieger.
 * Tammo "kb" Hinrichs: V2, RG2, flybye, "welcome to".
-* Thomas "fiver2" / "theunitedstatesofamerica" Mahlke: debris, kkrieger.
-* Christoph "giZMo" Muetze: flybye, "welcome to", "Project: Snowblind",
-  Candytron, debris, kkrieger.
+* Thomas "fiver2" / "theunitedstatesofamerica" Mahlke: werkkzeug3, debris,
+  kkrieger.
+* Christoph "giZMo" Muetze: genthree, Candytron, RG2, flybye, "welcome to",
+  werkkzeug3, wz_mobile, debris, kkrieger.
 * Dierk "Chaos" Ohlerich: GenThree, lekktor, werkkzeug3, werkkzeug3_kkrieger,
   wz_mobile.
 * Ronny Pries: debris.
-* Dennis "Exoticorn" Ranke: flybye, werkkzeug3_kkrieger (unreleased
-  contributions).
-* Leonard "paniq" Ritter: V2 UI, Buzz plugin.
+* Dennis "Exoticorn" Ranke: flybye, werkkzeug3_kkrieger.
+* Leonard "paniq" Ritter: V2, theta.
 * Bastian "Tron" Zuehlke: werkkzeug3.
 
 
 Have fun!
--Fabian "ryg" Giesen, April 2012.
+(released April 2012)
