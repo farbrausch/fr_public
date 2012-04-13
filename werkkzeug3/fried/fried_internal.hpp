@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 // FRIED
 // internal interface (everything that shouldn't be visible to the public)
 

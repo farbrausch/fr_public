@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 vs.2.0
 // material 2.0: zfill pass (vertex shader)
 

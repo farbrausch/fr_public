@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __WERKKZEUG_HPP__
 #define __WERKKZEUG_HPP__
 

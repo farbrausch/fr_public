@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __DEBUGINFO_HPP__
 #define __DEBUGINFO_HPP__
 

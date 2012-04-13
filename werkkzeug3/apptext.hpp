@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __APP_TEXT_HPP__
 #define __APP_TEXT_HPP__
 

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __STARTCONSOLE_HPP__
 #define __STARTCONSOLE_HPP__
 

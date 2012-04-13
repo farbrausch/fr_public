@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 // .theprodukkt werkkzeug3 texture generator library
 // Updated header v1.1 (Dec 19, 2007)
 

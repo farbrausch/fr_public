@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "start_mobile.hpp"
 #include "wz_mobile/doc2.hpp"
 #include "wz_mobile/gen_bitmap_class.hpp"

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __DEPACKER_HPP_
 #define __DEPACKER_HPP_
 

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __GENMATERIAL__
 #define __GENMATERIAL__
 

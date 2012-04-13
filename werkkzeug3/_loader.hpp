@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef ___LOADER_HPP__
 #define ___LOADER_HPP__
 

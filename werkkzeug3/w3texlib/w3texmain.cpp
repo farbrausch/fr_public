@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "w3texmain.hpp"
 #include "w3texlib.hpp"
 #include "genbitmap.hpp"

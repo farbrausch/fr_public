@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 vs.2.0
 
 // this shader is so simple that I don't bother with defining aliases
