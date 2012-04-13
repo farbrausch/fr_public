@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __KDOC_HPP__
 #define __KDOC_HPP__
 

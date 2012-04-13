@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef ___VIRUZ2_HPP__
 #define ___VIRUZ2_HPP__
 

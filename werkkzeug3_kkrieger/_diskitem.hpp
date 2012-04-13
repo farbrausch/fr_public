@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __DISKITEM_HPP__
 #define __DISKITEM_HPP__
 #if sLINK_DISKITEM

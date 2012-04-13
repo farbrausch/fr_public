@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __MATERIAL20_HPP__
 #define __MATERIAL20_HPP__
 

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "player_mobile/pa.hpp"
 #include "player_mobile/engine_soft.hpp"
 

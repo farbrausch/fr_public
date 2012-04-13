@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "win_view.hpp"
 #include "main_mobile.hpp"
 #include "gen_bitmap_class.hpp"

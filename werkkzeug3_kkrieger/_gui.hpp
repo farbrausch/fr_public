@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __GUI_HPP__
 #define __GUI_HPP__
 

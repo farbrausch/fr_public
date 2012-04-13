@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 
 #include "engine_soft.hpp"
 #include "start_mobile.hpp"

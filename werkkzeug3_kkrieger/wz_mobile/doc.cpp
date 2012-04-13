@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "doc.hpp"
 #include "main_mobile.hpp"
 #include "win_para.hpp"

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "genbitmap.hpp"
 #include "rtmanager.hpp"
 #include "_start.hpp"

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "genmesh.hpp"
 #include "genmaterial.hpp"
 #include "genbitmap.hpp"

@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __GENOVERLAY_HPP__
 #define __GENOVERLAY_HPP__
 

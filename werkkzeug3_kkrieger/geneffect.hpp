@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #ifndef __GENEFFECT_HPP__
 #define __GENEFFECT_HPP__
 

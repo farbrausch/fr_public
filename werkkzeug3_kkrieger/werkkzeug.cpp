@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "werkkzeug.hpp"
 #include "kdoc.hpp"
 #include "appbrowser.hpp"
