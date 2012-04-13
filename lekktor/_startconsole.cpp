@@ -1,3 +1,5 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
+
 #include "_types.hpp"
 #include "_startconsole.hpp"
 #define WIN32_LEAN_AND_MEAN
