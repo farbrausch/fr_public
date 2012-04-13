@@ -50,7 +50,15 @@ So, here's the sightseeing tips:
   the Candytron timeframe - mostly written by Chaos. Interesting bit of
   history :)
 * werkkzeug3 is a mess, but come on, debris - you know you want to... :)
-
+* werkkzeug3_kkrieger is from a branch called "kkrieger" in our SVN repository.
+  It's not the actual kkrieger code, and incorporates changes that were done
+  more than one year after the original kkrieger release. It was, however,
+  branched off before started not caring about breaking kkrieger compatibility
+  when making changes. You have a better chance of building the game from there
+  than you do from the "regular" werkkzeug3 tree - though both are unlikely to
+  work.
+  If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
+  be possible to do dig up something from 2004 :)
 
 Contributors (in alphabetical order):
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
@@ -65,7 +73,7 @@ Contributors (in alphabetical order):
   wz_mobile.
 * Kai "cp" Poethkow: dopplerdefekt, ein.schlag, theta.
 * Ronny Pries: debris.
-* Dennis "Exoticorn" Ranke: flybye, werkkzeug3_kkrieger.
+* Dennis "Exoticorn" Ranke: RG2, flybye, werkkzeug3_kkrieger.
 * Leonard "paniq" Ritter: V2, theta.
 * Bastian "Tron" Zuehlke: werkkzeug3.
 
