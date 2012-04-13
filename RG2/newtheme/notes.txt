@@ -1,9 +1,0 @@
-firstpart: 0-25px
-stretchpart: 26px
-lastpart: 27-91px (75px)
-tbar: y: 2-18px
-icon: 4-16px (y: 3-16px)
-button start: 36px
-  min: 0-19px
-  max: 20-35px
-  close: 36-50px
