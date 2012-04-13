@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 
 #ifndef __TYPES_HPP__
 #define __TYPES_HPP__

@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __STARTGL_HPP__
 #define __STARTGL_HPP__
 

@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __WINVIEW_HPP__
 #define __WINVIEW_HPP__
 

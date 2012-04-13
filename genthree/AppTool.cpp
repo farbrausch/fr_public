@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #include "apptool.hpp"
 #include "_xsi.hpp"
 

@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __CSLRT_HPP__
 #define __CSLRT_HPP__
 

@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __APP_CUBE_HPP__
 #define __APP_CUBE_HPP__
 

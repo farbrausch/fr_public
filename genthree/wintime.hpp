@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __WINTIME_HPP__
 #define __WINTIME_HPP__
 

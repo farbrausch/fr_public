@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #include "genplayer.hpp"
 #include "genmesh.hpp"
 #include "genmaterial.hpp"

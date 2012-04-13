@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 // ronan heiﬂt in wirklichkeit lisa. ich war nur zu faul zum renamen.
 
 // !DHAX_ !kwIH_k !br4AH_UHn !fAA_ks !jAH_mps !OW!vE_R !DHAX_ !lEY!zIY_ !dAA_g 

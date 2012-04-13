@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __STARTINTRO_HPP__
 #define __STARTINTRO_HPP__
 

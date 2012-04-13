@@ -1,3 +1,4 @@
+// This file is distributed under a BSD license. See LICENSE.txt for details.
 #ifndef __PLRUTIL_HPP_
 #define __PLRUTIL_HPP_
 
