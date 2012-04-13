@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __plugbase_h_
 #define __plugbase_h_
 

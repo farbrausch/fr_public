@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // TG2Config.h: interface for the CTG2Config class.
 //
 //////////////////////////////////////////////////////////////////////

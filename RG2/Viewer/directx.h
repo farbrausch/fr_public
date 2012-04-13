@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __fvs_directx_h_
 #define __fvs_directx_h_
 

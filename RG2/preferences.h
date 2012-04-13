@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __preferences_h__
 #define __preferences_h__
 

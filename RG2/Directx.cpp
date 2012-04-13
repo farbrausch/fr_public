@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #pragma warning (disable: 4786)
 
 #include "types.h"

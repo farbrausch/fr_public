@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __texbase_h_
 #define __texbase_h_
 

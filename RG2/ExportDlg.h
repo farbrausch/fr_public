@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __ExportDlg_h__
 #define __ExportDlg_h__
 

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // fvs² configuration. fit to your needs.
 
 #ifndef __fvs_fvsconfig_h_

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __VideoDlg_h__
 #define __VideoDlg_h__
 

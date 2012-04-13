@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __rg2_exporttool_h_
 #define __rg2_exporttool_h_
 

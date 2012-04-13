@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __RG2_UNDOBUFFER_H_
 #define __RG2_UNDOBUFFER_H_
 

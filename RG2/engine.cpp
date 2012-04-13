@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // the rg2 engine
 // now brand new and in an own file!
 

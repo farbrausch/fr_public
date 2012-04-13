@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // runtime library header
 
 #ifndef __rtlib_h_

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __opbutton_h_
 #define __opbutton_h_
 

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by tg2.rc

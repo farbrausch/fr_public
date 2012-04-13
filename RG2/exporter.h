@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __tg2_exporter_h_
 #define __tg2_exporter_h_
 

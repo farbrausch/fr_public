@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // PageWindow.h: interface for the CPageWindow class.
 //
 //////////////////////////////////////////////////////////////////////

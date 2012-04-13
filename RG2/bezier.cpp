@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // 2d bezier curves implementation
 
 #include "stdafx.h"

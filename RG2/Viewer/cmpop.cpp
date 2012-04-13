@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #include "types.h"
 #include "math3d_2.h"
 #include "opsys.h"

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // rg2 intro runtime texture base system
 
 #ifndef __texture_h__

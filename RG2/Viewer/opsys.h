@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // rg2 intro runtime operator system
 
 #ifndef __opsys_h_

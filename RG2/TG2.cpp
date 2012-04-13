@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // TG2.cpp : main source file for TG2.exe
 //
 

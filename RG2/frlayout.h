@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #pragma once
 #pragma warning (push)
 #pragma warning (disable: 4706) // assignment within conditional expression

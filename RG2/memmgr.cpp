@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // memmgr.cpp: implementations of the bufferMemoryManager interface
 
 #pragma warning (disable: 4786)

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // typed stream
 
 #ifndef __fr_tstream_h_

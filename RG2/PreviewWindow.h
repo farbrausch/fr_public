@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // PreviewWindow.h: interface for the CPreviewWindow class.
 //
 //////////////////////////////////////////////////////////////////////

@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #include "dsio.h"
 #include "rtlib.h"
 #include "types.h"

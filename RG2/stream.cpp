@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #include "stream.h"
 #include <string.h>
 #define WIN32_LEAN_AND_MEAN

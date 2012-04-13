@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // SplineEdit.h: interface for the CSplineEdit class.
 //
 //////////////////////////////////////////////////////////////////////

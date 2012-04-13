@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __fr_sync_h__
 #define __fr_sync_h__
 

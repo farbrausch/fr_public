@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #include "stdafx.h"
 #include "ruleMouseInput.h"
 #define DIRECTINPUT_VERSION 0x800

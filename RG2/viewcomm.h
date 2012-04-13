@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // viewcomm.h: messages for interview communication
 
 #pragma once

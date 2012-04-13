@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __FONTPAGE_H_
 #define __FONTPAGE_H_
 

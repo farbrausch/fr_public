@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __fr_stream_h_
 #define __fr_stream_h_
 

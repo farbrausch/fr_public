@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __cmpbase_h_
 #define __cmpbase_h_
 

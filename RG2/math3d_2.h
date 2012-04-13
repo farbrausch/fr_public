@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef __fr_math3d_h_
 #define __fr_math3d_h_
 

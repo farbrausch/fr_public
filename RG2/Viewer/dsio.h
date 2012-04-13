@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 #ifndef _DSIO_H_
 #define _DSIO_H_
 

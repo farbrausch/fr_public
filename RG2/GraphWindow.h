@@ -1,3 +1,5 @@
+// This code is in the public domain. See LICENSE for details.
+
 // GraphWindow.h: interface for the CGraphWindow class.
 //
 //////////////////////////////////////////////////////////////////////
