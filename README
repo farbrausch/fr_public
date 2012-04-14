@@ -32,6 +32,7 @@ So what do we have in here? Here's the basic directory structure:
     einschlag/          - data files for fr-022: ein.schlag
     flybye/             - data files for fr-013: flybye
     welcome_to/         - data files for fr-024: welcome to...
+  v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
   werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
     data/               - Source data for kkrieger and some test projects.
       debris/           - Source data for fr-041: debris.
@@ -59,7 +60,7 @@ So, here's the sightseeing tips:
   work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
   be possible to do dig up something from 2004 :)
-
+  
 Contributors (in alphabetical order):
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
   werkkzeug3, werkkzeug3_kkrieger.

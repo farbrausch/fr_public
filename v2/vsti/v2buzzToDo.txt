@@ -1,0 +1,9 @@
+bugs:
+
+- editor does not redraw controls on open
+- changing current program in editor does not always work
+- param desc for cc value and controller are switched
+
+features:
+
+184333 <wayfinder> mach das mal auch gleich so, dass das mausrad die slider in die richtige richtung dreht

@@ -1,0 +1,4 @@
+V2 test modules (C) Leonard Ritter.
+
+The files in this directory are under a CC-BY license, see
+http://creativecommons.org/licenses/by/3.0/
