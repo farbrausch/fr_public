@@ -1,0 +1,5 @@
+
+V2 code written 2000-2008 by Tammo "kb" Hinrichs
+
+I hereby place this code (as contained in this directory and the subdirectories
+"bin", "conv2m", "in_v2m", "libv2", "tinyplayer" and "tool")in the public domain.

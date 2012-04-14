@@ -1,0 +1,3 @@
+EXPORTS			GetInfo
+EXPORTS			CreateMachine
+EXPORTS			DllMain

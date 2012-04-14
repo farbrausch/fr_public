@@ -1,0 +1,4 @@
+V2 Appearances (C) 2004 Leonard Ritter.
+
+The files in this directory are under a CC-BY license, see
+http://creativecommons.org/licenses/by/3.0/
