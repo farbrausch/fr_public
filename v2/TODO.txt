@@ -1,0 +1,111 @@
+
+chaos:
+
+x logic
+x buzz
+- modulation von voice auf channel
+- ronan auf belieben channel
+- cross-channel-modulation
+- paniq button
+
+
+kb:
+
+x "current Voice"-Variable pro Channel
+  x diese Voice als Modulationsquelle nehmen, wenn LFOs/EGs/etc als
+    Source genommen werden
+
+x Denormals fixen
+  x EQs können auch in der Decayphase auslaufen, wenn SusTime<=0
+  x Bei Delay, Reverb und Compressor-Leveldetect konstante Epsilons einbauen
+  x Irgendwas überlegen, was man mit den Filtern machen könnte 
+    (Epsilons plus auto-off bei freq=0 oder so? Phasen? Aufschaukelnde Offsets?)
+  - per vtune sehen, wos sonst noch so brennt und ggf fixen
+
+- 3band-Param-EQ
+  - Band 1: 20-1000Hz, peaking oder low shelving (evtl low cut?)
+  - Band 2: 100-5000Hz, immer peaking
+  - Band 3: 400-20000Hz, peaking oder high shelving (evtl high cut?)
+
+- Phaser
+  - 6 Phaser-Bänder
+  - einfach mal coden
+
+- Patch-Versioning soweit aufbohren, dass man Parameter auch wegnehmen kann
+  - Chaos' Farbwert kicken (obsolet duch Paniqs Appearances)
+  - Low-Boost kicken (wird ggf durch EQ übernommen)
+
+- Effektrouting (EQ, Phaser, Flanger, Compressor, Distortion)
+  - Aua.
+  - Neues Widget (sone Art Buttonmatrix) ? Oder einfach nur div. Multibuttons
+    und in die Editorlogik einbauen, dass Doppelbelegungen nicht gehen?
+  - Synthcode.
+
+
+- Optional (#define): 5.1-Ausgabe
+  - vier zusätzliche Ausgangschannels
+  - 3D-Panningmodul. Wenn aus, dann nix, wenn an:
+    - Steuerung über Angle / Distance / Spread
+      - Lineares oder EQP-Panning? Ausprobieren!
+    - LFE-Regler plus festen 100Hz-Tiefpaß
+
+  - Ausgabe über OpenAL oder Multichannel-Waveout
+    - Firmenrechner? Chaos' Cube?
+    - Woher bekomme ich Boxen?
+
+- Mehrere Instances
+  - Globale "data"-Variable wegnehmen, stattdessen auch auf Toplevel mit
+    ebp und relativen Offsets arbeiten
+  - "data" doch wieder benutzen und Shortcuts anbieten, damits auch auf
+    die einfache art geht
+  - Totale Platzverschwendung: "dd SYN.size" und export, damit man an
+    die benötigte Größe rankommt.
+  - Lightweight-C++-Wrapper (komplett inline, damit ggf libc-Unabhängigkeit
+    gewährleistet wird), der den Synth in eine Klasse kapselt
+
+  - Neues Player-Frontend, das mit Synth-Instanz und CV2MPlayer arbeitet,
+    danach soundsys.cpp einfach mal wegwerfen
+
+  - Später: Komplette Editor/GUI-Logik von globalen Variablen befreien
+  - Den Hack mit der v2edit.dle einfach mal loswerden
+
+- VST-Integration:
+
+  - komm ich irgendwie an eins der multitimbralen VSTs von Steinberg ran,
+    um zu sehen, wie die das machen?
+  - Die Buzz-Patchauswahlbox auch fürs VSTi aktivieren und testen, was 
+    updateDisplay() so mit den meistbenutzten Hostapps (CubaseSX, Logic,
+    Renoise) macht.
+  - Wenn Plan aufgeht, Konzept "Aktiver Channel" einbauen
+    - Ein Channel ist immer der aktive (Highlight in der GUI,
+      Klickmöglichkeit auf Channelnummer)
+    - Voller Sync zwischen Hostapp, GUI und Synth (bei setProgram,
+      Boxklick und Program Change)
+
+- Optimierungen
+  - Nochmal alles durchsehen
+  - Chaos' Zeug kann man eigentlich mal in ner Schleife machen, hat den
+    Vorteil, ggf mehr Aux-Busse zu können. Andererseits: Kkrunchy. Hm.  
+  - Bei 128 Sample-Frames könnten meine pushad/popad-Orgien langsam ins
+    Gewicht fallen. Evtl mal sehen, obs schneller wird, wenn ich einzelne
+    push/pops nehme.
+    - Nachteil: Das gibt LUSTIGE Probleme, wenn man was an den Caller-Routinen
+      ändert!
+
+
+=================
+
+v2 TODO:
+
+* Muten von Channels in den Synth (+Solo)
+* Drum-Mapping für Channel 10:
+  Map, die pro Note ein Program und eine wirkliche Note hat
+  
+  
+  
+v2m version 2:
+
+- erste 8 bytes: tag und version (aus sounddef.cpp)
+- 
+
+

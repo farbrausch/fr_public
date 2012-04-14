@@ -1,0 +1,23 @@
+EXPORTS		v2vstiInit
+EXPORTS		v2vstiShutdown
+EXPORTS		v2vstiProcess
+EXPORTS		v2vstiProcessReplacing
+EXPORTS		v2vstiProcessEvents
+EXPORTS		v2vstiGetChunk
+EXPORTS		v2vstiSetChunk
+EXPORTS		v2vstiGetPatchNames
+EXPORTS		v2vstiSetProgram
+EXPORTS		v2vstiGetParameterDefs
+EXPORTS		v2vstiGetParameters
+EXPORTS		v2vstiUpdateUI
+EXPORTS		v2vstiSetSampleRate
+
+EXPORTS		v2buzzInit
+EXPORTS		v2buzzShutdown
+EXPORTS		v2buzzProcessEvent
+EXPORTS		v2buzzWork
+EXPORTS		v2buzzDestroyEditor
+EXPORTS		v2buzzShowEditor
+EXPORTS		v2buzzSetChannel
+
+EXPORTS		DllMain
