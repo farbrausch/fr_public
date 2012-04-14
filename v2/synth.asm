@@ -225,37 +225,37 @@ section .text
 fastatan: ; fast atan
           ; value in st0, -1 in st1, high 16bits in ax, "8" in ebx
           
-	shl			ax, 1
-	fld1											; <1> <val> <-1>
-	fcmovb  st0, st2          ; <sign> <val> <-1>
-	
-	xor     edx, edx
-	cmp     ah, 7fh
-	fmul    st1, st0          ; <sign> <absval> <-1>
-	cmovge  edx, ebx
-	fxch    st1               ; <x> <sign> <-1>
-	
-	; r(x)= (cx1*x + cx3*x^3)/(cxm0 + cxm2*x^2 + cxm4*x^4)
-	fld     st0                       ; <x> <x> <sign> <-1>
-	fmul    st0, st0                  ; <x²> <x> <sign> <-1>
-	fld     st0                       ; <x²> <x²> <x> <sign> <-1>
-	fld     st0                       ; <x²> <x²> <x²> <x> <sign> <-1>
-	fmul    qword [fcatanx3 + edx]    ; <x²*cx3> <x²> <x²> <x> <sign> <-1>
-	fxch    st1                       ; <x²> <x²(cx3)> <x²> <x> <sign> <-1>
-	fmul    qword [fcatanxm4 + edx]   ; <x²(cxm4)> <x²(cx3)> <x²> <x> <sign> <-1>
-	fxch    st1                       ; <x²(cx3)> <x²(cxm4)> <x²> <x> <sign> <-1>
-	fadd    qword [fcatanx1 + edx]    ; <cx1+x²(cx3)> <x²(cxm4)> <x²> <x> <sign> <-1>
-	fxch    st1                       ; <x²(cxm4)> <cx1+x²(cx3)> <x²> <x> <sign> <-1>
-	fadd    qword [fcatanxm2]         ; <cxm2+x²(cxm4)> <cx1+x²(cx3)> <x²> <x> <sign> <-1>
-	fxch    st1                       ; <cx1+x²(cx3)> <cxm2+x²(cxm4)> <x²> <x> <sign> <-1>
-	fmulp   st3, st0                  ; <cxm2+x²(cxm4)> <x²> <x(cx1)+x³(cx3)> <sign> <-1>
-	fmulp   st1, st0                  ; <x²(cxm2)+x^4(cxm4)> <x(cx1)+x³(cx3)> <sign> <-1>
-	fadd    qword [fcatanxm0 + edx]   ; <cxm0+x²(cxm2)+x^4(cxm4)> <x(cx1)+x³(cx3)> <sign> <-1>
-	fdivp   st1, st0                  ; <r(x)> <sign> <-1>
-	fadd    qword [fcatanadd + edx]   ; <r(x)+adder) <sign> <-1>
+    shl			ax, 1
+    fld1											; <1> <val> <-1>
+    fcmovb  st0, st2          ; <sign> <val> <-1>
+    
+    xor     edx, edx
+    cmp     ah, 7fh
+    fmul    st1, st0          ; <sign> <absval> <-1>
+    cmovge  edx, ebx
+    fxch    st1               ; <x> <sign> <-1>
+    
+    ; r(x)= (cx1*x + cx3*x^3)/(cxm0 + cxm2*x^2 + cxm4*x^4)
+    fld     st0                       ; <x> <x> <sign> <-1>
+    fmul    st0, st0                  ; <x²> <x> <sign> <-1>
+    fld     st0                       ; <x²> <x²> <x> <sign> <-1>
+    fld     st0                       ; <x²> <x²> <x²> <x> <sign> <-1>
+    fmul    qword [fcatanx3 + edx]    ; <x²*cx3> <x²> <x²> <x> <sign> <-1>
+    fxch    st1                       ; <x²> <x²(cx3)> <x²> <x> <sign> <-1>
+    fmul    qword [fcatanxm4 + edx]   ; <x²(cxm4)> <x²(cx3)> <x²> <x> <sign> <-1>
+    fxch    st1                       ; <x²(cx3)> <x²(cxm4)> <x²> <x> <sign> <-1>
+    fadd    qword [fcatanx1 + edx]    ; <cx1+x²(cx3)> <x²(cxm4)> <x²> <x> <sign> <-1>
+    fxch    st1                       ; <x²(cxm4)> <cx1+x²(cx3)> <x²> <x> <sign> <-1>
+    fadd    qword [fcatanxm2]         ; <cxm2+x²(cxm4)> <cx1+x²(cx3)> <x²> <x> <sign> <-1>
+    fxch    st1                       ; <cx1+x²(cx3)> <cxm2+x²(cxm4)> <x²> <x> <sign> <-1>
+    fmulp   st3, st0                  ; <cxm2+x²(cxm4)> <x²> <x(cx1)+x³(cx3)> <sign> <-1>
+    fmulp   st1, st0                  ; <x²(cxm2)+x^4(cxm4)> <x(cx1)+x³(cx3)> <sign> <-1>
+    fadd    qword [fcatanxm0 + edx]   ; <cxm0+x²(cxm2)+x^4(cxm4)> <x(cx1)+x³(cx3)> <sign> <-1>
+    fdivp   st1, st0                  ; <r(x)> <sign> <-1>
+    fadd    qword [fcatanadd + edx]   ; <r(x)+adder) <sign> <-1>
 
-	fmulp   st1, st0                  ; <sign*r'(x)> <-1>
-	ret
+    fmulp   st1, st0                  ; <sign*r'(x)> <-1>
+    ret
 
 
 ;global fastsinrc
@@ -320,51 +320,51 @@ fastsin: ; fast sinus approximation (st0 -> st0) from -pi/2 to pi/2, about -80dB
 
 ;global calcNewSampleRate
 calcNewSampleRate: ; new SR in eax
-	mov			[temp], eax
-	fild			dword [temp]					; <sr>
-	fld1													; <1> <sr>
-	fdiv    st0, st1							; <1/sr> <sr>	
-	fld     dword [fcoscbase]			; <oscbHz> <1/sr> <sr>
-	fmul    dword [fc32bit]				; <oscb32>  <1/sr> <sr>
-	fmul    st0, st1							; <oscbout> <1/sr> <sr>
-	fstp    dword [SRfcobasefrq]  ; <1/sr> <sr>
-	fld     dword [fcsrbase]      ; <srbase> <1/sr> <sr>
-	fmul    st0, st1              ; <linfrq> <1/sr> <sr>
-	fstp    dword [SRfclinfreq]		; <1/sr> <sr>
-	fld     st0                   ; <1/sr> <1/sr> <sr>
-	fmul    dword [fc2pi]         ; <boalpha> <1/sr> <sr>
-	fmul    dword [fcboostfreq]   ; <bof/sr> <1/sr> <sr>
-	fsincos                       ; <cos> <sin> <1/sr> <sr>
-	fstp    dword [SRfcBoostCos]  ; <sin> <1/sr> <sr>
-	fstp    dword [SRfcBoostSin]  ; <1/sr> <sr>
-	fmul    dword [fcdcflt]       ; <126/sr> <sr>
+    mov			[temp], eax
+    fild			dword [temp]					; <sr>
+    fld1													; <1> <sr>
+    fdiv    st0, st1							; <1/sr> <sr>	
+    fld     dword [fcoscbase]			; <oscbHz> <1/sr> <sr>
+    fmul    dword [fc32bit]				; <oscb32>  <1/sr> <sr>
+    fmul    st0, st1							; <oscbout> <1/sr> <sr>
+    fstp    dword [SRfcobasefrq]  ; <1/sr> <sr>
+    fld     dword [fcsrbase]      ; <srbase> <1/sr> <sr>
+    fmul    st0, st1              ; <linfrq> <1/sr> <sr>
+    fstp    dword [SRfclinfreq]		; <1/sr> <sr>
+    fld     st0                   ; <1/sr> <1/sr> <sr>
+    fmul    dword [fc2pi]         ; <boalpha> <1/sr> <sr>
+    fmul    dword [fcboostfreq]   ; <bof/sr> <1/sr> <sr>
+    fsincos                       ; <cos> <sin> <1/sr> <sr>
+    fstp    dword [SRfcBoostCos]  ; <sin> <1/sr> <sr>
+    fstp    dword [SRfcBoostSin]  ; <1/sr> <sr>
+    fmul    dword [fcdcflt]       ; <126/sr> <sr>
   fld1                          ; <1> <126/sr> <sr>
   fsubrp  st1, st0              ; <dcfilterR> <sr>
   fstp    dword [SRfcdcfilter]  ; <sr>	
-	fmul    dword [fcframebase]   ; <framebase*sr>
-	fdiv    dword [fcsrbase]      ; <framelen>
-	fadd    dword [fci2]          ; <round framelen>
-	fistp   dword [SRcFrameSize]  ; -
-	fild    dword [SRcFrameSize]  ; <framelen>
-	fld1													; <1> <framelen>
-	fdivrp  st1, st0							; <1/framelen>
-	fstp    dword [SRfciframe]    ; -
-	ret
+    fmul    dword [fcframebase]   ; <framebase*sr>
+    fdiv    dword [fcsrbase]      ; <framelen>
+    fadd    dword [fci2]          ; <round framelen>
+    fistp   dword [SRcFrameSize]  ; -
+    fild    dword [SRcFrameSize]  ; <framelen>
+    fld1													; <1> <framelen>
+    fdivrp  st1, st0							; <1/framelen>
+    fstp    dword [SRfciframe]    ; -
+    ret
 
 
 calcfreq2:
     fld1									;	 1 <0..1>
-		fsubp		st1, st0			;  <-1..0>
-		fmul    dword [fccfframe]  ;  <-11..0> -> <1/2048..1>
+        fsubp		st1, st0			;  <-1..0>
+        fmul    dword [fccfframe]  ;  <-11..0> -> <1/2048..1>
 
-		fld1
-		fld	st1
-		fprem
-		f2xm1
-		faddp		st1, st0
-		fscale
-		fstp	st1
-		ret
+        fld1
+        fld	st1
+        fprem
+        f2xm1
+        faddp		st1, st0
+        fscale
+        fstp	st1
+        ret
 
 ;global calcfreq2
 ;global calcfreq
@@ -373,39 +373,39 @@ calcfreq2:
 
 calcfreq: ; (0..1 linear zu 2^-10..1)
     fld1									;	 1 <0..1>
-		fsubp		st1, st0			;  <-1..0>
-		fmul    dword [fc10]  ;  <-10..0> -> <1/1024..1>
+        fsubp		st1, st0			;  <-1..0>
+        fmul    dword [fc10]  ;  <-10..0> -> <1/1024..1>
 
-		fld1
-		fld	st1
-		fprem
-		f2xm1
-		faddp		st1, st0
-		fscale
-		fstp	st1
-		ret
+        fld1
+        fld	st1
+        fprem
+        f2xm1
+        faddp		st1, st0
+        fscale
+        fstp	st1
+        ret
 
 pow2:
 
-		fld1
-		fld	st1
-		fprem
-		f2xm1
-		faddp		st1, st0
-		fscale
-		fstp	st1
-		ret
+        fld1
+        fld	st1
+        fprem
+        f2xm1
+        faddp		st1, st0
+        fscale
+        fstp	st1
+        ret
 
 pow:
-		fyl2x
-		fld1
-		fld	st1
-		fprem
-		f2xm1
-		faddp		st1, st0
-		fscale
-		fstp	st1
-		ret
+        fyl2x
+        fld1
+        fld	st1
+        fprem
+        f2xm1
+        faddp		st1, st0
+        fscale
+        fstp	st1
+        ret
 
 
 ;#####################################################################################
@@ -417,36 +417,36 @@ global _OSC_
 _OSC_
 
 struc syVOsc
-	.mode			resd 1  
+    .mode			resd 1  
   .ring     resd 1
-	.pitch    resd 1
-	.detune   resd 1
-	.color    resd 1
-	.gain     resd 1
-	.size
+    .pitch    resd 1
+    .detune   resd 1
+    .color    resd 1
+    .gain     resd 1
+    .size
 endstruc
 
 struc syWOsc
-	.mode			resd 1  ; dword: mode (0=tri/saw 1=pulse 2=sin 3=noise)
+    .mode			resd 1  ; dword: mode (0=tri/saw 1=pulse 2=sin 3=noise)
   .ring     resd 1  ; dword: ringmod on/off
-	.cnt      resd 1  ; dword: wave counter (32bit)
-	.freq     resd 1  ; dword: wave counter inc (8x/sample)
-	.brpt     resd 1  ; dword: break point für tri/pulse (32bit)
-	.nffrq    resd 1  ; noise: filter freq
-	.nfres    resd 1  ; noise: filter reso
-	.nseed    resd 1  ; noise: random seed
-	.gain     resd 1  ; output gain
-	.tmp      resd 1  ; temp
-	.nfl      resd 1  ; noise filter L buffer
-	.nfb      resd 1  ; noise filter B buffer
-	.note     resd 1  ; note
-	.pitch    resd 1  ; pitch
+    .cnt      resd 1  ; dword: wave counter (32bit)
+    .freq     resd 1  ; dword: wave counter inc (8x/sample)
+    .brpt     resd 1  ; dword: break point für tri/pulse (32bit)
+    .nffrq    resd 1  ; noise: filter freq
+    .nfres    resd 1  ; noise: filter reso
+    .nseed    resd 1  ; noise: random seed
+    .gain     resd 1  ; output gain
+    .tmp      resd 1  ; temp
+    .nfl      resd 1  ; noise filter L buffer
+    .nfb      resd 1  ; noise filter B buffer
+    .note     resd 1  ; note
+    .pitch    resd 1  ; pitch
 %if SAMPLER
   .smpptr   resd 1  ; sampler base ptr (to V2Sample struct)
   .smppos   resd 2  ; int64 sampler position
   .smpstep  resd 2  ; int64 sampler frequency  
 %endif	
-	.size
+    .size
 endstruc
 
 
@@ -467,15 +467,15 @@ oscseeds dd 0xdeadbeef ,0xbaadf00d ,0xd3adc0de
 section .text
 
 syOscInit:      ; ecx: osc index for noise seed
-		pushad
-		xor			eax, eax
-		mov     [ebp + syWOsc.cnt], eax
-		mov     [ebp + syWOsc.nfl], eax
-		mov     [ebp + syWOsc.nfb], eax	
-		mov     eax, [oscseeds+4*ecx]			
-		mov     [ebp + syWOsc.nseed], eax
-		popad
-		ret
+        pushad
+        xor			eax, eax
+        mov     [ebp + syWOsc.cnt], eax
+        mov     [ebp + syWOsc.nfl], eax
+        mov     [ebp + syWOsc.nfb], eax	
+        mov     eax, [oscseeds+4*ecx]			
+        mov     [ebp + syWOsc.nseed], eax
+        popad
+        ret
 
 
 syOscNoteOn:
@@ -486,58 +486,58 @@ syOscNoteOn:
 
 
 syOscChgPitch:
-	  fld     dword [ebp + syWOsc.pitch]
-		fld     st0
-		fadd    dword [fc64]
-		fmul    dword [fci128]
-		call    calcfreq
-		fmul    dword [SRfclinfreq]
-		fstp    dword [ebp + syWOsc.nffrq]
-	  fadd    dword [ebp + syWOsc.note]
-		fsub    dword [fcOscPitchOffs]
-		fmul    dword [fci12]
-		call    pow2
-		fmul    dword [SRfcobasefrq]
-		fistp   dword [ebp + syWOsc.freq]
-		ret
+      fld     dword [ebp + syWOsc.pitch]
+        fld     st0
+        fadd    dword [fc64]
+        fmul    dword [fci128]
+        call    calcfreq
+        fmul    dword [SRfclinfreq]
+        fstp    dword [ebp + syWOsc.nffrq]
+      fadd    dword [ebp + syWOsc.note]
+        fsub    dword [fcOscPitchOffs]
+        fmul    dword [fci12]
+        call    pow2
+        fmul    dword [SRfcobasefrq]
+        fistp   dword [ebp + syWOsc.freq]
+        ret
 
 
 
 syOscSet:
-		pushad
-		fld     dword [esi + syVOsc.mode]
-		fistp   dword [ebp + syWOsc.mode]
+        pushad
+        fld     dword [esi + syVOsc.mode]
+        fistp   dword [ebp + syWOsc.mode]
 
-		fld     dword [esi + syVOsc.ring]
-		fistp   dword [ebp + syWOsc.ring]
+        fld     dword [esi + syVOsc.ring]
+        fistp   dword [ebp + syWOsc.ring]
 
-	  fld     dword [esi + syVOsc.pitch]
-		fsub    dword [fc64]
-		fld			dword [esi + syVOsc.detune]
-		fsub    dword [fc64]
-		fmul    dword [fci128]
-		faddp   st1, st0
-		fstp    dword [ebp + syWOsc.pitch]
-		call    syOscChgPitch
+      fld     dword [esi + syVOsc.pitch]
+        fsub    dword [fc64]
+        fld			dword [esi + syVOsc.detune]
+        fsub    dword [fc64]
+        fmul    dword [fci128]
+        faddp   st1, st0
+        fstp    dword [ebp + syWOsc.pitch]
+        call    syOscChgPitch
 
-		fld     dword [esi + syVOsc.gain]
-		fmul    dword [fci128]
-		fstp    dword [ebp + syWOsc.gain]
+        fld     dword [esi + syVOsc.gain]
+        fmul    dword [fci128]
+        fstp    dword [ebp + syWOsc.gain]
 
-		fld     dword [esi + syVOsc.color] ; <c>
-		fmul    dword [fci128]						 ; <c'>
-		fld     st0                        ; <c'> <c'>
-		fmul    dword [fc32bit]						 ; <bp> <c'> 
-		fistp   dword [ebp + syWOsc.brpt]  ; <c'>
-		shl     dword [ebp + syWOsc.brpt],1 
+        fld     dword [esi + syVOsc.color] ; <c>
+        fmul    dword [fci128]						 ; <c'>
+        fld     st0                        ; <c'> <c'>
+        fmul    dword [fc32bit]						 ; <bp> <c'> 
+        fistp   dword [ebp + syWOsc.brpt]  ; <c'>
+        shl     dword [ebp + syWOsc.brpt],1 
 
-		fsqrt                              ; <rc'>
-		fld1                               ; <1> <rc'>
-		fsubrp  st1, st0                   ; <1-rc'>
-		fstp    dword [ebp + syWOsc.nfres] ; -
-		
-		popad
-		ret
+        fsqrt                              ; <rc'>
+        fld1                               ; <1> <rc'>
+        fsubrp  st1, st0                   ; <1-rc'>
+        fstp    dword [ebp + syWOsc.nfres] ; -
+        
+        popad
+        ret
 
 
 ; edi: dest buf
@@ -548,18 +548,18 @@ syOscSet:
 section .data
 
 oscjtab dd syOscRender.off, syOscRender.mode0, syOscRender.mode1, syOscRender.mode2, 
-				dd syOscRender.mode3, syOscRender.mode4, syOscRender.auxa, syOscRender.auxb
+                dd syOscRender.mode3, syOscRender.mode4, syOscRender.auxa, syOscRender.auxb
 
 section .text
 
 syOscRender:
-		pushad
-		V2PerfEnter V2Perf_OSC
-		lea     edi, [edi + 4*ecx]
-		neg     ecx
-		movzx		eax, byte [ebp + syWOsc.mode]
-		and			al, 7
-		jmp			dword [oscjtab + 4*eax]
+        pushad
+        V2PerfEnter V2Perf_OSC
+        lea     edi, [edi + 4*ecx]
+        neg     ecx
+        movzx		eax, byte [ebp + syWOsc.mode]
+        and			al, 7
+        jmp			dword [oscjtab + 4*eax]
 
 section .data
 
@@ -575,24 +575,24 @@ section .data
 section .text
 
 .mode0     ; tri/saw
-		mov		eax, [ebp + syWOsc.cnt]
+        mov		eax, [ebp + syWOsc.cnt]
     mov   esi, [ebp + syWOsc.freq]
  
     ; calc float helper values
-		mov   ebx, esi
-		shr   ebx, 9
-		or    ebx, 0x3f800000							
-		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, esi
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
     fld   dword [ebp + syWOsc.gain]     ; <g>
     fld1                                ; 1 <g>
     fsubr dword [ebp + syWOsc.tmp]      ; <f> <g>
     fld1                                ; <1> <f> <g>
     fdiv  st0, st1                      ; <1/f> <f> <g>
     fld   st2                           ; <g> <1/f> <f> <g>
- 		mov   ebx, [ebp + syWOsc.brpt]
-		shr   ebx, 9
-		or    ebx, 0x3f800000							
-		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, [ebp + syWOsc.brpt]
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
     fld   dword [ebp + syWOsc.tmp]     ; <b> <g> <1/f> <f> <g>
     fld1                               ; <1> <b> <g> <1/f> <f> <g>
     fsubr  st0, st1                    ; <col> <b> <g> <1/f> <f> <g>
@@ -602,7 +602,7 @@ section .text
     ; c1=gain/2*m1 = gain/col
     ; c2=gain/2*m2 = -gain/(1-col)
     fld    st0                         ; <col> <col> <b> <g> <1/f> <f> <g>
-		fdivr  st0, st3                    ; <c1> <col> <b> <g> <1/f> <f> <g>
+        fdivr  st0, st3                    ; <c1> <col> <b> <g> <1/f> <f> <g>
     fld1                               ; <1> <c1> <col> <b> <g> <1/f> <f> <g>
     fsubrp st2, st0                    ; <c1> <1-col> <b> <g> <1/f> <f> <g>
     fxch   st1                         ; <1-col> <c1> <b> <g> <1/f> <f> <g>
@@ -620,17 +620,17 @@ section .text
 
 
 .m0loop
-  		mov   ebx, eax
-  		shr   ebx, 9
-  		or    ebx, 0x3f800000							
-  		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, eax
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
 
       fld   dword [ebp + syWOsc.tmp] ; <p+b> <c2> <b> <c1> <1/f> <f> <g>
       fsub  st0, st2                 ; <p> <c2> <b> <c1> <1/f> <f> <g>
       cmp   eax, [ebp + syWOsc.brpt] ; ..............................oc  n
       rcl   edx, 1                   ; .............................ocn  .
       and   edx, 7                   ; 00000000000000000000000000000ocn
-  		jmp		dword [cs: .m0casetab + 4*edx]
+        jmp		dword [cs: .m0casetab + 4*edx]
 
 ; cases: on entry <p> <c2> <b> <c1> <1/f> <f>, on exit: <y> <c2> <b> <c1> <1/f> <f>
 
@@ -706,14 +706,14 @@ section .text
       rcl   edx, 1                   ; ..............................nc  .
       test  byte [ebp + syWOsc.ring], 1
       jz    .m0noring
-  	  fmul	dword [edi + 4*ecx]      ; <out'> <c2> <b> <c1> <1/f> <f> <g>
+      fmul	dword [edi + 4*ecx]      ; <out'> <c2> <b> <c1> <1/f> <f> <g>
       jmp   .m0store
 .m0noring
-		  fadd	dword [edi + 4*ecx]      ; <out'> <c2> <b> <c1> <1/f> <f> <g>
+          fadd	dword [edi + 4*ecx]      ; <out'> <c2> <b> <c1> <1/f> <f> <g>
 .m0store
-		  fstp	dword [edi + 4*ecx]      ; <c2> <b> <c1> <1/f> <f> <g>
-		  inc		ecx
-		jz   .m0end
+          fstp	dword [edi + 4*ecx]      ; <c2> <b> <c1> <1/f> <f> <g>
+          inc		ecx
+        jz   .m0end
     jmp  .m0loop
 .m0end
     mov   [ebp + syWOsc.cnt], eax
@@ -725,7 +725,7 @@ section .text
     fstp  st0 ; -
 .off
     V2PerfLeave V2Perf_OSC
-		popad				
+        popad				
     ret
 
 
@@ -744,23 +744,23 @@ section .data
 section .text
 
 .mode1     ; pulse
-		mov		eax, [ebp + syWOsc.cnt]
+        mov		eax, [ebp + syWOsc.cnt]
     mov   esi, [ebp + syWOsc.freq]
  
     ; calc float helper values
-		mov   ebx, esi
-		shr   ebx, 9
-		or    ebx, 0x3f800000							
-		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, esi
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
     fld   dword [ebp + syWOsc.gain]   ; <g>
     fld   dword [ebp + syWOsc.tmp]    ; <f+1> <g>
     fld1                              ; <1> <f+1> <g>
     fsubp st1, st0                    ; <f> <g>
     fdivr st0, st1                    ; <gdf> <g>
-		mov   ebx, [ebp + syWOsc.brpt]
-		shr   ebx, 9
-		or    ebx, 0x3f800000							
-		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, [ebp + syWOsc.brpt]
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
     fld   dword [ebp + syWOsc.tmp]    ; <b> <gdf> <g>
     fld   st0                         ; <b> <b> <gdf> <g>
     fadd  st0, st0                    ; <2b> <b> <gdf> <g>
@@ -786,14 +786,14 @@ section .text
 
 
 .m1loop
-  		mov   ebx, eax
-  		shr   ebx, 9
-  		or    ebx, 0x3f800000							
-  		mov   [ebp + syWOsc.tmp], ebx
+        mov   ebx, eax
+        shr   ebx, 9
+        or    ebx, 0x3f800000							
+        mov   [ebp + syWOsc.tmp], ebx
       cmp   eax, [ebp + syWOsc.brpt] ; ..............................oc  n
       rcl   edx, 1                   ; .............................ocn  .
       and   edx, 7                   ; 00000000000000000000000000000ocn
-  		jmp		dword [cs: .m1casetab + 4*edx]
+        jmp		dword [cs: .m1casetab + 4*edx]
 
 ; cases: on entry <cc121> <cc212> <b> <gdf> <g>, on exit: <out> <cc121> <cc212> <b> <gdf> <g>
 .m1c21  ; p2->p1 : 2(p-1)/f - 1
@@ -834,14 +834,14 @@ section .text
       rcl   edx, 1                   ; ..............................nc  .
       test  byte [ebp + syWOsc.ring], 1
       jz    .m1noring
-  	  fmul	dword [edi + 4*ecx]
+      fmul	dword [edi + 4*ecx]
       jmp   short .m1store
 .m1noring
-		  fadd	dword [edi + 4*ecx]
+          fadd	dword [edi + 4*ecx]
 .m1store
-		  fstp	dword [edi + 4*ecx]
-		  inc		ecx
-		jnz   .m1loop
+          fstp	dword [edi + 4*ecx]
+          inc		ecx
+        jnz   .m1loop
     mov   [ebp + syWOsc.cnt], eax
     fstp  st0 ; <cc212> <b> <gdf> <g>
     fstp  st0 ; <b> <gdf> <g>
@@ -849,7 +849,7 @@ section .text
     fstp  st0 ; <g>
     fstp  st0 ; -
     V2PerfLeave V2Perf_OSC
-		popad				
+        popad				
     ret
 
 
@@ -857,173 +857,173 @@ section .text
 
 
 .mode2     ; sin
-		mov		eax, [ebp + syWOsc.cnt]
-		mov   edx, [ebp + syWOsc.freq]
-		
-		fld   qword [fcsinx7]  ; <cx7>
-		fld   qword [fcsinx5]  ; <cx5> <cx7>
-		fld   qword [fcsinx3]  ; <cx3> <cx5> <cx7>
-		
+        mov		eax, [ebp + syWOsc.cnt]
+        mov   edx, [ebp + syWOsc.freq]
+        
+        fld   qword [fcsinx7]  ; <cx7>
+        fld   qword [fcsinx5]  ; <cx5> <cx7>
+        fld   qword [fcsinx3]  ; <cx3> <cx5> <cx7>
+        
 .m2loop1
-			mov   ebx, eax
-			add   ebx, 0x40000000
-			mov   esi, ebx
-			sar		esi, 31
-			xor   ebx, esi
-			shr   ebx, 8
-			add   eax, edx
-			or    ebx, 0x3f800000							
-			mov   [ebp + syWOsc.tmp], ebx
-			fld   dword [ebp + syWOsc.tmp] ; <x> <cx3> <cx5> <cx7>
-			
-			; scale/move to (-pi/4 .. pi/4)
-			fmul  dword [fcpi]             ; <x'> <cx3> <cx5> <cx7>
-			fsub  dword [fc1p5pi]          ; <x''> <cx3> <cx5> <cx7>
+            mov   ebx, eax
+            add   ebx, 0x40000000
+            mov   esi, ebx
+            sar		esi, 31
+            xor   ebx, esi
+            shr   ebx, 8
+            add   eax, edx
+            or    ebx, 0x3f800000							
+            mov   [ebp + syWOsc.tmp], ebx
+            fld   dword [ebp + syWOsc.tmp] ; <x> <cx3> <cx5> <cx7>
+            
+            ; scale/move to (-pi/4 .. pi/4)
+            fmul  dword [fcpi]             ; <x'> <cx3> <cx5> <cx7>
+            fsub  dword [fc1p5pi]          ; <x''> <cx3> <cx5> <cx7>
 
-			; inline fastsin
-			fld		st0										   ; <x> <x> <cx3> <cx5> <cx7>
-			fmul	st0, st1                 ; <x²> <x> <cx3> <cx5> <cx7>
-			fld	  st4                      ; <c> <x²> <x> <cx3> <cx5> <cx7>
-			fmul	st0, st1                 ; <cx²> <x²> <x> <cx3> <cx5> <cx7>
-			fadd	st0, st4                 ; <b+cx²> <x²> <x> <cx3> <cx5> <cx7>
-			fmul  st0, st1                 ; <x²(b+cx²)> <x²> <x> <cx3> <cx5> <cx7>
-			fadd  st0, st3                 ; <a+x²(b+cx²)> <x²> <x> <cx3> <cx5> <cx7>
-			fmulp st1, st0                 ; <x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
-			fld1                           ; <1> <x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
-			faddp st1, st0                 ; <1+x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
-			fmulp st1, st0                 ; <x(1+x²(a+x²(b+cx²))> <cx3> <cx5> <cx7>
+            ; inline fastsin
+            fld		st0										   ; <x> <x> <cx3> <cx5> <cx7>
+            fmul	st0, st1                 ; <x²> <x> <cx3> <cx5> <cx7>
+            fld	  st4                      ; <c> <x²> <x> <cx3> <cx5> <cx7>
+            fmul	st0, st1                 ; <cx²> <x²> <x> <cx3> <cx5> <cx7>
+            fadd	st0, st4                 ; <b+cx²> <x²> <x> <cx3> <cx5> <cx7>
+            fmul  st0, st1                 ; <x²(b+cx²)> <x²> <x> <cx3> <cx5> <cx7>
+            fadd  st0, st3                 ; <a+x²(b+cx²)> <x²> <x> <cx3> <cx5> <cx7>
+            fmulp st1, st0                 ; <x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
+            fld1                           ; <1> <x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
+            faddp st1, st0                 ; <1+x²(a+x²(b+cx²)> <x> <cx3> <cx5> <cx7>
+            fmulp st1, st0                 ; <x(1+x²(a+x²(b+cx²))> <cx3> <cx5> <cx7>
   
-			fmul  dword [ebp + syWOsc.gain] ; <gain(y)> <cx3> <cx5> <cx7>
+            fmul  dword [ebp + syWOsc.gain] ; <gain(y)> <cx3> <cx5> <cx7>
       test  byte [ebp + syWOsc.ring], 1
       jz    .m2noring
-			fmul	dword [edi + 4*ecx]       ; <out> <cx3> <cx5> <cx7>
+            fmul	dword [edi + 4*ecx]       ; <out> <cx3> <cx5> <cx7>
       jmp   short .m2store
 .m2noring
-			fadd	dword [edi + 4*ecx]       ; <out> <cx3> <cx5> <cx7>
+            fadd	dword [edi + 4*ecx]       ; <out> <cx3> <cx5> <cx7>
 .m2store
-			fstp	dword [edi + 4*ecx]       ; <cx3> <cx5> <cx7>
-			inc   ecx
-		jnz   .m2loop1
+            fstp	dword [edi + 4*ecx]       ; <cx3> <cx5> <cx7>
+            inc   ecx
+        jnz   .m2loop1
     mov   [ebp + syWOsc.cnt], eax
     
     fstp  st0                         ; <cx5> <cx7>
     fstp  st0                         ; <cx7>
     fstp  st0                         ; -
     V2PerfLeave V2Perf_OSC
-		popad				
+        popad				
     ret
 
 
 .mode3     ; noise
       mov   esi,	[ebp + syWOsc.nseed] 
-			fld   dword [ebp + syWOsc.nfres]   ; <r>
-			fld   dword [ebp + syWOsc.nffrq]   ; <f> <r>
-			fld   dword [ebp + syWOsc.nfl]			; <l> <f> <r>
-			fld   dword [ebp + syWOsc.nfb]			; <b> <l> <f> <r>
+            fld   dword [ebp + syWOsc.nfres]   ; <r>
+            fld   dword [ebp + syWOsc.nffrq]   ; <f> <r>
+            fld   dword [ebp + syWOsc.nfl]			; <l> <f> <r>
+            fld   dword [ebp + syWOsc.nfb]			; <b> <l> <f> <r>
 .m3loop1
-	    imul	esi, icnoisemul
-			add		esi, icnoiseadd
-			mov		eax, esi
-			shr   eax, 9
-			or    eax, 40000000h
-			mov		[ebp + syWOsc.tmp], eax
-			fld   dword [ebp + syWOsc.tmp]    ; <n> <b> <l> <f> <r>
-			fld1															; <1> <n> <b> <l> <f> <r>
-			fsub	st1, st0										; <1> <n-1> <b> <l> <f> <r>
-			fsub	st1, st0										; <1> <n-2> <b> <l> <f> <r>
-			fsubp st1, st0										; <n'> <b> <l> <f> <r>
+        imul	esi, icnoisemul
+            add		esi, icnoiseadd
+            mov		eax, esi
+            shr   eax, 9
+            or    eax, 40000000h
+            mov		[ebp + syWOsc.tmp], eax
+            fld   dword [ebp + syWOsc.tmp]    ; <n> <b> <l> <f> <r>
+            fld1															; <1> <n> <b> <l> <f> <r>
+            fsub	st1, st0										; <1> <n-1> <b> <l> <f> <r>
+            fsub	st1, st0										; <1> <n-2> <b> <l> <f> <r>
+            fsubp st1, st0										; <n'> <b> <l> <f> <r>
 
-			fld   st1                         ; <b> <n'> <b> <l> <f> <r>
-			fmul  st0, st4                    ; <b*f> <n'> <b> <l> <f> <r>
-			fxch  st1													; <n'> <b*f> <b> <l> <f> <r>
-			fld   st2                         ; <b> <n'> <b*f> <b> <l> <f> <r>
-			fmul  st0, st6                    ; <b*r> <n'> <b*f> <b> <l> <f> <r>
-			fsubp st1, st0                    ; <n-(b*r)> <b*f> <b> <l> <f> <r>
-			fxch  st1                         ; <b*f> <n-(b*r)> <b> <l> <f> <r>
-			faddp st3, st0                    ; <n-(b*r)> <b> <l'> <f> <r>
-			fsub  st0, st2                    ; <h> <b> <l'> <f> <r>
-			fld   st0                         ; <h> <h> <b> <l'> <f> <r>
-			fmul  st0, st4                    ; <h*f> <h> <b> <l'> <f> <r>
-			faddp st2, st0                    ; <h> <b'> <l'> <f> <r>
-			fld   st2                         ; <l'> <h> <b'> <l'> <f> <r>
-			faddp st1, st0                    ; <l+h> <b'> <l'> <f> <r>
-			fmul  st0, st4                    ; <r(l+h)> <b'> <l'> <f> <r>
-			fadd  st0, st1                    ; <r(l+h)+b> <b'> <l'> <f> <r>
+            fld   st1                         ; <b> <n'> <b> <l> <f> <r>
+            fmul  st0, st4                    ; <b*f> <n'> <b> <l> <f> <r>
+            fxch  st1													; <n'> <b*f> <b> <l> <f> <r>
+            fld   st2                         ; <b> <n'> <b*f> <b> <l> <f> <r>
+            fmul  st0, st6                    ; <b*r> <n'> <b*f> <b> <l> <f> <r>
+            fsubp st1, st0                    ; <n-(b*r)> <b*f> <b> <l> <f> <r>
+            fxch  st1                         ; <b*f> <n-(b*r)> <b> <l> <f> <r>
+            faddp st3, st0                    ; <n-(b*r)> <b> <l'> <f> <r>
+            fsub  st0, st2                    ; <h> <b> <l'> <f> <r>
+            fld   st0                         ; <h> <h> <b> <l'> <f> <r>
+            fmul  st0, st4                    ; <h*f> <h> <b> <l'> <f> <r>
+            faddp st2, st0                    ; <h> <b'> <l'> <f> <r>
+            fld   st2                         ; <l'> <h> <b'> <l'> <f> <r>
+            faddp st1, st0                    ; <l+h> <b'> <l'> <f> <r>
+            fmul  st0, st4                    ; <r(l+h)> <b'> <l'> <f> <r>
+            fadd  st0, st1                    ; <r(l+h)+b> <b'> <l'> <f> <r>
 
-			fmul	dword [ebp + syWOsc.gain]   ; <out> <b'> <l'> <f> <r>
+            fmul	dword [ebp + syWOsc.gain]   ; <out> <b'> <l'> <f> <r>
       test  byte [ebp + syWOsc.ring], 1
       jz    .m3noring
-			fmul	dword [edi + 4*ecx]
+            fmul	dword [edi + 4*ecx]
       jmp   .m3store
 .m3noring
-			fadd	dword [edi + 4*ecx]
+            fadd	dword [edi + 4*ecx]
 .m3store
-			fstp	dword [edi + 4*ecx]
-			inc		ecx
-		jnz   .m3loop1
-		fstp	dword [ebp + syWOsc.nfb]			; <l> <f> <r>
-		fstp	dword [ebp + syWOsc.nfl]			; <f> <r>
-		fstp  st0                           ; <r>
-		fstp  st0                           ; <->
+            fstp	dword [edi + 4*ecx]
+            inc		ecx
+        jnz   .m3loop1
+        fstp	dword [ebp + syWOsc.nfb]			; <l> <f> <r>
+        fstp	dword [ebp + syWOsc.nfl]			; <f> <r>
+        fstp  st0                           ; <r>
+        fstp  st0                           ; <->
     mov   [ebp + syWOsc.nseed], esi
     V2PerfLeave V2Perf_OSC
-		popad				
+        popad				
     ret
 
 
 .mode4     ; fm sin
-		mov		eax, [ebp + syWOsc.cnt]
-		mov   edx, [ebp + syWOsc.freq]
+        mov		eax, [ebp + syWOsc.cnt]
+        mov   edx, [ebp + syWOsc.freq]
 .m4loop1
-			mov   ebx, eax
+            mov   ebx, eax
       fld   dword [edi + 4*ecx]  ; -1 .. 1
       fmul  dword [fcfmmax]
-			shr   ebx, 9
-			add   eax, edx
-			or    ebx, 0x3f800000							
-			mov   [ebp + syWOsc.tmp], ebx
-			fadd  dword [ebp + syWOsc.tmp]
-			fmul  dword [fc2pi]      
-			call  fastsinrc
-			fmul  dword [ebp + syWOsc.gain]
+            shr   ebx, 9
+            add   eax, edx
+            or    ebx, 0x3f800000							
+            mov   [ebp + syWOsc.tmp], ebx
+            fadd  dword [ebp + syWOsc.tmp]
+            fmul  dword [fc2pi]      
+            call  fastsinrc
+            fmul  dword [ebp + syWOsc.gain]
       test  byte [ebp + syWOsc.ring], 1
       jz    .m4store
-			fmul	dword [edi + 4*ecx]
+            fmul	dword [edi + 4*ecx]
 .m4store
-			fstp	dword [edi + 4*ecx]
-			inc   ecx
-		jnz   .m4loop1
+            fstp	dword [edi + 4*ecx]
+            inc   ecx
+        jnz   .m4loop1
     mov   [ebp + syWOsc.cnt], eax
     V2PerfLeave V2Perf_OSC
-		popad				
+        popad				
     ret
 
 ; CHAOS
 
 .auxa			; copy
     mov   esi,[this] 
-		lea   esi,[esi + SYN.auxabuf]
+        lea   esi,[esi + SYN.auxabuf]
 .auxaloop
-			fld		dword [esi+0]
-			fadd	dword [esi+4]
-			add		esi,8
-			fmul  dword [ebp + syWOsc.gain]
-			fmul	dword [fcgain]
+            fld		dword [esi+0]
+            fadd	dword [esi+4]
+            add		esi,8
+            fmul  dword [ebp + syWOsc.gain]
+            fmul	dword [fcgain]
       test  byte [ebp + syWOsc.ring], 1
       jz    .auxastore
-			fmul	dword [edi + 4*ecx]
+            fmul	dword [edi + 4*ecx]
 .auxastore
-			fstp	dword [edi + 4*ecx]
-			inc   ecx
-		jnz   .auxaloop
+            fstp	dword [edi + 4*ecx]
+            inc   ecx
+        jnz   .auxaloop
     V2PerfLeave V2Perf_OSC
-		popad
-		ret
+        popad
+        ret
 
 .auxb			; copy 
     mov   esi,[this] 
-		lea   esi,[esi + SYN.auxbbuf]
-		jmp .auxaloop		
+        lea   esi,[esi + SYN.auxbbuf]
+        jmp .auxaloop		
 
 ;#####################################################################################
 ;  Envelope Generator
@@ -1035,86 +1035,86 @@ _ENV_
 
 struc syVEnv
   .ar		resd 1   
-	.dr   resd 1
-	.sl   resd 1
-	.sr   resd 1
-	.rr   resd 1
-	.vol  resd 1
-	.size
+    .dr   resd 1
+    .sl   resd 1
+    .sr   resd 1
+    .rr   resd 1
+    .vol  resd 1
+    .size
 endstruc
 
 struc syWEnv
-	.out    resd 1
+    .out    resd 1
   .state  resd 1  ; int state - 0: off, 1: attack, 2: decay, 3: sustain, 4: release 
-	.val    resd 1  ; float outval (0.0-128.0)
+    .val    resd 1  ; float outval (0.0-128.0)
   .atd		resd 1  ; float attack delta (added every frame in phase 1, transition -> 2 at 128.0)
-	.dcf		resd 1  ; float decay factor (mul'ed every frame in phase 2, transision -> 3 at .sul)
-	.sul		resd 1  ; float sustain level (defines phase 2->3 transition point)
-	.suf		resd 1  ; float sustain factor (mul'ed every frame in phase 3, transition -> 4 at gate off or ->0 at 0.0)
-	.ref    resd 1  ; float release (mul'ed every frame in phase 4, transition ->0 at 0.0)
-	.gain   resd 1  ; float gain (0.1 .. 1.0)
-	.size
+    .dcf		resd 1  ; float decay factor (mul'ed every frame in phase 2, transision -> 3 at .sul)
+    .sul		resd 1  ; float sustain level (defines phase 2->3 transition point)
+    .suf		resd 1  ; float sustain factor (mul'ed every frame in phase 3, transition -> 4 at gate off or ->0 at 0.0)
+    .ref    resd 1  ; float release (mul'ed every frame in phase 4, transition ->0 at 0.0)
+    .gain   resd 1  ; float gain (0.1 .. 1.0)
+    .size
 endstruc
 
 ; init
 ; ebp: workspace
 syEnvInit:
-	   pushad
-		 xor eax, eax
-		 mov [ebp + syWEnv.state], eax  ; reset state to "off"
-		 popad
-		 ret
+       pushad
+         xor eax, eax
+         mov [ebp + syWEnv.state], eax  ; reset state to "off"
+         popad
+         ret
 
 ; set
 ; esi: values
 ; epb: workspace
 syEnvSet:
-		pushad
+        pushad
 
-		; ar: 2^7 (128) bis 2^-4 (0.03, ca. 10secs bei 344frames/sec)
-		fld		dword [esi + syVEnv.ar]		; 0..127
-		fmul  dword [fcattackmul]				; 0..-12
-		fadd  dword [fcattackadd]				; 7..-5
-		call  pow2
-		fstp  dword [ebp + syWEnv.atd]
+        ; ar: 2^7 (128) bis 2^-4 (0.03, ca. 10secs bei 344frames/sec)
+        fld		dword [esi + syVEnv.ar]		; 0..127
+        fmul  dword [fcattackmul]				; 0..-12
+        fadd  dword [fcattackadd]				; 7..-5
+        call  pow2
+        fstp  dword [ebp + syWEnv.atd]
 
-		; dcf: 0 (5msecs dank volramping) bis fast 1 (durchgehend)
-		fld		dword [esi + syVEnv.dr]		; 0..127
-		fmul  dword [fci128]            ; 0..~1
-		fld1                            ; 1  0..~1
-		fsubrp st1, st0                 ; 1..~0
-		call  calcfreq2                
-		fld1                    
-		fsubrp st1, st0
-		fstp  dword [ebp + syWEnv.dcf]  ; 0..~1
+        ; dcf: 0 (5msecs dank volramping) bis fast 1 (durchgehend)
+        fld		dword [esi + syVEnv.dr]		; 0..127
+        fmul  dword [fci128]            ; 0..~1
+        fld1                            ; 1  0..~1
+        fsubrp st1, st0                 ; 1..~0
+        call  calcfreq2                
+        fld1                    
+        fsubrp st1, st0
+        fstp  dword [ebp + syWEnv.dcf]  ; 0..~1
 
-		; sul: 0..127 ist schon ok
-		fld		dword [esi + syVEnv.sl]		; 0..127
-		fstp  dword [ebp + syWEnv.sul]  ; 0..127
+        ; sul: 0..127 ist schon ok
+        fld		dword [esi + syVEnv.sl]		; 0..127
+        fstp  dword [ebp + syWEnv.sul]  ; 0..127
 
-		; suf: 1/128 (15msecs bis weg) bis 128 (15msecs bis voll da)
-		fld		dword [esi + syVEnv.sr]		; 0..127
-		fsub  dword [fc64]              ; -64 .. 63
-		fmul  dword [fcsusmul]          ; -7 .. ~7
-		call  pow2
-		fstp  dword [ebp + syWEnv.suf]  ; 1/128 .. ~128
+        ; suf: 1/128 (15msecs bis weg) bis 128 (15msecs bis voll da)
+        fld		dword [esi + syVEnv.sr]		; 0..127
+        fsub  dword [fc64]              ; -64 .. 63
+        fmul  dword [fcsusmul]          ; -7 .. ~7
+        call  pow2
+        fstp  dword [ebp + syWEnv.suf]  ; 1/128 .. ~128
 
-		; ref: 0 (5msecs dank volramping) bis fast 1 (durchgehend)
-		fld		dword [esi + syVEnv.rr]		; 0..127
-		fmul  dword [fci128]
-		fld1
-		fsubrp st1, st0
-		call  calcfreq2
-		fld1
-		fsubrp st1, st0
-		fstp  dword [ebp + syWEnv.ref]  ; 0..~1
-		
-		fld   dword [esi + syVEnv.vol]
-		fmul  dword [fci128]
-		fstp  dword [ebp + syWEnv.gain]
+        ; ref: 0 (5msecs dank volramping) bis fast 1 (durchgehend)
+        fld		dword [esi + syVEnv.rr]		; 0..127
+        fmul  dword [fci128]
+        fld1
+        fsubrp st1, st0
+        call  calcfreq2
+        fld1
+        fsubrp st1, st0
+        fstp  dword [ebp + syWEnv.ref]  ; 0..~1
+        
+        fld   dword [esi + syVEnv.vol]
+        fmul  dword [fci128]
+        fstp  dword [ebp + syWEnv.gain]
 
-		popad 
-		ret
+        popad 
+        ret
 
 
 ; tick
@@ -1124,107 +1124,107 @@ syEnvSet:
 section .data
 
 syETTab		dd syEnvTick.state_off, syEnvTick.state_atk, syEnvTick.state_dec,
-				  dd syEnvTick.state_sus, syEnvTick.state_rel
-				  
+                  dd syEnvTick.state_sus, syEnvTick.state_rel
+                  
 section .text
 
 syEnvTick:
-		pushad
-		mov		ebx, [ebp + syWEnv.state]
-		call  [syETTab + 4*ebx]
-		fld   dword [ebp + syWEnv.val]
-		fmul  dword [ebp + syWEnv.gain]
-		fstp  dword [ebp + syWEnv.out]
-		popad 
-		ret
+        pushad
+        mov		ebx, [ebp + syWEnv.state]
+        call  [syETTab + 4*ebx]
+        fld   dword [ebp + syWEnv.val]
+        fmul  dword [ebp + syWEnv.gain]
+        fstp  dword [ebp + syWEnv.out]
+        popad 
+        ret
 
 .state_off  ; envelope off
     or    eax, eax  ; gate on -> attack
-		jz		.s0ok
-		inc		byte [ebp + syWEnv.state]
-		jmp   .state_atk
+        jz		.s0ok
+        inc		byte [ebp + syWEnv.state]
+        jmp   .state_atk
 .s0ok
-		fldz
-		fstp  dword [ebp + syWEnv.val]
-		ret
+        fldz
+        fstp  dword [ebp + syWEnv.val]
+        ret
 
 .state_atk  ; attack
     or    eax, eax  ; gate off -> release
-		jnz		.s1ok
-		mov		byte [ebp + syWEnv.state], 4
-		jmp   .state_rel
+        jnz		.s1ok
+        mov		byte [ebp + syWEnv.state], 4
+        jmp   .state_rel
 .s1ok 
-		fld   dword [ebp + syWEnv.val]
-		fadd  dword [ebp + syWEnv.atd]
-		fstp	dword [ebp + syWEnv.val]
-		mov   ecx,  43000000h           ; 128.0
-		cmp		ecx,	[ebp + syWEnv.val]
-		ja    .s1end                    ; val above -> decay
-		mov   [ebp + syWEnv.val], ecx
-		inc   byte [ebp + syWEnv.state]
+        fld   dword [ebp + syWEnv.val]
+        fadd  dword [ebp + syWEnv.atd]
+        fstp	dword [ebp + syWEnv.val]
+        mov   ecx,  43000000h           ; 128.0
+        cmp		ecx,	[ebp + syWEnv.val]
+        ja    .s1end                    ; val above -> decay
+        mov   [ebp + syWEnv.val], ecx
+        inc   byte [ebp + syWEnv.state]
 .s1end
-		ret
+        ret
 
 .state_dec
     or    eax, eax  ; gate off -> release
-		jnz		.s2ok
-		mov		byte [ebp + syWEnv.state], 4
-		jmp   .state_rel
+        jnz		.s2ok
+        mov		byte [ebp + syWEnv.state], 4
+        jmp   .state_rel
 .s2ok 
-		fld   dword [ebp + syWEnv.val]
-		fmul  dword [ebp + syWEnv.dcf]
-		fstp	dword [ebp + syWEnv.val]
-		mov   ecx,  [ebp + syWEnv.sul] ; sustain level
-		cmp		ecx,	[ebp + syWEnv.val]
-		jb    .s4checkrunout            ; val below -> sustain
-		mov   [ebp + syWEnv.val], ecx
-		inc   byte [ebp + syWEnv.state]
-		ret
+        fld   dword [ebp + syWEnv.val]
+        fmul  dword [ebp + syWEnv.dcf]
+        fstp	dword [ebp + syWEnv.val]
+        mov   ecx,  [ebp + syWEnv.sul] ; sustain level
+        cmp		ecx,	[ebp + syWEnv.val]
+        jb    .s4checkrunout            ; val below -> sustain
+        mov   [ebp + syWEnv.val], ecx
+        inc   byte [ebp + syWEnv.state]
+        ret
 
 
 .state_sus
     or    eax, eax  ; gate off -> release
-		jnz		.s3ok
-		inc		byte [ebp + syWEnv.state]
-		jmp   .state_rel
+        jnz		.s3ok
+        inc		byte [ebp + syWEnv.state]
+        jmp   .state_rel
 .s3ok 
-		fld   dword [ebp + syWEnv.val]
-		fmul  dword [ebp + syWEnv.suf]
-		fstp	dword [ebp + syWEnv.val]
-		mov   ecx,  LOWEST
-		cmp		ecx,	[ebp + syWEnv.val]
-		jb    .s3not2low               ; val below -> off
-		xor   ecx, ecx
-		mov   [ebp + syWEnv.val], ecx
-		mov   [ebp + syWEnv.state], ecx
-		ret
+        fld   dword [ebp + syWEnv.val]
+        fmul  dword [ebp + syWEnv.suf]
+        fstp	dword [ebp + syWEnv.val]
+        mov   ecx,  LOWEST
+        cmp		ecx,	[ebp + syWEnv.val]
+        jb    .s3not2low               ; val below -> off
+        xor   ecx, ecx
+        mov   [ebp + syWEnv.val], ecx
+        mov   [ebp + syWEnv.state], ecx
+        ret
 .s3not2low
-		mov   ecx,  43000000h           ; 128.0
-		cmp		ecx,	[ebp + syWEnv.val]
-		ja    .s3end                    ; val above -> decay
-		mov   [ebp + syWEnv.val], ecx
+        mov   ecx,  43000000h           ; 128.0
+        cmp		ecx,	[ebp + syWEnv.val]
+        ja    .s3end                    ; val above -> decay
+        mov   [ebp + syWEnv.val], ecx
 .s3end
-		ret
+        ret
 
 
 .state_rel
     or    eax, eax  ; gate off -> release
-		jz		.s4ok
-		mov		byte [ebp + syWEnv.state], 1
-		jmp   .state_atk
+        jz		.s4ok
+        mov		byte [ebp + syWEnv.state], 1
+        jmp   .state_atk
 .s4ok 
-		fld   dword [ebp + syWEnv.val]
-		fmul  dword [ebp + syWEnv.ref]
-		fstp	dword [ebp + syWEnv.val]
+        fld   dword [ebp + syWEnv.val]
+        fmul  dword [ebp + syWEnv.ref]
+        fstp	dword [ebp + syWEnv.val]
 .s4checkrunout
-		mov   ecx,  LOWEST
-		cmp		ecx,	[ebp + syWEnv.val]
-		jb    .s4end
-		xor   ecx, ecx
-		mov   [ebp + syWEnv.val], ecx
-		mov   [ebp + syWEnv.state], ecx
+        mov   ecx,  LOWEST
+        cmp		ecx,	[ebp + syWEnv.val]
+        jb    .s4end
+        xor   ecx, ecx
+        mov   [ebp + syWEnv.val], ecx
+        mov   [ebp + syWEnv.state], ecx
 .s4end
-		ret
+        ret
 
 
 
@@ -1237,69 +1237,69 @@ _VCF_
 
 
 struc syVFlt
-	.mode   resd 1
-	.cutoff resd 1
-	.reso   resd 1
-	.size
+    .mode   resd 1
+    .cutoff resd 1
+    .reso   resd 1
+    .size
 endstruc
 
 struc syWFlt
   .mode   resd 1  ; int: 0 - bypass, 1 - low, 2 - band, 3 - high, 4 - notch, 5 - all, 6 - moogl, 7 - moogh
-	.cfreq  resd 1  ; float: frq (0-1)
-	.res    resd 1  ; float: res (0-1)
-	.moogf  resd 1  ; moog flt f coefficient (negative!)
-	.moogp  resd 1  ; moog flt p coefficient
-	.moogq  resd 1  ; moog flt q coefficient
-	.l      resd 1  
-	.b      resd 1
-	.mb0    resd 1  
-	.mb1    resd 1  
-	.mb2    resd 1  
-	.mb3    resd 1  
-	.mb4    resd 1	
+    .cfreq  resd 1  ; float: frq (0-1)
+    .res    resd 1  ; float: res (0-1)
+    .moogf  resd 1  ; moog flt f coefficient (negative!)
+    .moogp  resd 1  ; moog flt p coefficient
+    .moogq  resd 1  ; moog flt q coefficient
+    .l      resd 1  
+    .b      resd 1
+    .mb0    resd 1  
+    .mb1    resd 1  
+    .mb2    resd 1  
+    .mb3    resd 1  
+    .mb4    resd 1	
   .step   resd 1
-	.size
+    .size
 endstruc
 
 syFltInit:
-	pushad
-	xor eax, eax
-	lea edi, [ebp + syWFlt.l]
-	lea ecx, [eax + 7]
+    pushad
+    xor eax, eax
+    lea edi, [ebp + syWFlt.l]
+    lea ecx, [eax + 7]
   rep stosd
   mov  al, 4
   mov [ebp + syWFlt.step], eax
-	popad
-	ret
+    popad
+    ret
 
 
 
 syFltSet:
-	pushad
-	fld			dword [esi + syVFlt.mode]
-	fistp		dword [ebp + syWFlt.mode]
+    pushad
+    fld			dword [esi + syVFlt.mode]
+    fistp		dword [ebp + syWFlt.mode]
 
-	fld			dword [esi + syVFlt.cutoff]
-	fmul		dword [fci128]
-	call    calcfreq                   ; <f>
-	fmul    dword [SRfclinfreq]
+    fld			dword [esi + syVFlt.cutoff]
+    fmul		dword [fci128]
+    call    calcfreq                   ; <f>
+    fmul    dword [SRfclinfreq]
 
   cmp     byte [ebp + syWFlt.mode], 6
   jge     .moogflt 
   
   fld			dword [esi + syVFlt.reso]  ; <r> <f>
-	fmul		dword [fci128]
-	fld1															 ; <1> <r> <f>
+    fmul		dword [fci128]
+    fld1															 ; <1> <r> <f>
   fsubrp  st1, st0                   ; <1-res> <f>
-	fstp		dword [ebp + syWFlt.res]   ; <f>
+    fstp		dword [ebp + syWFlt.res]   ; <f>
 
-	fstp	  dword [ebp + syWFlt.cfreq] ; -
+    fstp	  dword [ebp + syWFlt.cfreq] ; -
 
-	popad
-	ret
+    popad
+    ret
 
-	.moogflt
-	;t = 1.0f - frequency;
+    .moogflt
+    ;t = 1.0f - frequency;
   ;p = frequency + 0.8f * frequency * t;
   ;f = p + p - 1.0f;
   ;q = resonance * (1.0f + 0.5f * t * (1.0f - t + 5.6f * t * t));
@@ -1329,21 +1329,21 @@ syFltSet:
   fld1
   faddp  st1, st0                   ; <1+0.5t(1-t+5.6t²)>
   fld		 dword [esi + syVFlt.reso]  ; <r> <1+0.5t(1-t+5.6t²)>
-	fmul	 dword [fci128]             ; <r'> <1+0.5t(1-t+5.6t²)>
-	fmulp  st1, st0                   ; <q>
-	fadd   st0, st0
-	fadd   st0, st0
-	fstp   dword [ebp + syWFlt.moogq] ; - 
+    fmul	 dword [fci128]             ; <r'> <1+0.5t(1-t+5.6t²)>
+    fmulp  st1, st0                   ; <q>
+    fadd   st0, st0
+    fadd   st0, st0
+    fstp   dword [ebp + syWFlt.moogq] ; - 
  
-	popad
-	ret
-	
+    popad
+    ret
+    
 
 section .data
 
 syFRTab	dd syFltRender.mode0, syFltRender.mode1, syFltRender.mode2
-				dd syFltRender.mode3, syFltRender.mode4, syFltRender.mode5
-				dd syFltRender.modemlo, syFltRender.modemhi
+                dd syFltRender.mode3, syFltRender.mode4, syFltRender.mode5
+                dd syFltRender.modemlo, syFltRender.modemhi
 
 section .text
 
@@ -1353,129 +1353,129 @@ section .text
 ; edi: dest
 ;global syFltRender
 syFltRender:
-	pushad
-	V2PerfEnter V2Perf_VCF
-	
-	movzx	eax, byte [ebp + syWFlt.mode]
-	and   al, 7
+    pushad
+    V2PerfEnter V2Perf_VCF
+    
+    movzx	eax, byte [ebp + syWFlt.mode]
+    and   al, 7
   cmp   al, 6 
   jge   .moogflt
-	
-	fld   dword [ebp + syWFlt.res]	; <r>
-	fld   dword [ebp + syWFlt.cfreq]; <f> <r>
-	fld   dword [ebp + syWFlt.l]		; <l> <f> <r>
-	fld   dword [ebp + syWFlt.b]		; <b> <l> <f> <r>
-	call  [syFRTab + 4*eax]
+    
+    fld   dword [ebp + syWFlt.res]	; <r>
+    fld   dword [ebp + syWFlt.cfreq]; <f> <r>
+    fld   dword [ebp + syWFlt.l]		; <l> <f> <r>
+    fld   dword [ebp + syWFlt.b]		; <b> <l> <f> <r>
+    call  [syFRTab + 4*eax]
   fstp dword [ebp + syWFlt.b] ; <l''> <f> <r>
   fstp dword [ebp + syWFlt.l] ; <f> <r>
-	fstp st0
-	fstp st0
-	V2PerfLeave V2Perf_VCF
-	popad
-	ret
-	
-	.moogflt
-	fld dword [ebp + syWFlt.mb4]	; <b4>
-	fld dword [ebp + syWFlt.mb3]	; <b3> <b4>
-	fld dword [ebp + syWFlt.mb2]	; <b2> <b3> <b4>
-	fld dword [ebp + syWFlt.mb1]	; <b1> <b2> <b3> <b4>
-	fld dword [ebp + syWFlt.mb0]	; <b0> <b1> <b2> <b3> <b4>
-	call  [syFRTab + 4*eax]
-	fstp dword [ebp + syWFlt.mb0]	; <b1> <b2> <b3> <b4>
-	fstp dword [ebp + syWFlt.mb1]	; <b2> <b3> <b4>
-	fstp dword [ebp + syWFlt.mb2]	; <b3> <b4>
-	fstp dword [ebp + syWFlt.mb3]	; <b4>
-	fstp dword [ebp + syWFlt.mb4]	; -
-	V2PerfLeave V2Perf_VCF
-	popad
-	ret
-	
+    fstp st0
+    fstp st0
+    V2PerfLeave V2Perf_VCF
+    popad
+    ret
+    
+    .moogflt
+    fld dword [ebp + syWFlt.mb4]	; <b4>
+    fld dword [ebp + syWFlt.mb3]	; <b3> <b4>
+    fld dword [ebp + syWFlt.mb2]	; <b2> <b3> <b4>
+    fld dword [ebp + syWFlt.mb1]	; <b1> <b2> <b3> <b4>
+    fld dword [ebp + syWFlt.mb0]	; <b0> <b1> <b2> <b3> <b4>
+    call  [syFRTab + 4*eax]
+    fstp dword [ebp + syWFlt.mb0]	; <b1> <b2> <b3> <b4>
+    fstp dword [ebp + syWFlt.mb1]	; <b2> <b3> <b4>
+    fstp dword [ebp + syWFlt.mb2]	; <b3> <b4>
+    fstp dword [ebp + syWFlt.mb3]	; <b4>
+    fstp dword [ebp + syWFlt.mb4]	; -
+    V2PerfLeave V2Perf_VCF
+    popad
+    ret
+    
 .process: ; <b> <l> <f> <r>
-	  fld			dword [esi]									; <in> <b> <l> <f> <r>
+      fld			dword [esi]									; <in> <b> <l> <f> <r>
 %if FIXDENORMALS
     fadd    dword [fcdcoffset]
 %endif    	  
-		fld			st1                         ; <b> <in> <b> <l> <f> <r>
-		fld			st2                         ; <b> <b> <in> <b> <l> <f> <r>
-		fmul		st0, st5                    ; <b*f> <b> <in> <b> <l> <f> <r>
-		fxch		st1                         ; <b> <b*f> <in> <b> <l> <f> <r>
-		fmul		st0, st6                    ; <b*r> <b*f> <in> <b> <l> <f> <r>
-		fxch		st1                         ; <b*f> <b*r> <in> <b> <l> <f> <r>
-		add     esi, [ebp + syWFlt.step]
+        fld			st1                         ; <b> <in> <b> <l> <f> <r>
+        fld			st2                         ; <b> <b> <in> <b> <l> <f> <r>
+        fmul		st0, st5                    ; <b*f> <b> <in> <b> <l> <f> <r>
+        fxch		st1                         ; <b> <b*f> <in> <b> <l> <f> <r>
+        fmul		st0, st6                    ; <b*r> <b*f> <in> <b> <l> <f> <r>
+        fxch		st1                         ; <b*f> <b*r> <in> <b> <l> <f> <r>
+        add     esi, [ebp + syWFlt.step]
     fsub    dword [fcdcoffset]
-		faddp		st4, st0										; <b*r> <in> <b> <l'> <f> <r>
-		fsubr   st0, st1                    ; <in-b*r> <in> <b> <l'> <f> <r>
-		fsub    st0, st3                    ; <h> <in> <b> <l'> <f> <r>
-		fmul    st0, st4                    ; <f*h> <in> <b> <l'> <f> <r>
-		faddp   st2, st0                    ; <in> <b'> <l'> <f> <r>
-		fld     st1                         ; <b'> <in> <b'> <l'> <f> <r>
-		fld     st2                         ; <b'> <b'> <in> <b'> <l'> <f> <r>
-		fmul    st0, st5                    ; <b'*f> <b'> <in> <b'> <l'> <f> <r>
-		fxch		st1													; <b'> <b'*f> <in> <b'> <l'> <f> <r>
-		fmul    st0, st6                    ; <b'*r> <b'*f> <in> <b'> <l'> <f> <r>
-		fxch    st1                         ; <b'*f> <b'*r> <in> <b'> <l'> <f> <r>
-		faddp   st4, st0                    ; <b'*r> <in> <b'> <l''> <f> <r>
-		fsubp   st1, st0                    ; <in-b'*r> <b'> <l''> <f> <r>
-		fsub    st0, st2                    ; <h> <b'> <l''> <f> <r>
-		fld     st0                         ; <h> <h> <b'> <l''> <f> <r>
-		fmul    st0, st4                    ; <h*f> <h> <b'> <l''> <f> <r>
-		faddp   st2, st0                    ; <h> <b''> <l''> <f> <r>
-		ret
+        faddp		st4, st0										; <b*r> <in> <b> <l'> <f> <r>
+        fsubr   st0, st1                    ; <in-b*r> <in> <b> <l'> <f> <r>
+        fsub    st0, st3                    ; <h> <in> <b> <l'> <f> <r>
+        fmul    st0, st4                    ; <f*h> <in> <b> <l'> <f> <r>
+        faddp   st2, st0                    ; <in> <b'> <l'> <f> <r>
+        fld     st1                         ; <b'> <in> <b'> <l'> <f> <r>
+        fld     st2                         ; <b'> <b'> <in> <b'> <l'> <f> <r>
+        fmul    st0, st5                    ; <b'*f> <b'> <in> <b'> <l'> <f> <r>
+        fxch		st1													; <b'> <b'*f> <in> <b'> <l'> <f> <r>
+        fmul    st0, st6                    ; <b'*r> <b'*f> <in> <b'> <l'> <f> <r>
+        fxch    st1                         ; <b'*f> <b'*r> <in> <b'> <l'> <f> <r>
+        faddp   st4, st0                    ; <b'*r> <in> <b'> <l''> <f> <r>
+        fsubp   st1, st0                    ; <in-b'*r> <b'> <l''> <f> <r>
+        fsub    st0, st2                    ; <h> <b'> <l''> <f> <r>
+        fld     st0                         ; <h> <h> <b'> <l''> <f> <r>
+        fmul    st0, st4                    ; <h*f> <h> <b'> <l''> <f> <r>
+        faddp   st2, st0                    ; <h> <b''> <l''> <f> <r>
+        ret
 
 
 .mode0: ; bypass
   cmp		esi, edi
-	je    .m0end
-	rep   movsd
+    je    .m0end
+    rep   movsd
 .m0end
-	ret
+    ret
 
 .mode1: ; low
     call	.process			; <h> <b''> <l''> <f> <r>
-		fstp	st0						; <b''> <l''> <f> <r>
-		fxch  st1						; <l''> <b''> <f> <r>
-		fst   dword [edi]   ; -> l'' stored
-		fxch  st1						; <b''> <l''> <f> <r>
+        fstp	st0						; <b''> <l''> <f> <r>
+        fxch  st1						; <l''> <b''> <f> <r>
+        fst   dword [edi]   ; -> l'' stored
+        fxch  st1						; <b''> <l''> <f> <r>
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz .mode1
-	ret
+    dec ecx
+    jnz .mode1
+    ret
 
 .mode2: ; band
     call	.process			; <h> <b''> <l''> <f> <r>
-		fstp	st0						; <b''> <l''> <f> <r>
-		fst   dword [edi]   ; -> b'' stored
+        fstp	st0						; <b''> <l''> <f> <r>
+        fst   dword [edi]   ; -> b'' stored
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.mode2
-	ret
+    dec ecx
+    jnz	.mode2
+    ret
 
 .mode3: ; high
     call	.process			; <h> <b''> <l''> <f> <r>
-		fstp  dword [edi]		; <b''> <l''> <f> <r> -> h stored
+        fstp  dword [edi]		; <b''> <l''> <f> <r> -> h stored
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.mode3
-	ret
-		
+    dec ecx
+    jnz	.mode3
+    ret
+        
 .mode4: ; notch
     call	.process			; <h> <b''> <l''> <f> <r>
-		fadd  st2           ; <h+l> <b''> <l''> <f> <r>
-		fstp  dword [edi]		; <b''> <l''> <f> <r> -> h+l'' stored
+        fadd  st2           ; <h+l> <b''> <l''> <f> <r>
+        fstp  dword [edi]		; <b''> <l''> <f> <r> -> h+l'' stored
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.mode4
-	ret
+    dec ecx
+    jnz	.mode4
+    ret
 
 .mode5: ; allpass
     call	.process			; <h> <b''> <l''> <f> <r>
-		fadd  st1           ; <h+b> <b''> <l''> <f> <r>
-		fadd  st2           ; <h+b+l> <b''> <l''> <f> <r>
-		fstp  dword [edi]		; <b''> <l''> <f> <r> -> h+b''+l'' stored
+        fadd  st1           ; <h+b> <b''> <l''> <f> <r>
+        fadd  st2           ; <h+b+l> <b''> <l''> <f> <r>
+        fstp  dword [edi]		; <b''> <l''> <f> <r> -> h+b''+l'' stored
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.mode5
-	ret
+    dec ecx
+    jnz	.mode5
+    ret
 
 ;  in -= q * b4;                          //feedback
 ;  t1 = b1;  b1 = (in + b0) * p - b1 * f;
@@ -1537,9 +1537,9 @@ syFltRender:
     fstp  dword [edi]
     add   esi, [ebp + syWFlt.step]
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.modemlo
-	ret
+    dec ecx
+    jnz	.modemlo
+    ret
 
 .modemhi:    
     call  .processmoog
@@ -1549,9 +1549,9 @@ syFltRender:
     fstp  dword [edi]
     add   esi, [ebp + syWFlt.step]
     add   edi, [ebp + syWFlt.step]
-	dec ecx
-	jnz	.modemhi
-	ret
+    dec ecx
+    jnz	.modemhi
+    ret
 
 ;#####################################################################################
 ; Low Frequency Oscillator
@@ -1572,162 +1572,162 @@ struc syVLFO
 endstruc
 
 struc syWLFO
-	.out		resd 1  ; float: out
-	.mode   resd 1  ; int: mode
-	.fs     resd 1  ; int: sync flag
-	.feg    resd 1  ; int: eg flag
-	.freq   resd 1  ; int: freq
-	.cntr   resd 1  ;	int: counter
-	.cph    resd 1  ; int: counter sync phase
-	.gain   resd 1  ; float: output gain
-	.dc     resd 1  ; float: output DC
-	.nseed  resd 1  ; int: random seed
-	.last   resd 1  ; int: last counter value (for s&h transition)
+    .out		resd 1  ; float: out
+    .mode   resd 1  ; int: mode
+    .fs     resd 1  ; int: sync flag
+    .feg    resd 1  ; int: eg flag
+    .freq   resd 1  ; int: freq
+    .cntr   resd 1  ;	int: counter
+    .cph    resd 1  ; int: counter sync phase
+    .gain   resd 1  ; float: output gain
+    .dc     resd 1  ; float: output DC
+    .nseed  resd 1  ; int: random seed
+    .last   resd 1  ; int: last counter value (for s&h transition)
   .size
 endstruc
 
 
 syLFOInit
   pushad
-	xor			eax, eax
-	mov			[ebp + syWLFO.cntr], eax
-	mov			[ebp + syWLFO.last], eax
-	rdtsc
-	mov			[ebp + syWLFO.nseed], eax
-	popad
-	ret
+    xor			eax, eax
+    mov			[ebp + syWLFO.cntr], eax
+    mov			[ebp + syWLFO.last], eax
+    rdtsc
+    mov			[ebp + syWLFO.nseed], eax
+    popad
+    ret
 
 
 syLFOSet
   pushad
-	
-	fld		dword [esi + syVLFO.mode]
-	fistp   dword [ebp + syWLFO.mode]
-	fld     dword [esi + syVLFO.sync]
-	fistp   dword [ebp + syWLFO.fs]
-	fld     dword [esi + syVLFO.egmode]
-	fistp   dword [ebp + syWLFO.feg]
+    
+    fld		dword [esi + syVLFO.mode]
+    fistp   dword [ebp + syWLFO.mode]
+    fld     dword [esi + syVLFO.sync]
+    fistp   dword [ebp + syWLFO.fs]
+    fld     dword [esi + syVLFO.egmode]
+    fistp   dword [ebp + syWLFO.feg]
 
-	fld     dword [esi + syVLFO.rate]
-	fmul    dword [fci128]
-	call    calcfreq
-	fmul    dword [fc32bit]
-	fmul    dword [fci2]
-	fistp   dword [ebp + syWLFO.freq]
+    fld     dword [esi + syVLFO.rate]
+    fmul    dword [fci128]
+    call    calcfreq
+    fmul    dword [fc32bit]
+    fmul    dword [fci2]
+    fistp   dword [ebp + syWLFO.freq]
 
-	fld     dword [esi + syVLFO.phase]
-	fmul    dword [fci128]
-	fmul    dword [fc32bit]
-	fistp   dword [ebp + syWLFO.cph]
-	shl     dword [ebp + syWLFO.cph],1
+    fld     dword [esi + syVLFO.phase]
+    fmul    dword [fci128]
+    fmul    dword [fc32bit]
+    fistp   dword [ebp + syWLFO.cph]
+    shl     dword [ebp + syWLFO.cph],1
 
-	fld     dword [esi + syVLFO.amp]
-	fld     dword [esi + syVLFO.pol]
-	fistp   dword [temp]
-	mov     eax,  [temp]
-	fld     st0
-	fchs
-	fmul    dword [fci2]
-	cmp     al, 2       ; +/- polarity?
-	jz      .isp2
-	fsub    st0, st0	
+    fld     dword [esi + syVLFO.amp]
+    fld     dword [esi + syVLFO.pol]
+    fistp   dword [temp]
+    mov     eax,  [temp]
+    fld     st0
+    fchs
+    fmul    dword [fci2]
+    cmp     al, 2       ; +/- polarity?
+    jz      .isp2
+    fsub    st0, st0	
 .isp2
-	fstp    dword [ebp + syWLFO.dc]
-	cmp     al, 1       ; +/- polarity?
-	jnz     .isntp1
-	fchs
+    fstp    dword [ebp + syWLFO.dc]
+    cmp     al, 1       ; +/- polarity?
+    jnz     .isntp1
+    fchs
 .isntp1
-	fstp    dword [ebp + syWLFO.gain]
+    fstp    dword [ebp + syWLFO.gain]
 
-	popad
-	ret
+    popad
+    ret
 
 
 syLFOKeyOn
   pushad
-	mov eax, [ebp + syWLFO.fs]
-	or  eax, eax
-	jz  .end
-	mov eax, [ebp + syWLFO.cph]
-	mov [ebp + syWLFO.cntr], eax
-	xor eax, eax
-	not eax
-	mov [ebp + syWLFO.last], eax
+    mov eax, [ebp + syWLFO.fs]
+    or  eax, eax
+    jz  .end
+    mov eax, [ebp + syWLFO.cph]
+    mov [ebp + syWLFO.cntr], eax
+    xor eax, eax
+    not eax
+    mov [ebp + syWLFO.last], eax
 .end
-	popad
-	ret
+    popad
+    ret
 
 
 section .data
 
 syLTTab		dd syLFOTick.mode0, syLFOTick.mode1, syLFOTick.mode2, syLFOTick.mode3
-				  dd syLFOTick.mode4, syLFOTick.mode0, syLFOTick.mode0, syLFOTick.mode0
-				  
+                  dd syLFOTick.mode4, syLFOTick.mode0, syLFOTick.mode0, syLFOTick.mode0
+                  
 section .text
 
 syLFOTick
   pushad
-	mov			eax, [ebp + syWLFO.cntr]
-	mov			edx, [ebp + syWLFO.mode]
-	and     dl, 7
-	call    [syLTTab + 4*edx]
-	fmul    dword [ebp + syWLFO.gain]
-	fadd    dword [ebp + syWLFO.dc]
-	fstp    dword [ebp + syWLFO.out]
-	mov			eax, [ebp + syWLFO.cntr]
-	add			eax, [ebp + syWLFO.freq]
-	jnc     .isok
-	mov     edx, [ebp + syWLFO.feg]
-	or      edx, edx
-	jz      .isok
-	xor     eax, eax
-	not     eax
+    mov			eax, [ebp + syWLFO.cntr]
+    mov			edx, [ebp + syWLFO.mode]
+    and     dl, 7
+    call    [syLTTab + 4*edx]
+    fmul    dword [ebp + syWLFO.gain]
+    fadd    dword [ebp + syWLFO.dc]
+    fstp    dword [ebp + syWLFO.out]
+    mov			eax, [ebp + syWLFO.cntr]
+    add			eax, [ebp + syWLFO.freq]
+    jnc     .isok
+    mov     edx, [ebp + syWLFO.feg]
+    or      edx, edx
+    jz      .isok
+    xor     eax, eax
+    not     eax
 .isok
-	mov			[ebp + syWLFO.cntr], eax
-	popad
-	ret
+    mov			[ebp + syWLFO.cntr], eax
+    popad
+    ret
 
 .mode0 ; saw
   shr			eax, 9
-	or      eax, 3f800000h
-	mov     [temp], eax
-	fld     dword [temp] ; <1..2>
-	fld1                 ; <1> <1..2>
-	fsubp   st1, st0     ; <0..1>
-	ret
+    or      eax, 3f800000h
+    mov     [temp], eax
+    fld     dword [temp] ; <1..2>
+    fld1                 ; <1> <1..2>
+    fsubp   st1, st0     ; <0..1>
+    ret
 
 .mode1 ; tri
   shl			eax, 1
-	sbb     ebx, ebx
-	xor     eax, ebx
-	jmp     .mode0
+    sbb     ebx, ebx
+    xor     eax, ebx
+    jmp     .mode0
 
 .mode2 ; pulse
-	shl     eax, 1
-	sbb     eax, eax
+    shl     eax, 1
+    sbb     eax, eax
   jmp			.mode0
 
 
 .mode3 ; sin
   call    .mode0
-	fmul    dword [fc2pi] ; <0..2pi>
-	call    fastsinrc     ; <-1..1>
-	fmul    dword [fci2]  ; <-0.5..0.5>
-	fadd    dword [fci2]  ; <0..1>
-	ret
+    fmul    dword [fc2pi] ; <0..2pi>
+    call    fastsinrc     ; <-1..1>
+    fmul    dword [fci2]  ; <-0.5..0.5>
+    fadd    dword [fci2]  ; <0..1>
+    ret
 
 
 .mode4 ; s&h
-	cmp   eax, [ebp + syWLFO.last]
-	mov		[ebp + syWLFO.last], eax
+    cmp   eax, [ebp + syWLFO.last]
+    mov		[ebp + syWLFO.last], eax
   jae   .nonew
-	mov   eax, [ebp + syWLFO.nseed]
+    mov   eax, [ebp + syWLFO.nseed]
   imul	eax, icnoisemul
-	add		eax, icnoiseadd
-	mov		[ebp + syWLFO.nseed], eax
+    add		eax, icnoiseadd
+    mov		[ebp + syWLFO.nseed], eax
 .nonew
-	mov   eax, [ebp + syWLFO.nseed]
-	jmp   .mode0
+    mov   eax, [ebp + syWLFO.nseed]
+    jmp   .mode0
 
 
 
@@ -1748,137 +1748,137 @@ global _DIST_
 _DIST_
 
 struc syVDist
-	.mode			resd 1			; 0: off, 1: overdrive, 2: clip, 3: bitcrusher, 4: decimator
+    .mode			resd 1			; 0: off, 1: overdrive, 2: clip, 3: bitcrusher, 4: decimator
                         ; modes 4 to 8: filters (see syVFlt)
-	.ingain   resd 1      ; -12dB ... 36dB
-	.param1   resd 1      ; outgain/crush/outfreq
-	.param2   resd 1      ; offset/offset/xor/jitter
-	.size
+    .ingain   resd 1      ; -12dB ... 36dB
+    .param1   resd 1      ; outgain/crush/outfreq
+    .param2   resd 1      ; offset/offset/xor/jitter
+    .size
 endstruc
 
 struc syWDist
-	.mode			resd 1
-	.gain1    resd 1      ; float: input gain for all fx
-	.gain2    resd 1      ; float: output gain for od/clip
-	.offs			resd 1      ; float: offs for od/clip
-	.crush1   resd 1      ; float: crush factor^-1
-	.crush2   resd 1      ; int:	 crush factor^1
-	.crxor    resd 1      ; int:   xor value for crush
-	.dcount   resd 1      ; int:   decimator counter
-	.dfreq    resd 1      ; int:   decimator frequency
-	.dvall	  resd 1			; float: last decimator value (mono/left)
-	.dvalr	  resd 1			; float: last decimator value (right)
-	.dlp1c    resd 1			; float: decimator pre-filter coefficient
-	.dlp1bl   resd 1			; float: decimator pre-filter buffer (mono/left)
-	.dlp1br   resd 1			; float: decimator pre-filter buffer (right)
-	.dlp2c    resd 1			; float: decimator post-filter coefficient
-	.dlp2bl   resd 1			; float: decimator post-filter buffer (mono/left)
-	.dlp2br   resd 1			; float: decimator post-filter buffer (right)
-	.fw1      resb syWFlt.size  ; left/mono filter workspace
-	.fw2      resb syWFlt.size  ; right filter workspace
-	.size
+    .mode			resd 1
+    .gain1    resd 1      ; float: input gain for all fx
+    .gain2    resd 1      ; float: output gain for od/clip
+    .offs			resd 1      ; float: offs for od/clip
+    .crush1   resd 1      ; float: crush factor^-1
+    .crush2   resd 1      ; int:	 crush factor^1
+    .crxor    resd 1      ; int:   xor value for crush
+    .dcount   resd 1      ; int:   decimator counter
+    .dfreq    resd 1      ; int:   decimator frequency
+    .dvall	  resd 1			; float: last decimator value (mono/left)
+    .dvalr	  resd 1			; float: last decimator value (right)
+    .dlp1c    resd 1			; float: decimator pre-filter coefficient
+    .dlp1bl   resd 1			; float: decimator pre-filter buffer (mono/left)
+    .dlp1br   resd 1			; float: decimator pre-filter buffer (right)
+    .dlp2c    resd 1			; float: decimator post-filter coefficient
+    .dlp2bl   resd 1			; float: decimator post-filter buffer (mono/left)
+    .dlp2br   resd 1			; float: decimator post-filter buffer (right)
+    .fw1      resb syWFlt.size  ; left/mono filter workspace
+    .fw2      resb syWFlt.size  ; right filter workspace
+    .size
 endstruc
 
 
 syDistInit:
-		pushad
-		xor			eax, eax
-		mov			[ebp + syWDist.dcount], eax
-		mov			[ebp + syWDist.dvall], eax
-		mov			[ebp + syWDist.dvalr], eax
-		mov			[ebp + syWDist.dlp1bl], eax
-		mov			[ebp + syWDist.dlp1br], eax
-		mov			[ebp + syWDist.dlp2bl], eax
-		mov			[ebp + syWDist.dlp2br], eax
+        pushad
+        xor			eax, eax
+        mov			[ebp + syWDist.dcount], eax
+        mov			[ebp + syWDist.dvall], eax
+        mov			[ebp + syWDist.dvalr], eax
+        mov			[ebp + syWDist.dlp1bl], eax
+        mov			[ebp + syWDist.dlp1br], eax
+        mov			[ebp + syWDist.dlp2bl], eax
+        mov			[ebp + syWDist.dlp2br], eax
     lea     ebp, [ebp + syWDist.fw1]
     call    syFltInit
     lea     ebp, [ebp + syWDist.fw2 - syWDist.fw1]
     call    syFltInit
-		popad
-		ret
+        popad
+        ret
 
 section .data
 
 syDSTab			dd syDistSet.mode0, syDistSet.mode1, syDistSet.mode2, syDistSet.mode3, syDistSet.mode4
-						dd syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF
-						dd syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF
-						dd syDistSet.modeF
+                        dd syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF
+                        dd syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF, syDistSet.modeF
+                        dd syDistSet.modeF
 
 section .text
 
 syDistSet:
-		pushad
-		fld			dword [esi + syVDist.mode]
-		fistp   dword [ebp + syWDist.mode]
+        pushad
+        fld			dword [esi + syVDist.mode]
+        fistp   dword [ebp + syWDist.mode]
 
-		fld     dword [esi + syVDist.ingain]
-		fsub    dword [fc32]
-		fmul    dword [fci16]
-		call    pow2
-		fstp    dword [ebp + syWDist.gain1]
+        fld     dword [esi + syVDist.ingain]
+        fsub    dword [fc32]
+        fmul    dword [fci16]
+        call    pow2
+        fstp    dword [ebp + syWDist.gain1]
 
-		fld     dword [esi + syVDist.param1]
-		mov     eax, [ebp + syWDist.mode]
-		and     al, 15
-		call    [syDSTab + 4*eax]
-		popad
-		ret
+        fld     dword [esi + syVDist.param1]
+        mov     eax, [ebp + syWDist.mode]
+        and     al, 15
+        call    [syDSTab + 4*eax]
+        popad
+        ret
 
 .mode0
-		fstp st0
-		ret
+        fstp st0
+        ret
 
 .mode1 ; overdrive
- 		fmul    dword [fci128]
-		fld			dword [ebp + syWDist.gain1]
-		fld1
-		fpatan
-		fdivp   st1, st0
-		jmp     .mode2b
+        fmul    dword [fci128]
+        fld			dword [ebp + syWDist.gain1]
+        fld1
+        fpatan
+        fdivp   st1, st0
+        jmp     .mode2b
 
 .mode2 ; clip
- 		fmul    dword [fci128]
+        fmul    dword [fci128]
 .mode2b
-		fstp    dword [ebp + syWDist.gain2]
-		fld     dword [esi + syVDist.param2]
-		fsub    dword [fc64]
-		fmul    dword [fci128]		
-		fadd    st0, st0
-		fmul    dword [ebp + syWDist.gain1]
-		fstp    dword [ebp + syWDist.offs]
-		ret
+        fstp    dword [ebp + syWDist.gain2]
+        fld     dword [esi + syVDist.param2]
+        fsub    dword [fc64]
+        fmul    dword [fci128]		
+        fadd    st0, st0
+        fmul    dword [ebp + syWDist.gain1]
+        fstp    dword [ebp + syWDist.offs]
+        ret
 
 .mode3 ; bitcrusher
-		fmul    dword [fc256]                  ; 0 .. 32xxx
-		fld1 
-		faddp   st1, st0                       ; 1 .. 32xxx
-		fld     dword [fc32768]                ; 32768 x
-		fxch    st1														 ; x 32768
-		fdiv    st1, st0                       ; x 32768/x
-		fistp   dword [ebp + syWDist.crush2]
-		fmul    dword [ebp + syWDist.gain1]
-		fstp    dword [ebp + syWDist.crush1]
-		fld     dword [esi + syVDist.param2]
-		fistp   dword [temp]
-		mov     eax, [temp]
-		shl     eax, 9
-		mov     [ebp + syWDist.crxor], eax
-		ret
+        fmul    dword [fc256]                  ; 0 .. 32xxx
+        fld1 
+        faddp   st1, st0                       ; 1 .. 32xxx
+        fld     dword [fc32768]                ; 32768 x
+        fxch    st1														 ; x 32768
+        fdiv    st1, st0                       ; x 32768/x
+        fistp   dword [ebp + syWDist.crush2]
+        fmul    dword [ebp + syWDist.gain1]
+        fstp    dword [ebp + syWDist.crush1]
+        fld     dword [esi + syVDist.param2]
+        fistp   dword [temp]
+        mov     eax, [temp]
+        shl     eax, 9
+        mov     [ebp + syWDist.crxor], eax
+        ret
 
 .mode4 ; decimator
-		fmul    dword [fci128]
-		call    calcfreq
-		fmul    dword [fc32bit]
-		fistp   dword [ebp + syWDist.dfreq]
-		shl     dword [ebp + syWDist.dfreq], 1
-		fld     dword [esi + syVDist.ingain]
-		fmul    dword [fci127]
-		fmul    st0, st0
-		fstp    dword [ebp + syWDist.dlp1c]
-		fld     dword [esi + syVDist.param2]
-		fmul    dword [fci127]
-		fmul    st0, st0
-		fstp    dword [ebp + syWDist.dlp2c]
+        fmul    dword [fci128]
+        call    calcfreq
+        fmul    dword [fc32bit]
+        fistp   dword [ebp + syWDist.dfreq]
+        shl     dword [ebp + syWDist.dfreq], 1
+        fld     dword [esi + syVDist.ingain]
+        fmul    dword [fci127]
+        fmul    st0, st0
+        fstp    dword [ebp + syWDist.dlp1c]
+        fld     dword [esi + syVDist.param2]
+        fmul    dword [fci127]
+        fmul    st0, st0
+        fstp    dword [ebp + syWDist.dlp2c]
     ret
 
 .modeF ; filters
@@ -1899,7 +1899,7 @@ syDistSet:
 section .data
 
 syDRMTab		dd syDistRenderMono.mode0, syDistRenderMono.mode1, syDistRenderMono.mode2, syDistRenderMono.mode3
-						dd syDistRenderMono.mode4, syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
+                        dd syDistRenderMono.mode4, syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
             dd syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
             dd syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
 
@@ -1909,49 +1909,49 @@ section .text
 ; edi : destptr
 ; ecx : size
 syDistRenderMono:
-		pushad
-	  V2PerfEnter V2Perf_DIST
-		mov			edx, [ebp + syWDist.mode]
-		call    [syDRMTab + 4*edx]
-	  V2PerfLeave V2Perf_DIST
-		popad
-		ret
+        pushad
+      V2PerfEnter V2Perf_DIST
+        mov			edx, [ebp + syWDist.mode]
+        call    [syDRMTab + 4*edx]
+      V2PerfLeave V2Perf_DIST
+        popad
+        ret
 
 .mode0  ; bypass
-		cmp			esi, edi
-		je			.m0end
-		rep     movsd
+        cmp			esi, edi
+        je			.m0end
+        rep     movsd
 .m0end
-		ret
+        ret
 
 .mode1  ; overdrive
-			fld1							; <1>
-			fchs							; <-1>
-			xor   ebx, ebx
-			mov   bl, 8
+            fld1							; <1>
+            fchs							; <-1>
+            xor   ebx, ebx
+            mov   bl, 8
 .m1loop
-			fld		dword [esi]
-			lea   esi, [esi+4]
-			fmul  dword [ebp + syWDist.gain1]
-			fadd  dword [ebp + syWDist.offs]
-			fst   dword [temp]
-			mov   ax,   [temp+2]
+            fld		dword [esi]
+            lea   esi, [esi+4]
+            fmul  dword [ebp + syWDist.gain1]
+            fadd  dword [ebp + syWDist.offs]
+            fst   dword [temp]
+            mov   ax,   [temp+2]
 
-			call  fastatan
-			
-			fmul  dword [ebp + syWDist.gain2]
-			fstp  dword [edi]
-			lea   edi, [edi+4]
-		dec ecx
-		jnz .m1loop
-	  fstp  st0          ; -
-		ret
+            call  fastatan
+            
+            fmul  dword [ebp + syWDist.gain2]
+            fstp  dword [edi]
+            lea   edi, [edi+4]
+        dec ecx
+        jnz .m1loop
+      fstp  st0          ; -
+        ret
 
 .mode2 ; clip
-			fld		dword [esi]
-			lea   esi, [esi+4]
-			fmul  dword [ebp + syWDist.gain1]
-			fadd  dword [ebp + syWDist.offs]
+            fld		dword [esi]
+            lea   esi, [esi+4]
+            fmul  dword [ebp + syWDist.gain1]
+            fadd  dword [ebp + syWDist.offs]
 
       fld1  
       fcomi		st0, st1
@@ -1963,37 +1963,37 @@ syDistRenderMono:
       fcmovb  st0, st1
       fxch    st1
       fstp    st0
-			
-			fmul  dword [ebp + syWDist.gain2]
-		  fstp  dword [edi]
-			lea   edi, [edi+4]
-		dec ecx
-		jnz .mode2
-		ret
+            
+            fmul  dword [ebp + syWDist.gain2]
+          fstp  dword [edi]
+            lea   edi, [edi+4]
+        dec ecx
+        jnz .mode2
+        ret
 
 .mode3 ; bitcrusher
     mov   ebx, 7fffh
     mov   edx, -7fffh
 .m3loop      
       fld		dword [esi]
-			lea		esi,	[esi+4]
-			fmul	dword [ebp + syWDist.crush1]
-			fistp dword [temp]
-			mov		eax,	[temp]
-			imul  eax,  [ebp + syWDist.crush2]
-			cmp			ebx, eax
-			cmovle  eax, ebx
-			cmp			edx, eax
-			cmovge  eax, edx
+            lea		esi,	[esi+4]
+            fmul	dword [ebp + syWDist.crush1]
+            fistp dword [temp]
+            mov		eax,	[temp]
+            imul  eax,  [ebp + syWDist.crush2]
+            cmp			ebx, eax
+            cmovle  eax, ebx
+            cmp			edx, eax
+            cmovge  eax, edx
       xor   eax, [ebp + syWDist.crxor]
-			mov   [temp],	eax
-			fild  dword [temp]
-			fmul  dword [fci32768]
-			fstp  dword [edi]
-			lea   edi, [edi+4]
-			dec   ecx
-		jnz .m3loop
-		ret
+            mov   [temp],	eax
+            fild  dword [temp]
+            fmul  dword [fci32768]
+            fstp  dword [edi]
+            lea   edi, [edi+4]
+            dec   ecx
+        jnz .m3loop
+        ret
 
 
 .mode4 ; decimator
@@ -2001,17 +2001,17 @@ syDistRenderMono:
   mov edx, [ebp + syWDist.dfreq]
   mov ebx, [ebp + syWDist.dcount]
 .m4loop
-		add		ebx, edx
-		cmovc eax, [esi]
-		add		esi, byte 4
-		stosd
-		dec ecx
+        add		ebx, edx
+        cmovc eax, [esi]
+        add		esi, byte 4
+        stosd
+        dec ecx
   jnz .m4loop
   mov [ebp + syWDist.dcount], ebx
   mov [ebp + syWDist.dvall], eax
   ret
 
-			      
+                  
 
 .modeF ; filters
   lea   ebp, [ebp + syWDist.fw1]
@@ -2020,42 +2020,42 @@ syDistRenderMono:
 section .data					
 
 syDRSTab		dd syDistRenderMono.mode0, syDistRenderMono.mode1, syDistRenderMono.mode2, syDistRenderMono.mode3
-						dd syDistRenderStereo.mode4, syDistRenderStereo.modeF, syDistRenderStereo.modeF, syDistRenderStereo.modeF
+                        dd syDistRenderStereo.mode4, syDistRenderStereo.modeF, syDistRenderStereo.modeF, syDistRenderStereo.modeF
             dd syDistRenderStereo.modeF, syDistRenderStereo.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
             dd syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF, syDistRenderMono.modeF
-		
+        
 section .text		
-		
+        
 syDistRenderStereo:
-	pushad
-	V2PerfEnter V2Perf_DIST
-	shl  ecx, 1
-	mov			edx, [ebp + syWDist.mode]
-	call    [syDRSTab + 4*edx]
-	V2PerfLeave V2Perf_DIST
-	popad
-	ret
+    pushad
+    V2PerfEnter V2Perf_DIST
+    shl  ecx, 1
+    mov			edx, [ebp + syWDist.mode]
+    call    [syDRSTab + 4*edx]
+    V2PerfLeave V2Perf_DIST
+    popad
+    ret
 
 .mode4 ; decimator
-	shr ecx, 1
-	mov eax, [ebp + syWDist.dvall]
-	mov edx, [ebp + syWDist.dvalr]
-	mov ebx, [ebp + syWDist.dcount]
+    shr ecx, 1
+    mov eax, [ebp + syWDist.dvall]
+    mov edx, [ebp + syWDist.dvalr]
+    mov ebx, [ebp + syWDist.dcount]
 .m4loop
-		add   ebx, [ebp + syWDist.dfreq]
-		cmovc eax, [esi]
-		cmovc edx, [esi + 4]
-		add   esi, byte 8
-		stosd 
-		xchg  eax, edx
-		stosd
-		xchg  eax, edx
-		dec   ecx
-	jnz .m4loop
+        add   ebx, [ebp + syWDist.dfreq]
+        cmovc eax, [esi]
+        cmovc edx, [esi + 4]
+        add   esi, byte 8
+        stosd 
+        xchg  eax, edx
+        stosd
+        xchg  eax, edx
+        dec   ecx
+    jnz .m4loop
   mov [ebp + syWDist.dcount], ebx
   mov [ebp + syWDist.dvall],  eax
   mov [ebp + syWDist.dvalr],  edx
-	ret
+    ret
 
 
 
@@ -2193,115 +2193,115 @@ struc syVV2
   .osc1			resb syVOsc.size    ; oszi 1
   .osc2			resb syVOsc.size    ; oszi 2
   .osc3			resb syVOsc.size    ; oszi 3
-	.vcf1     resb syVFlt.size	  ; filter 1
-	.vcf2     resb syVFlt.size	  ; filter 2
-	.routing  resd 1              ; 0: single  1: serial  2: parallel
+    .vcf1     resb syVFlt.size	  ; filter 1
+    .vcf2     resb syVFlt.size	  ; filter 2
+    .routing  resd 1              ; 0: single  1: serial  2: parallel
   .fltbal   resd 1              ; parallel filter balance
-	.dist     resb syVDist.size   ; distorter
-	.aenv     resb syVEnv.size    ; amplitude env
-	.env2			resb syVEnv.size    ; EG 2
-	.lfo1     resb syVLFO.size    ; LFO 1
-	.lfo2     resb syVLFO.size    ; LFO 2
-	.oscsync  resd 1              ; osc keysync flag
-	.size
+    .dist     resb syVDist.size   ; distorter
+    .aenv     resb syVEnv.size    ; amplitude env
+    .env2			resb syVEnv.size    ; EG 2
+    .lfo1     resb syVLFO.size    ; LFO 1
+    .lfo2     resb syVLFO.size    ; LFO 2
+    .oscsync  resd 1              ; osc keysync flag
+    .size
 endstruc
 
 
 struc syWV2
-	.note			resd 1
-	.velo			resd 1
-	.gate     resd 1
+    .note			resd 1
+    .velo			resd 1
+    .gate     resd 1
 
-	.curvol   resd 1
-	.volramp  resd 1
+    .curvol   resd 1
+    .volramp  resd 1
 
   .xpose    resd 1
-	.fmode    resd 1
-	.lvol     resd 1
-	.rvol     resd 1
+    .fmode    resd 1
+    .lvol     resd 1
+    .rvol     resd 1
   .f1gain   resd 1
   .f2gain   resd 1
 
-	.oks      resd 1
+    .oks      resd 1
 
-	.osc1     resb syWOsc.size
-	.osc2     resb syWOsc.size
-	.osc3     resb syWOsc.size
-	.vcf1     resb syWFlt.size	  ; filter 1
-	.vcf2     resb syWFlt.size	  ; filter 2
-	.aenv     resb syWEnv.size
-	.env2			resb syWEnv.size    
-	.lfo1     resb syWLFO.size    ; LFO 1
-	.lfo2     resb syWLFO.size    ; LFO 2
-	.dist     resb syWDist.size   ; distorter
-	.dcf      resb syWDCF.size   ; post dc filter
+    .osc1     resb syWOsc.size
+    .osc2     resb syWOsc.size
+    .osc3     resb syWOsc.size
+    .vcf1     resb syWFlt.size	  ; filter 1
+    .vcf2     resb syWFlt.size	  ; filter 2
+    .aenv     resb syWEnv.size
+    .env2			resb syWEnv.size    
+    .lfo1     resb syWLFO.size    ; LFO 1
+    .lfo2     resb syWLFO.size    ; LFO 2
+    .dist     resb syWDist.size   ; distorter
+    .dcf      resb syWDCF.size   ; post dc filter
 
-	.size
+    .size
 endstruc
 
 
 ; ebp: workspace
 syV2Init:
-	pushad
-	lea ebp, [ebp + syWV2.osc1 - 0]
-	xor ecx, ecx
-	call syOscInit
-	lea ebp, [ebp + syWV2.osc2 - syWV2.osc1]
+    pushad
+    lea ebp, [ebp + syWV2.osc1 - 0]
+    xor ecx, ecx
+    call syOscInit
+    lea ebp, [ebp + syWV2.osc2 - syWV2.osc1]
   inc  ecx
-	call syOscInit
-	lea ebp, [ebp + syWV2.osc3 - syWV2.osc2]
+    call syOscInit
+    lea ebp, [ebp + syWV2.osc3 - syWV2.osc2]
   inc  ecx
-	call syOscInit
-	lea ebp, [ebp + syWV2.aenv - syWV2.osc3]
-	call syEnvInit
-	lea ebp, [ebp + syWV2.env2 - syWV2.aenv]
-	call syEnvInit
-	lea ebp, [ebp + syWV2.vcf1 - syWV2.env2]
-	call syFltInit
-	lea ebp, [ebp + syWV2.vcf2 - syWV2.vcf1]
-	call syFltInit
-	lea ebp, [ebp + syWV2.lfo1 - syWV2.vcf2]
-	call syLFOInit
-	lea ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
-	call syLFOInit
-	lea ebp, [ebp + syWV2.dist - syWV2.lfo2]
-	call syDistInit
-	lea ebp, [ebp + syWV2.dcf - syWV2.dist]
-	call syDCFInit
-	popad
-	ret
+    call syOscInit
+    lea ebp, [ebp + syWV2.aenv - syWV2.osc3]
+    call syEnvInit
+    lea ebp, [ebp + syWV2.env2 - syWV2.aenv]
+    call syEnvInit
+    lea ebp, [ebp + syWV2.vcf1 - syWV2.env2]
+    call syFltInit
+    lea ebp, [ebp + syWV2.vcf2 - syWV2.vcf1]
+    call syFltInit
+    lea ebp, [ebp + syWV2.lfo1 - syWV2.vcf2]
+    call syLFOInit
+    lea ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
+    call syLFOInit
+    lea ebp, [ebp + syWV2.dist - syWV2.lfo2]
+    call syDistInit
+    lea ebp, [ebp + syWV2.dcf - syWV2.dist]
+    call syDCFInit
+    popad
+    ret
 
 
 ; tick
 ; ebp: workspace
 syV2Tick:
-	pushad
+    pushad
 
 
-	; 1. EGs
-	mov		eax, [ebp + syWV2.gate]
-	lea		ebp, [ebp + syWV2.aenv - 0]
-	call  syEnvTick
-	lea		ebp, [ebp + syWV2.env2 - syWV2.aenv]
-	call  syEnvTick
+    ; 1. EGs
+    mov		eax, [ebp + syWV2.gate]
+    lea		ebp, [ebp + syWV2.aenv - 0]
+    call  syEnvTick
+    lea		ebp, [ebp + syWV2.env2 - syWV2.aenv]
+    call  syEnvTick
 
-	; 2. LFOs
-	lea		ebp, [ebp + syWV2.lfo1 - syWV2.env2]
-	call  syLFOTick
-	lea		ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
-	call  syLFOTick
+    ; 2. LFOs
+    lea		ebp, [ebp + syWV2.lfo1 - syWV2.env2]
+    call  syLFOTick
+    lea		ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
+    call  syLFOTick
 
-	lea		ebp, [ebp + 0 - syWV2.lfo2]
+    lea		ebp, [ebp + 0 - syWV2.lfo2]
 
-	; 3. Volume Ramping
-	fld	 dword [ebp + syWV2.aenv + syWEnv.out]
-	fmul dword [fci128]
-	fsub dword [ebp + syWV2.curvol]
-	fmul dword [SRfciframe]
-	fstp dword [ebp + syWV2.volramp]
+    ; 3. Volume Ramping
+    fld	 dword [ebp + syWV2.aenv + syWEnv.out]
+    fmul dword [fci128]
+    fsub dword [ebp + syWV2.curvol]
+    fmul dword [SRfciframe]
+    fstp dword [ebp + syWV2.volramp]
 
-	popad
-	ret
+    popad
+    ret
 
 
 ; render
@@ -2309,126 +2309,126 @@ syV2Tick:
 ; ecx: # of samples
 ; ebp: workspace
 syV2Render:
-	pushad
+    pushad
 
   mov  ebx, [this]
   add  ebx, SYN.vcebuf
 
-	; clear buffer
-	push ecx
-	mov  edi, ebx
-	xor  eax, eax
-	rep  stosd
-	pop  ecx
+    ; clear buffer
+    push ecx
+    mov  edi, ebx
+    xor  eax, eax
+    rep  stosd
+    pop  ecx
 
-	mov  edi, ebx
-	lea  ebp, [ebp - 0 + syWV2.osc1]
-	call syOscRender
-	lea  ebp, [ebp - syWV2.osc1 + syWV2.osc2]
-	call syOscRender
-	lea  ebp, [ebp - syWV2.osc2 + syWV2.osc3]
-	call syOscRender
-	lea  ebp, [ebp - syWV2.osc3 + 0]
+    mov  edi, ebx
+    lea  ebp, [ebp - 0 + syWV2.osc1]
+    call syOscRender
+    lea  ebp, [ebp - syWV2.osc1 + syWV2.osc2]
+    call syOscRender
+    lea  ebp, [ebp - syWV2.osc2 + syWV2.osc3]
+    call syOscRender
+    lea  ebp, [ebp - syWV2.osc3 + 0]
 
-	; Filter + Routing
-	; wenn parallel -> erst filter 2 in buf2 rendern
-	mov  edx, [ebp + syWV2.fmode]
-	cmp  dl, 2   ; parallel?
-	jne  .nopar1
-	lea  ebp, [ebp - 0 + syWV2.vcf2]
-	mov  esi, ebx
-	lea  edi, [ebx + SYN.vcebuf2-SYN.vcebuf]
-	call syFltRender
-	lea  ebp, [ebp - syWV2.vcf2 + 0]
+    ; Filter + Routing
+    ; wenn parallel -> erst filter 2 in buf2 rendern
+    mov  edx, [ebp + syWV2.fmode]
+    cmp  dl, 2   ; parallel?
+    jne  .nopar1
+    lea  ebp, [ebp - 0 + syWV2.vcf2]
+    mov  esi, ebx
+    lea  edi, [ebx + SYN.vcebuf2-SYN.vcebuf]
+    call syFltRender
+    lea  ebp, [ebp - syWV2.vcf2 + 0]
 .nopar1
-	; dann auf jeden fall filter 1 rendern
-	lea  ebp, [ebp - 0 + syWV2.vcf1]
-	mov  esi, ebx
-	mov  edi, ebx
-	call syFltRender
-	lea  ebp, [ebp - syWV2.vcf1 + 0]
-	; dann fallunterscheidung...
-	or   dl, dl   ; single?
-	jz	 .fltend
-	cmp  dl, 2    ; parallel?
-	jnz  .nopar2
-	push ecx      ; ja -> buf2 auf buf adden
-	lea  esi, [ebx + SYN.vcebuf2-SYN.vcebuf]
-	mov  edi, ebx
+    ; dann auf jeden fall filter 1 rendern
+    lea  ebp, [ebp - 0 + syWV2.vcf1]
+    mov  esi, ebx
+    mov  edi, ebx
+    call syFltRender
+    lea  ebp, [ebp - syWV2.vcf1 + 0]
+    ; dann fallunterscheidung...
+    or   dl, dl   ; single?
+    jz	 .fltend
+    cmp  dl, 2    ; parallel?
+    jnz  .nopar2
+    push ecx      ; ja -> buf2 auf buf adden
+    lea  esi, [ebx + SYN.vcebuf2-SYN.vcebuf]
+    mov  edi, ebx
   fld  dword [ebp + syWV2.f1gain]   ; <g1>
   fld  dword [ebp + syWV2.f2gain]   ; <g2> <g1>
 .parloop
     fld		dword [esi]               ; <v2> <g2> <g1>
     fmul  st0, st1                  ; <v2'> <g2> <g1>
-		add		esi, byte 4    
-		fld 	dword [edi]               ; <v1> <v2'> <g2> <g1>
-		fmul	st0, st3                  ; <v1'> <v2'> <g2> <g1>
+        add		esi, byte 4    
+        fld 	dword [edi]               ; <v1> <v2'> <g2> <g1>
+        fmul	st0, st3                  ; <v1'> <v2'> <g2> <g1>
     faddp st1, st0                  ; <out> <g2> <g1>
-		fstp  dword [edi]               ; <g2> <g1>
-		add   edi, byte 4
-	  dec ecx
-	jnz .parloop
+        fstp  dword [edi]               ; <g2> <g1>
+        add   edi, byte 4
+      dec ecx
+    jnz .parloop
   fstp st0                          ; <g1>
   fstp st0                          ; -
-	pop ecx
-	jmp .fltend
+    pop ecx
+    jmp .fltend
 .nopar2  
   ; ... also seriell ... filter 2 drüberrechnen
-	lea  ebp, [ebp - 0 + syWV2.vcf2]
-	mov  esi, ebx
-	mov  edi, ebx
-	call syFltRender
-	lea  ebp, [ebp - syWV2.vcf2 + 0]
+    lea  ebp, [ebp - 0 + syWV2.vcf2]
+    mov  esi, ebx
+    mov  edi, ebx
+    call syFltRender
+    lea  ebp, [ebp - syWV2.vcf2 + 0]
  
 .fltend
 
-	; distortion
-	mov  esi, ebx
-	mov  edi, ebx
-	lea  ebp, [ebp - 0 + syWV2.dist]
-	call syDistRenderMono
-	
-	; dc filter
-	lea ebp, [ebp + syWV2.dcf - syWV2.dist]
-	call syDCFRenderMono
-	
-	lea  ebp, [ebp - syWV2.dcf + 0]
+    ; distortion
+    mov  esi, ebx
+    mov  edi, ebx
+    lea  ebp, [ebp - 0 + syWV2.dist]
+    call syDistRenderMono
+    
+    ; dc filter
+    lea ebp, [ebp + syWV2.dcf - syWV2.dist]
+    call syDCFRenderMono
+    
+    lea  ebp, [ebp - syWV2.dcf + 0]
 
-	; vcebuf (mono) nach chanbuf(stereo) kopieren
-	lea	 edi, [ebx + SYN.chanbuf-SYN.vcebuf]
-	mov  esi, ebx
-	fld  dword [ebp + syWV2.curvol] ; cv
+    ; vcebuf (mono) nach chanbuf(stereo) kopieren
+    lea	 edi, [ebx + SYN.chanbuf-SYN.vcebuf]
+    mov  esi, ebx
+    fld  dword [ebp + syWV2.curvol] ; cv
 .copyloop1
-		fld		dword [esi]		; out cv
-		fmul  st1						; out' cv
-		fxch  st1						; cv out'
-		fadd  dword [ebp + syWV2.volramp] ; cv' out'
-		fxch  st1						; out' cv'
-		fld		st0						; out out cv
-		fmul  dword [ebp + syWV2.lvol] ; outl out cv
-		fxch  st1						; out outl cv
-		fmul  dword [ebp + syWV2.rvol] ; outr outl cv
-		fxch  st1						; outl outr cv
+        fld		dword [esi]		; out cv
+        fmul  st1						; out' cv
+        fxch  st1						; cv out'
+        fadd  dword [ebp + syWV2.volramp] ; cv' out'
+        fxch  st1						; out' cv'
+        fld		st0						; out out cv
+        fmul  dword [ebp + syWV2.lvol] ; outl out cv
+        fxch  st1						; out outl cv
+        fmul  dword [ebp + syWV2.rvol] ; outr outl cv
+        fxch  st1						; outl outr cv
 %ifdef FIXDENORMALS
-		fadd  dword [fcdcoffset]
-		fxch  st1
-		fadd  dword [fcdcoffset]
-		fxch  st1
+        fadd  dword [fcdcoffset]
+        fxch  st1
+        fadd  dword [fcdcoffset]
+        fxch  st1
 %endif		
-		fadd  dword [edi]		; l outr cv
-		fxch  st1						; outr l cv
-		fadd  dword [edi+4]	; r l cv
-		fxch	st1						; l r cv
-		fstp dword [edi]		; r cv
-		fstp dword [edi+4]	; cv
-		add esi, 4				
-		add edi, 8
-	dec ecx
-	jnz .copyloop1
-	fstp	dword [ebp + syWV2.curvol] ; -
+        fadd  dword [edi]		; l outr cv
+        fxch  st1						; outr l cv
+        fadd  dword [edi+4]	; r l cv
+        fxch	st1						; l r cv
+        fstp dword [edi]		; r cv
+        fstp dword [edi+4]	; cv
+        add esi, 4				
+        add edi, 8
+    dec ecx
+    jnz .copyloop1
+    fstp	dword [ebp + syWV2.curvol] ; -
 
-	popad
-	ret
+    popad
+    ret
 
 
 
@@ -2436,33 +2436,33 @@ syV2Render:
 ; esi: values
 ; ebp: workspace
 syV2Set:
-	pushad
+    pushad
 
   fld     dword [esi + syVV2.transp]
   fsub    dword [fc64]
   fst     dword [ebp + syWV2.xpose]
 
-	fiadd	  dword [ebp + syWV2.note]
+    fiadd	  dword [ebp + syWV2.note]
   fst		dword [ebp + syWV2.osc1 + syWOsc.note]
   fst		dword [ebp + syWV2.osc2 + syWOsc.note]
   fstp  dword [ebp + syWV2.osc3 + syWOsc.note]
 
-	fld			dword [esi + syVV2.routing]
-	fistp		dword [ebp + syWV2.fmode]
+    fld			dword [esi + syVV2.routing]
+    fistp		dword [ebp + syWV2.fmode]
 
-	fld			dword [esi + syVV2.oscsync]
-	fistp		dword [ebp + syWV2.oks]
+    fld			dword [esi + syVV2.oscsync]
+    fistp		dword [ebp + syWV2.oks]
 
-	; ... denn EQP - Panning rult.
-	fld			dword [esi + syVV2.panning] ; <p>
-	fmul		dword [fci128]              ; <p'>
-	fld			st0                         ; <p'> <p'>
-	fld1			                          ; <1> <p'> <p'>
-	fsubrp	st1, st0                    ; <1-p'> <p'>
-	fsqrt																; <lv> <p'>
-	fstp    dword [ebp + syWV2.lvol]    ; <p'>
-	fsqrt																; <rv>
-	fstp    dword [ebp + syWV2.rvol] 
+    ; ... denn EQP - Panning rult.
+    fld			dword [esi + syVV2.panning] ; <p>
+    fmul		dword [fci128]              ; <p'>
+    fld			st0                         ; <p'> <p'>
+    fld1			                          ; <1> <p'> <p'>
+    fsubrp	st1, st0                    ; <1-p'> <p'>
+    fsqrt																; <lv> <p'>
+    fstp    dword [ebp + syWV2.lvol]    ; <p'>
+    fsqrt																; <rv>
+    fstp    dword [ebp + syWV2.rvol] 
 
   ; filter balance für parallel
   fld     dword [esi + syVV2.fltbal]
@@ -2484,38 +2484,38 @@ syV2Set:
   fstp    dword [ebp + syWV2.f1gain] ; -
 
 
-	lea			ebp, [ebp + syWV2.osc1 - 0]
-	lea			esi, [esi + syVV2.osc1 - 0]
-	call		syOscSet
-	lea			ebp, [ebp + syWV2.osc2 - syWV2.osc1]
-	lea			esi, [esi + syVV2.osc2 - syVV2.osc1]
-	call		syOscSet
-	lea			ebp, [ebp + syWV2.osc3 - syWV2.osc2]
-	lea			esi, [esi + syVV2.osc3 - syVV2.osc2]
-	call		syOscSet
-	lea			ebp, [ebp + syWV2.aenv - syWV2.osc3]
-	lea			esi, [esi + syVV2.aenv - syVV2.osc3]
-	call		syEnvSet
-	lea			ebp, [ebp + syWV2.env2 - syWV2.aenv]
-	lea			esi, [esi + syVV2.env2 - syVV2.aenv]
-	call		syEnvSet
-	lea			ebp, [ebp + syWV2.vcf1 - syWV2.env2]
-	lea			esi, [esi + syVV2.vcf1 - syVV2.env2]
-	call		syFltSet
-	lea			ebp, [ebp + syWV2.vcf2 - syWV2.vcf1]
-	lea			esi, [esi + syVV2.vcf2 - syVV2.vcf1]
-	call		syFltSet
-	lea			ebp, [ebp + syWV2.lfo1 - syWV2.vcf2]
-	lea			esi, [esi + syVV2.lfo1 - syVV2.vcf2]
-	call		syLFOSet
-	lea			ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
-	lea			esi, [esi + syVV2.lfo2 - syVV2.lfo1]
-	call		syLFOSet
-	lea			ebp, [ebp + syWV2.dist - syWV2.lfo2]
-	lea			esi, [esi + syVV2.dist - syVV2.lfo2]
-	call		syDistSet
-	popad
-	ret
+    lea			ebp, [ebp + syWV2.osc1 - 0]
+    lea			esi, [esi + syVV2.osc1 - 0]
+    call		syOscSet
+    lea			ebp, [ebp + syWV2.osc2 - syWV2.osc1]
+    lea			esi, [esi + syVV2.osc2 - syVV2.osc1]
+    call		syOscSet
+    lea			ebp, [ebp + syWV2.osc3 - syWV2.osc2]
+    lea			esi, [esi + syVV2.osc3 - syVV2.osc2]
+    call		syOscSet
+    lea			ebp, [ebp + syWV2.aenv - syWV2.osc3]
+    lea			esi, [esi + syVV2.aenv - syVV2.osc3]
+    call		syEnvSet
+    lea			ebp, [ebp + syWV2.env2 - syWV2.aenv]
+    lea			esi, [esi + syVV2.env2 - syVV2.aenv]
+    call		syEnvSet
+    lea			ebp, [ebp + syWV2.vcf1 - syWV2.env2]
+    lea			esi, [esi + syVV2.vcf1 - syVV2.env2]
+    call		syFltSet
+    lea			ebp, [ebp + syWV2.vcf2 - syWV2.vcf1]
+    lea			esi, [esi + syVV2.vcf2 - syVV2.vcf1]
+    call		syFltSet
+    lea			ebp, [ebp + syWV2.lfo1 - syWV2.vcf2]
+    lea			esi, [esi + syVV2.lfo1 - syVV2.vcf2]
+    call		syLFOSet
+    lea			ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
+    lea			esi, [esi + syVV2.lfo2 - syVV2.lfo1]
+    call		syLFOSet
+    lea			ebp, [ebp + syWV2.dist - syWV2.lfo2]
+    lea			esi, [esi + syVV2.dist - syVV2.lfo2]
+    call		syDistSet
+    popad
+    ret
 
 
 ; note on
@@ -2524,39 +2524,39 @@ syV2Set:
 ; ebp: workspace
 syV2NoteOn:
   pushad
-	mov		[ebp + syWV2.note], eax
-	fild	dword [ebp + syWV2.note]
+    mov		[ebp + syWV2.note], eax
+    fild	dword [ebp + syWV2.note]
   fadd  dword [ebp + syWV2.xpose]
 
   fst		dword [ebp + syWV2.osc1 + syWOsc.note]
   fst		dword [ebp + syWV2.osc2 + syWOsc.note]
   fstp  dword [ebp + syWV2.osc3 + syWOsc.note]
-	mov   [temp], ebx
-	fild	dword [temp]
-	fstp  dword [ebp + syWV2.velo]
-	xor eax, eax
-	inc eax
-	mov [ebp + syWV2.gate], eax	
-	; reset EGs
-	mov [ebp + syWV2.aenv + syWEnv.state], eax	
-	mov [ebp + syWV2.env2 + syWEnv.state], eax	
+    mov   [temp], ebx
+    fild	dword [temp]
+    fstp  dword [ebp + syWV2.velo]
+    xor eax, eax
+    inc eax
+    mov [ebp + syWV2.gate], eax	
+    ; reset EGs
+    mov [ebp + syWV2.aenv + syWEnv.state], eax	
+    mov [ebp + syWV2.env2 + syWEnv.state], eax	
 
-	mov ebx, [ebp + syWV2.oks]
-	or	ebx, ebx
-	jz .nosync
+    mov ebx, [ebp + syWV2.oks]
+    or	ebx, ebx
+    jz .nosync
 
-	xor eax, eax
-	mov [ebp + syWV2.osc1 + syWOsc.cnt], eax
-	mov [ebp + syWV2.osc2 + syWOsc.cnt], eax
-	mov [ebp + syWV2.osc3 + syWOsc.cnt], eax
+    xor eax, eax
+    mov [ebp + syWV2.osc1 + syWOsc.cnt], eax
+    mov [ebp + syWV2.osc2 + syWOsc.cnt], eax
+    mov [ebp + syWV2.osc3 + syWOsc.cnt], eax
 
   cmp bl, 2
   jnz .nosync
 
   ; HARDSYNC
-	mov [ebp + syWV2.aenv + syWEnv.val], eax
-	mov [ebp + syWV2.env2 + syWEnv.val], eax
-	mov [ebp + syWV2.curvol], eax
+    mov [ebp + syWV2.aenv + syWEnv.val], eax
+    mov [ebp + syWV2.env2 + syWEnv.val], eax
+    mov [ebp + syWV2.curvol], eax
 
   lea ebp, [ebp + syWV2.osc1]
   xor ecx, ecx
@@ -2577,42 +2577,42 @@ syV2NoteOn:
    
 .nosync
 
-	lea  ebp, [ebp + syWV2.osc1 - 0]
-	call syOscChgPitch
-	lea  ebp, [ebp + syWV2.osc2 - syWV2.osc1]
-	call syOscChgPitch
-	lea  ebp, [ebp + syWV2.osc3 - syWV2.osc2]
-	call syOscChgPitch
+    lea  ebp, [ebp + syWV2.osc1 - 0]
+    call syOscChgPitch
+    lea  ebp, [ebp + syWV2.osc2 - syWV2.osc1]
+    call syOscChgPitch
+    lea  ebp, [ebp + syWV2.osc3 - syWV2.osc2]
+    call syOscChgPitch
 
-	lea  ebp, [ebp + syWV2.lfo1 - syWV2.osc3]
-	call syLFOKeyOn
-	lea  ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
-	call syLFOKeyOn
-	
-	lea ebp, [ebp + syWV2.dcf - syWV2.lfo2]
-	call syDCFInit
+    lea  ebp, [ebp + syWV2.lfo1 - syWV2.osc3]
+    call syLFOKeyOn
+    lea  ebp, [ebp + syWV2.lfo2 - syWV2.lfo1]
+    call syLFOKeyOn
+    
+    lea ebp, [ebp + syWV2.dcf - syWV2.lfo2]
+    call syDCFInit
 
-	popad
-	ret
+    popad
+    ret
 
 
 ; note off
 ; ebp: workspace
 syV2NoteOff:
   pushad
-	xor eax, eax
-	mov [ebp + syWV2.gate], eax
-	popad
-	ret
+    xor eax, eax
+    mov [ebp + syWV2.gate], eax
+    popad
+    ret
 
 
 section .data
 
 ; table for mod sources
 sVTab   dd		syWV2.aenv + syWEnv.out
-				dd    syWV2.env2 + syWEnv.out
-				dd    syWV2.lfo1 + syWLFO.out
-				dd    syWV2.lfo2 + syWLFO.out
+                dd    syWV2.env2 + syWEnv.out
+                dd    syWV2.lfo1 + syWLFO.out
+                dd    syWV2.lfo2 + syWLFO.out
 
 section .text
 
@@ -2621,65 +2621,65 @@ section .text
 storeV2Values:  ; ebp: pointer auf globals / edx: voice
   pushad
 
-	mov   ebx, [ebp + SYN.chanmap + 4*edx]    ; ebx = channel
-	or    ebx, ebx
-	jns   .doit
-	jmp   .end      ; voice gar ned belegt?
+    mov   ebx, [ebp + SYN.chanmap + 4*edx]    ; ebx = channel
+    or    ebx, ebx
+    jns   .doit
+    jmp   .end      ; voice gar ned belegt?
 .doit
-	movzx eax, byte [ebp + SYN.chans + 8*ebx] ; pgmnummer
-	mov   edi, [ebp + SYN.patchmap]
-	mov   edi, [edi + 4*eax]							 ; edi -> sounddaten
-	add   edi, [ebp + SYN.patchmap]
+    movzx eax, byte [ebp + SYN.chans + 8*ebx] ; pgmnummer
+    mov   edi, [ebp + SYN.patchmap]
+    mov   edi, [edi + 4*eax]							 ; edi -> sounddaten
+    add   edi, [ebp + SYN.patchmap]
 
-	mov   eax, edx
-	imul  eax, syVV2.size
-	lea   esi, [ebp + SYN.voicesv + eax]      ; esi -> values
-	mov   eax, edx
-	imul  eax, syWV2.size
-	lea   ebx, [ebp + SYN.voicesw + eax]      ; ebx -> workspace
+    mov   eax, edx
+    imul  eax, syVV2.size
+    lea   esi, [ebp + SYN.voicesv + eax]      ; esi -> values
+    mov   eax, edx
+    imul  eax, syWV2.size
+    lea   ebx, [ebp + SYN.voicesw + eax]      ; ebx -> workspace
 
-	; voicedependent daten übertragen
+    ; voicedependent daten übertragen
   xor   ecx, ecx
 .goloop
-		movzx eax, byte [edi + ecx]
-		mov   [temp], eax
-		fild  dword [temp]
-		fstp  dword [esi + 4*ecx]
-		inc   ecx
-		cmp   cl, v2sound.endvdvals
-	jne .goloop
+        movzx eax, byte [edi + ecx]
+        mov   [temp], eax
+        fild  dword [temp]
+        fstp  dword [esi + 4*ecx]
+        inc   ecx
+        cmp   cl, v2sound.endvdvals
+    jne .goloop
 
-	; MODMATRIX!
-	movzx ecx, byte [edi + v2sound.modnum]
-	lea		edi, [edi + v2sound.modmatrix]
-	or	ecx, ecx
-	jnz  .modloop
-	jmp  .modend
+    ; MODMATRIX!
+    movzx ecx, byte [edi + v2sound.modnum]
+    lea		edi, [edi + v2sound.modmatrix]
+    or	ecx, ecx
+    jnz  .modloop
+    jmp  .modend
 
 .modloop
-		movzx		eax, byte [edi + v2mod.source]  ; source
-		or      eax, eax
-		jnz     .mnotvel
-		fld     dword [ebx + syWV2.velo]
-		jmp			.mdo
+        movzx		eax, byte [edi + v2mod.source]  ; source
+        or      eax, eax
+        jnz     .mnotvel
+        fld     dword [ebx + syWV2.velo]
+        jmp			.mdo
 .mnotvel
-		cmp     al, 8
-		jae     .mnotctl
-		push    ebx
-  	mov     ebx, [ebp + SYN.chanmap + 4*edx]
-  	lea     ebx, [8*ebx + eax]
-		movzx   eax, byte [ebp + SYN.chans + ebx]
-		pop     ebx
-		mov     [temp], eax
-		fild    dword [temp]
-		jmp     .mdo
+        cmp     al, 8
+        jae     .mnotctl
+        push    ebx
+    mov     ebx, [ebp + SYN.chanmap + 4*edx]
+    lea     ebx, [8*ebx + eax]
+        movzx   eax, byte [ebp + SYN.chans + ebx]
+        pop     ebx
+        mov     [temp], eax
+        fild    dword [temp]
+        jmp     .mdo
 .mnotctl
     cmp     al, 12
     jae     .mnotvm
-		and     al, 3
-		mov     eax, [sVTab + 4*eax]
-		fld     dword [ebx + eax]
-		jmp     .mdo
+        and     al, 3
+        mov     eax, [sVTab + 4*eax]
+        fld     dword [ebx + eax]
+        jmp     .mdo
 .mnotvm
     cmp     al, 13
     jne     .mnotnote
@@ -2689,47 +2689,47 @@ storeV2Values:  ; ebp: pointer auf globals / edx: voice
     fadd    st0, st0
     jmp     .mdo
 .mdo
-		movzx   eax, byte [edi + v2mod.val]
-		mov     [temp], eax
-		fild    dword [temp]
-		fsub    dword [fc64]
-		fmul    dword [fci128]
-		fadd    st0, st0
-		fmulp   st1, st0
-		movzx   eax, byte [edi + v2mod.dest]
-		cmp     eax, v2sound.endvdvals
-		jb     .misok
-		fstp   st0
-		jmp    .mlend
+        movzx   eax, byte [edi + v2mod.val]
+        mov     [temp], eax
+        fild    dword [temp]
+        fsub    dword [fc64]
+        fmul    dword [fci128]
+        fadd    st0, st0
+        fmulp   st1, st0
+        movzx   eax, byte [edi + v2mod.dest]
+        cmp     eax, v2sound.endvdvals
+        jb     .misok
+        fstp   st0
+        jmp    .mlend
 .misok
-		fadd    dword [esi + 4*eax]
-		fstp    dword [temp]
-		; clippen
-		push    edx
-		mov     edx, [temp]
-		or      edx, edx
-		jns     .mnoclip1
-		xor     edx, edx
+        fadd    dword [esi + 4*eax]
+        fstp    dword [temp]
+        ; clippen
+        push    edx
+        mov     edx, [temp]
+        or      edx, edx
+        jns     .mnoclip1
+        xor     edx, edx
 .mnoclip1
     cmp     edx, 43000000h
-		jbe     .mnoclip2
-		mov     edx, 43000000h
+        jbe     .mnoclip2
+        mov     edx, 43000000h
 .mnoclip2
-		mov			[esi + 4*eax], edx
-		pop     edx
+        mov			[esi + 4*eax], edx
+        pop     edx
 .mlend
-		lea edi, [edi+3]
-	  dec ecx
-	jz .modend
-	jmp .modloop
+        lea edi, [edi+3]
+      dec ecx
+    jz .modend
+    jmp .modloop
 .modend
   
   mov  ebp, ebx
-	call syV2Set
+    call syV2Set
 
 .end
-	popad
-	ret
+    popad
+    ret
 
 
 
@@ -2952,189 +2952,189 @@ _MODDEL_
 
 struc syVModDel
   .amount   resd 1    ; dry/eff value (0=-eff, 64=dry, 127=eff)
-	.fb       resd 1    ; feedback (0=-100%, 64=0%, 127=~+100%)
-	.llength	resd 1		; length of left delay
-	.rlength  resd 1    ; length of right delay	
-	.mrate    resd 1    ; modulation rate
-	.mdepth   resd 1    ; modulation depth
-	.mphase   resd 1    ; modulation stereo phase (0=-180°, 64=0°, 127=180°)
-	.size
+    .fb       resd 1    ; feedback (0=-100%, 64=0%, 127=~+100%)
+    .llength	resd 1		; length of left delay
+    .rlength  resd 1    ; length of right delay	
+    .mrate    resd 1    ; modulation rate
+    .mdepth   resd 1    ; modulation depth
+    .mphase   resd 1    ; modulation stereo phase (0=-180°, 64=0°, 127=180°)
+    .size
 endstruc
 
 struc syWModDel
-	.db1      resd 1    ; ptr: delay buffer 1
-	.db2      resd 1    ; ptr: delay buffer 2
+    .db1      resd 1    ; ptr: delay buffer 1
+    .db2      resd 1    ; ptr: delay buffer 2
   .dbufmask resd 1    ; int: delay buffer mask
 
-	.dbptr    resd 1    ; int: buffer write pos
-	.db1offs  resd 1    ; int: buffer 1 offset
-	.db2offs  resd 1    ; int: buffer 2 offset
-	.mcnt     resd 1    ; mod counter
-	.mfreq    resd 1    ; mod freq
-	.mphase   resd 1    ; mod phase
-	.mmaxoffs resd 1    ; mod max offs (2048samples*depth)
+    .dbptr    resd 1    ; int: buffer write pos
+    .db1offs  resd 1    ; int: buffer 1 offset
+    .db2offs  resd 1    ; int: buffer 2 offset
+    .mcnt     resd 1    ; mod counter
+    .mfreq    resd 1    ; mod freq
+    .mphase   resd 1    ; mod phase
+    .mmaxoffs resd 1    ; mod max offs (2048samples*depth)
 
-	.fbval    resd 1    ; float: feedback val
-	.dryout   resd 1    ; float: dry out
-	.effout   resd 1    ; float: eff out
+    .fbval    resd 1    ; float: feedback val
+    .dryout   resd 1    ; float: dry out
+    .effout   resd 1    ; float: eff out
 
-	.size
+    .size
 endstruc
 
 
 syModDelInit
   pushad
-	xor eax, eax
-	mov [ebp + syWModDel.dbptr],eax
-	mov [ebp + syWModDel.mcnt],eax
-	mov esi, [ebp + syWModDel.db1]
-	mov edi, [ebp + syWModDel.db2]
-	mov ecx, [ebp + syWModDel.dbufmask]
+    xor eax, eax
+    mov [ebp + syWModDel.dbptr],eax
+    mov [ebp + syWModDel.mcnt],eax
+    mov esi, [ebp + syWModDel.db1]
+    mov edi, [ebp + syWModDel.db2]
+    mov ecx, [ebp + syWModDel.dbufmask]
 .clloop
-	  stosd
-		mov		[esi+4*ecx],eax
-		dec		ecx
-	jns	.clloop
-	popad
-	ret
+      stosd
+        mov		[esi+4*ecx],eax
+        dec		ecx
+    jns	.clloop
+    popad
+    ret
 
 syModDelSet
   pushad
-	fld			dword [esi + syVModDel.amount]
-	fsub		dword [fc64]
-	fmul    dword [fci128]
-	fadd    st0, st0
-	fst     dword [ebp + syWModDel.effout]
-	fabs
-	fld1
-	fsubrp  st1, st0
-	fstp    dword [ebp + syWModDel.dryout]
-	fld     dword [esi + syVModDel.fb]
-	fsub		dword [fc64]
-	fmul    dword [fci128]
-	fadd    st0, st0
-	fstp    dword [ebp + syWModDel.fbval]
+    fld			dword [esi + syVModDel.amount]
+    fsub		dword [fc64]
+    fmul    dword [fci128]
+    fadd    st0, st0
+    fst     dword [ebp + syWModDel.effout]
+    fabs
+    fld1
+    fsubrp  st1, st0
+    fstp    dword [ebp + syWModDel.dryout]
+    fld     dword [esi + syVModDel.fb]
+    fsub		dword [fc64]
+    fmul    dword [fci128]
+    fadd    st0, st0
+    fstp    dword [ebp + syWModDel.fbval]
 
   fild    dword [ebp + syWModDel.dbufmask]
-	fsub    dword [fc1023]
-	fmul    dword [fci128]
-	fld     dword [esi + syVModDel.llength]
-	fmul    st0, st1
-	fistp   dword [ebp + syWModDel.db1offs]
-	fld     dword [esi + syVModDel.rlength]
-	fmulp   st1, st0
-	fistp   dword [ebp + syWModDel.db2offs]
+    fsub    dword [fc1023]
+    fmul    dword [fci128]
+    fld     dword [esi + syVModDel.llength]
+    fmul    st0, st1
+    fistp   dword [ebp + syWModDel.db1offs]
+    fld     dword [esi + syVModDel.rlength]
+    fmulp   st1, st0
+    fistp   dword [ebp + syWModDel.db2offs]
 
-	fld     dword [esi + syVModDel.mrate]
-	fmul    dword [fci128]
-	call    calcfreq
-	fmul    dword [fcmdlfomul]
-	fmul    dword [SRfclinfreq]
-	fistp   dword [ebp + syWModDel.mfreq]
+    fld     dword [esi + syVModDel.mrate]
+    fmul    dword [fci128]
+    call    calcfreq
+    fmul    dword [fcmdlfomul]
+    fmul    dword [SRfclinfreq]
+    fistp   dword [ebp + syWModDel.mfreq]
 
-	fld     dword [esi + syVModDel.mdepth]
-	fmul    dword [fci128]
-	fmul    dword [fc1023]
-	fistp   dword [ebp + syWModDel.mmaxoffs]
+    fld     dword [esi + syVModDel.mdepth]
+    fmul    dword [fci128]
+    fmul    dword [fc1023]
+    fistp   dword [ebp + syWModDel.mmaxoffs]
 
-	fld     dword [esi + syVModDel.mphase]
-	fsub		dword [fc64]
-	fmul    dword [fci128]
-	fmul    dword [fc32bit]
-	fistp   dword [ebp + syWModDel.mphase]
-	shl     dword [ebp + syWModDel.mphase], 1
+    fld     dword [esi + syVModDel.mphase]
+    fsub		dword [fc64]
+    fmul    dword [fci128]
+    fmul    dword [fc32bit]
+    fistp   dword [ebp + syWModDel.mphase]
+    shl     dword [ebp + syWModDel.mphase], 1
 
-	popad
-	ret
+    popad
+    ret
 
 syModDelProcessSample  
 ; fpu: <r> <l> <eff> <dry> <fb>
 ; edx: buffer index
 
-	push    edx
+    push    edx
 
-	; step 1: rechtes dingens holen
-	mov     eax, [ebp + syWModDel.mcnt]
-	add     eax, [ebp + syWModDel.mphase]
-	shl     eax, 1
-	sbb     ebx, ebx
-	xor     eax, ebx
-	mov     ebx, [ebp + syWModDel.mmaxoffs]
-	mul     ebx  
-	add     edx, [ebp + syWModDel.db2offs]
-	mov     ebx, [esp]
-	sub     ebx, edx
-	dec     ebx
-	and     ebx, [ebp + syWModDel.dbufmask]
-	shr     eax, 9
-	or      eax, 3f800000h
-	mov     [temp], eax
-	fld     dword [temp] ; <1..2> <r> <l> <eff> <dry> <fb>
-	fsubr   dword [fc2]  ; <x> <r> <l> <eff> <dry> <fb>
-	mov     eax,  [ebp + syWModDel.db2]
-	fld     dword [eax + 4*ebx] ; <in1> <x> <r> <l> <eff> <dry> <fb>
-	inc     ebx
-	and     ebx, [ebp + syWModDel.dbufmask]
-	fld     dword [eax + 4*ebx] ; <in2> <in1> <x> <r> <l> <eff> <dry> <fb>
-	fsub    st0, st1            ; <in2-in1> <in1> <x> <r> <l> <eff> <dry> <fb>
-	mov     ebx, [esp]
-	fmulp   st2, st0            ; <in1> <x*(in2-in1)> <r> <l> <eff> <dry> <fb>
-	faddp   st1, st0            ; <in> <r> <l> <eff> <dry> <fb>
-	fld     st1                 ; <r> <in> <r> <l> <eff> <dry> <fb>
-	fmul    st0, st5            ; <r*dry> <in> <r> <l> <eff> <dry> <fb>
-	fld     st1                 ; <in> <r*dry> <in> <r> <l> <eff> <dry> <fb>
-	fmul    st0, st5            ; <in*eff> <r*dry> <in> <r> <l> <eff> <dry> <fb>
-	fxch    st2                 ; <in> <in*eff> <r*dry> <r> <l> <eff> <dry> <fb>
-	fmul    st0, st7            ; <in*fb> <in*eff> <r*dry> <r> <l> <eff> <dry> <fb>
-	fxch    st1                 ; <in*eff> <in*fb> <r*dry> <r> <l> <eff> <dry> <fb>
-	faddp   st2, st0            ; <in*fb> <r'> <r> <l> <eff> <dry> <fb>
-	faddp   st2, st0            ; <r'> <rb> <l> <eff> <dry> <fb>
-	fxch    st1                 ; <rb> <r'> <l> <eff> <dry> <fb>
-	fstp    dword [eax+4*ebx]   ; <r'> <l> <eff> <dry> <fb>
-	fxch    st1                 ; <l> <r'> <eff> <dry> <fb>
+    ; step 1: rechtes dingens holen
+    mov     eax, [ebp + syWModDel.mcnt]
+    add     eax, [ebp + syWModDel.mphase]
+    shl     eax, 1
+    sbb     ebx, ebx
+    xor     eax, ebx
+    mov     ebx, [ebp + syWModDel.mmaxoffs]
+    mul     ebx  
+    add     edx, [ebp + syWModDel.db2offs]
+    mov     ebx, [esp]
+    sub     ebx, edx
+    dec     ebx
+    and     ebx, [ebp + syWModDel.dbufmask]
+    shr     eax, 9
+    or      eax, 3f800000h
+    mov     [temp], eax
+    fld     dword [temp] ; <1..2> <r> <l> <eff> <dry> <fb>
+    fsubr   dword [fc2]  ; <x> <r> <l> <eff> <dry> <fb>
+    mov     eax,  [ebp + syWModDel.db2]
+    fld     dword [eax + 4*ebx] ; <in1> <x> <r> <l> <eff> <dry> <fb>
+    inc     ebx
+    and     ebx, [ebp + syWModDel.dbufmask]
+    fld     dword [eax + 4*ebx] ; <in2> <in1> <x> <r> <l> <eff> <dry> <fb>
+    fsub    st0, st1            ; <in2-in1> <in1> <x> <r> <l> <eff> <dry> <fb>
+    mov     ebx, [esp]
+    fmulp   st2, st0            ; <in1> <x*(in2-in1)> <r> <l> <eff> <dry> <fb>
+    faddp   st1, st0            ; <in> <r> <l> <eff> <dry> <fb>
+    fld     st1                 ; <r> <in> <r> <l> <eff> <dry> <fb>
+    fmul    st0, st5            ; <r*dry> <in> <r> <l> <eff> <dry> <fb>
+    fld     st1                 ; <in> <r*dry> <in> <r> <l> <eff> <dry> <fb>
+    fmul    st0, st5            ; <in*eff> <r*dry> <in> <r> <l> <eff> <dry> <fb>
+    fxch    st2                 ; <in> <in*eff> <r*dry> <r> <l> <eff> <dry> <fb>
+    fmul    st0, st7            ; <in*fb> <in*eff> <r*dry> <r> <l> <eff> <dry> <fb>
+    fxch    st1                 ; <in*eff> <in*fb> <r*dry> <r> <l> <eff> <dry> <fb>
+    faddp   st2, st0            ; <in*fb> <r'> <r> <l> <eff> <dry> <fb>
+    faddp   st2, st0            ; <r'> <rb> <l> <eff> <dry> <fb>
+    fxch    st1                 ; <rb> <r'> <l> <eff> <dry> <fb>
+    fstp    dword [eax+4*ebx]   ; <r'> <l> <eff> <dry> <fb>
+    fxch    st1                 ; <l> <r'> <eff> <dry> <fb>
 
-	; step 2: linkes dingens holen
-	mov     eax, [ebp + syWModDel.mcnt]
-	shl     eax, 1
-	sbb     ebx, ebx
-	xor     eax, ebx
-	mov     ebx, [ebp + syWModDel.mmaxoffs]
-	mul     ebx  
-	add     edx, [ebp + syWModDel.db1offs]
-	mov     ebx, [esp]
-	sub     ebx, edx
-	and     ebx, [ebp + syWModDel.dbufmask]
-	shr     eax, 9
-	or      eax, 3f800000h
-	mov     [temp], eax
-	fld     dword [temp] ; <1..2> <l> <r'> <eff> <dry> <fb>
-	fsubr   dword [fc2]  ; <x> <l> <r'> <eff> <dry> <fb>
-	mov     eax,  [ebp + syWModDel.db1]
-	fld     dword [eax + 4*ebx] ; <in1> <x> <l> <r'> <eff> <dry> <fb>
-	inc     ebx
-	and     ebx, [ebp + syWModDel.dbufmask]
-	fld     dword [eax + 4*ebx] ; <in2> <in1> <x> <l> <r'> <eff> <dry> <fb>
-	fsub    st0, st1            ; <in2-in1> <in1> <x> <l> <r'> <eff> <dry> <fb>
-	mov     ebx, [esp]
-	fmulp   st2, st0            ; <in1> <x*(in2-in1)> <l> <r'> <eff> <dry> <fb>
-	faddp   st1, st0            ; <in> <l> <r'> <eff> <dry> <fb>
-	fld     st1                 ; <l> <in> <l> <r'> <eff> <dry> <fb>
-	fmul    st0, st5            ; <l*dry> <in> <l> <r'> <eff> <dry> <fb>
-	fld     st1                 ; <in> <l*dry> <in> <l> <r'> <eff> <dry> <fb>
-	fmul    st0, st5            ; <in*eff> <l*dry> <in> <l> <r'> <eff> <dry> <fb>
-	fxch    st2                 ; <in> <in*eff> <l*dry> <l> <r'> <eff> <dry> <fb>
-	fmul    st0, st7            ; <in*fb> <in*eff> <l*dry> <l> <r'> <eff> <dry> <fb>
-	fxch    st1                 ; <in*eff> <in*fb> <l*dry> <l> <r'> <eff> <dry> <fb>
-	faddp   st2, st0            ; <in*fb> <l'> <l> <r'> <eff> <dry> <fb>
-	faddp   st2, st0            ; <l'> <lb> <r'> <eff> <dry> <fb>
-	fxch    st1                 ; <lb> <l'> <r'> <eff> <dry> <fb>
-	fstp    dword [eax+4*ebx]   ; <l'> <r'> <eff> <dry> <fb>
+    ; step 2: linkes dingens holen
+    mov     eax, [ebp + syWModDel.mcnt]
+    shl     eax, 1
+    sbb     ebx, ebx
+    xor     eax, ebx
+    mov     ebx, [ebp + syWModDel.mmaxoffs]
+    mul     ebx  
+    add     edx, [ebp + syWModDel.db1offs]
+    mov     ebx, [esp]
+    sub     ebx, edx
+    and     ebx, [ebp + syWModDel.dbufmask]
+    shr     eax, 9
+    or      eax, 3f800000h
+    mov     [temp], eax
+    fld     dword [temp] ; <1..2> <l> <r'> <eff> <dry> <fb>
+    fsubr   dword [fc2]  ; <x> <l> <r'> <eff> <dry> <fb>
+    mov     eax,  [ebp + syWModDel.db1]
+    fld     dword [eax + 4*ebx] ; <in1> <x> <l> <r'> <eff> <dry> <fb>
+    inc     ebx
+    and     ebx, [ebp + syWModDel.dbufmask]
+    fld     dword [eax + 4*ebx] ; <in2> <in1> <x> <l> <r'> <eff> <dry> <fb>
+    fsub    st0, st1            ; <in2-in1> <in1> <x> <l> <r'> <eff> <dry> <fb>
+    mov     ebx, [esp]
+    fmulp   st2, st0            ; <in1> <x*(in2-in1)> <l> <r'> <eff> <dry> <fb>
+    faddp   st1, st0            ; <in> <l> <r'> <eff> <dry> <fb>
+    fld     st1                 ; <l> <in> <l> <r'> <eff> <dry> <fb>
+    fmul    st0, st5            ; <l*dry> <in> <l> <r'> <eff> <dry> <fb>
+    fld     st1                 ; <in> <l*dry> <in> <l> <r'> <eff> <dry> <fb>
+    fmul    st0, st5            ; <in*eff> <l*dry> <in> <l> <r'> <eff> <dry> <fb>
+    fxch    st2                 ; <in> <in*eff> <l*dry> <l> <r'> <eff> <dry> <fb>
+    fmul    st0, st7            ; <in*fb> <in*eff> <l*dry> <l> <r'> <eff> <dry> <fb>
+    fxch    st1                 ; <in*eff> <in*fb> <l*dry> <l> <r'> <eff> <dry> <fb>
+    faddp   st2, st0            ; <in*fb> <l'> <l> <r'> <eff> <dry> <fb>
+    faddp   st2, st0            ; <l'> <lb> <r'> <eff> <dry> <fb>
+    fxch    st1                 ; <lb> <l'> <r'> <eff> <dry> <fb>
+    fstp    dword [eax+4*ebx]   ; <l'> <r'> <eff> <dry> <fb>
 
-	pop     edx	
-	mov     eax, [ebp + syWModDel.mfreq]
-	add     [ebp + syWModDel.mcnt], eax
-	inc     edx
-	and     edx,  [ebp + syWModDel.dbufmask]
+    pop     edx	
+    mov     eax, [ebp + syWModDel.mfreq]
+    add     [ebp + syWModDel.mcnt], eax
+    inc     edx
+    and     edx,  [ebp + syWModDel.dbufmask]
   ret
 
 
@@ -3142,80 +3142,80 @@ syModDelRenderAux2Main
   pushad
   V2PerfEnter V2Perf_MODDEL
 
-	mov     eax, [ebp + syWModDel.effout]
-	or      eax, eax
-	jz      .dont
+    mov     eax, [ebp + syWModDel.effout]
+    or      eax, eax
+    jz      .dont
 
-	fld			dword [ebp + syWModDel.fbval]					;  <fb>
-	fldz                                          ;  <"dry"=0> <fb>
-	fld     dword [ebp + syWModDel.effout]				;  <eff> <dry> <fb>
-	mov     edx,	[ebp + syWModDel.dbptr]
-	mov     esi,  [this]
-	add     esi,  SYN.aux2buf
+    fld			dword [ebp + syWModDel.fbval]					;  <fb>
+    fldz                                          ;  <"dry"=0> <fb>
+    fld     dword [ebp + syWModDel.effout]				;  <eff> <dry> <fb>
+    mov     edx,	[ebp + syWModDel.dbptr]
+    mov     esi,  [this]
+    add     esi,  SYN.aux2buf
 .rloop
-		fld     dword [esi]						;  <m> <eff> <dry> <fb>
+        fld     dword [esi]						;  <m> <eff> <dry> <fb>
 %if FIXDENORMALS
     fadd    dword [fcdcoffset]
 %endif    		
-		fld     st0                   ;  <m> <m> <eff> <dry> <fb>
-		lea     esi, [esi+4]
-		call    syModDelProcessSample ;  <l'> <r'> <eff> <dry> <fb>
-		fadd    dword [edi]           ;  <lout> <r'> <eff> <dry> <fb>
-		fstp    dword [edi]           ;  <r'> <eff> <dry> <fb>
-		fadd    dword [edi+4]         ;  <rout> <eff> <dry> <fb>
-		fstp    dword [edi+4]         ;  <eff> <dry> <fb>
-		lea     edi, [edi+8]
+        fld     st0                   ;  <m> <m> <eff> <dry> <fb>
+        lea     esi, [esi+4]
+        call    syModDelProcessSample ;  <l'> <r'> <eff> <dry> <fb>
+        fadd    dword [edi]           ;  <lout> <r'> <eff> <dry> <fb>
+        fstp    dword [edi]           ;  <r'> <eff> <dry> <fb>
+        fadd    dword [edi+4]         ;  <rout> <eff> <dry> <fb>
+        fstp    dword [edi+4]         ;  <eff> <dry> <fb>
+        lea     edi, [edi+8]
 
-		dec     ecx
+        dec     ecx
   jnz .rloop
-	mov			[ebp + syWModDel.dbptr], edx
-	fstp    st0			                ; <dry> <fb>
-	fstp    st0                     ; <fb>
-	fstp    st0                     ; -
+    mov			[ebp + syWModDel.dbptr], edx
+    fstp    st0			                ; <dry> <fb>
+    fstp    st0                     ; <fb>
+    fstp    st0                     ; -
 
 .dont
   V2PerfLeave V2Perf_MODDEL
-	popad
-	ret
+    popad
+    ret
 
 syModDelRenderChan
   pushad
   V2PerfEnter V2Perf_MODDEL
 
-	mov     eax, [ebp + syWModDel.effout]
-	or      eax, eax
-	jz      .dont
+    mov     eax, [ebp + syWModDel.effout]
+    or      eax, eax
+    jz      .dont
 
-	fld			dword [ebp + syWModDel.fbval]					;  <fb>
-	fld     dword [ebp + syWModDel.dryout]				;  <dry> <fb>
-	fld     dword [ebp + syWModDel.effout]				;  <eff> <dry> <fb>
-	mov     edx,	[ebp + syWModDel.dbptr]
-	mov     esi,  [this]
-	add     esi,  SYN.chanbuf
+    fld			dword [ebp + syWModDel.fbval]					;  <fb>
+    fld     dword [ebp + syWModDel.dryout]				;  <dry> <fb>
+    fld     dword [ebp + syWModDel.effout]				;  <eff> <dry> <fb>
+    mov     edx,	[ebp + syWModDel.dbptr]
+    mov     esi,  [this]
+    add     esi,  SYN.chanbuf
 .rloop
-		fld     dword [esi]						;  <l> <eff> <dry> <fb>
+        fld     dword [esi]						;  <l> <eff> <dry> <fb>
 %if FIXDENORMALS
     fadd    dword [fcdcoffset]
 %endif    		
-		fld     dword [esi+4]					;  <r> <l> <eff> <dry> <fb>
+        fld     dword [esi+4]					;  <r> <l> <eff> <dry> <fb>
 %if FIXDENORMALS
     fadd    dword [fcdcoffset]
 %endif    		
-		call    syModDelProcessSample ;  <l'> <r'> <eff> <dry> <fb>
-		fstp    dword [esi]           ;  <r'> <eff> <dry> <fb>
-		fstp    dword [esi+4]         ;  <eff> <dry> <fb>
-		lea     esi, [esi+8]
-		dec     ecx
+        call    syModDelProcessSample ;  <l'> <r'> <eff> <dry> <fb>
+        fstp    dword [esi]           ;  <r'> <eff> <dry> <fb>
+        fstp    dword [esi+4]         ;  <eff> <dry> <fb>
+        lea     esi, [esi+8]
+        dec     ecx
   jnz .rloop
-	mov			[ebp + syWModDel.dbptr], edx
-	fstp    st0			                ; <dry> <fb>
-	fstp    st0                     ; <fb>
-	fstp    st0                     ; -
+    mov			[ebp + syWModDel.dbptr], edx
+    fstp    st0			                ; <dry> <fb>
+    fstp    st0                     ; <fb>
+    fstp    st0                     ; -
 
 .dont
   V2PerfLeave V2Perf_MODDEL
-	popad
-	ret
+    popad
+    ret
 
 
 
@@ -3256,7 +3256,7 @@ struc syVComp
   .attack       resd 1  ; attack value
   .release      resd 1  ; release value
   .outgain      resd 1  ; output gain 
-	.size
+    .size
 endstruc
 
 struc syWComp
@@ -3283,7 +3283,7 @@ struc syWComp
   .dbuf         resd 2*COMPDLEN ; lookahead delay buffer
   .rmsbuf       resd 2*8192     ; RMS ring buffer
 
-	.size
+    .size
 endstruc
 
 syCompInit:
@@ -3343,10 +3343,10 @@ syCompSet:
   fstp    st0
   fld1
 .noag
-	fld     dword [esi + syVComp.outgain]
-	fsub    dword [fc64]
-	fmul    dword [fci16]
-	call    pow2
+    fld     dword [esi + syVComp.outgain]
+    fsub    dword [fc64]
+    fmul    dword [fci16]
+    call    pow2
   fmulp   st1, st0
   fstp    dword [ebp + syWComp.outvol]
 
@@ -3715,11 +3715,11 @@ global _REVERB_
 _REVERB_
 
 struc syVReverb
-	.revtime	resd 1
-	.highcut  resd 1
+    .revtime	resd 1
+    .highcut  resd 1
   .lowcut   resd 1
-	.vol      resd 1
-	.size
+    .vol      resd 1
+    .size
 endstruc
 
 struc syCReverb
@@ -3732,7 +3732,7 @@ struc syCReverb
   .gainin	resd 1          ; input gain
   .damp		resd 1          ; high cut   (1-val²)
   .lowcut resd 1          ; low cut    (val²)
-	.size
+    .size
 endstruc
 
 struc syWReverb
@@ -3784,69 +3784,69 @@ section .data
 
 ; see struct above
 syRvDefs  dd 0.966384599, 0.958186359, 0.953783929, 0.950933178, 0.994260075, 0.998044717
-  				dd 1.0  ; input gain
-					dd 0.8	; high cut
+                dd 1.0  ; input gain
+                    dd 0.8	; high cut
 
 section .text
 
 
 syReverbInit	
-	pushad
-	xor    eax, eax
- 	mov    ecx, syWReverb.size
-	mov    edi, ebp
-	rep    stosb
-	popad
-	ret
+    pushad
+    xor    eax, eax
+    mov    ecx, syWReverb.size
+    mov    edi, ebp
+    rep    stosb
+    popad
+    ret
 
 syReverbReset
-	pushad
-	xor    eax, eax
- 	mov    ecx, syWReverb.size-syWReverb.dyn
-	lea    edi, [ebp + syWReverb.dyn]
-	rep    stosb
-	popad
-	ret
+    pushad
+    xor    eax, eax
+    mov    ecx, syWReverb.size-syWReverb.dyn
+    lea    edi, [ebp + syWReverb.dyn]
+    rep    stosb
+    popad
+    ret
 
 
 syReverbSet
   pushad
 
   fld    dword [esi + syVReverb.revtime]
-	fld1
-	faddp  st1, st0
-	fld    dword [fc64]
-	fdivrp st1, st0
-	fmul   st0, st0
-	fmul   dword [SRfclinfreq]
-	xor    ecx, ecx
+    fld1
+    faddp  st1, st0
+    fld    dword [fc64]
+    fdivrp st1, st0
+    fmul   st0, st0
+    fmul   dword [SRfclinfreq]
+    xor    ecx, ecx
 .rtloop
-	  fld  st0
+      fld  st0
     fld  dword [syRvDefs+4*ecx]
-		call pow
-		fstp dword [ebp + syWReverb.setup + syCReverb.gainc0 + 4*ecx]
-		inc  ecx
-		cmp  cl, 6
-	jne .rtloop
-	fstp   st0
+        call pow
+        fstp dword [ebp + syWReverb.setup + syCReverb.gainc0 + 4*ecx]
+        inc  ecx
+        cmp  cl, 6
+    jne .rtloop
+    fstp   st0
 
-	fld    dword [esi + syVReverb.highcut]
-	fmul   dword [fci128]
-	fmul   dword [SRfclinfreq]
-	fstp   dword [ebp + syWReverb.setup + syCReverb.damp]
-	fld    dword [esi + syVReverb.vol]
-	fmul   dword [fci128]
-	fstp   dword [ebp + syWReverb.setup + syCReverb.gainin]
+    fld    dword [esi + syVReverb.highcut]
+    fmul   dword [fci128]
+    fmul   dword [SRfclinfreq]
+    fstp   dword [ebp + syWReverb.setup + syCReverb.damp]
+    fld    dword [esi + syVReverb.vol]
+    fmul   dword [fci128]
+    fstp   dword [ebp + syWReverb.setup + syCReverb.gainin]
 
-	fld    dword [esi + syVReverb.lowcut]
+    fld    dword [esi + syVReverb.lowcut]
   fmul   dword [fci128]
   fmul   st0, st0
   fmul   st0, st0
-	fmul   dword [SRfclinfreq]
-	fstp   dword [ebp + syWReverb.setup + syCReverb.lowcut]
+    fmul   dword [SRfclinfreq]
+    fstp   dword [ebp + syWReverb.setup + syCReverb.lowcut]
 
-	popad
-	ret
+    popad
+    ret
 
 
 syReverbProcess
@@ -3856,118 +3856,118 @@ syReverbProcess
   fclex
 
   mov    esi,  [this]
-	add    esi,  SYN.aux1buf
-	fld    dword [ebp + syWReverb.setup + syCReverb.lowcut]             	; <lc> <0>
-	fld    dword [ebp + syWReverb.setup + syCReverb.damp]             	; <damp> <lc> <0>
+    add    esi,  SYN.aux1buf
+    fld    dword [ebp + syWReverb.setup + syCReverb.lowcut]             	; <lc> <0>
+    fld    dword [ebp + syWReverb.setup + syCReverb.damp]             	; <damp> <lc> <0>
   xor    ebx, ebx
-	mov    eax, ecx
+    mov    eax, ecx
 
 .sloop          ; prinzipiell nur ne große schleife
-	; step 1: get input sample
-	fld		 dword [esi]																  						; <in'> <damp> <lc> <0>
-	fmul	 dword [ebp + syWReverb.setup + syCReverb.gainin]     	; <in> <damp> <lc> <0>
+    ; step 1: get input sample
+    fld		 dword [esi]																  						; <in'> <damp> <lc> <0>
+    fmul	 dword [ebp + syWReverb.setup + syCReverb.gainin]     	; <in> <damp> <lc> <0>
 %if FIXDENORMALS	
-	fadd   dword [fcdcoffset]
+    fadd   dword [fcdcoffset]
 %endif	
-	lea    esi,	 [esi+4]
+    lea    esi,	 [esi+4]
 
-	; step 2a: process the 4 left lpf filtered comb delays
-	; left comb 0
-	mov    edx,  [ebp + syWReverb.poscl0]
-	fld    dword [ebp + syWReverb.linecl0+4*edx]    	; <dv> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc0]           	; <dv'> <in> <damp> <lc> <chk>
-	fadd   st0,  st1                		; <nv>  <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcl0]           	; <v-lp> <in> <damp> <lc> <chk>
-	fmul   st0,  st2                		; <d*(v-lp)> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcl0]           	; <dout> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcl0]           	; <dout> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecl0+4*edx]    	; <asuml> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencl0
+    ; step 2a: process the 4 left lpf filtered comb delays
+    ; left comb 0
+    mov    edx,  [ebp + syWReverb.poscl0]
+    fld    dword [ebp + syWReverb.linecl0+4*edx]    	; <dv> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc0]           	; <dv'> <in> <damp> <lc> <chk>
+    fadd   st0,  st1                		; <nv>  <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcl0]           	; <v-lp> <in> <damp> <lc> <chk>
+    fmul   st0,  st2                		; <d*(v-lp)> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcl0]           	; <dout> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcl0]           	; <dout> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecl0+4*edx]    	; <asuml> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencl0
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscl0], edx
+    mov    [ebp + syWReverb.poscl0], edx
 
-	; left comb 1
-	mov    edx,  [ebp + syWReverb.poscl1]
-	fld    dword [ebp + syWReverb.linecl1+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc1]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
-	fsub   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcl1]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
-	fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcl1]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcl1]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecl1+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencl1
+    ; left comb 1
+    mov    edx,  [ebp + syWReverb.poscl1]
+    fld    dword [ebp + syWReverb.linecl1+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc1]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
+    fsub   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcl1]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
+    fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcl1]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcl1]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecl1+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencl1
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscl1], edx
+    mov    [ebp + syWReverb.poscl1], edx
 
-	; left comb 2
-	mov    edx,  [ebp + syWReverb.poscl2]
-	fld    dword [ebp + syWReverb.linecl2+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc2]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
-	fadd   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcl2]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
-	fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcl2]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcl2]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecl2+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencl2
+    ; left comb 2
+    mov    edx,  [ebp + syWReverb.poscl2]
+    fld    dword [ebp + syWReverb.linecl2+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc2]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
+    fadd   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcl2]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
+    fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcl2]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcl2]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecl2+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencl2
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscl2], edx
+    mov    [ebp + syWReverb.poscl2], edx
 
-	; left comb 3
-	mov    edx,  [ebp + syWReverb.poscl3]
-	fld    dword [ebp + syWReverb.linecl3+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc3]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
-	fsub   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcl3]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
-	fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcl3]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcl3]           	; <dout> <asuml> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecl3+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencl3
+    ; left comb 3
+    mov    edx,  [ebp + syWReverb.poscl3]
+    fld    dword [ebp + syWReverb.linecl3+4*edx]    	; <dv> <asuml> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc3]           	; <dv'> <asuml> <in> <damp> <lc> <chk>
+    fsub   st0,  st2                		; <nv>  <asuml> <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcl3]           	; <v-lp> <asuml> <in> <damp> <lc> <chk>
+    fmul   st0,  st3                		; <d*(v-lp)> <asuml> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcl3]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcl3]           	; <dout> <asuml> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecl3+4*edx]    	; <dout> <asuml> <in> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asuml'> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencl3
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscl3], edx
+    mov    [ebp + syWReverb.poscl3], edx
 
-	; step 2b: process the 2 left allpass delays
-	; left allpass 0
-	mov    edx,  [ebp + syWReverb.posal0]
-	fld    dword [ebp + syWReverb.lineal0+4*edx]    	; <d0v> <asuml> <in> <damp> <lc> <chk>
-	fld    st0                      		; <d0v> <d0v> <asuml> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0v'> <d0v> <asuml> <in> <damp> <lc> <chk>
-	faddp  st2, st0                 		; <d0v> <d0z> <in> <damp> <lc> <chk>
-	fxch   st0, st1                 		; <d0z> <d0v> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lineal0+4*edx]
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0z'> <d0v> <in> <damp> <lc> <chk>
-	fsubp  st1, st0                 		; <d0o> <in> <damp> <lc> <chk>
-	inc    edx
+    ; step 2b: process the 2 left allpass delays
+    ; left allpass 0
+    mov    edx,  [ebp + syWReverb.posal0]
+    fld    dword [ebp + syWReverb.lineal0+4*edx]    	; <d0v> <asuml> <in> <damp> <lc> <chk>
+    fld    st0                      		; <d0v> <d0v> <asuml> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0v'> <d0v> <asuml> <in> <damp> <lc> <chk>
+    faddp  st2, st0                 		; <d0v> <d0z> <in> <damp> <lc> <chk>
+    fxch   st0, st1                 		; <d0z> <d0v> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lineal0+4*edx]
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0z'> <d0v> <in> <damp> <lc> <chk>
+    fsubp  st1, st0                 		; <d0o> <in> <damp> <lc> <chk>
+    inc    edx
   cmp    dl, lenal0
   cmove  edx, ebx
-	mov    [ebp + syWReverb.posal0], edx
+    mov    [ebp + syWReverb.posal0], edx
 
-	; left allpass 1
-	mov    edx,  [ebp + syWReverb.posal1]
-	fld    dword [ebp + syWReverb.lineal1+4*edx]    	; <d1v> <d0o> <in> <damp> <lc> <chk>
-	fld    st0                      		; <d1v> <d1v> <d0o> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1v'> <d1v> <d0o> <in> <damp> <lc> <chk>
-	faddp  st2, st0                 		; <d1v> <d1z> <in> <damp> <lc> <chk>
-	fxch   st0, st1                 		; <d1z> <d1v> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lineal1+4*edx]
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1z'> <d1v> <in> <damp> <lc> <chk>
-	fsubp  st1, st0                 		; <d1o> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dl, lenal1
+    ; left allpass 1
+    mov    edx,  [ebp + syWReverb.posal1]
+    fld    dword [ebp + syWReverb.lineal1+4*edx]    	; <d1v> <d0o> <in> <damp> <lc> <chk>
+    fld    st0                      		; <d1v> <d1v> <d0o> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1v'> <d1v> <d0o> <in> <damp> <lc> <chk>
+    faddp  st2, st0                 		; <d1v> <d1z> <in> <damp> <lc> <chk>
+    fxch   st0, st1                 		; <d1z> <d1v> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lineal1+4*edx]
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1z'> <d1v> <in> <damp> <lc> <chk>
+    fsubp  st1, st0                 		; <d1o> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dl, lenal1
   cmove  edx, ebx
-	mov    [ebp + syWReverb.posal1], edx
+    mov    [ebp + syWReverb.posal1], edx
 
   ; step 2c: low cut
-	fld    dword [ebp + syWReverb.hpfcl]	; <hpf> <d1o> <in> <damp> <lc> <chk>
+    fld    dword [ebp + syWReverb.hpfcl]	; <hpf> <d1o> <in> <damp> <lc> <chk>
   fld    st0                            ; <hpf> <hpf> <d1o> <in> <damp> <lc> <chk>
   fsubr  st0, st2                       ; <d1o-hpf> <hpf> <d1o> <in> <damp> <lc> <chk>
   fmul   st0, st5                       ; <lc(d1o-hpf)> <hpf> <d1o> <in> <damp> <lc> <chk>
@@ -3975,111 +3975,111 @@ syReverbProcess
   fst    dword [ebp + syWReverb.hpfcl]
   fsubp  st1, st0                       ; <outl> <in> <damp> <lc> <chk>
 
-	; step 2d: update left mixing buffer
-	fadd  dword [edi]
-	fstp  dword [edi]                     ; <in> <damp> <lc> <chk>
+    ; step 2d: update left mixing buffer
+    fadd  dword [edi]
+    fstp  dword [edi]                     ; <in> <damp> <lc> <chk>
 
 
-	; step 3a: process the 4 right lpf filtered comb delays
-	; right comb 0
-	mov    edx,  [ebp + syWReverb.poscr0]
-	fld    dword [ebp + syWReverb.linecr0+4*edx]    	; <dv> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc0]           	; <dv'> <in> <damp> <lc> <chk>
-	fadd   st0,  st1                		; <nv>  <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcr0]           	; <v-lp> <in> <damp> <lc> <chk>
-	fmul   st0,  st2                		; <d*(v-lp)> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcr0]           	; <dout> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcr0]           	; <dout> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecr0+4*edx]    	; <asumr> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencr0
+    ; step 3a: process the 4 right lpf filtered comb delays
+    ; right comb 0
+    mov    edx,  [ebp + syWReverb.poscr0]
+    fld    dword [ebp + syWReverb.linecr0+4*edx]    	; <dv> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc0]           	; <dv'> <in> <damp> <lc> <chk>
+    fadd   st0,  st1                		; <nv>  <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcr0]           	; <v-lp> <in> <damp> <lc> <chk>
+    fmul   st0,  st2                		; <d*(v-lp)> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcr0]           	; <dout> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcr0]           	; <dout> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecr0+4*edx]    	; <asumr> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencr0
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscr0], edx
+    mov    [ebp + syWReverb.poscr0], edx
 
-	; right comb 1
-	mov    edx,  [ebp + syWReverb.poscr1]
-	fld    dword [ebp + syWReverb.linecr1+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc1]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
-	fsub   st0,  st2                		; <nv>  <asumr> <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcr1]           	; <v-lp> <asumr> <in> <damp> <lc> <chk>
-	fmul   st0,  st3                		; <d*(v-lp)> <asumr> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcr1]           	; <dout> <asumr> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcr1]           	; <dout> <asumr> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecr1+4*edx]    	; <dout> <asumr> <in> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asumr'> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencr1
+    ; right comb 1
+    mov    edx,  [ebp + syWReverb.poscr1]
+    fld    dword [ebp + syWReverb.linecr1+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc1]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
+    fsub   st0,  st2                		; <nv>  <asumr> <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcr1]           	; <v-lp> <asumr> <in> <damp> <lc> <chk>
+    fmul   st0,  st3                		; <d*(v-lp)> <asumr> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcr1]           	; <dout> <asumr> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcr1]           	; <dout> <asumr> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecr1+4*edx]    	; <dout> <asumr> <in> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asumr'> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencr1
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscr1], edx
+    mov    [ebp + syWReverb.poscr1], edx
 
-	; right comb 2
-	mov    edx,  [ebp + syWReverb.poscr2]
-	fld    dword [ebp + syWReverb.linecr2+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc2]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
-	fadd   st0,  st2                		; <nv>  <asumr> <in> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcr2]           	; <v-lp> <asumr> <in> <damp> <lc> <chk>
-	fmul   st0,  st3                		; <d*(v-lp)> <asumr> <in> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcr2]           	; <dout> <asumr> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcr2]           	; <dout> <asumr> <in> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecr2+4*edx]    	; <dout> <asumr> <in> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asumr'> <in> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencr2
+    ; right comb 2
+    mov    edx,  [ebp + syWReverb.poscr2]
+    fld    dword [ebp + syWReverb.linecr2+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc2]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
+    fadd   st0,  st2                		; <nv>  <asumr> <in> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcr2]           	; <v-lp> <asumr> <in> <damp> <lc> <chk>
+    fmul   st0,  st3                		; <d*(v-lp)> <asumr> <in> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcr2]           	; <dout> <asumr> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcr2]           	; <dout> <asumr> <in> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecr2+4*edx]    	; <dout> <asumr> <in> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asumr'> <in> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencr2
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscr2], edx
+    mov    [ebp + syWReverb.poscr2], edx
 
-	; right comb 3
-	mov    edx,  [ebp + syWReverb.poscr3]
-	fld    dword [ebp + syWReverb.linecr3+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gainc3]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
-	fsubrp st2,  st0                		; <asumr> <nv> <damp> <lc> <chk>
-	fxch   st0,  st1                		; <nv> <asumr> <damp> <lc> <chk>
-	fsub   dword [ebp + syWReverb.lpfcr3]           	; <v-lp> <asumr> <damp> <lc> <chk>
-	fmul   st0,  st2                		; <d*(v-lp)> <asumr> <damp> <lc> <chk>
-	fadd   dword [ebp + syWReverb.lpfcr3]           	; <dout> <asumr> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.lpfcr3]           	; <dout> <asumr> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linecr3+4*edx]    	; <dout> <asumr> <damp> <lc> <chk>
-	faddp  st1,  st0                		; <asumr'> <damp> <lc> <chk>
-	inc    edx
-	cmp    dx,  lencr3
+    ; right comb 3
+    mov    edx,  [ebp + syWReverb.poscr3]
+    fld    dword [ebp + syWReverb.linecr3+4*edx]    	; <dv> <asumr> <in> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gainc3]           	; <dv'> <asumr> <in> <damp> <lc> <chk>
+    fsubrp st2,  st0                		; <asumr> <nv> <damp> <lc> <chk>
+    fxch   st0,  st1                		; <nv> <asumr> <damp> <lc> <chk>
+    fsub   dword [ebp + syWReverb.lpfcr3]           	; <v-lp> <asumr> <damp> <lc> <chk>
+    fmul   st0,  st2                		; <d*(v-lp)> <asumr> <damp> <lc> <chk>
+    fadd   dword [ebp + syWReverb.lpfcr3]           	; <dout> <asumr> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.lpfcr3]           	; <dout> <asumr> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linecr3+4*edx]    	; <dout> <asumr> <damp> <lc> <chk>
+    faddp  st1,  st0                		; <asumr'> <damp> <lc> <chk>
+    inc    edx
+    cmp    dx,  lencr3
   cmove  edx, ebx
-	mov    [ebp + syWReverb.poscr3], edx
+    mov    [ebp + syWReverb.poscr3], edx
 
 
-	; step 2b: process the 2 right allpass delays
-	; right allpass 0
-	mov    edx,  [ebp + syWReverb.posar0]
-	fld    dword [ebp + syWReverb.linear0+4*edx]    	; <d0v> <asumr> <damp> <lc> <chk>
-	fld    st0                      		; <d0v> <d0v> <asumr> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0v'> <d0v> <asumr> <damp> <lc> <chk>
-	faddp  st2, st0                 		; <d0v> <d0z> <damp> <lc> <chk>
-	fxch   st0, st1                 		; <d0z> <d0v> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linear0+4*edx]
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0z'> <d0v> <damp> <lc> <chk>
-	fsubp  st1, st0                 		; <d0o> <damp> <lc> <chk>
-	inc    edx
-	cmp    dl, lenar0
+    ; step 2b: process the 2 right allpass delays
+    ; right allpass 0
+    mov    edx,  [ebp + syWReverb.posar0]
+    fld    dword [ebp + syWReverb.linear0+4*edx]    	; <d0v> <asumr> <damp> <lc> <chk>
+    fld    st0                      		; <d0v> <d0v> <asumr> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0v'> <d0v> <asumr> <damp> <lc> <chk>
+    faddp  st2, st0                 		; <d0v> <d0z> <damp> <lc> <chk>
+    fxch   st0, st1                 		; <d0z> <d0v> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linear0+4*edx]
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina0]           	; <d0z'> <d0v> <damp> <lc> <chk>
+    fsubp  st1, st0                 		; <d0o> <damp> <lc> <chk>
+    inc    edx
+    cmp    dl, lenar0
   cmove  edx, ebx
-	mov    [ebp + syWReverb.posar0], edx
+    mov    [ebp + syWReverb.posar0], edx
 
-	; right allpass 1
-	mov    edx,  [ebp + syWReverb.posar1]
-	fld    dword [ebp + syWReverb.linear1+4*edx]    	; <d1v> <d0o> <damp> <lc> <chk>
-	fld    st0                      		; <d1v> <d1v> <d0o> <damp> <lc> <chk>
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1v'> <d1v> <d0o> <damp> <lc> <chk>
-	faddp  st2, st0                 		; <d1v> <d1z> <damp> <lc> <chk>
-	fxch   st0, st1                 		; <d1z> <d1v> <damp> <lc> <chk>
-	fst    dword [ebp + syWReverb.linear1+4*edx]
-	fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1z'> <d1v> <damp> <lc> <chk>
-	fsubp  st1, st0                 		; <d1o> <damp> <lc> <chk>
-	inc    edx
-	cmp    dl, lenar1
+    ; right allpass 1
+    mov    edx,  [ebp + syWReverb.posar1]
+    fld    dword [ebp + syWReverb.linear1+4*edx]    	; <d1v> <d0o> <damp> <lc> <chk>
+    fld    st0                      		; <d1v> <d1v> <d0o> <damp> <lc> <chk>
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1v'> <d1v> <d0o> <damp> <lc> <chk>
+    faddp  st2, st0                 		; <d1v> <d1z> <damp> <lc> <chk>
+    fxch   st0, st1                 		; <d1z> <d1v> <damp> <lc> <chk>
+    fst    dword [ebp + syWReverb.linear1+4*edx]
+    fmul   dword [ebp + syWReverb.setup + syCReverb.gaina1]           	; <d1z'> <d1v> <damp> <lc> <chk>
+    fsubp  st1, st0                 		; <d1o> <damp> <lc> <chk>
+    inc    edx
+    cmp    dl, lenar1
   cmove  edx, ebx
-	mov    [ebp + syWReverb.posar1], edx
+    mov    [ebp + syWReverb.posar1], edx
 
 
   ; step 2c: low cut
-	fld    dword [ebp + syWReverb.hpfcr]	; <hpf> <d1o> <damp> <lc> <chk>
+    fld    dword [ebp + syWReverb.hpfcr]	; <hpf> <d1o> <damp> <lc> <chk>
   fld    st0                            ; <hpf> <hpf> <d1o>  <damp> <lc> <chk>
   fsubr  st0, st2                       ; <d1o-hpf> <hpf> <d1o> <damp> <lc> <chk>
   fmul   st0, st4                       ; <lc(d1o-hpf)> <hpf> <d1o> <damp> <lc> <chk>
@@ -4087,30 +4087,30 @@ syReverbProcess
   fst    dword [ebp + syWReverb.hpfcr]
   fsubp  st1, st0                       ; <outr> <damp> <lc> <chk>
 
-	; step 2d: update left mixing buffer
-	fadd  dword [edi+4]
-	fstp  dword [edi+4]                   ; <damp> <lc> <chk>
+    ; step 2d: update left mixing buffer
+    fadd  dword [edi+4]
+    fstp  dword [edi+4]                   ; <damp> <lc> <chk>
 
 
-	lea    edi,  [edi+8]
-	dec    ecx
-	jnz    near .sloop
+    lea    edi,  [edi+8]
+    dec    ecx
+    jnz    near .sloop
 
-	fstp   st0                      ; <lc> <chk>
-	fstp   st0                      ; <chk>
+    fstp   st0                      ; <lc> <chk>
+    fstp   st0                      ; <chk>
 
-	; FPU underflow protection
-	fstsw  ax
-	and    eax, byte 16
-	jz     .dontpanic
-	call   syReverbReset
+    ; FPU underflow protection
+    fstsw  ax
+    and    eax, byte 16
+    jz     .dontpanic
+    call   syReverbReset
 
 
 .dontpanic
 
   V2PerfLeave V2Perf_REVERB
-	popad
-	ret
+    popad
+    ret
 
 ;#####################################################################################
 ; Oberdings
@@ -4121,106 +4121,106 @@ global _V2CHAN_
 _V2CHAN_
 
 struc syVChan
-	.chanvol resd 1
-	.auxarcv resd 1			; CHAOS aux a receive
-	.auxbrcv resd 1			; CHAOS aux b receive
-	.auxasnd resd 1			; CHAOS aux a send
-	.auxbsnd resd 1			; CHAOS aux b send
-	.aux1		 resd 1
-	.aux2    resd 1
-	.fxroute resd 1
+    .chanvol resd 1
+    .auxarcv resd 1			; CHAOS aux a receive
+    .auxbrcv resd 1			; CHAOS aux b receive
+    .auxasnd resd 1			; CHAOS aux a send
+    .auxbsnd resd 1			; CHAOS aux b send
+    .aux1		 resd 1
+    .aux2    resd 1
+    .fxroute resd 1
   .boost   resb syVBoost.size
-	.cdist   resb syVDist.size
-	.chorus  resb syVModDel.size
+    .cdist   resb syVDist.size
+    .chorus  resb syVModDel.size
   .compr   resb syVComp.size
-	.size
+    .size
 endstruc
 
 struc syWChan
-	.chgain resd 1
-	.a1gain resd 1
-	.a2gain resd 1
-	.aasnd  resd 1
-	.absnd  resd 1
-	.aarcv  resd 1
-	.abrcv  resd 1
-	.fxr    resd 1
+    .chgain resd 1
+    .a1gain resd 1
+    .a2gain resd 1
+    .aasnd  resd 1
+    .absnd  resd 1
+    .aarcv  resd 1
+    .abrcv  resd 1
+    .fxr    resd 1
   .dcf1w  resb syWDCF.size
   .boostw resb syWBoost.size
-	.distw  resb syWDist.size
+    .distw  resb syWDist.size
   .dcf2w  resb syWDCF.size
-	.chrw		resb syWModDel.size
+    .chrw		resb syWModDel.size
   .compw  resb syWComp.size
-	.size
+    .size
 endstruc
 
 
 ; ebp: wchan
 syChanInit
   pushad
-	lea		ebp, [ebp + syWChan.distw]
-	call	syDistInit
-	lea		ebp, [ebp + syWChan.chrw - syWChan.distw]
-	call	syModDelInit
-	lea		ebp, [ebp + syWChan.compw - syWChan.chrw]
+    lea		ebp, [ebp + syWChan.distw]
+    call	syDistInit
+    lea		ebp, [ebp + syWChan.chrw - syWChan.distw]
+    call	syModDelInit
+    lea		ebp, [ebp + syWChan.compw - syWChan.chrw]
   call  syCompInit
-	lea		ebp, [ebp + syWChan.boostw - syWChan.compw]
+    lea		ebp, [ebp + syWChan.boostw - syWChan.compw]
   call  syBoostInit
   lea   ebp, [ebp + syWChan.dcf1w - syWChan.boostw]
   call  syDCFInit
   lea   ebp, [ebp + syWChan.dcf2w - syWChan.dcf1w]
   call  syDCFInit
-	popad
-	ret
+    popad
+    ret
 
 ; esi: vchan
 ; ebp: wchan
 syChanSet
   pushad
   fld		dword [esi + syVChan.auxarcv]
-	fmul	dword [fci128]
-	fstp	dword [ebp + syWChan.aarcv]
+    fmul	dword [fci128]
+    fstp	dword [ebp + syWChan.aarcv]
   fld		dword [esi + syVChan.auxbrcv]
-	fmul	dword [fci128]
-	fstp	dword [ebp + syWChan.abrcv]
+    fmul	dword [fci128]
+    fstp	dword [ebp + syWChan.abrcv]
   fld		dword [esi + syVChan.auxasnd]
-	fmul	dword [fci128]
-	fmul	dword [fcgain]
-	fstp	dword [ebp + syWChan.aasnd]
+    fmul	dword [fci128]
+    fmul	dword [fcgain]
+    fstp	dword [ebp + syWChan.aasnd]
   fld		dword [esi + syVChan.auxbsnd]
-	fmul	dword [fci128]
-	fmul	dword [fcgain]
-	fstp	dword [ebp + syWChan.absnd]
+    fmul	dword [fci128]
+    fmul	dword [fcgain]
+    fstp	dword [ebp + syWChan.absnd]
   fld		dword [esi + syVChan.chanvol]
-	fmul	dword [fci128]
-	fmul	dword [fcgain]
-	fst 	dword [ebp + syWChan.chgain]
+    fmul	dword [fci128]
+    fmul	dword [fcgain]
+    fst 	dword [ebp + syWChan.chgain]
   fld		dword [esi + syVChan.aux1]
-	fmul	dword [fci128]
-	fmul	dword [fcgainh]
-	fmul  st0, st1
-	fstp	dword [ebp + syWChan.a1gain]
+    fmul	dword [fci128]
+    fmul	dword [fcgainh]
+    fmul  st0, st1
+    fstp	dword [ebp + syWChan.a1gain]
   fld		dword [esi + syVChan.aux2]
-	fmul	dword [fci128]
-	fmul	dword [fcgainh]
-	fmulp st1, st0
-	fstp	dword [ebp + syWChan.a2gain]
-	fld		dword [esi + syVChan.fxroute]
-	fistp dword [ebp + syWChan.fxr]
-	lea   esi,  [esi + syVChan.cdist]
-	lea		ebp,	[ebp + syWChan.distw]
-	call	syDistSet
-	lea   esi,  [esi + syVChan.chorus - syVChan.cdist]
-	lea		ebp,	[ebp + syWChan.chrw - syWChan.distw]
-	call	syModDelSet
-	lea   esi,  [esi + syVChan.compr - syVChan.chorus]
-	lea		ebp,  [ebp + syWChan.compw - syWChan.chrw]
-	call	syCompSet
-	lea   esi,  [esi + syVChan.boost - syVChan.compr]
-	lea		ebp,  [ebp + syWChan.boostw - syWChan.compw]
-	call	syBoostSet
-	popad 
-	ret
+    fmul	dword [fci128]
+    fmul	dword [fcgainh]
+    fmulp st1, st0
+    fstp	dword [ebp + syWChan.a2gain]
+    fld		dword [esi + syVChan.fxroute]
+    fistp dword [ebp + syWChan.fxr]
+    lea   esi,  [esi + syVChan.cdist]
+    lea		ebp,	[ebp + syWChan.distw]
+    call	syDistSet
+    lea   esi,  [esi + syVChan.chorus - syVChan.cdist]
+    lea		ebp,	[ebp + syWChan.chrw - syWChan.distw]
+    call	syModDelSet
+    lea   esi,  [esi + syVChan.compr - syVChan.chorus]
+    lea		ebp,  [ebp + syWChan.compw - syWChan.chrw]
+    call	syCompSet
+    lea   esi,  [esi + syVChan.boost - syVChan.compr]
+    lea		ebp,  [ebp + syWChan.boostw - syWChan.compw]
+    call	syBoostSet
+    popad 
+    ret
 
 syChanProcess
   pushad
@@ -4228,292 +4228,292 @@ syChanProcess
   mov   ebx, [this]
   add   ebx, SYN.chanbuf
 
-	; AuxA Receive		CHAOS
-	mov   eax, [ebp + syWChan.aarcv]
-	or    eax, eax
-	jz    .noauxarcv
-	push	ecx
-	mov		edi, ebx
-	lea   esi, [ebx + SYN.auxabuf-SYN.chanbuf]
+    ; AuxA Receive		CHAOS
+    mov   eax, [ebp + syWChan.aarcv]
+    or    eax, eax
+    jz    .noauxarcv
+    push	ecx
+    mov		edi, ebx
+    lea   esi, [ebx + SYN.auxabuf-SYN.chanbuf]
 .auxarcvloop
-		fld		dword [esi]
-		fmul  dword [ebp + syWChan.aarcv]
-		fld		dword [esi+4]
-		fmul  dword [ebp + syWChan.aarcv]
-		lea   esi, [esi + 8]
-		fxch  st1
-		fadd	dword [edi]
-		fxch  st1
-		fadd	dword [edi+4]
-		fxch  st1
-		fstp  dword [edi]
-		fstp  dword [edi+4]
-		lea   edi, [edi + 8]
-		dec ecx
-	jnz		.auxarcvloop
-	pop		ecx
+        fld		dword [esi]
+        fmul  dword [ebp + syWChan.aarcv]
+        fld		dword [esi+4]
+        fmul  dword [ebp + syWChan.aarcv]
+        lea   esi, [esi + 8]
+        fxch  st1
+        fadd	dword [edi]
+        fxch  st1
+        fadd	dword [edi+4]
+        fxch  st1
+        fstp  dword [edi]
+        fstp  dword [edi+4]
+        lea   edi, [edi + 8]
+        dec ecx
+    jnz		.auxarcvloop
+    pop		ecx
 .noauxarcv
 
-	; AuxB Receive		CHAOS
-	mov   eax, [ebp + syWChan.abrcv]
-	or    eax, eax
-	jz    .noauxbrcv
-	push	ecx
-	mov		edi, ebx
-	lea   esi, [ebx + SYN.auxbbuf-SYN.chanbuf]
+    ; AuxB Receive		CHAOS
+    mov   eax, [ebp + syWChan.abrcv]
+    or    eax, eax
+    jz    .noauxbrcv
+    push	ecx
+    mov		edi, ebx
+    lea   esi, [ebx + SYN.auxbbuf-SYN.chanbuf]
 .auxbrcvloop
-		fld		dword [esi]
-		fmul  dword [ebp + syWChan.abrcv]
-		fld		dword [esi+4]
-		fmul  dword [ebp + syWChan.abrcv]
-		lea   esi, [esi + 8]
-		fxch  st1
-		fadd	dword [edi]
-		fxch  st1
-		fadd	dword [edi+4]
-		fxch  st1
-		fstp  dword [edi]
-		fstp  dword [edi+4]
-		lea   edi, [edi + 8]
-		dec ecx
-	jnz		.auxbrcvloop
-	pop		ecx
+        fld		dword [esi]
+        fmul  dword [ebp + syWChan.abrcv]
+        fld		dword [esi+4]
+        fmul  dword [ebp + syWChan.abrcv]
+        lea   esi, [esi + 8]
+        fxch  st1
+        fadd	dword [edi]
+        fxch  st1
+        fadd	dword [edi+4]
+        fxch  st1
+        fstp  dword [edi]
+        fstp  dword [edi+4]
+        lea   edi, [edi + 8]
+        dec ecx
+    jnz		.auxbrcvloop
+    pop		ecx
 .noauxbrcv
 
 
 
-	mov		esi, ebx
-	mov		edi, esi
+    mov		esi, ebx
+    mov		edi, esi
 
   lea   ebp, [ebp + syWChan.dcf1w - 0]
   call  syDCFRenderStereo
-	lea		ebp, [ebp + syWChan.compw - syWChan.dcf1w]
+    lea		ebp, [ebp + syWChan.compw - syWChan.dcf1w]
   call  syCompRender  
-	lea		ebp, [ebp + syWChan.boostw - syWChan.compw]
+    lea		ebp, [ebp + syWChan.boostw - syWChan.compw]
   call  syBoostRender  
-	lea		ebp, [ebp + 0 - syWChan.boostw]
+    lea		ebp, [ebp + 0 - syWChan.boostw]
 
-	mov   eax, [ebp + syWChan.fxr]
-	or    eax, eax
-	jnz   .otherway
-	lea		ebp, [ebp - 0 + syWChan.distw]
-	call	syDistRenderStereo
+    mov   eax, [ebp + syWChan.fxr]
+    or    eax, eax
+    jnz   .otherway
+    lea		ebp, [ebp - 0 + syWChan.distw]
+    call	syDistRenderStereo
   lea   ebp, [ebp - syWChan.distw + syWChan.dcf2w]
   call  syDCFRenderStereo
   lea		ebp, [ebp - syWChan.dcf2w + syWChan.chrw]
-	call	syModDelRenderChan
-	lea		ebp, [ebp - syWChan.chrw + 0]
-	jmp   short .weiterso
+    call	syModDelRenderChan
+    lea		ebp, [ebp - syWChan.chrw + 0]
+    jmp   short .weiterso
 .otherway
-	lea		ebp, [ebp + syWChan.chrw - 0]
-	call	syModDelRenderChan
-	lea		ebp, [ebp + syWChan.distw - syWChan.chrw]
-	call	syDistRenderStereo
+    lea		ebp, [ebp + syWChan.chrw - 0]
+    call	syModDelRenderChan
+    lea		ebp, [ebp + syWChan.distw - syWChan.chrw]
+    call	syDistRenderStereo
   lea   ebp, [ebp - syWChan.distw + syWChan.dcf2w]
   call  syDCFRenderStereo
-	lea		ebp, [ebp + 0 - syWChan.dcf2w]
+    lea		ebp, [ebp + 0 - syWChan.dcf2w]
 
 .weiterso
 
-	; Aux1...
-	mov   eax, [ebp + syWChan.a1gain]
-	or    eax, eax
-	jz    .noaux1
+    ; Aux1...
+    mov   eax, [ebp + syWChan.a1gain]
+    or    eax, eax
+    jz    .noaux1
 
-	push	ecx
-	push  esi
-	lea   edi, [ebx + SYN.aux1buf-SYN.chanbuf]
+    push	ecx
+    push  esi
+    lea   edi, [ebx + SYN.aux1buf-SYN.chanbuf]
 .aux1loop
-		fld		dword [esi]
-		fadd	dword [esi+4]
-		lea   esi, [esi+8]
-		fmul  dword [ebp + syWChan.a1gain]
-		fadd  dword [edi]
-		fstp  dword [edi]
-		lea   edi, [edi+4]
-		dec		ecx
-	jnz		.aux1loop
-	pop   esi
-	pop		ecx
+        fld		dword [esi]
+        fadd	dword [esi+4]
+        lea   esi, [esi+8]
+        fmul  dword [ebp + syWChan.a1gain]
+        fadd  dword [edi]
+        fstp  dword [edi]
+        lea   edi, [edi+4]
+        dec		ecx
+    jnz		.aux1loop
+    pop   esi
+    pop		ecx
 
 .noaux1
 
-	; ... und Aux2.
-	mov   eax, [ebp + syWChan.a2gain]
-	or    eax, eax
-	jz    .noaux2
-	push	ecx
-	push  esi
-	lea   edi, [ebx + SYN.aux2buf-SYN.chanbuf]
+    ; ... und Aux2.
+    mov   eax, [ebp + syWChan.a2gain]
+    or    eax, eax
+    jz    .noaux2
+    push	ecx
+    push  esi
+    lea   edi, [ebx + SYN.aux2buf-SYN.chanbuf]
 .aux2loop
-		fld		dword [esi]
-		fadd	dword [esi+4]
-		lea   esi, [esi+8]
-		fmul  dword [ebp + syWChan.a2gain]
-		fadd  dword [edi]
-		fstp  dword [edi]
-		lea   edi, [edi+4]
-		dec		ecx
-	jnz		.aux2loop
-	pop   esi
-	pop		ecx
+        fld		dword [esi]
+        fadd	dword [esi+4]
+        lea   esi, [esi+8]
+        fmul  dword [ebp + syWChan.a2gain]
+        fadd  dword [edi]
+        fstp  dword [edi]
+        lea   edi, [edi+4]
+        dec		ecx
+    jnz		.aux2loop
+    pop   esi
+    pop		ecx
 
 .noaux2
 
-	; AuxA...		CHAOS
-	mov   eax, [ebp + syWChan.aasnd]
-	or    eax, eax
-	jz    .noauxa
-	push	ecx
-	push  esi
-	lea   edi, [ebx + SYN.auxabuf-SYN.chanbuf]
+    ; AuxA...		CHAOS
+    mov   eax, [ebp + syWChan.aasnd]
+    or    eax, eax
+    jz    .noauxa
+    push	ecx
+    push  esi
+    lea   edi, [ebx + SYN.auxabuf-SYN.chanbuf]
 .auxaloop
-		fld		dword [esi]
-		fmul  dword [ebp + syWChan.aasnd]
-		fld		dword [esi+4]
-		fmul  dword [ebp + syWChan.aasnd]
-		lea   esi, [esi + 8]
-		fxch  st1
-		fadd	dword [edi]
-		fxch  st1
-		fadd	dword [edi+4]
-		fxch  st1
-		fstp  dword [edi]
-		fstp  dword [edi+4]
-		lea   edi, [edi + 8]
-		dec ecx
-	jnz		.auxaloop
-	pop   esi
-	pop		ecx
+        fld		dword [esi]
+        fmul  dword [ebp + syWChan.aasnd]
+        fld		dword [esi+4]
+        fmul  dword [ebp + syWChan.aasnd]
+        lea   esi, [esi + 8]
+        fxch  st1
+        fadd	dword [edi]
+        fxch  st1
+        fadd	dword [edi+4]
+        fxch  st1
+        fstp  dword [edi]
+        fstp  dword [edi+4]
+        lea   edi, [edi + 8]
+        dec ecx
+    jnz		.auxaloop
+    pop   esi
+    pop		ecx
 .noauxa
 
-	; AuxB...		CHAOS
-	mov   eax, [ebp + syWChan.absnd]
-	or    eax, eax
-	jz    .noauxb
-	push	ecx
-	push  esi
-	lea   edi, [ebx + SYN.auxbbuf-SYN.chanbuf]
+    ; AuxB...		CHAOS
+    mov   eax, [ebp + syWChan.absnd]
+    or    eax, eax
+    jz    .noauxb
+    push	ecx
+    push  esi
+    lea   edi, [ebx + SYN.auxbbuf-SYN.chanbuf]
 .auxbloop
-		fld		dword [esi]
-		fmul  dword [ebp + syWChan.absnd]
-		fld		dword [esi+4]
-		fmul  dword [ebp + syWChan.absnd]
-		lea   esi, [esi + 8]
-		fxch  st1
-		fadd	dword [edi]
-		fxch  st1
-		fadd	dword [edi+4]
-		fxch  st1
-		fstp  dword [edi]
-		fstp  dword [edi+4]
-		lea   edi, [edi + 8]
-		dec ecx
-	jnz		.auxbloop
-	pop   esi
-	pop		ecx
+        fld		dword [esi]
+        fmul  dword [ebp + syWChan.absnd]
+        fld		dword [esi+4]
+        fmul  dword [ebp + syWChan.absnd]
+        lea   esi, [esi + 8]
+        fxch  st1
+        fadd	dword [edi]
+        fxch  st1
+        fadd	dword [edi+4]
+        fxch  st1
+        fstp  dword [edi]
+        fstp  dword [edi+4]
+        lea   edi, [edi + 8]
+        dec ecx
+    jnz		.auxbloop
+    pop   esi
+    pop		ecx
 .noauxb
 
   ; Chanbuf in Mainbuffer kopieren
-	lea   edi, [ebx + SYN.mixbuf-SYN.chanbuf]
+    lea   edi, [ebx + SYN.mixbuf-SYN.chanbuf]
 .ccloop			
-		fld		dword [esi]
-		fmul  dword [ebp + syWChan.chgain]
-		fld		dword [esi+4]
-		fmul  dword [ebp + syWChan.chgain]
-		lea   esi, [esi + 8]
-		fxch  st1
-		fadd	dword [edi]
-		fxch  st1
-		fadd	dword [edi+4]
-		fxch  st1
-		fstp  dword [edi]
-		fstp  dword [edi+4]
-		lea   edi, [edi + 8]
-		dec ecx
-	jnz .ccloop
+        fld		dword [esi]
+        fmul  dword [ebp + syWChan.chgain]
+        fld		dword [esi+4]
+        fmul  dword [ebp + syWChan.chgain]
+        lea   esi, [esi + 8]
+        fxch  st1
+        fadd	dword [edi]
+        fxch  st1
+        fadd	dword [edi+4]
+        fxch  st1
+        fstp  dword [edi]
+        fstp  dword [edi+4]
+        lea   edi, [edi + 8]
+        dec ecx
+    jnz .ccloop
 
-	popad
-	ret
+    popad
+    ret
 
 
 
 storeChanValues:  ; ebx: channel, ebp: globals
   pushad
 
-	movzx eax, byte [ebp + SYN.chans + 8*ebx] ; pgmnummer
-	mov   edi, [ebp + SYN.patchmap]
-	mov   edi, [edi + 4*eax]									; edi -> sounddaten
-	add   edi, [ebp + SYN.patchmap]
+    movzx eax, byte [ebp + SYN.chans + 8*ebx] ; pgmnummer
+    mov   edi, [ebp + SYN.patchmap]
+    mov   edi, [edi + 4*eax]									; edi -> sounddaten
+    add   edi, [ebp + SYN.patchmap]
 
-	mov   eax, ebx
-	imul  eax, syVChan.size
-	lea   esi, [ebp + SYN.chansv + eax]      ; esi -> values
-	mov   eax, ebx
-	imul  eax, syWChan.size
-	lea   eax, [ebp + SYN.chansw + eax]      ; eax -> workspace
-	push  eax
-	
-	; channeldependent daten übertragen
-	push esi
-	xor  ecx, ecx
-	mov  cl, v2sound.chan
+    mov   eax, ebx
+    imul  eax, syVChan.size
+    lea   esi, [ebp + SYN.chansv + eax]      ; esi -> values
+    mov   eax, ebx
+    imul  eax, syWChan.size
+    lea   eax, [ebp + SYN.chansw + eax]      ; eax -> workspace
+    push  eax
+    
+    ; channeldependent daten übertragen
+    push esi
+    xor  ecx, ecx
+    mov  cl, v2sound.chan
 .goloop
-		movzx eax, byte [edi + ecx]
-		mov   [temp], eax
-		fild  dword [temp]
-		fstp  dword [esi]
-		lea   esi, [esi+4]
-		inc   ecx
-		cmp   cl, v2sound.endcdvals
-	jne .goloop
-	pop esi
+        movzx eax, byte [edi + ecx]
+        mov   [temp], eax
+        fild  dword [temp]
+        fstp  dword [esi]
+        lea   esi, [esi+4]
+        inc   ecx
+        cmp   cl, v2sound.endcdvals
+    jne .goloop
+    pop esi
 
   ; ebp: ptr auf voice
-	mov   eax, [ebp + SYN.voicemap + 4*ebx]
-	imul  eax, syWV2.size
-	lea   ebp, [ebp + SYN.voicesw + eax]      ; ebp -> workspace
+    mov   eax, [ebp + SYN.voicemap + 4*ebx]
+    imul  eax, syWV2.size
+    lea   ebp, [ebp + SYN.voicesw + eax]      ; ebp -> workspace
 
 
-	; MODMATRIX!
-	movzx ecx, byte [edi + v2sound.modnum]
-	lea		edi, [edi + v2sound.modmatrix]
-	or		ecx, ecx
-	jnz  .modloop
-	jmp  .modend
+    ; MODMATRIX!
+    movzx ecx, byte [edi + v2sound.modnum]
+    lea		edi, [edi + v2sound.modmatrix]
+    or		ecx, ecx
+    jnz  .modloop
+    jmp  .modend
 
 .modloop
-		movzx   eax, byte [edi + v2mod.dest]
-		cmp     al, v2sound.chan
-		jb      .mlegw
-		cmp     al, v2sound.endcdvals
-		jb      .mok
+        movzx   eax, byte [edi + v2mod.dest]
+        cmp     al, v2sound.chan
+        jb      .mlegw
+        cmp     al, v2sound.endcdvals
+        jb      .mok
 .mlegw
-		jmp     .mlend
+        jmp     .mlend
 .mok
-		movzx		eax, byte [edi + v2mod.source]  ; source
-		or      eax, eax
-		jnz     .mnotvel
-		fld     dword [ebp + syWV2.velo]
-		jmp			.mdo
+        movzx		eax, byte [edi + v2mod.source]  ; source
+        or      eax, eax
+        jnz     .mnotvel
+        fld     dword [ebp + syWV2.velo]
+        jmp			.mdo
 .mnotvel
-		cmp     al, 8
-		jae     .mnotctl
-		push    ebp
-		mov     ebp, [this]
-		lea     ebp, [ebp + SYN.chans + 8*ebx]
-		movzx   eax, byte [ebp + eax]
-		pop     ebp
-		mov     [temp], eax
-		fild    dword [temp]
-		jmp     .mdo
+        cmp     al, 8
+        jae     .mnotctl
+        push    ebp
+        mov     ebp, [this]
+        lea     ebp, [ebp + SYN.chans + 8*ebx]
+        movzx   eax, byte [ebp + eax]
+        pop     ebp
+        mov     [temp], eax
+        fild    dword [temp]
+        jmp     .mdo
 .mnotctl
     cmp     al, 12
     jae     .mnotvm
-		and     al, 3
-		mov     eax, [sVTab + 4*eax]
-		fld     dword [ebp + eax]
-		jmp     .mdo
+        and     al, 3
+        mov     eax, [sVTab + 4*eax]
+        fld     dword [ebp + eax]
+        jmp     .mdo
 .mnotvm
     cmp     al, 13
     jne     .mnotnote
@@ -4522,41 +4522,41 @@ storeChanValues:  ; ebx: channel, ebp: globals
     fsub    dword [fc48]
     fadd    st0, st0		
 .mdo
-		movzx   eax, byte [edi + v2mod.val]
-		mov     [temp], eax
-		fild    dword [temp]
-		fsub    dword [fc64]
-		fmul    dword [fci128]
-		fadd    st0, st0
-		fmulp   st1, st0
-		movzx   eax, byte [edi + v2mod.dest]
-		sub     al, v2sound.chan
-		fadd    dword [esi + 4*eax]
-		fstp    dword [temp]
-		; clippen
-		mov     edx, [temp]
-		or      edx, edx
-		jns     .mnoclip1
-		xor     edx, edx
+        movzx   eax, byte [edi + v2mod.val]
+        mov     [temp], eax
+        fild    dword [temp]
+        fsub    dword [fc64]
+        fmul    dword [fci128]
+        fadd    st0, st0
+        fmulp   st1, st0
+        movzx   eax, byte [edi + v2mod.dest]
+        sub     al, v2sound.chan
+        fadd    dword [esi + 4*eax]
+        fstp    dword [temp]
+        ; clippen
+        mov     edx, [temp]
+        or      edx, edx
+        jns     .mnoclip1
+        xor     edx, edx
 .mnoclip1
     cmp     edx, 43000000h
-		jbe     .mnoclip2
-		mov     edx, 43000000h
+        jbe     .mnoclip2
+        mov     edx, 43000000h
 .mnoclip2
-		mov			[esi + 4*eax], edx
+        mov			[esi + 4*eax], edx
 .mlend
-		lea edi, [edi+3]
-	  dec ecx
-	jz .modend
-	jmp .modloop
+        lea edi, [edi+3]
+      dec ecx
+    jz .modend
+    jmp .modloop
 .modend
   
   pop ebp
-	call syChanSet
+    call syChanSet
 
 .end
-	popad
-	ret
+    popad
+    ret
 
 
 
@@ -4584,59 +4584,59 @@ extern _ronanCBSetSR@8
 
 ; ebp: this
 syRonanInit
-	pushad
-	mov  eax, [this]
-	add  eax, SYN.ronanw
-	push eax
-	call _ronanCBInit@4
-	popad
-	ret
+    pushad
+    mov  eax, [this]
+    add  eax, SYN.ronanw
+    push eax
+    call _ronanCBInit@4
+    popad
+    ret
 
 ; ebp: this
 syRonanNoteOn
-	pushad
-	mov  eax, [this]
-	add  eax, SYN.ronanw
-	push eax
-	call _ronanCBNoteOn@4
-	popad
-	ret
+    pushad
+    mov  eax, [this]
+    add  eax, SYN.ronanw
+    push eax
+    call _ronanCBNoteOn@4
+    popad
+    ret
 
 ; ebp: this
 syRonanNoteOff
-	pushad
-	mov  eax, [this]
-	add  eax, SYN.ronanw
-	push eax
-	call _ronanCBNoteOff@4
-	popad
-	ret
+    pushad
+    mov  eax, [this]
+    add  eax, SYN.ronanw
+    push eax
+    call _ronanCBNoteOff@4
+    popad
+    ret
 
 ; ebp: this
 syRonanTick
-	pushad
-	mov  eax, [this]
-	add  eax, SYN.ronanw
-	push eax
-	call _ronanCBTick@4
-	popad
-	ret
+    pushad
+    mov  eax, [this]
+    add  eax, SYN.ronanw
+    push eax
+    call _ronanCBTick@4
+    popad
+    ret
 
 ; ebp: this
 ; esi: buffer
 ; ecx: count
 syRonanProcess
-	pushad
-	V2PerfEnter V2Perf_RONAN
-	push    ecx
-	push    esi
-	mov  eax, [this]
-	add  eax, SYN.ronanw
-	push eax
-	call    _ronanCBProcess@12
-	V2PerfLeave V2Perf_RONAN
-	popad
-	ret
+    pushad
+    V2PerfEnter V2Perf_RONAN
+    push    ecx
+    push    esi
+    mov  eax, [this]
+    add  eax, SYN.ronanw
+    push eax
+    call    _ronanCBProcess@12
+    V2PerfLeave V2Perf_RONAN
+    popad
+    ret
 
 
 %endif
@@ -4649,27 +4649,27 @@ syRonanProcess
 struc v2sound
    ; voice dependent sachen
 
-	.voice			resb syVV2.size/4
-	.endvdvals
+    .voice			resb syVV2.size/4
+    .endvdvals
 
   ; globale pro-channel-sachen
-	.chan				resb syVChan.size/4
-	.endcdvals
+    .chan				resb syVChan.size/4
+    .endcdvals
 
-	; manuelles rumgefake
+    ; manuelles rumgefake
   .maxpoly		resb 1
 
-	; modmatrix
-	.modnum			resb 1
-	.modmatrix
-	.size
+    ; modmatrix
+    .modnum			resb 1
+    .modmatrix
+    .size
 endstruc
 
 struc v2mod
-	.source   resb 1   ; source: vel/ctl1-7/aenv/env2/lfo1/lfo2
-	.val      resb 1   ; 0 = -1 .. 128=1
-	.dest     resb 1   ; destination (index into v2sound)
-	.size     
+    .source   resb 1   ; source: vel/ctl1-7/aenv/env2/lfo1/lfo2
+    .val      resb 1   ; 0 = -1 .. 128=1
+    .dest     resb 1   ; destination (index into v2sound)
+    .size     
 endstruc
 
 
@@ -4681,54 +4681,54 @@ endstruc
 
 struc CHANINFO
   .pgm      resb 1
-	.ctl      resb 7
-	.size
+    .ctl      resb 7
+    .size
 endstruc
 
 struc SYN
-	.patchmap resd 1
-	.mrstat   resd 1
-	.curalloc resd 1
-	.samplerate resd 1
-	.chanmap	resd POLY
-	.allocpos resd POLY
-	.voicemap resd 16
-	.tickd    resd 1
+    .patchmap resd 1
+    .mrstat   resd 1
+    .curalloc resd 1
+    .samplerate resd 1
+    .chanmap	resd POLY
+    .allocpos resd POLY
+    .voicemap resd 16
+    .tickd    resd 1
 
-	.chans    resb 16*CHANINFO.size
-	          alignb 4
+    .chans    resb 16*CHANINFO.size
+              alignb 4
   .voicesv  resb POLY*syVV2.size
-	          alignb 4
+              alignb 4
   .voicesw  resb POLY*syWV2.size
-	          alignb 4
+              alignb 4
 
   .chansv		resb 16*syVChan.size
   .chansw		resb 16*syWChan.size
 
-	.globalsstart
-	.rvbparm  resb syVReverb.size
-	.delparm  resb syVModDel.size
-	.vlowcut  resd 1
-	.vhighcut resd 1
+    .globalsstart
+    .rvbparm  resb syVReverb.size
+    .delparm  resb syVModDel.size
+    .vlowcut  resd 1
+    .vhighcut resd 1
   .cprparm  resb syVComp.size
-	.guicolor	resb 1			; CHAOS gui logo color (has nothing to do with sound but should be saved with patch)
-	.globalsend
+    .guicolor	resb 1			; CHAOS gui logo color (has nothing to do with sound but should be saved with patch)
+    .globalsend
 
             alignb 4
-	.reverb   resb syWReverb.size
-	          alignb 4
-	.delay    resb syWModDel.size
-	          alignb 4
-	.dcf      resb syWDCF.size
-	          alignb 4
-	.compr    resb syWComp.size
-	          alignb 4
-	.lcfreq   resd 1
-	.lcbufl   resd 1
-	.lcbufr   resd 1
-	.hcfreq   resd 1
-	.hcbufl   resd 1
-	.hcbufr   resd 1
+    .reverb   resb syWReverb.size
+              alignb 4
+    .delay    resb syWModDel.size
+              alignb 4
+    .dcf      resb syWDCF.size
+              alignb 4
+    .compr    resb syWComp.size
+              alignb 4
+    .lcfreq   resd 1
+    .lcbufl   resd 1
+    .lcbufr   resd 1
+    .hcfreq   resd 1
+    .hcbufl   resd 1
+    .hcbufr   resd 1
 
   .maindelbuf   resd 2*32768
   .chandelbuf   resd 16*2*2048
@@ -4756,7 +4756,7 @@ struc SYN
   .mainvu   resd 2
 %endif  
 
-	.size
+    .size
 endstruc
 
 
@@ -4767,78 +4767,78 @@ section .text
 
 global _synthInit@12
 _synthInit@12:
-		pushad
+        pushad
 
     mov ebp, [esp+36]
     mov [this], ebp
 
-		xor eax, eax
-		mov ecx, SYN.size
-		mov edi, ebp
-		rep stosb
+        xor eax, eax
+        mov ecx, SYN.size
+        mov edi, ebp
+        rep stosb
 
-		mov eax, [esp + 44]
-		mov [ebp + SYN.samplerate], eax
-		call calcNewSampleRate
+        mov eax, [esp + 44]
+        mov [ebp + SYN.samplerate], eax
+        call calcNewSampleRate
 
 %ifdef RONAN		
     pushad
-		mov eax, [ebp + SYN.samplerate]
-		push eax
-	  lea  eax, [ebp + SYN.ronanw]
-  	push eax
+        mov eax, [ebp + SYN.samplerate]
+        push eax
+      lea  eax, [ebp + SYN.ronanw]
+    push eax
     call _ronanCBSetSR@8
     popad
 %endif    
-		
-		mov eax, [esp + 40]
-		mov [ebp + SYN.patchmap], eax
+        
+        mov eax, [esp + 40]
+        mov [ebp + SYN.patchmap], eax
 
-		mov cl, POLY
-		xor eax, eax
-		not eax
-		lea edi, [ebp + SYN.chanmap]
-		lea ebp, [ebp + SYN.voicesw]
+        mov cl, POLY
+        xor eax, eax
+        not eax
+        lea edi, [ebp + SYN.chanmap]
+        lea ebp, [ebp + SYN.voicesw]
 .siloop1
       stosd
       call	syV2Init
-			lea		ebp, [ebp+syWV2.size]
-			dec   ecx
-		jnz .siloop1
+            lea		ebp, [ebp+syWV2.size]
+            dec   ecx
+        jnz .siloop1
 
-		mov cl, 0
-		mov ebx, [this]
-		lea ebp, [ebx + SYN.chansw]
+        mov cl, 0
+        mov ebx, [this]
+        lea ebp, [ebx + SYN.chansw]
 .siloop2
-			mov   byte [ebx + SYN.chans + 8*ecx + 7], 7fh
-			mov   eax, ecx
-			shl   eax, 14
-			lea   eax, [ebx + SYN.chandelbuf + eax]
-			mov   [ebp + syWChan.chrw + syWModDel.db1], eax
-			add   eax, 8192
-			mov   [ebp + syWChan.chrw + syWModDel.db2], eax
-			mov   eax, 2047
-			mov   [ebp + syWChan.chrw + syWModDel.dbufmask], eax
+            mov   byte [ebx + SYN.chans + 8*ecx + 7], 7fh
+            mov   eax, ecx
+            shl   eax, 14
+            lea   eax, [ebx + SYN.chandelbuf + eax]
+            mov   [ebp + syWChan.chrw + syWModDel.db1], eax
+            add   eax, 8192
+            mov   [ebp + syWChan.chrw + syWModDel.db2], eax
+            mov   eax, 2047
+            mov   [ebp + syWChan.chrw + syWModDel.dbufmask], eax
       call	syChanInit
-			lea		ebp, [ebp+syWChan.size]
-			inc   ecx
-			cmp   cl, 16
-		jne .siloop2
+            lea		ebp, [ebp+syWChan.size]
+            inc   ecx
+            cmp   cl, 16
+        jne .siloop2
 
-		lea		ebp, [ebx + SYN.reverb]
-		call  syReverbInit
+        lea		ebp, [ebx + SYN.reverb]
+        call  syReverbInit
 
-		lea		ebp, [ebx + SYN.delay]
-		lea   eax, [ebx + SYN.maindelbuf]
-		mov   [ebp + syWModDel.db1], eax
-		add   eax, 131072
-		mov   [ebp + syWModDel.db2], eax
-		mov   eax, 32767
-		mov   [ebp + syWModDel.dbufmask], eax
+        lea		ebp, [ebx + SYN.delay]
+        lea   eax, [ebx + SYN.maindelbuf]
+        mov   [ebp + syWModDel.db1], eax
+        add   eax, 131072
+        mov   [ebp + syWModDel.db2], eax
+        mov   eax, 32767
+        mov   [ebp + syWModDel.dbufmask], eax
     call	syModDelInit
 
 %ifdef RONAN
-		call  syRonanInit
+        call  syRonanInit
 %endif
 
     lea   ebp, [ebx + SYN.compr]
@@ -4846,8 +4846,8 @@ _synthInit@12:
     lea   ebp, [ebx + SYN.dcf]
     call  syDCFInit
 
-		popad
-		ret 12
+        popad
+        ret 12
 
 
 ;-------------------------------------------------------------------------------------
@@ -4860,376 +4860,376 @@ section .text
 
 global _synthRender@20
 _synthRender@20:
-		pushad
+        pushad
 
     mov ebp, [esp+36]
     mov [this], ebp
 
-		; FPUsetup...
-		fstcw	[oldfpcw]
-		mov		ax, [oldfpcw]
-		and		ax, 0f0ffh
-		or		ax, 3fh
-		mov		[temp], ax
-		finit
-	 	fldcw	[temp]
+        ; FPUsetup...
+        fstcw	[oldfpcw]
+        mov		ax, [oldfpcw]
+        and		ax, 0f0ffh
+        or		ax, 3fh
+        mov		[temp], ax
+        finit
+        fldcw	[temp]
 
-		mov   ecx, [esp+44]
-		mov   [todo], ecx
-		mov   edi, [esp+52]
-		mov   [addflg], edi
-		mov   edi, [esp+48]
-		mov   [outptr+4], edi
-		mov   edi, [esp+40]
-		mov   [outptr], edi
+        mov   ecx, [esp+44]
+        mov   [todo], ecx
+        mov   edi, [esp+52]
+        mov   [addflg], edi
+        mov   edi, [esp+48]
+        mov   [outptr+4], edi
+        mov   edi, [esp+40]
+        mov   [outptr], edi
 
 .fragloop:
-			; step 1: fragmentieren
+            ; step 1: fragmentieren
       mov   eax, [todo]
-		  or    eax, eax
-		  jnz   .doit
+          or    eax, eax
+          jnz   .doit
 
-		  fldcw [oldfpcw] ; nix zu tun? -> ende
-		  popad
-		  ret 20
+          fldcw [oldfpcw] ; nix zu tun? -> ende
+          popad
+          ret 20
 .doit
 
-			; neuer Frame nötig?
-			mov   ebx, [ebp + SYN.tickd]
-			or    ebx, ebx
-			jnz   .nonewtick
+            ; neuer Frame nötig?
+            mov   ebx, [ebp + SYN.tickd]
+            or    ebx, ebx
+            jnz   .nonewtick
 
-	    ; tick abspielen
-			xor   edx, edx
+        ; tick abspielen
+            xor   edx, edx
 .tickloop 
         mov		eax, [ebp + SYN.chanmap + 4*edx]
-				or		eax, eax
-				js		.tlnext
-				mov		eax, edx
-				imul	eax, syWV2.size
-				call  storeV2Values 
-				lea   ebp, [ebp + SYN.voicesw + eax]
-				call  syV2Tick
-				; checken ob EG ausgelaufen
-				mov   eax, [ebp + syWV2.aenv + syWEnv.state]
-				mov   ebp, [this]
-				or    eax, eax
-				jnz   .stillok
-				; wenn ja -> ausmachen!
-				not   eax
+                or		eax, eax
+                js		.tlnext
+                mov		eax, edx
+                imul	eax, syWV2.size
+                call  storeV2Values 
+                lea   ebp, [ebp + SYN.voicesw + eax]
+                call  syV2Tick
+                ; checken ob EG ausgelaufen
+                mov   eax, [ebp + syWV2.aenv + syWEnv.state]
+                mov   ebp, [this]
+                or    eax, eax
+                jnz   .stillok
+                ; wenn ja -> ausmachen!
+                not   eax
         mov		[ebp + SYN.chanmap + 4*edx], eax
-				jmp   .tlnext
+                jmp   .tlnext
 .stillok
 .tlnext 
-				inc   edx
-				cmp   dl, POLY
-			jne .tickloop
+                inc   edx
+                cmp   dl, POLY
+            jne .tickloop
 
-			xor   ebx, ebx
+            xor   ebx, ebx
 .tickloop2
-				call  storeChanValues
-				inc   ebx
-				cmp   bl, 16
-			jne		.tickloop2
+                call  storeChanValues
+                inc   ebx
+                cmp   bl, 16
+            jne		.tickloop2
 
 %ifdef RONAN
-			call  syRonanTick
+            call  syRonanTick
 %endif
 
-			; frame rendern
-			mov   ecx,	dword [SRcFrameSize]
-			mov   [ebp + SYN.tickd], ecx
-			call  .RenderBlock
+            ; frame rendern
+            mov   ecx,	dword [SRcFrameSize]
+            mov   [ebp + SYN.tickd], ecx
+            call  .RenderBlock
 
 .nonewtick 
 
       ; daten in destination umkopieren
-			mov   eax, [todo]
-			mov   ebx, [ebp + SYN.tickd]
-			mov   ecx, ebx
+            mov   eax, [todo]
+            mov   ebx, [ebp + SYN.tickd]
+            mov   ecx, ebx
 
-			mov   esi, [SRcFrameSize]
-			sub   esi, ecx
-			shl   esi, 3
-			lea   esi, [ebp + SYN.mixbuf + esi]
+            mov   esi, [SRcFrameSize]
+            sub   esi, ecx
+            shl   esi, 3
+            lea   esi, [ebp + SYN.mixbuf + esi]
 
-			cmp   eax, ecx
-		  jge   .tickdg
-			mov   ecx, eax
+            cmp   eax, ecx
+          jge   .tickdg
+            mov   ecx, eax
 .tickdg
-			sub   eax, ecx
-			sub   ebx, ecx
-			mov   [todo], eax
-			mov   [ebp + SYN.tickd], ebx
-			
-			mov   eax, [addflg]
-			mov   edi, [outptr]			
-			mov   ebx, [outptr+4]
-			or    ebx, ebx
-			jz    .interleaved
+            sub   eax, ecx
+            sub   ebx, ecx
+            mov   [todo], eax
+            mov   [ebp + SYN.tickd], ebx
+            
+            mov   eax, [addflg]
+            mov   edi, [outptr]			
+            mov   ebx, [outptr+4]
+            or    ebx, ebx
+            jz    .interleaved
 
-			; separate channels
-			or    eax, eax
-			jz    .seploopreplace
+            ; separate channels
+            or    eax, eax
+            jz    .seploopreplace
 
-  	  	.seploopadd
-	  	  fld dword [ebx]
-			  fld dword [edi]
-			  fadd dword [esi]
-			  fstp dword [edi]
-				lea edi, [edi+4]
-			  fadd dword [esi+4]
-				lea esi, [esi+8]
-			  fstp dword [ebx]
-				lea ebx, [ebx+4]
-				dec ecx
-		  jnz .seploopadd
-			jz  .seploopend
+        .seploopadd
+          fld dword [ebx]
+              fld dword [edi]
+              fadd dword [esi]
+              fstp dword [edi]
+                lea edi, [edi+4]
+              fadd dword [esi+4]
+                lea esi, [esi+8]
+              fstp dword [ebx]
+                lea ebx, [ebx+4]
+                dec ecx
+          jnz .seploopadd
+            jz  .seploopend
 
-			.seploopreplace
-				mov eax, [esi]
-				mov edx, [esi+4]
-				lea esi, [esi+8]
-				mov [edi], eax
-				lea edi, [edi+4]
-				mov [ebx], edx
-				lea ebx, [ebx+4]
-				dec ecx
-		  jnz .seploopreplace
-			
-			.seploopend
-			mov [outptr], edi
-			mov [outptr+4], ebx
-			jmp .fragloop
+            .seploopreplace
+                mov eax, [esi]
+                mov edx, [esi+4]
+                lea esi, [esi+8]
+                mov [edi], eax
+                lea edi, [edi+4]
+                mov [ebx], edx
+                lea ebx, [ebx+4]
+                dec ecx
+          jnz .seploopreplace
+            
+            .seploopend
+            mov [outptr], edi
+            mov [outptr+4], ebx
+            jmp .fragloop
 
 .interleaved
-			shl   ecx, 1
-			or    eax, eax
-			jz    .intloopreplace
-			
-			.intloopadd
-			  fld dword [edi]			
-			  fadd dword [esi]
-			  lea  esi, [esi+4]
-			  fstp dword [edi]
-			  lea  edi, [edi+4]
-				dec ecx
-		  jnz .intloopadd
-			jz  .intloopend
+            shl   ecx, 1
+            or    eax, eax
+            jz    .intloopreplace
+            
+            .intloopadd
+              fld dword [edi]			
+              fadd dword [esi]
+              lea  esi, [esi+4]
+              fstp dword [edi]
+              lea  edi, [edi+4]
+                dec ecx
+          jnz .intloopadd
+            jz  .intloopend
 
       .intloopreplace
-			rep   movsd
+            rep   movsd
 
       .intloopend
- 			mov   [outptr], edi
+            mov   [outptr], edi
       jmp		.fragloop
 
 
 
 .RenderBlock
-		pushad
-		V2PerfClear
-		V2PerfEnter V2Perf_TOTAL
-		
-		; clear output buffer
-		mov   [todo+4], ecx
-		lea   edi, [ebp + SYN.mixbuf]
-		xor   eax, eax
-		shl   ecx, 1
-		rep   stosd
+        pushad
+        V2PerfClear
+        V2PerfEnter V2Perf_TOTAL
+        
+        ; clear output buffer
+        mov   [todo+4], ecx
+        lea   edi, [ebp + SYN.mixbuf]
+        xor   eax, eax
+        shl   ecx, 1
+        rep   stosd
 
-		; clear aux1
-		mov   ecx, [todo+4]
-		lea   edi, [ebp + SYN.aux1buf]
-		rep   stosd
+        ; clear aux1
+        mov   ecx, [todo+4]
+        lea   edi, [ebp + SYN.aux1buf]
+        rep   stosd
 
-		; clear aux2
-		mov   ecx, [todo+4]
-		lea   edi, [ebp + SYN.aux2buf]
-		rep   stosd
+        ; clear aux2
+        mov   ecx, [todo+4]
+        lea   edi, [ebp + SYN.aux2buf]
+        rep   stosd
 
-		; clear aux a / b
-		mov 	ecx, [todo+4]
-		add		ecx,ecx
-		mov		eax,ecx
-		lea		edi, [ebp + SYN.auxabuf]
-		rep		stosd
-		mov 	ecx,eax
-		lea		edi, [ebp + SYN.auxbbuf]
-		rep		stosd
+        ; clear aux a / b
+        mov 	ecx, [todo+4]
+        add		ecx,ecx
+        mov		eax,ecx
+        lea		edi, [ebp + SYN.auxabuf]
+        rep		stosd
+        mov 	ecx,eax
+        lea		edi, [ebp + SYN.auxbbuf]
+        rep		stosd
 
 
     ; process all channels
-		xor   ecx, ecx
+        xor   ecx, ecx
 .chanloop
       push ecx
-			; check if voices are active
-			xor edx, edx		
+            ; check if voices are active
+            xor edx, edx		
 .cchkloop
-				cmp ecx, [ebp + SYN.chanmap + 4*edx]
-				je  .dochan
-				inc edx
-				cmp dl, POLY
-			jne .cchkloop
+                cmp ecx, [ebp + SYN.chanmap + 4*edx]
+                je  .dochan
+                inc edx
+                cmp dl, POLY
+            jne .cchkloop
 %ifdef VUMETER
       xor		eax, eax
       mov		[ebp + SYN.chanvu + 8*ecx], eax
       mov		[ebp + SYN.chanvu + 8*ecx + 4], eax   
 %endif						
-			jmp .chanend
+            jmp .chanend
 .dochan
-			; clear channel buffer
-			lea edi, [ebp + SYN.chanbuf]
-			mov ecx, [todo+4]
-			shl ecx, 1
-			xor eax, eax
-			rep stosd
+            ; clear channel buffer
+            lea edi, [ebp + SYN.chanbuf]
+            mov ecx, [todo+4]
+            shl ecx, 1
+            xor eax, eax
+            rep stosd
 
-			; process all voices belonging to that channel
-			xor		edx, edx
+            ; process all voices belonging to that channel
+            xor		edx, edx
 .vceloop
-				pop		ecx
-				push	ecx
-				cmp		ecx, [ebp + SYN.chanmap + 4*edx]
-				jne		.vceend
+                pop		ecx
+                push	ecx
+                cmp		ecx, [ebp + SYN.chanmap + 4*edx]
+                jne		.vceend
 
-				; alle Voices rendern
-				mov		eax, edx
-				imul	eax, syWV2.size
-				lea   ebp, [ebp + SYN.voicesw + eax]
-				mov   ecx, [todo+4]
-				call	syV2Render
-				mov   ebp, [this]
-				
+                ; alle Voices rendern
+                mov		eax, edx
+                imul	eax, syWV2.size
+                lea   ebp, [ebp + SYN.voicesw + eax]
+                mov   ecx, [todo+4]
+                call	syV2Render
+                mov   ebp, [this]
+                
 .vceend 
-				inc edx
-				cmp dl, POLY
-			jne .vceloop
+                inc edx
+                cmp dl, POLY
+            jne .vceloop
 
 %ifdef RONAN
-			; Wenn channel 16, dann Sprachsynth!
-			pop		ecx
-			push	ecx
-			cmp   cl, 15
-			jne   .noronan
-	
-			mov		ecx, [todo+4]
-			lea   esi, [ebp + SYN.chanbuf]
-			call  syRonanProcess
+            ; Wenn channel 16, dann Sprachsynth!
+            pop		ecx
+            push	ecx
+            cmp   cl, 15
+            jne   .noronan
+    
+            mov		ecx, [todo+4]
+            lea   esi, [ebp + SYN.chanbuf]
+            call  syRonanProcess
 .noronan
 %endif
-			
-			pop		ecx
-			push	ecx
-			imul	ecx, syWChan.size
-			lea   ebp, [ebp + SYN.chansw + ecx]
-			mov		ecx, [todo+4]
-			call	syChanProcess
-			mov   ebp, [this]
+            
+            pop		ecx
+            push	ecx
+            imul	ecx, syWChan.size
+            lea   ebp, [ebp + SYN.chansw + ecx]
+            mov		ecx, [todo+4]
+            call	syChanProcess
+            mov   ebp, [this]
 
 %ifdef VUMETER
-		  ; VU-Meter der Channels bearbeiten
-		  pop		edx
-		  push	edx
-		  lea   esi, [ebp + SYN.chanbuf]
-		  lea   edi, [ebp + SYN.chanvu + 8*edx]
-		  call  .vumeter
+          ; VU-Meter der Channels bearbeiten
+          pop		edx
+          push	edx
+          lea   esi, [ebp + SYN.chanbuf]
+          lea   edi, [ebp + SYN.chanvu + 8*edx]
+          call  .vumeter
 %endif		  
-			
+            
 .chanend
-			pop ecx
-			inc ecx
-			cmp cl, 16
-		je .clend
-		jmp .chanloop
+            pop ecx
+            inc ecx
+            cmp cl, 16
+        je .clend
+        jmp .chanloop
 
 .clend
 
-		
-		; Reverb/Delay draufrechnen
-		mov		ecx, [todo+4]
-		lea	  edi, [ebp + SYN.mixbuf]
-		lea		ebp, [ebp + SYN.reverb]
-		call	syReverbProcess
-		lea   ebp, [ebp + SYN.delay - SYN.reverb]
-		call  syModDelRenderAux2Main
+        
+        ; Reverb/Delay draufrechnen
+        mov		ecx, [todo+4]
+        lea	  edi, [ebp + SYN.mixbuf]
+        lea		ebp, [ebp + SYN.reverb]
+        call	syReverbProcess
+        lea   ebp, [ebp + SYN.delay - SYN.reverb]
+        call  syModDelRenderAux2Main
     mov   ebp, [this]
 
     ; DC filter
-		lea	  esi, [ebp + SYN.mixbuf]
-		mov   edi, esi
-		mov		ecx, [todo+4]
+        lea	  esi, [ebp + SYN.mixbuf]
+        mov   edi, esi
+        mov		ecx, [todo+4]
     lea   ebp, [ebp + SYN.dcf]
     call  syDCFRenderStereo
     lea   ebp, [ebp - SYN.dcf]
 
-		; lowcut/highcut
-		mov   eax, [ebp + SYN.hcfreq]
-		fld   dword [ebp + SYN.hcbufr]   ; <hcbr>
-		fld   dword [ebp + SYN.lcbufr]   ; <lcbr> <hcbr>
-		fld   dword [ebp + SYN.hcbufl]   ; <hcbl> <lcbr> <hcbr>
-		fld   dword [ebp + SYN.lcbufl]   ; <lcbl> <hcbl> <lcbr> <hcbr>
+        ; lowcut/highcut
+        mov   eax, [ebp + SYN.hcfreq]
+        fld   dword [ebp + SYN.hcbufr]   ; <hcbr>
+        fld   dword [ebp + SYN.lcbufr]   ; <lcbr> <hcbr>
+        fld   dword [ebp + SYN.hcbufl]   ; <hcbl> <lcbr> <hcbr>
+        fld   dword [ebp + SYN.lcbufl]   ; <lcbl> <hcbl> <lcbr> <hcbr>
 .lhcloop
-			; low cut
-			fld			st0                       ; <lcbl> <lcbl> <hcbl> <lcbr> <hcbr>
-			fsubr		dword [esi]								; <in-l=lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
-			fld			st0                       ; <in-l> <lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
-			fmul		dword [ebp + SYN.lcfreq] ; <f*(in-l)> <lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
-			faddp		st2, st0                  ; <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
-			fld     st3                       ; <lcbr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
-			fsubr		dword [esi+4]							; <in-l=lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
-			fld     st0                       ; <in-l> <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
-			fmul		dword [ebp + SYN.lcfreq] ; <f*(in-l)> <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
-			faddp   st5, st0                  ; <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fxch    st1                       ; <lcoutl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			cmp     eax, 3f800000h            
-			je      .nohighcut
-			; high cut
-			fld     st3                       ; <hcbl> <lcoutl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fsubp   st1, st0                  ; <inl-hcbl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fld     st5												; <hcbr> <inl-hcbl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fsubp   st2, st0                  ; <inl-hcbl> <inr-hcbr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fmul    dword [ebp + SYN.hcfreq] ; <f*(inl-l)> <inr-hcbr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fxch    st1                       ; <inr-hcbr> <f*(inl-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fmul    dword [ebp + SYN.hcfreq] ; <f*(inr-l)> <f*(inl-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fxch    st1                       ; <f*(inl-l)> <f*(inr-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			faddp   st3, st0                  ; <f*(inr-l)> <lcbl'> <hcbl'> <lcbr'> <hcbr>
-			faddp   st4, st0                  ; <lcbl'> <hcbl'> <lcbr'> <hcbr'>
-			fld     st3                       ; <hcoutr> <lcbl'> <hcbl'> <lcbr'> <hcbr'>
-			fld     st2                       ; <hcoutl> <hcoutr> <lcbl'> <hcbl'> <lcbr'> <hcbr'>
+            ; low cut
+            fld			st0                       ; <lcbl> <lcbl> <hcbl> <lcbr> <hcbr>
+            fsubr		dword [esi]								; <in-l=lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
+            fld			st0                       ; <in-l> <lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
+            fmul		dword [ebp + SYN.lcfreq] ; <f*(in-l)> <lcoutl> <lcbl> <hcbl> <lcbr> <hcbr>
+            faddp		st2, st0                  ; <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
+            fld     st3                       ; <lcbr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
+            fsubr		dword [esi+4]							; <in-l=lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
+            fld     st0                       ; <in-l> <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
+            fmul		dword [ebp + SYN.lcfreq] ; <f*(in-l)> <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr> <hcbr>
+            faddp   st5, st0                  ; <lcoutr> <lcoutl> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fxch    st1                       ; <lcoutl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            cmp     eax, 3f800000h            
+            je      .nohighcut
+            ; high cut
+            fld     st3                       ; <hcbl> <lcoutl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fsubp   st1, st0                  ; <inl-hcbl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fld     st5												; <hcbr> <inl-hcbl> <lcoutr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fsubp   st2, st0                  ; <inl-hcbl> <inr-hcbr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fmul    dword [ebp + SYN.hcfreq] ; <f*(inl-l)> <inr-hcbr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fxch    st1                       ; <inr-hcbr> <f*(inl-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fmul    dword [ebp + SYN.hcfreq] ; <f*(inr-l)> <f*(inl-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fxch    st1                       ; <f*(inl-l)> <f*(inr-l)> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            faddp   st3, st0                  ; <f*(inr-l)> <lcbl'> <hcbl'> <lcbr'> <hcbr>
+            faddp   st4, st0                  ; <lcbl'> <hcbl'> <lcbr'> <hcbr'>
+            fld     st3                       ; <hcoutr> <lcbl'> <hcbl'> <lcbr'> <hcbr'>
+            fld     st2                       ; <hcoutl> <hcoutr> <lcbl'> <hcbl'> <lcbr'> <hcbr'>
 .nohighcut
-			fstp    dword [esi]               ; <outr> <lcbl'> <hcbl> <lcbr'> <hcbr>
-			fstp    dword [esi+4]             ; <lcbl'> <hcbl> <lcbr'> <hcbr>
-			lea			esi, [esi+8]
+            fstp    dword [esi]               ; <outr> <lcbl'> <hcbl> <lcbr'> <hcbr>
+            fstp    dword [esi+4]             ; <lcbl'> <hcbl> <lcbr'> <hcbr>
+            lea			esi, [esi+8]
 
-			dec ecx
-		jnz		.lhcloop
-		
-		fstp  dword [ebp + SYN.lcbufl]   ; <hcbl> <lcbr> <hcbr>
-		fstp  dword [ebp + SYN.hcbufl]   ; <lcbr> <hcbr>
-		fstp  dword [ebp + SYN.lcbufr]   ; <hcbr>
-		fstp  dword [ebp + SYN.hcbufr]   ; -
+            dec ecx
+        jnz		.lhcloop
+        
+        fstp  dword [ebp + SYN.lcbufl]   ; <hcbl> <lcbr> <hcbr>
+        fstp  dword [ebp + SYN.hcbufl]   ; <lcbr> <hcbr>
+        fstp  dword [ebp + SYN.lcbufr]   ; <hcbr>
+        fstp  dword [ebp + SYN.hcbufr]   ; -
 
     ; Kompressor
-		mov		ecx, [todo+4]
-		lea	  edi, [ebp + SYN.mixbuf]
-		mov   esi, edi
-		lea		ebp, [ebp + SYN.compr]
+        mov		ecx, [todo+4]
+        lea	  edi, [ebp + SYN.mixbuf]
+        mov   esi, edi
+        lea		ebp, [ebp + SYN.compr]
     call  syCompRender
-		lea		ebp, [ebp - SYN.compr]
+        lea		ebp, [ebp - SYN.compr]
 
 .renderend
 %ifdef VUMETER
-		mov		ecx, [todo+4]
-		lea	  esi, [ebp + SYN.mixbuf]
-		lea   edi, [ebp + SYN.mainvu]
-		call  .vumeter
+        mov		ecx, [todo+4]
+        lea	  esi, [ebp + SYN.mixbuf]
+        lea   edi, [ebp + SYN.mainvu]
+        call  .vumeter
 %endif	
 
     V2PerfLeave V2Perf_TOTAL
     V2PerfCopy	  
-		popad
-		ret
+        popad
+        ret
 
 
 
@@ -5238,58 +5238,58 @@ _synthRender@20:
       ; esi: srcbuf, ecx: len, edi: &outv
       pushad
       mov   [temp], ecx
-		  mov		eax, [ebp + SYN.vumode]		  
-		  jnz		.vurms
-		  
-		  ; peak vu meter
-		  .vploop
-		    mov		eax, [esi]
-		    and   eax, 0x7fffffff
-		    cmp   eax, [edi]
-		    jbe   .vplbe1
-		    mov   [edi], eax
-		    .vplbe1
-		    mov		eax, [esi+4]
-		    and   eax, 0x7fffffff
-		    cmp   eax, [edi+4]
-		    jbe   .vplbe2
-		    mov   [edi+4], eax
-		    .vplbe2
-		    fld   dword [edi]
-		    fmul  dword [fcvufalloff]
-		    fstp  dword [edi]
-		    fld   dword [edi+4]
-		    fmul  dword [fcvufalloff]
-		    fstp  dword [edi+4]
-		    lea   esi,  [esi+8]
-		    dec ecx
-		    jnz .vploop
-				popad
-				ret
+          mov		eax, [ebp + SYN.vumode]		  
+          jnz		.vurms
+          
+          ; peak vu meter
+          .vploop
+            mov		eax, [esi]
+            and   eax, 0x7fffffff
+            cmp   eax, [edi]
+            jbe   .vplbe1
+            mov   [edi], eax
+            .vplbe1
+            mov		eax, [esi+4]
+            and   eax, 0x7fffffff
+            cmp   eax, [edi+4]
+            jbe   .vplbe2
+            mov   [edi+4], eax
+            .vplbe2
+            fld   dword [edi]
+            fmul  dword [fcvufalloff]
+            fstp  dword [edi]
+            fld   dword [edi+4]
+            fmul  dword [fcvufalloff]
+            fstp  dword [edi+4]
+            lea   esi,  [esi+8]
+            dec ecx
+            jnz .vploop
+                popad
+                ret
 
 .vurms		  
-			  ; rms vu meter			 
-		    fldz											; <lsum>
-		    fldz											; <rsum> <lsum>
-		    .vrloop
-		      fld     dword [esi]     ; <l> <rsum> <lsum>
-		      fmul    st0, st0        ; <l²> <rsum> <lsum>
-		      faddp   st2, st0        ; <rsum> <lsum'>
-		      fld     dword [esi+4]   ; <r> <rsum> <lsum>
-			    lea			esi, [esi+8]
-		      fmul    st0, st0        ; <r²> <rsum> <lsum>
-		      faddp   st1, st0        ; <rsum'> <lsum'>
-		      dec     ecx
-		    jnz .vrloop               ; <rsum> <lsum>
-		    fld1                      ; <1> <rsum> <lsum>
-		    fidiv  dword [temp]       ; <1/fl> <rsum> <lsum>
-		    fmul   st2, st0           ; <1/fl> <rsum> <lout>
-		    fmulp  st1, st0           ; <rout> <lout>
-		    fxch   st1                ; <lout> <rout>
-		    fstp   dword [edi] ; <rout>
-		    fstp  dword  [edi+4] ; -		  				  
-				popad
-				ret
+              ; rms vu meter			 
+            fldz											; <lsum>
+            fldz											; <rsum> <lsum>
+            .vrloop
+              fld     dword [esi]     ; <l> <rsum> <lsum>
+              fmul    st0, st0        ; <l²> <rsum> <lsum>
+              faddp   st2, st0        ; <rsum> <lsum'>
+              fld     dword [esi+4]   ; <r> <rsum> <lsum>
+                lea			esi, [esi+8]
+              fmul    st0, st0        ; <r²> <rsum> <lsum>
+              faddp   st1, st0        ; <rsum'> <lsum'>
+              dec     ecx
+            jnz .vrloop               ; <rsum> <lsum>
+            fld1                      ; <1> <rsum> <lsum>
+            fidiv  dword [temp]       ; <1/fl> <rsum> <lsum>
+            fmul   st2, st0           ; <1/fl> <rsum> <lout>
+            fmulp  st1, st0           ; <rout> <lout>
+            fxch   st1                ; <lout> <rout>
+            fstp   dword [edi] ; <rout>
+            fstp  dword  [edi+4] ; -		  				  
+                popad
+                ret
 %endif		  
 
 
@@ -5306,13 +5306,13 @@ _MIDI_
 section .data
 
 spMTab dd ProcessNoteOff
-			 dd ProcessNoteOn
-			 dd ProcessPolyPressure
-			 dd ProcessControlChange
-			 dd ProcessProgramChange
-			 dd ProcessChannelPressure
-			 dd ProcessPitchBend
-			 dd ProcessRealTime
+             dd ProcessNoteOn
+             dd ProcessPolyPressure
+             dd ProcessControlChange
+             dd ProcessProgramChange
+             dd ProcessChannelPressure
+             dd ProcessPitchBend
+             dd ProcessRealTime
 
 section .text
 
@@ -5324,42 +5324,42 @@ _synthProcessMIDI@8:
   mov ebp, [esp+36]
   mov [this], ebp
 
-	fstcw	[oldfpcw]
-	mov		ax, [oldfpcw]
-	and		ax, 0f0ffh
-	or		ax, 3fh
-	mov		[temp], ax
-	finit
-	fldcw	[temp]
+    fstcw	[oldfpcw]
+    mov		ax, [oldfpcw]
+    and		ax, 0f0ffh
+    or		ax, 3fh
+    mov		[temp], ax
+    finit
+    fldcw	[temp]
 
 
-	mov		esi, [esp + 40]
+    mov		esi, [esp + 40]
 .mainloop
-		xor		eax, eax	
-		mov		al, [esi]
-		test	al, 80h
-		jz    .nocmd
-		cmp   al, 0fdh  ; end of stream ?
-		jne   .noend
+        xor		eax, eax	
+        mov		al, [esi]
+        test	al, 80h
+        jz    .nocmd
+        cmp   al, 0fdh  ; end of stream ?
+        jne   .noend
 .end
     fldcw [oldfpcw]
-		popad
-		ret 8
+        popad
+        ret 8
 .noend
 
     mov   [ebp + SYN.mrstat], eax ; update running status
-		inc   esi
-		mov		al, [esi]
+        inc   esi
+        mov		al, [esi]
 .nocmd
-		mov   ebx, [ebp + SYN.mrstat]
-		mov   ecx, ebx
-		and   cl, 0fh
-		shr   ebx, 4
-		test  bl, 8
-		jz    .end
-		and   ebx, 07h
-		call  [spMTab + 4*ebx]
-	jmp .mainloop
+        mov   ebx, [ebp + SYN.mrstat]
+        mov   ecx, ebx
+        and   cl, 0fh
+        shr   ebx, 4
+        test  bl, 8
+        jz    .end
+        and   ebx, 07h
+        call  [spMTab + 4*ebx]
+    jmp .mainloop
 
 ; esi: ptr auf midistream (muß nachher richtig sein!)
 ; ecx: channel aus commandbyte
@@ -5370,43 +5370,43 @@ _synthProcessMIDI@8:
 
 
 ProcessNoteOff:
-	movzx edi, byte [esi]  ; Note
-	; Nach Voice suchen, die die Note spielt
-	xor		edx, edx
+    movzx edi, byte [esi]  ; Note
+    ; Nach Voice suchen, die die Note spielt
+    xor		edx, edx
 
 %ifdef RONAN
-	cmp		cl, 15 ; Speechsynth-Channel?
-	jne		.srvloop
-	pushad
+    cmp		cl, 15 ; Speechsynth-Channel?
+    jne		.srvloop
+    pushad
   lea   eax, [ebp+SYN.ronanw]
   push	eax
-	call  _ronanCBNoteOff@4
-	popad
+    call  _ronanCBNoteOff@4
+    popad
 %endif
-	
+    
 .srvloop
     cmp   ecx, [ebp + SYN.chanmap+4*edx] ; richtiger channel?
-		jne		.srvlno
-		mov		eax, edx
-		imul	eax, syWV2.size
-		lea   ebp, [ebp + SYN.voicesw + eax]
-		cmp   edi, [ebp + syWV2.note]
-		jne   .srvlno
-		test  byte [ebp + syWV2.gate], 255
-		jz    .srvlno
+        jne		.srvlno
+        mov		eax, edx
+        imul	eax, syWV2.size
+        lea   ebp, [ebp + SYN.voicesw + eax]
+        cmp   edi, [ebp + syWV2.note]
+        jne   .srvlno
+        test  byte [ebp + syWV2.gate], 255
+        jz    .srvlno
 
-		call  syV2NoteOff
-		mov   ebp, [this]
-		jmp   .end
+        call  syV2NoteOff
+        mov   ebp, [this]
+        jmp   .end
 .srvlno
-		mov   ebp, [this]
+        mov   ebp, [this]
     inc   edx
-		cmp   dl, POLY
-	jne .srvloop
-		  
+        cmp   dl, POLY
+    jne .srvloop
+          
 .end
   add esi, byte 2
-	ret
+    ret
 
 
 
@@ -5415,154 +5415,154 @@ ProcessNoteOff:
 
 ProcessNoteOn:
   ; auf noteoff checken
-	mov al, [esi+1]
-	or  al, al
-	jnz .isnoteon
-	jmp ProcessNoteOff
+    mov al, [esi+1]
+    or  al, al
+    jnz .isnoteon
+    jmp ProcessNoteOff
 .isnoteon
 
 
 %ifdef RONAN
-	cmp		cl, 15 ; Speechsynth-Channel?
-	jne		.noronan
-	pushad
+    cmp		cl, 15 ; Speechsynth-Channel?
+    jne		.noronan
+    pushad
   lea  eax, [ebp + SYN.ronanw]
   push eax
-	call  _ronanCBNoteOn@4
-	popad
+    call  _ronanCBNoteOn@4
+    popad
 .noronan
 %endif
 
-	movzx eax, byte [ebp + SYN.chans + 8*ecx]   ; pgmnummer
-	mov   edi, [ebp + SYN.patchmap]
-	add		edi, [edi + 4*eax]           ; sounddef
-	movzx edi, byte [edi + v2sound.maxpoly]
+    movzx eax, byte [ebp + SYN.chans + 8*ecx]   ; pgmnummer
+    mov   edi, [ebp + SYN.patchmap]
+    add		edi, [edi + 4*eax]           ; sounddef
+    movzx edi, byte [edi + v2sound.maxpoly]
 
-	; maximale polyphonie erreicht?
-	xor ebx, ebx
-	mov edx, POLY
+    ; maximale polyphonie erreicht?
+    xor ebx, ebx
+    mov edx, POLY
 .chmploop
     mov eax, [ebp + SYN.chanmap+4*edx - 4]
-		cmp eax, ecx
-		jne .notthischan
-		inc ebx
+        cmp eax, ecx
+        jne .notthischan
+        inc ebx
 .notthischan
     dec edx
-	jnz .chmploop
+    jnz .chmploop
 
-	cmp ebx,edi   ; poly erreicht?
-	jae .killvoice	; ja -> alte voice töten
+    cmp ebx,edi   ; poly erreicht?
+    jae .killvoice	; ja -> alte voice töten
 
-	; freie voice suchen
-	xor edx, edx
+    ; freie voice suchen
+    xor edx, edx
 .sfvloop1
     mov	eax, [ebp + SYN.chanmap+4*edx]
-		or	eax, eax
-		js	.foundfv
-		inc edx
-		cmp dl, POLY
-	jne .sfvloop1
+        or	eax, eax
+        js	.foundfv
+        inc edx
+        cmp dl, POLY
+    jne .sfvloop1
 
-	; keine freie? gut, dann die älteste mit gate aus
-	mov	edi, [ebp + SYN.curalloc]
-	xor	ebx, ebx
-	xor edx, edx
-	not edx
+    ; keine freie? gut, dann die älteste mit gate aus
+    mov	edi, [ebp + SYN.curalloc]
+    xor	ebx, ebx
+    xor edx, edx
+    not edx
 .sfvloop2
-		mov		eax, ebx
-		imul	eax, syWV2.size
-		mov   eax, [ebp + SYN.voicesw + eax + syWV2.gate]
-		or    eax, eax
-		jnz   .sfvl2no
-		cmp		edi, [ebp + SYN.allocpos+4*ebx]
-		jbe		.sfvl2no
-		mov		edi, [ebp + SYN.allocpos+4*ebx]
-		mov		edx, ebx
+        mov		eax, ebx
+        imul	eax, syWV2.size
+        mov   eax, [ebp + SYN.voicesw + eax + syWV2.gate]
+        or    eax, eax
+        jnz   .sfvl2no
+        cmp		edi, [ebp + SYN.allocpos+4*ebx]
+        jbe		.sfvl2no
+        mov		edi, [ebp + SYN.allocpos+4*ebx]
+        mov		edx, ebx
 .sfvl2no
-		inc ebx
-		cmp bl, POLY
-	jne .sfvloop2
+        inc ebx
+        cmp bl, POLY
+    jne .sfvloop2
 
-	or	edx, edx
-	jns	.foundfv
+    or	edx, edx
+    jns	.foundfv
 
-	; immer noch keine freie? gut, dann die ganz älteste
-	mov eax, [ebp + SYN.curalloc]
-	xor	ebx, ebx
+    ; immer noch keine freie? gut, dann die ganz älteste
+    mov eax, [ebp + SYN.curalloc]
+    xor	ebx, ebx
 .sfvloop3
-		cmp eax, [ebp + SYN.allocpos+4*ebx]
-		jbe .sfvl3no
-		mov eax, [ebp + SYN.allocpos+4*ebx]
-		mov edx, ebx
+        cmp eax, [ebp + SYN.allocpos+4*ebx]
+        jbe .sfvl3no
+        mov eax, [ebp + SYN.allocpos+4*ebx]
+        mov edx, ebx
 .sfvl3no
-		inc ebx
-		cmp bl, POLY
-	jne .sfvloop3
-	; ok... die nehmen wir jezz.
+        inc ebx
+        cmp bl, POLY
+    jne .sfvloop3
+    ; ok... die nehmen wir jezz.
 .foundfv
-	jmp .donoteon
+    jmp .donoteon
 
 .killvoice		
   ; älteste voice dieses channels suchen
-	mov	edi, [ebp + SYN.curalloc]
-	xor	ebx, ebx
-	xor edx, edx
-	not edx
+    mov	edi, [ebp + SYN.curalloc]
+    xor	ebx, ebx
+    xor edx, edx
+    not edx
 .skvloop2
-		cmp		ecx, [ebp + SYN.chanmap+4*ebx]
-		jne		.skvl2no
-		mov		eax, ebx
-		imul	eax, syWV2.size
-		mov   eax, [ebp + SYN.voicesw + eax + syWV2.gate]
-		or    eax, eax
-		jnz   .skvl2no
-		cmp		edi, [ebp + SYN.allocpos+4*ebx]
-		jbe		.skvl2no
-		mov		edi, [ebp + SYN.allocpos+4*ebx]
-		mov		edx, ebx
+        cmp		ecx, [ebp + SYN.chanmap+4*ebx]
+        jne		.skvl2no
+        mov		eax, ebx
+        imul	eax, syWV2.size
+        mov   eax, [ebp + SYN.voicesw + eax + syWV2.gate]
+        or    eax, eax
+        jnz   .skvl2no
+        cmp		edi, [ebp + SYN.allocpos+4*ebx]
+        jbe		.skvl2no
+        mov		edi, [ebp + SYN.allocpos+4*ebx]
+        mov		edx, ebx
 .skvl2no
-		inc ebx
-		cmp bl, POLY
-	jne .skvloop2
+        inc ebx
+        cmp bl, POLY
+    jne .skvloop2
 
-	or	edx, edx
-	jns	.donoteon
+    or	edx, edx
+    jns	.donoteon
 
   ; nein? -> älteste voice suchen
-	mov eax, [ebp + SYN.curalloc]
-	xor ebx, ebx
+    mov eax, [ebp + SYN.curalloc]
+    xor ebx, ebx
 .skvloop
-		cmp ecx, [ebp + SYN.chanmap+4*ebx]
-		jne .skvlno
-		cmp eax, [ebp + SYN.allocpos+4*ebx]
-		jbe .skvlno
-		mov eax, [ebp + SYN.allocpos+4*ebx]
-		mov edx, ebx
+        cmp ecx, [ebp + SYN.chanmap+4*ebx]
+        jne .skvlno
+        cmp eax, [ebp + SYN.allocpos+4*ebx]
+        jbe .skvlno
+        mov eax, [ebp + SYN.allocpos+4*ebx]
+        mov edx, ebx
 .skvlno
     inc ebx
-		cmp bl, POLY
-	jne .skvloop
-	; ... und damit haben wir die voice, die fliegt.
+        cmp bl, POLY
+    jne .skvloop
+    ; ... und damit haben wir die voice, die fliegt.
 
 .donoteon
-	; (ecx immer noch chan, edx voice, ebp=this)
-	mov [ebp + SYN.chanmap  + 4*edx], ecx  ; channel
-	mov [ebp + SYN.voicemap + 4*ecx], edx  ; current voice
-	mov eax, [ebp + SYN.curalloc]
-	mov [ebp + SYN.allocpos + 4*edx], eax  ; allocpos
-	inc dword [ebp + SYN.curalloc]
+    ; (ecx immer noch chan, edx voice, ebp=this)
+    mov [ebp + SYN.chanmap  + 4*edx], ecx  ; channel
+    mov [ebp + SYN.voicemap + 4*ecx], edx  ; current voice
+    mov eax, [ebp + SYN.curalloc]
+    mov [ebp + SYN.allocpos + 4*edx], eax  ; allocpos
+    inc dword [ebp + SYN.curalloc]
 
-	call		storeV2Values ; Values der Voice updaten  
-	mov			eax, edx
-	imul		eax, syWV2.size
-	lea			ebp, [ebp + SYN.voicesw + eax]
-	movzx		eax, byte [esi]    ; Note
-	movzx		ebx, byte [esi+1]  ; Velo
-	call		syV2NoteOn
-	mov     ebp, [this]
+    call		storeV2Values ; Values der Voice updaten  
+    mov			eax, edx
+    imul		eax, syWV2.size
+    lea			ebp, [ebp + SYN.voicesw + eax]
+    movzx		eax, byte [esi]    ; Note
+    movzx		ebx, byte [esi+1]  ; Velo
+    call		syV2NoteOn
+    mov     ebp, [this]
 
   add			esi, byte 2
-	ret
+    ret
 
 ; ------------------------------------------------------------------------
 ; Aftertouch
@@ -5570,7 +5570,7 @@ ProcessNoteOn:
 
 ProcessChannelPressure:
   add esi, byte 1
-	ret
+    ret
 
 
 ; ------------------------------------------------------------------------
@@ -5579,59 +5579,59 @@ ProcessChannelPressure:
 
 ProcessControlChange:
   movzx eax, byte [esi]
-	or		eax, eax        ; und auf 1-7 checken
-	jz    .end
-	cmp   al, 7
+    or		eax, eax        ; und auf 1-7 checken
+    jz    .end
+    cmp   al, 7
 %ifdef FULLMIDI
   ja    .chanmode
 %else
-	ja    .end
+    ja    .end
 %endif
 
-	lea		edi, [ebp + SYN.chans + 8*ecx]
-	movzx ebx, byte [esi+1]
-	mov   [edi+eax], bl
-	
-	cmp   cl, 15 ; sprachsynth?
-	jne   .end
+    lea		edi, [ebp + SYN.chans + 8*ecx]
+    movzx ebx, byte [esi+1]
+    mov   [edi+eax], bl
+    
+    cmp   cl, 15 ; sprachsynth?
+    jne   .end
 %ifdef RONAN
-	pushad
-	push  ebx
-	push  eax
-	lea   eax, [ebp + SYN.ronanw]
-	push  eax
-	call  _ronanCBSetCtl@12
-	popad
+    pushad
+    push  ebx
+    push  eax
+    lea   eax, [ebp + SYN.ronanw]
+    push  eax
+    call  _ronanCBSetCtl@12
+    popad
 %endif
 
-	
+    
 .end
   add esi,2
-	ret
-	
+    ret
+    
 %ifdef FULLMIDI	
 .chanmode
   cmp al, 120
   jb  .end
   ja  .noalloff
   
-	; CC #120 : All Sound Off
-	xor edx, edx
-	mov eax, ebp
-	add ebp, SYN.voicesw
+    ; CC #120 : All Sound Off
+    xor edx, edx
+    mov eax, ebp
+    add ebp, SYN.voicesw
 .siloop1
     cmp   byte [eax + SYN.chanmap - 4 + 4*edx], cl
     jnz   .noreset
     call	syV2Init
-		mov   dword [eax + SYN.chanmap - 4 + 4*edx], -1
+        mov   dword [eax + SYN.chanmap - 4 + 4*edx], -1
 .noreset
-		lea		ebp, [ebp+syWV2.size]
-		inc   dl
-		cmp   dl, POLY
-		jnz .siloop1	
+        lea		ebp, [ebp+syWV2.size]
+        inc   dl
+        cmp   dl, POLY
+        jnz .siloop1	
 
-	mov ebp, eax
-	jmp short .end
+    mov ebp, eax
+    jmp short .end
   
   
 .noalloff
@@ -5640,7 +5640,7 @@ ProcessControlChange:
   ; CC #121 : Reset All Controllers
   ; evtl TODO, who knows
 
-	jmp short .end
+    jmp short .end
   
 .noresetcc
   cmp al, 123
@@ -5649,30 +5649,30 @@ ProcessControlChange:
   ; and CC #124-#127 - channel mode changes (ignored)
 
 %ifdef RONAN
-	cmp		cl, 15 ; Speechsynth-Channel?
-	jne		.noronanoff
-	pushad
+    cmp		cl, 15 ; Speechsynth-Channel?
+    jne		.noronanoff
+    pushad
   lea  eax, [ebp + SYN.ronanw]
-	push eax
-	call  _ronanCBNoteOff@4
-	popad
+    push eax
+    call  _ronanCBNoteOff@4
+    popad
 .noronanoff
 %endif
-	
-	mov eax, ebp
-	xor edx, edx
-	add ebp, SYN.voicesw
+    
+    mov eax, ebp
+    xor edx, edx
+    add ebp, SYN.voicesw
 .noffloop1
     cmp   byte [eax + SYN.chanmap - 4 + 4*edx], cl
     jnz   .nonoff
-		call  syV2NoteOff
+        call  syV2NoteOff
 .nonoff
-		lea		ebp, [ebp+syWV2.size]
-		inc   dl
-		cmp   dl, POLY
-	jnz .noffloop1
-	mov ebp, eax
-	jmp short .end  
+        lea		ebp, [ebp+syWV2.size]
+        inc   dl
+        cmp   dl, POLY
+    jnz .noffloop1
+    mov ebp, eax
+    jmp short .end  
 
 %endif
   
@@ -5684,42 +5684,42 @@ ProcessControlChange:
 
 ProcessProgramChange:
   ; check ob selbes program
-	lea		edi, [ebp + SYN.chans + 8*ecx]
+    lea		edi, [ebp + SYN.chans + 8*ecx]
   mov   al, [esi]
   and   al, 7fh
   cmp   al, [edi]
   jz    .sameprg
-	mov   [edi], al
+    mov   [edi], al
   
-	; ok, alle voices, die was mit dem channel zu tun haben... NOT-AUS!
+    ; ok, alle voices, die was mit dem channel zu tun haben... NOT-AUS!
   xor edx, edx
-	xor eax, eax
-	not eax
+    xor eax, eax
+    not eax
 .notausloop
-	  cmp ecx, [ebp + SYN.chanmap + 4*edx]
-		jnz .nichtaus
-		mov [ebp + SYN.chanmap + 4*edx], eax
+      cmp ecx, [ebp + SYN.chanmap + 4*edx]
+        jnz .nichtaus
+        mov [ebp + SYN.chanmap + 4*edx], eax
 .nichtaus
-		inc edx
-		cmp dl, POLY
-	jne .notausloop
+        inc edx
+        cmp dl, POLY
+    jne .notausloop
 
 
-	; pgm setzen und controller resetten
+    ; pgm setzen und controller resetten
 .sameprg
-	mov   cl, 6
+    mov   cl, 6
   inc		esi
-	inc		edi
-	xor   eax, eax
-	rep		stosb
-	ret
+    inc		edi
+    xor   eax, eax
+    rep		stosb
+    ret
 
 ; ------------------------------------------------------------------------
 ; Pitch Bend
 
 ProcessPitchBend:
   add esi, byte 2
-	ret
+    ret
 
 
 ; ------------------------------------------------------------------------
@@ -5727,7 +5727,7 @@ ProcessPitchBend:
 
 ProcessPolyPressure:   ; unsupported
   add esi, byte 2
-	ret
+    ret
 
 
 ; ------------------------------------------------------------------------
@@ -5736,19 +5736,19 @@ ProcessPolyPressure:   ; unsupported
 
 ProcessRealTime:
 %ifdef FULLMIDI
-	cmp cl, 0fh
-	jne .noreset
-	
-	pushad
-	push dword [ebp + SYN.samplerate]
-	push dword [ebp + SYN.patchmap]
-	push ebp
-	call _synthInit@12
-	popad
+    cmp cl, 0fh
+    jne .noreset
+    
+    pushad
+    push dword [ebp + SYN.samplerate]
+    push dword [ebp + SYN.patchmap]
+    push ebp
+    call _synthInit@12
+    popad
 
 .noreset
 %endif
-	ret
+    ret
 
 
 ; ------------------------------------------------------------------------
@@ -5757,53 +5757,53 @@ ProcessRealTime:
 
 global _synthSetGlobals@8
 _synthSetGlobals@8
-	pushad
-	
-	mov   ebp, [esp+36]
-	mov   [this], ebp
-	
-	xor   eax, eax
-	xor   ecx, ecx
-	mov   esi, [esp+40]
-	lea   edi, [ebp + SYN.rvbparm]
+    pushad
+    
+    mov   ebp, [esp+36]
+    mov   [this], ebp
+    
+    xor   eax, eax
+    xor   ecx, ecx
+    mov   esi, [esp+40]
+    lea   edi, [ebp + SYN.rvbparm]
   mov   cl,  (SYN.globalsend-SYN.globalsstart)/4
 .cvloop
-		lodsb
-		mov   [temp], eax
-		fild  dword [temp]
-		fstp  dword [edi]
-		lea   edi, [edi+4]
-		dec   ecx
-	jnz .cvloop
+        lodsb
+        mov   [temp], eax
+        fild  dword [temp]
+        fstp  dword [edi]
+        lea   edi, [edi+4]
+        dec   ecx
+    jnz .cvloop
 
-	lea   esi, [ebp + SYN.rvbparm]
-	lea   ebp, [ebp + SYN.reverb]
-	call	syReverbSet
-	mov   ebp, [this]
-	lea   esi, [ebp + SYN.delparm]
-	lea   ebp, [ebp + SYN.delay]
-	call  syModDelSet
-	mov   ebp, [this]
+    lea   esi, [ebp + SYN.rvbparm]
+    lea   ebp, [ebp + SYN.reverb]
+    call	syReverbSet
+    mov   ebp, [this]
+    lea   esi, [ebp + SYN.delparm]
+    lea   ebp, [ebp + SYN.delay]
+    call  syModDelSet
+    mov   ebp, [this]
   lea   esi, [ebp + SYN.cprparm]
   lea   ebp, [ebp + SYN.compr]
   call  syCompSet
-	mov   ebp, [this]
+    mov   ebp, [this]
 
-	fld   dword [ebp + SYN.vlowcut]
-	fld1
-	faddp st1, st0
-	fmul  dword [fci128]
-	fmul  st0, st0
-	fstp  dword [ebp + SYN.lcfreq]
-	fld   dword [ebp + SYN.vhighcut]
-	fld1
-	faddp st1, st0
-	fmul  dword [fci128]
-	fmul  st0, st0
-	fstp  dword [ebp + SYN.hcfreq]
+    fld   dword [ebp + SYN.vlowcut]
+    fld1
+    faddp st1, st0
+    fmul  dword [fci128]
+    fmul  st0, st0
+    fstp  dword [ebp + SYN.lcfreq]
+    fld   dword [ebp + SYN.vhighcut]
+    fld1
+    faddp st1, st0
+    fmul  dword [fci128]
+    fmul  st0, st0
+    fstp  dword [ebp + SYN.hcfreq]
 
-	popad
-	ret	8
+    popad
+    ret	8
 
 ; ------------------------------------------------------------------------
 ; sampler init
@@ -5812,7 +5812,7 @@ global _synthSetSampler@12
 _synthSetSampler@12:
 %if SAMPLER
   pushad
-	mov   ebp, [esp+36]
+    mov   ebp, [esp+36]
   mov   eax, [esp+40]
   mov   [ebp + SYN.sbankinfo], eax
   mov   eax, [esp+44]
@@ -5873,45 +5873,45 @@ global _synthGetPoly@8
 
 _synthGetPoly@8:
   pushad
-	mov ecx, 17
-	mov ebp, [esp + 36]
-	mov edi, [esp + 40]
-	xor eax, eax
-	rep stosd
+    mov ecx, 17
+    mov ebp, [esp + 36]
+    mov edi, [esp + 40]
+    xor eax, eax
+    rep stosd
 
-	mov edi, [esp + 40]
+    mov edi, [esp + 40]
 .gploop
-		mov ebx, [ebp + SYN.chanmap + 4*eax]
-		or  ebx, ebx
-		js  .gplend
-		inc dword [edi + 4*ebx]
-		inc dword [edi + 4*16]
+        mov ebx, [ebp + SYN.chanmap + 4*eax]
+        or  ebx, ebx
+        js  .gplend
+        inc dword [edi + 4*ebx]
+        inc dword [edi + 4*16]
 .gplend
     inc eax
-		cmp al, POLY
-	jne .gploop
+        cmp al, POLY
+    jne .gploop
 
-	popad
-	ret 8
+    popad
+    ret 8
 
 
 global _synthGetPgm@8
 
 _synthGetPgm@8:
   pushad
-	mov ebp, [esp + 36]
-	mov edi, [esp + 40]
-	xor ecx, ecx
+    mov ebp, [esp + 36]
+    mov edi, [esp + 40]
+    xor ecx, ecx
 
 .gploop
-		movzx eax, byte [ebp + SYN.chans + 8*ecx]
-		stosd
+        movzx eax, byte [ebp + SYN.chans + 8*ecx]
+        stosd
     inc ecx
-		cmp cl, 16
-	jne .gploop
+        cmp cl, 16
+    jne .gploop
 
-	popad
-	ret 8
+    popad
+    ret 8
 
 global _synthGetSize@0
 _synthGetSize@0:
