@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema
+      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName
+      Include="asc">
+      <Targets>_asc</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+  <UsingTask
+    TaskName="asc"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+  <Target
+    Name="_asc"
+    BeforeTargets="$(ascBeforeTargets)"
+    AfterTargets="$(ascAfterTargets)"
+    Condition="'@(asc)' != ''"
+    DependsOnTargets="$(ascDependsOn);ComputeascOutput"
+    Outputs="%(asc.Outputs)"
+    Inputs="%(asc.Identity);%(asc.AdditionalDependencies);$(MSBuildProjectFile)">
+    <ItemGroup
+      Condition="'@(SelectedFiles)' != ''">
+      <asc
+        Remove="@(asc)"
+        Condition="'%(Identity)' != '@(SelectedFiles)'" />
+    </ItemGroup>
+    <ItemGroup>
+      <asc_tlog
+        Include="%(asc.Outputs)"
+        Condition="'%(asc.Outputs)' != '' and '%(asc.ExcludedFromBuild)' != 'true'">
+        <Source>@(asc, '|')</Source>
+      </asc_tlog>
+    </ItemGroup>
+    <Message
+      Importance="High"
+      Text="%(asc.ExecutionDescription)" />
+    <WriteLinesToFile
+      Condition="'@(asc_tlog)' != '' and '%(asc_tlog.ExcludedFromBuild)' != 'true'"
+      File="$(IntDir)$(ProjectName).write.1.tlog"
+      Lines="^%(asc_tlog.Source);@(asc_tlog-&gt;'%(Fullpath)')" />
+    <asc
+      Condition="'@(asc)' != '' and '%(asc.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(asc.CommandLineTemplate)"
+      Quiet="%(asc.Quiet)"
+      Debug="%(asc.Debug)"
+      NoOpt="%(asc.NoOpt)"
+      NoAuto="%(asc.NoAuto)"
+      OldEngine="%(asc.OldEngine)"
+      WZ3="%(asc.WZ3)"
+      AdditionalOptions="%(asc.AdditionalOptions)"
+      Inputs="%(asc.Identity)" />
+  </Target>
+  <PropertyGroup>
+    <ComputeLinkInputsTargets>
+            $(ComputeLinkInputsTargets);
+            ComputeascOutput;
+          </ComputeLinkInputsTargets>
+    <ComputeLibInputsTargets>
+            $(ComputeLibInputsTargets);
+            ComputeascOutput;
+          </ComputeLibInputsTargets>
+  </PropertyGroup>
+  <Target
+    Name="ComputeascOutput"
+    Condition="'@(asc)' != ''">
+    <ItemGroup>
+      <ascDirsToMake
+        Condition="'@(asc)' != '' and '%(asc.ExcludedFromBuild)' != 'true'"
+        Include="%(asc.Outputs)" />
+      <Link
+        Include="%(ascDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <Lib
+        Include="%(ascDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <ImpLib
+        Include="%(ascDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+    </ItemGroup>
+    <MakeDir
+      Directories="@(ascDirsToMake-&gt;'%(RootDir)%(Directory)')" />
+  </Target>
+</Project>

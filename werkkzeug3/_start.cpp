@@ -14,6 +14,7 @@
 #define WINVER 0x500
 #define _WIN32_WINNT 0x0500
 #define DIRECTINPUT_VERSION 0x0800
+#define DIRECTSOUND_VERSION 0x0800
 
 #define sPLAYER_SCREENX     1024
 #define sPLAYER_SCREENY     768
@@ -29,6 +30,7 @@ const sChar *sWindowTitle="fr-052: platinum";
 #endif
 
 #define D3D_DEBUG_INFO
+#define INITGUID // to get rid of dxguid.lib
 
 #include <windows.h>
 #include <d3d9.h>
@@ -64,9 +66,7 @@ const sChar *sWindowTitle="fr-052: platinum";
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"opengl32.lib")
 #pragma comment(lib,"dinput8.lib")
-#if !sINTRO || _DEBUG
-#pragma comment(lib,"dxguid.lib")
-#else
+#if sINTRO && !defined(_DEBUG)
 #pragma comment(linker,"/nodefaultlib")
 #endif
 #if !sPLAYER
