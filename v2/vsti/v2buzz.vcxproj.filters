@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{8569bc2b-ed82-47c2-ba2c-7599b48a6aef}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{6ecfab57-0cda-4746-92ff-9ff3ef2bff20}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="console.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="v2buzz.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="v2buzz.def">
+      <Filter>src</Filter>
+    </None>
+    <None Include="v2buzzToDo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="console.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="MachineInterface.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="MachineInterfaceTL.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2buzz.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
