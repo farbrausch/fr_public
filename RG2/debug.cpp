@@ -76,9 +76,9 @@ namespace fr
 		static hotSpot *hotSpots[64];
 #endif
 
-		static sChar *stripFilename(const sChar *name)
+		static const sChar *stripFilename(const sChar *name)
 		{
-		  sChar *ptr;
+		  const sChar *ptr;
 
 		  ptr=strrchr(name, '\\');
 		  if (ptr)

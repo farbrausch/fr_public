@@ -509,13 +509,15 @@ void CAnimMixer::clipChanged()
 
   if (m_moveElement != -1)
   {
-    for (sInt i = 0; i < m_thisClip->m_elements.size() && m_thisClip->m_elements[i] != moveElem; i++);
+    sInt i;
+    for (i = 0; i < m_thisClip->m_elements.size() && m_thisClip->m_elements[i] != moveElem; i++);
     m_moveElement = i;
   }
 
   if (m_curElem != -1)
   {
-    for (sInt i = 0; i < m_thisClip->m_elements.size() && m_thisClip->m_elements[i] != currentElem; i++);
+    sInt i;
+    for (i = 0; i < m_thisClip->m_elements.size() && m_thisClip->m_elements[i] != currentElem; i++);
     m_curElem = i;
   }
   

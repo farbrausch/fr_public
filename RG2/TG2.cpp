@@ -53,9 +53,14 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
   sChar winpos[128];
   sU32 winsz=128;
 
-  key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ);
-  key.QueryDWORDValue(_T("WindowMode"), nShow);
-  key.QueryStringValue(_T("WindowPos"), winpos, &winsz);
+  winpos[0] = 0;
+
+  if (key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ) == ERROR_SUCCESS)
+  {
+    key.QueryDWORDValue(_T("WindowMode"), nShow);
+    key.QueryStringValue(_T("WindowPos"), winpos, &winsz);
+    key.Close();
+  }
 
   sscanf(winpos, "%d,%d,%d,%d", &rc.left, &rc.top, &rc.right, &rc.bottom);
 
@@ -63,7 +68,6 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
     rc.right<=rc.left || rc.bottom<=rc.top) // sanity checks
     rc=CWindow::rcDefault;
 
-  key.Close();
 
 	if(wndMain.CreateEx(0, rc) == NULL)
 	{

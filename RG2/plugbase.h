@@ -198,7 +198,7 @@ public:
   virtual void        setAnim(sInt index, const sF32* vals);
   
   virtual void        serialize(fr::streamWrapper& strm);
-  virtual void        export(fr::stream& f, const frGraphExporter& exp);
+  virtual void        exportTo(fr::stream& f, const frGraphExporter& exp);
   
   virtual sInt        getButtonType();
   virtual sBool       displayParameter(sU32 index);

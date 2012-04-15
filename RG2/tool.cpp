@@ -55,7 +55,8 @@ namespace fr
 
 	static inline sInt myStrLen(const sChar *str)
 	{
-    for (sInt i=0; str[i]; i++);
+    sInt i;
+    for (i=0; str[i]; i++);
     
 		return i;
 	}
@@ -542,7 +543,8 @@ namespace fr
 	{
 		copyBeforeWrite();
 
-		for (sInt i=getLength()-1; i>=0; i--)
+    sInt i;
+		for (i=getLength()-1; i>=0; i--)
 		{
 			if (strData[i]!='\r' && strData[i]!='\n' && strData[i]!='\t' && strData[i]!=' ')
 				break;
@@ -556,7 +558,8 @@ namespace fr
 	{
 		copyBeforeWrite();
 
-		for (sInt i=0; strData[i]; i++)
+    sInt i;
+		for (i=0; strData[i]; i++)
 		{
 			if (strData[i]!='\r' && strData[i]!='\n' && strData[i]!='\t' && strData[i]!=' ')
 				break;

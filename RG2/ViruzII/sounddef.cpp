@@ -275,28 +275,28 @@ void sdInit()
 		memcpy(sptr,v2initsnd,v2soundsize);
 		sptr+=v2soundsize;
 	}
-	for (i=0; i<v2ngparms; i++)
+	for (int i=0; i<v2ngparms; i++)
 		globals[i]=v2initglobs[i];
 
 	// init version control
 	v2version=0;
-	for (i=0; i<v2nparms; i++)
+	for (int i=0; i<v2nparms; i++)
 		if (v2parms[i].version>v2version) v2version=v2parms[i].version;
-	for (i=0; i<v2ngparms; i++)
+	for (int i=0; i<v2ngparms; i++)
 		if (v2gparms[i].version>v2version) v2version=v2gparms[i].version;
 
 	v2vsizes = new int[v2version+1];
 	v2gsizes = new int[v2version+1];
 	memset(v2vsizes,0,(v2version+1)*sizeof(int));
 	memset(v2gsizes,0,(v2version+1)*sizeof(int));
-	for (i=0; i<v2nparms; i++)
+	for (int i=0; i<v2nparms; i++)
 	{
 		const V2PARAM &p=v2parms[i];
 //		ATLASSERT(p.version<=v2version);
 		for (int j=v2version; j>=p.version; j--)
 			v2vsizes[j]++;
 	}
-	for (i=0; i<v2ngparms; i++)
+	for (int i=0; i<v2ngparms; i++)
 	{
 		const V2PARAM &p=v2gparms[i];
 		//ATLASSERT(p.version<=v2version);
@@ -305,7 +305,7 @@ void sdInit()
 	}
 //ATLASSERT(v2vsizes[v2version]==v2nparms);
 
-	for (i=0; i<=v2version; i++)
+	for (int i=0; i<=v2version; i++)
 	{
 		sprintf(s,"size of version %d sound bank: %d params, %d globals\n",i,v2vsizes[i],v2gsizes[i]);
 		v2vsizes[i]+=1+255*3;
@@ -314,7 +314,7 @@ void sdInit()
 
 	v2topics2=new int[v2ntopics];
 	int p=0;
-	for (i=0; i<v2ntopics; i++)
+	for (int i=0; i<v2ntopics; i++)
 	{
 		v2topics2[i]=p;
 		p+=v2topics[i].no;
@@ -323,7 +323,7 @@ void sdInit()
 
 	v2gtopics2=new int[v2ngtopics];
 	p=0;
-	for (i=0; i<v2ngtopics; i++)
+	for (int i=0; i<v2ngtopics; i++)
 	{
 		v2gtopics2[i]=p;
 		p+=v2gtopics[i].no;

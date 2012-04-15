@@ -751,7 +751,7 @@ class frOpTCBump: public frTextureOperator
             spotTerm = pow((ca - oca) * ocs, falloff);
         }
 
-        for (i = 0; i < 3; i++)
+        for (sInt i = 0; i < 3; i++)
         {
           const sF32 scale = (color[i] + color[i + 3] * dots[0]) / 255.0f;
           sInt v = (src[i] * scale + color[i + 6] * dots[1] * 256.0f) * spotTerm;
@@ -1154,7 +1154,7 @@ class frOpTGCrystal: public frTextureOperator
 
     static const sU32 _MMMax = 0x7fffffff;
     const sU32 _MM256 = (height << 16) | width, temp = (_MM256 >> 1) & 0x7fff7fff;
-    const sU64 _MM128 = (temp << 32) | temp;
+    const sU64 _MM128 = ((sU64)temp << 32) | temp;
     const sU64 _MMMask = ((height - 1) << 16) | (width - 1);
 
     const sU32 col1 = col[0];

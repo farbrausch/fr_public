@@ -324,7 +324,7 @@ LRESULT CTimelineWindow::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 		const sInt baseY = mapRect.bottom - MulDiv(-lf.lfHeight, dc.GetDeviceCaps(LOGPIXELSY), 72);
 		const sInt baseLen = baseY - mapRect.top;
 
-		for (i = 0; i <= lineCount; i++)
+		for (sInt i = 0; i <= lineCount; i++)
 		{
 			const sInt value = (i != lineCount) ? i * lineStep : clipLength;
 			const sInt xpos = (value * mapWidth + (clipLength >> 1)) / clipLength + mapRect.left;

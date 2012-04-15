@@ -573,12 +573,14 @@ LRESULT CPreviewWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 {
   CRegKey key;
 
-  key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ);
   DWORD tiled = 0, zoom = 4, alpha = 1;
-  key.QueryDWORDValue(_T("TextureTiled"), tiled);
-  key.QueryDWORDValue(_T("TextureZoom"), zoom);
-	key.QueryDWORDValue(_T("TextureAlpha"), alpha);
-  key.Close();
+  if (key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ) == ERROR_SUCCESS)
+  {
+    key.QueryDWORDValue(_T("TextureTiled"), tiled);
+    key.QueryDWORDValue(_T("TextureZoom"), zoom);
+	  key.QueryDWORDValue(_T("TextureAlpha"), alpha);
+    key.Close();
+  }
   
   m_client.Create(m_hWnd, rcDefault, 0, WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN, 0);
 

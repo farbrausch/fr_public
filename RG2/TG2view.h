@@ -193,12 +193,14 @@ public:
     sU32 splitterPosSize=128;
     sInt splitterPos1=280+22+10, splitterPos2=300+5+300, splitterPos3=200, splitterPos4=300;
 
-    key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ);
-    key.QueryDWORDValue(_T("EditWindowsVisible"), editWindowsVisible);
-    key.QueryStringValue(_T("SplitterPositions"), splitterPositions, &splitterPosSize);
-    key.QueryDWORDValue(_T("CurrentFSWindow"), currentFSWindow);
-    key.QueryDWORDValue(_T("CurrentModule"), currentModule);
-    key.Close();
+    if (key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ) == ERROR_SUCCESS)
+    {
+      key.QueryDWORDValue(_T("EditWindowsVisible"), editWindowsVisible);
+      key.QueryStringValue(_T("SplitterPositions"), splitterPositions, &splitterPosSize);
+      key.QueryDWORDValue(_T("CurrentFSWindow"), currentFSWindow);
+      key.QueryDWORDValue(_T("CurrentModule"), currentModule);
+      key.Close();
+    }
 
     sscanf(splitterPositions, "%d,%d,%d,%d", &splitterPos1, &splitterPos4, &splitterPos3, &splitterPos2);
 
