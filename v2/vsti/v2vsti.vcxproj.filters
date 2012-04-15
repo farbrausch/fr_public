@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{b9b60a6c-c45a-4117-9641-c7d68618cf92}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{627b8484-3b83-4039-a633-7a50440338c8}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="vst2\AudioEffect.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="vst2\audioeffectx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="console.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="vsti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="v2vsti.def">
+      <Filter>src</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="vst2\AEffect.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\aeffectx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\AEffEditor.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\AudioEffect.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\audioeffectx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="console.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\vstcontrols.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\vstgui.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vsti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

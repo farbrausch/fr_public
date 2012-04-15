@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{ab3d1350-8628-4a70-9584-1f9ae193e428}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{0d071718-4e95-4e95-a32c-50c51ade1a4e}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{f058507c-9408-4468-9197-8f2839eee7b6}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Synth src">
+      <UniqueIdentifier>{f5b972b9-f44f-4567-b0b3-c8bbc9172676}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="e2p">
+      <UniqueIdentifier>{c8fc68d9-c2e9-4a5a-a581-6b4b4cf28d72}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="console.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tool\file.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="midi.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sounddef.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\v2mconv.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="v2mrecorder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="vstiext.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ronan.cpp">
+      <Filter>Synth src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\samples.cpp">
+      <Filter>Synth src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kram\e2p\english.c">
+      <Filter>e2p</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kram\e2p\parse.c">
+      <Filter>e2p</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kram\e2p\phoneme.c">
+      <Filter>e2p</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kram\e2p\saynum.c">
+      <Filter>e2p</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kram\e2p\spellwor.c">
+      <Filter>e2p</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="wtlbla.def">
+      <Filter>src</Filter>
+    </None>
+    <None Include="v2logo.bmp">
+      <Filter>res</Filter>
+    </None>
+    <None Include="v2logo2003.bmp">
+      <Filter>res</Filter>
+    </None>
+    <None Include="presets.v2b" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="vst2\AEffect.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\aeffectx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\AEffEditor.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\AudioEffect.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="vst2\audioeffectx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="chaos.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="console.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tool\File.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="midi.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="multibutton.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="OffscreenPaint.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sounddef.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2api.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2appearance.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2host.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2interfaces.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\v2mconv.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2mrecorder.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2parameters.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2view.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="v2vsti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="wtlblaview.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\phonemtab.h">
+      <Filter>Synth src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ronan.h">
+      <Filter>Synth src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\samples.h">
+      <Filter>Synth src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\synth.h">
+      <Filter>Synth src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="wtlbla.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="presets.asm">
+      <Filter>src</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\synth.asm">
+      <Filter>Synth src</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
