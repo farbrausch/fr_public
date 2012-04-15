@@ -1,21 +1,19 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kkrunchy", "kkrunchy.vcproj", "{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kkrunchy", "kkrunchy.vcxproj", "{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}"
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Debug.ActiveCfg = Debug|Win32
-		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Debug.Build.0 = Debug|Win32
-		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Release.ActiveCfg = Release|Win32
-		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Release.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Debug|Win32.Build.0 = Debug|Win32
+		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Release|Win32.ActiveCfg = Release|Win32
+		{DBA4BA9A-8A3D-4298-98E4-FD67B9B0D56A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
