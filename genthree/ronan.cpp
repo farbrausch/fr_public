@@ -106,7 +106,7 @@ static const sU8 rawphonemes[PTABSIZE] =
 #include <math.h>
 #pragma intrinsic (sin, cos, exp, log, atan, atan2, pow)
 
-__forceinline mystrnicmp1(const char *a, const char *b)
+__forceinline int mystrnicmp1(const char *a, const char *b)
 {
 	sInt l=0;
 	while (*a && *b)

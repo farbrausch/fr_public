@@ -6,11 +6,11 @@
 /****************************************************************************/
 
 #if sINTRO_X
-const BitmapXSize=256;
-const BitmapYSize=256;
+const sInt BitmapXSize=256;
+const sInt BitmapYSize=256;
 #else
-static BitmapXSize=256;
-static BitmapYSize=256;
+static sInt BitmapXSize=256;
+static sInt BitmapYSize=256;
 #endif
 
 /****************************************************************************/

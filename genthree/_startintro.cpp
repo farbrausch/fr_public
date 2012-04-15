@@ -36,7 +36,6 @@
 #undef GetCurrentDirectory
 
 #pragma comment(lib,"opengl32.lib")
-#pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dinput.lib")
 #pragma comment(lib,"winmm.lib")
 
