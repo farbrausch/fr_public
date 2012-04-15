@@ -399,13 +399,13 @@ public:
 
     case 1003: // Make Demo
       {
-        frGraphExporter export;
+        frGraphExporter exporter;
 
         static const sInt xRes[]={0, 512, 640, 800, 1024};
         static const sInt yRes[]={0, 384, 480, 600, 768};
         const sInt res=m_resChooser.GetSelection();
 
-        export.makeDemo(xRes[res], yRes[res]);
+        exporter.makeDemo(xRes[res], yRes[res]);
       }
       return 0;
     }

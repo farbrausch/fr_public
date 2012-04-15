@@ -256,7 +256,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     const sBool furtherParams=!aboutEqual(params[6].tfloatv.a, 0.0f) || !aboutEqual(params[6].tfloatv.b, 0.0)
       || !aboutEqual(params[7].tfloatv.a, 1.0f) || !aboutEqual(params[7].tfloatv.b, 1.0f)

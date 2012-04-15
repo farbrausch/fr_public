@@ -170,7 +170,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     putPackedFloat(f, params[0].floatv);
   }
