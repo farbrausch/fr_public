@@ -297,7 +297,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[2].selectv.sel);
     f.putsU16(params[1].floatv*256);
@@ -387,7 +387,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU16(params[0].floatv*1024);
     
@@ -494,7 +494,7 @@ public:
       strm << params[2].tfloatv << params[3].pointv;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     sU16 angtemp = fmod(params[0].floatv + 36000.0f, 360.0f) * 65536.0f / 360.0f;
 
@@ -660,7 +660,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsS16(params[0].floatv*2048);
     f.putsS16(params[1].floatv*32767);
@@ -937,7 +937,7 @@ public:
     }
   }
 
-  void export(fr::stream& f, const frGraphExporter& exp)
+  void exportTo(fr::stream& f, const frGraphExporter& exp)
   {
     f.putsU8(params[0].tfloatv.a - 1);
     f.putsU8(params[0].tfloatv.b - 1);
@@ -1009,7 +1009,7 @@ public:
 			strm << params[0].stringv;
 	}
 
-	void export(fr::stream& f, const frGraphExporter& exp)
+	void exportTo(fr::stream& f, const frGraphExporter& exp)
 	{
 		fr::streamF input;
 		

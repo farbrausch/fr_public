@@ -1,11 +1,11 @@
 // This code is in the public domain. See LICENSE for details.
 
+#include "types.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
 #include "debug.h"
 #include "dbghelp.h"
 
