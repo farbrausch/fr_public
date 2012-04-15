@@ -10,10 +10,10 @@ a bunch of different versions of Visual Studio. Some of it is really tricky
 to compile, some really easy. There's some nice clean stuff there, other parts
 are just a complete mess.
 
-I haven't tried to get any of this to run. I'll probably go over everything
+We haven't tried to get any of this to run. We'll probably go over everything
 and try to get it to compile with VS2010 soon, but no promises - if I can't
 get it to work, then well, it won't compile :). You can still look at the
-source, of course.
+source, of course. UPDATE: Check out the "vs2010" branch.
 
 All of this is released either under a BSD license or put in the public
 domain (stated per project). Not that you're likely to want to use most of
@@ -23,7 +23,7 @@ So what do we have in here? Here's the basic directory structure:
 
   genthree/             - GenThree. Used for Candytron and nothing else.
     data/               - Candytron data files.
-  kkrunchy/             - kkrunchy 0.23alpha code (latest I could find)
+  kkrunchy/             - kkrunchy 0.23alpha code (latest we could find)
   kkrunchy_k7/          - kkrunchy_k7 0.23a3 (didn't find a4; need to re-check)
   ktg/                  - OpenKTG texture generator. See below.
   lekktor/              - May summon Eldritch Abominations. Handle with care.
