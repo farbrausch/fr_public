@@ -60,6 +60,16 @@ So, here's the sightseeing tips:
   work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
   be possible to do dig up something from 2004 :)
+
+As a general rule, the "master" branch contains the original, unmodified code.
+There's a second branch ("vs2010") that contains project files and fixes to
+make the code compile (more or less) cleanly with VS2010. If you want to
+actually build any of this, that's the way to go, though of course it won't
+match the original projects or have the original size; but since this
+repository in general contains versions of the tools and players that are more
+recent than any production released with them, it would be hard to get the
+"original" executables back anyway, even if you had the necessary compilers,
+tools and libraries.
   
 Contributors (in alphabetical order):
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
