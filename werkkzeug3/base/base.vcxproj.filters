@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="kkrunchy">
+      <UniqueIdentifier>{31434dcc-89a4-4e6e-877c-fdbd6bf33c75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{affbf357-5948-4b9b-b1aa-2c0959d080af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="music">
+      <UniqueIdentifier>{e4a47d6e-259c-4f01-9880-dbb54d343167}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{4aba7801-ddfe-414f-bf75-0ae3eb6d0dcb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\debuginfo.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\depacker.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dis.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\exepacker.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mapfile.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\packer.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdbfile.cpp">
+      <Filter>kkrunchy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercodegen.cpp">
+      <Filter>shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercompile.cpp">
+      <Filter>shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_mp3.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_ogg.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_viruz2.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_ascbase.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_bsplines.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_diskitem.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_gui.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_intmath.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_lekktor.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_loader.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_rygdxt.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_start.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_types.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_util.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_wavefront.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_xsi.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="base_oplist.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\debuginfo.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\depacker.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dis.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\exepacker.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mapfile.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\packer.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdbfile.hpp">
+      <Filter>kkrunchy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercodegen.hpp">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercompile.hpp">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_mp3.hpp">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_ogg.hpp">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_viruz2.hpp">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_ascbase.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_bsplines.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_diskitem.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_gui.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_intmath.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_lekktor.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_loader.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_rygdxt.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_start.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_startdx.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_types.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_util.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_wavefront.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_xsi.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="base_config.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\depack2.asm">
+      <Filter>kkrunchy</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\depacker.asm">
+      <Filter>kkrunchy</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\_viruz2a.asm">
+      <Filter>music</Filter>
+    </CustomBuild>
+    <CustomBuild Include="base_data.asm" />
+  </ItemGroup>
+</Project>

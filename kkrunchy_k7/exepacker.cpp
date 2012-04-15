@@ -877,7 +877,7 @@ sU8 *EXEPacker::Pack(sU8 *source,sInt &outSize,DebugInfo *info,PackerCallback cb
   // compress the image (right to its destination)
   dataStart = OutSize;
   OutSize += RangecoderPack(UnImage,dataSize-skip,OutImage+dataStart,cb);
-  sSystem->SaveFile("unpacked.dat",UnImage,dataSize-skip);
+  //sSystem->SaveFile("unpacked.dat",UnImage,dataSize-skip);
   //sSystem->SaveFile("packed.dat",OutImage+dataStart,OutSize-dataStart);
 
   // verify that packing was successful and clean up

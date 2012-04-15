@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup
+    Condition="'$(ascBeforeTargets)' == '' and '$(ascAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+    <ascBeforeTargets>Midl</ascBeforeTargets>
+    <ascAfterTargets>CustomBuild</ascAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ascDependsOn
+      Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(ascDependsOn)</ascDependsOn>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <asc>
+      <Quiet>true</Quiet>
+      <Debug>False</Debug>
+      <NoOpt>False</NoOpt>
+      <NoAuto>False</NoAuto>
+      <OldEngine>False</OldEngine>
+      <WZ3>False</WZ3>
+      <CommandLineTemplate>"$(SolutionDir)tools\asc" [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [WZ3]</CommandLineTemplate>
+      <Outputs>%(RootDir)%(Directory)%(Filename).cpp; %(RootDir)%(Directory)%(Filename).hpp</Outputs>
+      <ExecutionDescription>asc "%(RootDir)%(Directory)%(Filename)"</ExecutionDescription>
+    </asc>
+  </ItemDefinitionGroup>
+</Project>
