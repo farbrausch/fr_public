@@ -54,10 +54,10 @@ So, here's the sightseeing tips:
 * werkkzeug3_kkrieger is from a branch called "kkrieger" in our SVN repository.
   It's not the actual kkrieger code, and incorporates changes that were done
   more than one year after the original kkrieger release. It was, however,
-  branched off before started not caring about breaking kkrieger compatibility
-  when making changes. You have a better chance of building the game from there
-  than you do from the "regular" werkkzeug3 tree - though both are unlikely to
-  work.
+  branched off before we started not caring about breaking kkrieger
+  compatibility when making changes. You have a better chance of building the
+  game from there than you do from the "regular" werkkzeug3 tree - though both
+  are unlikely to work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
   be possible to do dig up something from 2004 :)
 
