@@ -5794,7 +5794,7 @@ _synthGetChannelVU@16:
   ret 16
 
 global _synthGetMainVU@12
-_synthGetChannelVU@12:
+_synthGetMainVU@12:
   pushad
   mov  ebp, [esp + 36]
   mov  esi, [esp + 40]

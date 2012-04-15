@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="System">
+      <UniqueIdentifier>{45190c93-593e-4f9b-8994-815c03f31e4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{dd07dd88-a570-43f4-b137-1c68b376f2bc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\_intmath.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_startconsole.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_types.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercodegen.cpp">
+      <Filter>Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercompile.cpp">
+      <Filter>Shaders</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\_intmath.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startconsole.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_types.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercodegen.hpp">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercompile.hpp">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

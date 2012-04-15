@@ -1,67 +1,38 @@
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "base", "base\base.vcproj", "{62C73706-20EC-4838-999D-210ECFC18986}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "base", "base\base.vcxproj", "{62C73706-20EC-4838-999D-210ECFC18986}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example_cube", "example_cube\example_cube.vcxproj", "{C330C7DF-71AE-49AC-BA16-9089F4C85516}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "werkkzeug3", "werkkzeug3\werkkzeug3.vcxproj", "{C777BC6A-EDA8-444E-B212-E06A94C2CF17}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B85F145B-0635-4ED9-8BB5-45C0CDF69CD3} = {B85F145B-0635-4ED9-8BB5-45C0CDF69CD3}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example_cube", "example_cube\example_cube.vcproj", "{C330C7DF-71AE-49AC-BA16-9089F4C85516}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_demo", "player_demo\player_demo.vcxproj", "{7A5AABAC-000F-4CE5-9471-74C2C5746EF7}"
 	ProjectSection(ProjectDependencies) = postProject
-		{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A} = {D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}
 		{62C73706-20EC-4838-999D-210ECFC18986} = {62C73706-20EC-4838-999D-210ECFC18986}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "werkkzeug3", "werkkzeug3\werkkzeug3.vcproj", "{C777BC6A-EDA8-444E-B212-E06A94C2CF17}"
-	ProjectSection(ProjectDependencies) = postProject
-		{62520ADF-98B0-40B5-9A6C-53F7320012DB} = {62520ADF-98B0-40B5-9A6C-53F7320012DB}
-		{D242F9BC-84B6-4757-8965-7A274CC88015} = {D242F9BC-84B6-4757-8965-7A274CC88015}
-		{7A5AABAC-000F-4CE5-9471-74C2C5746EF7} = {7A5AABAC-000F-4CE5-9471-74C2C5746EF7}
-		{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A} = {D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}
-		{6A10EB30-1E08-4989-8EA5-8D946EED26FA} = {6A10EB30-1E08-4989-8EA5-8D946EED26FA}
-		{62C73706-20EC-4838-999D-210ECFC18986} = {62C73706-20EC-4838-999D-210ECFC18986}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_kkrieger", "player_kkrieger\player_kkrieger.vcxproj", "{6A10EB30-1E08-4989-8EA5-8D946EED26FA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_demo", "player_demo\player_demo.vcproj", "{7A5AABAC-000F-4CE5-9471-74C2C5746EF7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A} = {D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}
-		{D242F9BC-84B6-4757-8965-7A274CC88015} = {D242F9BC-84B6-4757-8965-7A274CC88015}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shadercompile", "shadercompile\shadercompile.vcxproj", "{12FDFC35-AC48-453D-9FCC-32DBA9AAEEAD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_kkrieger", "player_kkrieger\player_kkrieger.vcproj", "{6A10EB30-1E08-4989-8EA5-8D946EED26FA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "base_console", "base_console\base_console.vcxproj", "{16396944-DE4D-4146-9594-B5FF265DE9BF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shadercompile", "shadercompile\shadercompile.vcproj", "{12FDFC35-AC48-453D-9FCC-32DBA9AAEEAD}"
-	ProjectSection(ProjectDependencies) = postProject
-		{16396944-DE4D-4146-9594-B5FF265DE9BF} = {16396944-DE4D-4146-9594-B5FF265DE9BF}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "materials", "materials\materials.vcxproj", "{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "base_console", "base_console\base_console.vcproj", "{16396944-DE4D-4146-9594-B5FF265DE9BF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wz_mobile", "wz_mobile\wz_mobile.vcxproj", "{72A27B32-6669-4CF4-94EE-0E0DCE422A6D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "materials", "materials\materials.vcproj", "{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{12FDFC35-AC48-453D-9FCC-32DBA9AAEEAD} = {12FDFC35-AC48-453D-9FCC-32DBA9AAEEAD}
-		{62C73706-20EC-4838-999D-210ECFC18986} = {62C73706-20EC-4838-999D-210ECFC18986}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_intro", "player_intro\player_intro.vcxproj", "{62520ADF-98B0-40B5-9A6C-53F7320012DB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wz_mobile", "wz_mobile\wz_mobile.vcproj", "{72A27B32-6669-4CF4-94EE-0E0DCE422A6D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D945E86F-50EB-4D36-BD8B-CB2FFA167A1A} = {D945E86F-50EB-4D36-BD8B-CB2FFA167A1A}
-		{62C73706-20EC-4838-999D-210ECFC18986} = {62C73706-20EC-4838-999D-210ECFC18986}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pngloader", "pngloader\pngloader.vcxproj", "{B85F145B-0635-4ED9-8BB5-45C0CDF69CD3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_mobile", "player_mobile\player_mobile.vcproj", "{38067567-F305-45BB-B9ED-54B86F559BF7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fried", "fried\fried.vcxproj", "{D242F9BC-84B6-4757-8965-7A274CC88015}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_intro", "player_intro\player_intro.vcproj", "{62520ADF-98B0-40B5-9A6C-53F7320012DB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w3texlib", "w3texlib\w3texlib.vcxproj", "{89B6DC98-2D52-4223-AD35-487AC64D93C2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pngloader", "pngloader\pngloader.vcproj", "{B85F145B-0635-4ED9-8BB5-45C0CDF69CD3}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fried", "fried\fried.vcproj", "{D242F9BC-84B6-4757-8965-7A274CC88015}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w3texlib", "w3texlib\w3texlib.vcproj", "{89B6DC98-2D52-4223-AD35-487AC64D93C2}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "texlibtest", "texlibtest\texlibtest.vcproj", "{52382220-A000-45C6-8F4E-90893B4323E8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{89B6DC98-2D52-4223-AD35-487AC64D93C2} = {89B6DC98-2D52-4223-AD35-487AC64D93C2}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "texlibtest", "texlibtest\texlibtest.vcxproj", "{52382220-A000-45C6-8F4E-90893B4323E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -118,9 +89,6 @@ Global
 		{72A27B32-6669-4CF4-94EE-0E0DCE422A6D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{72A27B32-6669-4CF4-94EE-0E0DCE422A6D}.Release_Texture|Win32.ActiveCfg = Release_Texture|Win32
 		{72A27B32-6669-4CF4-94EE-0E0DCE422A6D}.Release|Win32.ActiveCfg = Release|Win32
-		{38067567-F305-45BB-B9ED-54B86F559BF7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{38067567-F305-45BB-B9ED-54B86F559BF7}.Release_Texture|Win32.ActiveCfg = Release_Texture|Win32
-		{38067567-F305-45BB-B9ED-54B86F559BF7}.Release|Win32.ActiveCfg = Release|Win32
 		{62520ADF-98B0-40B5-9A6C-53F7320012DB}.Debug|Win32.ActiveCfg = Debug|Win32
 		{62520ADF-98B0-40B5-9A6C-53F7320012DB}.Debug|Win32.Build.0 = Debug|Win32
 		{62520ADF-98B0-40B5-9A6C-53F7320012DB}.Release_Texture|Win32.ActiveCfg = Release_Texture|Win32
