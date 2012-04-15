@@ -246,8 +246,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">
     <ClCompile>
-      <AdditionalOptions>/QIfist %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>Disabled</Optimization>
+      <Optimization>Full</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -264,9 +263,10 @@
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <CallingConvention>FastCall</CallingConvention>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <AdditionalOptions>/MACHINE:I386 /OPT:ICF=16 %(AdditionalOptions)</AdditionalOptions>
@@ -282,6 +282,8 @@
       <FunctionOrder>
       </FunctionOrder>
       <BaseAddress>0x430000</BaseAddress>
+      <StackCommitSize>0x100000</StackCommitSize>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -292,7 +294,8 @@
     </Midl>
     <PostBuildEvent>
       <Message>Packing and analyzing...</Message>
-      <Command>kkrunchy --best "$(TargetPath)" --refsize 64</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -503,28 +506,28 @@
     </CustomBuild>
     <CustomBuild Include="introasm.asm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
+      <Message Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
 </Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">c:/nxn/genthree/babe.mesh;c:/nxn/genthree/default.raw;c:/nxn/genthree/josie.v2m;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">data\babe.mesh;data\josie.v2m;data\candytron_final_064.pac</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Player Debug|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
+      <Message Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
 </Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">c:/nxn/genthree/default.pac;c:/nxn/genthree/babe.mesh;default.raw;josie.v2m;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">data\babe.mesh;data\josie.v2m;data\candytron_final_064.pac</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Player Release|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
 </Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c:\nxn\genthree\default.pac; c:\nxn\genthree\babe.mesh;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='VTune|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='VTune|Win32'">nasmw -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
+      <Message Condition="'$(Configuration)|$(Platform)'=='VTune|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='VTune|Win32'">yasm -f win32 -o "$(OutDir)%(Filename).obj" "%(FullPath)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='VTune|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
     </CustomBuild>
