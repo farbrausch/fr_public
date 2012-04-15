@@ -89,6 +89,8 @@ sBool MAPFileReader::ReadDebugInfo(sChar *fileName,DebugInfo &to)
   if(!text)
     return sFALSE;
 
+  sChar *orig_text = text;
+
   // load dbghelp.dll to resolve symbol names if available
   void *module = LoadLibraryA("dbghelp.dll");
   if(module)
@@ -216,7 +218,7 @@ sBool MAPFileReader::ReadDebugInfo(sChar *fileName,DebugInfo &to)
 
   // cleanup
   Sections.Exit();
-  delete[] text;
+  delete[] orig_text;
 
   return sTRUE;
 }
