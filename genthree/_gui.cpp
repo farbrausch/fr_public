@@ -378,7 +378,7 @@ void sGuiManager::OnFrame()
   sGuiWindow *win;
   sScreenInfo si;
   sInt count;
-  static OldMouseX,OldMouseY;
+  static sInt OldMouseX,OldMouseY;
   sZONE(GuiFrame);
 
   for(i=0;i<PostIndex;i++)

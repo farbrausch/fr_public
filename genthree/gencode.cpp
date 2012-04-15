@@ -666,7 +666,7 @@ void ToolCodeGen::AddTimeline(TimeDoc *td)
   Timeline[TimelineCount++] = td;
 }
 
-sBool ToolCodeGen::End(ScriptCompiler *sc,sBool addsource,sBool export)
+sBool ToolCodeGen::End(ScriptCompiler *sc,sBool addsource,sBool doexport)
 {
   sZONE(Compile);
   sInt i,max,j,k,l;
@@ -745,7 +745,7 @@ sBool ToolCodeGen::End(ScriptCompiler *sc,sBool addsource,sBool export)
 
 // use cached objects
 
-    if(!export)
+    if(!doexport)
     {
       max = Snips.Count;
       for(i=0;i<max;i++)
