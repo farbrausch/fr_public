@@ -50,7 +50,8 @@ CSplineEdit::~CSplineEdit()
 
 LRESULT CSplineEdit::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-  for (sInt i = 0; i < 3; i++)
+  sInt i;
+  for (i = 0; i < 3; i++)
   {
     m_curveShow[i].Create(m_hWnd, rcDefault, _T(""), WS_CHILD|FRBS_AUTO|FRBS_AUTO3D_SINGLE|FRBS_SOLID|FRBS_CHECK|FRBS_HOTTRACK, 0, 400+i);
     m_curveShow[i].SetColorScheme(RGB(0, 0, 0), RGB(0, 0, 255), RGB(66, 65, 64), RGB(103, 99, 96),
@@ -60,7 +61,7 @@ LRESULT CSplineEdit::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHa
 
   TCHAR *types[3]={ _T("Constant"), _T("Linear"), _T("Catmull-Rom") };
 
-  for (sInt i=0; i<3; i++)
+  for (i=0; i<3; i++)
   {
     m_types[i].Create(m_hWnd, CRect((i+1)*80, 2, (i+2)*80, 22), types[i],
       WS_CHILD|WS_VISIBLE|FRBS_AUTO|FRBS_AUTO3D_SINGLE|FRBS_HOTTRACK|FRBS_SOLID|FRBS_CHECK, 0, 100+i);

@@ -145,7 +145,7 @@ public:
       params[3].trfloatv.a = params[3].trfloatv.b = params[3].trfloatv.c = 0.0f;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     putPackedVector(f, params[0].trfloatv, sTRUE);
     putPackedVector(f, params[1].trfloatv);
@@ -233,7 +233,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     putPackedVector(f, params[0].trfloatv);
     putPackedVector(f, params[1].trfloatv);
@@ -496,7 +496,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel | (params[1].selectv.sel << 3) | (params[4].selectv.sel << 4));
 
@@ -578,7 +578,7 @@ class frGFDeleteSelection: public frGeometryPlugin
 
         // build new vertex list
         sU32 vertPos = 0;
-        for (i = 0; i < vertCount; i++)
+        for (sInt i = 0; i < vertCount; i++)
         {
           vertRemap[i] = vertPos;
 					if (origMesh->vertices[i].select != 3)
@@ -590,7 +590,7 @@ class frGFDeleteSelection: public frGeometryPlugin
 
         // build new face list
         sU32 facePos = 0;
-        for (i = 0; i < faceCount; i++)
+        for (sInt i = 0; i < faceCount; i++)
         {
 					if (origMesh->primSelect[i])
 						continue;
@@ -627,7 +627,7 @@ public:
     strm << ver;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
   }
 };
@@ -829,7 +829,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     for (sInt i = 0; i < 6; i++)
       putPackedVector(f, params[i].trfloatv);
@@ -981,7 +981,7 @@ public:
       params[4].selectv.sel=0;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel|(params[4].selectv.sel<<2));
 
@@ -1031,7 +1031,7 @@ class frGFDoubleSided: public frGeometryPlugin
       if (msh->vFormat == 0 && mode != 3)
       {
         // flip vertex normals
-        for (i = 0; i < msh->nVerts; i++)
+        for (sInt i = 0; i < msh->nVerts; i++)
           msh->vertices[i].norm.scale(-1.0f);
       }
     }
@@ -1077,7 +1077,7 @@ public:
       params[0].selectv.sel=0;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel);
   }
@@ -1116,7 +1116,8 @@ class frGFObjMerge: public frGeometryPlugin
 
       if (msh)
       {
-        for (sInt it2 = 0; it2 < nRealObjects; it2++)
+        sInt it2;
+        for (it2 = 0; it2 < nRealObjects; it2++)
         {
           frObject* inObj2 = data->objects + it2;
 
@@ -1180,7 +1181,7 @@ public:
     strm << ver;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
   }
 };
@@ -1260,7 +1261,7 @@ public:
       strm << params[0].linkv << params[1].selectv.sel << params[2].trfloatv << params[3].trfloatv << params[4].trfloatv;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[1].selectv.sel);
 
@@ -1478,7 +1479,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     /*f.putsU16(params[0].intv);
     f.putsU16(params[1].intv);
@@ -1528,7 +1529,7 @@ public:
         vertptr++;
       }
 
-      for (j=1; j<hairSegments; j++)
+      for (sInt j=1; j<hairSegments; j++)
       {
         *indptr++=basev+j-1;
         *indptr++=basev+j;
@@ -1667,7 +1668,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel | (params[3].selectv.sel << 1));
     putPackedFloat(f, params[params[0].selectv.sel + 1].floatv);
@@ -1740,7 +1741,7 @@ public:
       params[0].selectv.sel = 0;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel);
   }
@@ -1889,7 +1890,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[1].selectv.sel);
 
@@ -2009,7 +2010,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
 		putPackedFloat(f, params[1].selectv.sel ? -params[0].floatv : params[0].floatv);
 
@@ -2054,7 +2055,7 @@ public:
     fr::debugOut("Make ryg happy is deprecated!\n");
   }
 
-  void export(fr::stream& f, const frGraphExporter& exp)
+  void exportTo(fr::stream& f, const frGraphExporter& exp)
   {
   }
 };
@@ -2138,7 +2139,7 @@ public:
 		}
 	}
 
-	void export(fr::stream& f, const frGraphExporter& exp)
+	void exportTo(fr::stream& f, const frGraphExporter& exp)
 	{
 		putPackedFloat(f, params[0].floatv);
 		f.putsU8(params[1].selectv.sel | (params[2].selectv.sel << 2));

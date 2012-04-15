@@ -1,0 +1,8 @@
+Debug/
+Release/
+fvsdebug.txt
+MakeDemo.dat
+*.suo
+*.sln.old
+*.sdf
+*.opensdf

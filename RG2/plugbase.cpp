@@ -325,7 +325,7 @@ void frPlugin::serialize(fr::streamWrapper& strm)
 {
 }
 
-void frPlugin::export(fr::stream& f, const frGraphExporter& exp)
+void frPlugin::exportTo(fr::stream& f, const frGraphExporter& exp)
 {
 }
 

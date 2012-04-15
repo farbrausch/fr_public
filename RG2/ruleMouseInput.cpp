@@ -3,11 +3,17 @@
 #include "stdafx.h"
 #include "ruleMouseInput.h"
 #define DIRECTINPUT_VERSION 0x800
+
+// hack to get rid of dxguid.lib
+#undef DEFINE_GUID
+#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+        EXTERN_C const GUID DECLSPEC_SELECTANY name \
+                = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+
 #include <dinput.h>
 #include "sync.h"
 
 #pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dxguid.lib")
 
 static IDirectInput8 *dinput=0;
 static IDirectInputDevice8 *dmouse=0;
