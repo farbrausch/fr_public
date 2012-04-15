@@ -1,0 +1,11 @@
+If you have VC 2010 installed and NASM in your path, you should be able to
+compile kkrunchy out of the box.
+
+Note: You actually need NASM for this - the other projects in the
+repository use YASM, which is somewhat better maintained, but YASM
+has problems with __fastcall (@ as first character in a label isn't
+supported) and writes broken RDF file (some relocs reference undefined
+segments). The __fastcall bit can be hacked, but the RDF thing is a
+showstopper; kkrunchy_k7 actually compiles the stage-1 depacker as RDF
+and then applies various fixups. If the RDF file is broken, none of that
+will work.
