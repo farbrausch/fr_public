@@ -1,10 +1,10 @@
-Hi!
+# Hi!
 
 This is it. Pretty much a history of Farbrausch tools 2001-2011. We've been
 meaning to release all this for ages, in various forms, and always ended up
 not doing it because "we'd just have to clean it up a bit first...".
 
-No more. This is *not* cleaned up. This is the raw deal, some from old hard
+No more. This is **not** cleaned up. This is the raw deal, some from old hard
 drives, some fresh from various SVN repositories. This is code written for
 a bunch of different versions of Visual Studio. Some of it is really tricky
 to compile, some really easy. There's some nice clean stuff there, other parts
@@ -21,27 +21,28 @@ this code, but if you want to, we see no reason to keep you.
 
 So what do we have in here? Here's the basic directory structure:
 
-  genthree/             - GenThree. Used for Candytron and nothing else.
-    data/               - Candytron data files.
-  kkrunchy/             - kkrunchy 0.23alpha code (latest I could find)
-  kkrunchy_k7/          - kkrunchy_k7 0.23a3 (didn't find a4; need to re-check)
-  ktg/                  - OpenKTG texture generator. See below.
-  lekktor/              - May summon Eldritch Abominations. Handle with care.
-  RG2/                  - RauschGenerator 2. Used for several 64k intros.
-    dopplerdefekt/      - data files for fr-029: dopplerdefekt
-    einschlag/          - data files for fr-022: ein.schlag
-    flybye/             - data files for fr-013: flybye
-    welcome_to/         - data files for fr-024: welcome to...
-  v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
-  werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
-    data/               - Source data for kkrieger and some test projects.
-      debris/           - Source data for fr-041: debris.
-      theta/            - Source data for fr-038: theta.
-    w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
-    wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
-  werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
+    genthree/             - GenThree. Used for Candytron and nothing else.
+      data/               - Candytron data files.
+    kkrunchy/             - kkrunchy 0.23alpha code (latest I could find)
+    kkrunchy_k7/          - kkrunchy_k7 0.23a3 (didn't find a4; need to re-check)
+    ktg/                  - OpenKTG texture generator. See below.
+    lekktor/              - May summon Eldritch Abominations. Handle with care.
+    RG2/                  - RauschGenerator 2. Used for several 64k intros.
+      dopplerdefekt/      - data files for fr-029: dopplerdefekt
+      einschlag/          - data files for fr-022: ein.schlag
+      flybye/             - data files for fr-013: flybye
+      welcome_to/         - data files for fr-024: welcome to...
+    v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
+    werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
+      data/               - Source data for kkrieger and some test projects.
+        debris/           - Source data for fr-041: debris.
+        theta/            - Source data for fr-038: theta.
+      w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
+      wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
+    werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
 
 So, here's the sightseeing tips:
+
 * "ktg" is OpenKTG, a proposal for a simple but relatively powerful and
   orthogonal subset of texture generation functions - designed around 2007.
   This is really nice, clean code. If you want to generate textures for WebGL
@@ -70,8 +71,9 @@ repository in general contains versions of the tools and players that are more
 recent than any production released with them, it would be hard to get the
 "original" executables back anyway, even if you had the necessary compilers,
 tools and libraries.
-  
+
 Contributors (in alphabetical order):
+
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
   werkkzeug3, werkkzeug3_kkrieger.
 * Sebastian "Wayfinder" Grillmaier: RG2, ein.schlag, debris, kkrieger.
