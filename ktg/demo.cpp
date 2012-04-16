@@ -8,8 +8,26 @@
 #include <stdio.h>
 #include "gentexture.hpp"
 
-#pragma comment(lib,"winmm.lib")
-#include <windows.h>
+#ifdef _WIN32
+  #pragma comment(lib,"winmm.lib")
+  #include <windows.h>
+#else
+  #include <sys/time.h>
+  static long timeGetTime()
+  {
+      timeval tim;
+      gettimeofday(&tim, NULL);
+      return tim.tv_sec * 1000000 + tim.tv_usec / 10;
+  }
+  static int timeBeginPeriod(unsigned int period)
+  {
+      return 0;
+  }
+  static int timeEndPeriod(unsigned int period)
+  {
+      return 0;
+  }
+#endif
 
 // 4x4 matrix multiply
 static void MatMult(Matrix44 &dest,const Matrix44 &a,const Matrix44 &b)
