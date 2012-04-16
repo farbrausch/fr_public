@@ -1,5 +1,21 @@
+/*************************************************************************************/
+/*************************************************************************************/
+/**                                                                                 **/
+/**  V2 module player (.v2m)                                                        **/
+/**  (c) Tammo 'kb' Hinrichs 2000-2008                                              **/
+/**  This file is under the Artistic License 2.0, see LICENSE.txt for details       **/
+/**                                                                                 **/
+/*************************************************************************************/
+/*************************************************************************************/
+
 #ifndef V2MPLAYER_H_
 #define V2MPLAYER_H_
+
+/*************************************************************************************/
+/**                                                                                 **/
+/**  Type definitions                                                               **/
+/**                                                                                 **/
+/*************************************************************************************/
 
 #ifndef V2TYPES
 #define V2TYPES
@@ -25,22 +41,20 @@ typedef double            sF64;
 #define sTRUE             1
 #define sFALSE            0
 
-#endif
-
-//
-#ifdef _DEBUG
-extern void __cdecl printf2(const char *format, ...);
-#else
-#define printf2
-#endif
-
 template<class T> inline T sMin(const T a, const T b) { return (a<b)?a:b;  }
 template<class T> inline T sMax(const T a, const T b) { return (a>b)?a:b;  }
 template<class T> inline T sClamp(const T x, const T min, const T max) { return sMax(min,sMin(max,x)); }
 
+#endif
 
 
-class CV2MPlayer
+/*************************************************************************************/
+/**                                                                                 **/
+/**  V2M player class                                                               **/
+/**                                                                                 **/
+/*************************************************************************************/
+
+class V2MPlayer
 {
 public:
 
@@ -103,7 +117,7 @@ public:
 	//
 	static void __stdcall RenderProxy(void *a_this, sF32 *a_buffer, sU32 a_len) 
 	{ 
-		reinterpret_cast<CV2MPlayer*>(a_this)->Render(a_buffer,a_len);
+		reinterpret_cast<V2MPlayer*>(a_this)->Render(a_buffer,a_len);
 	}
 
   // returns if song is currently playing
@@ -166,10 +180,8 @@ private:
 				const sU8		*ccptr;
 			} ctl[7];
 		} chan[16];
-	#ifdef RONAN
 		const char  *speechdata;
 		const char  *speechptrs[256];
-	#endif
 	};
 
 
@@ -240,4 +252,3 @@ private:
 };
 
 #endif
-
