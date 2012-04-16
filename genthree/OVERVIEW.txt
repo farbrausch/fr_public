@@ -1,0 +1,407 @@
+# Introduction
+
+GenThree was the next tool Chaos started after Werkkzeug1. See "diary.txt"
+for the early history (if you can read German). I (ryg) joined the project
+some time after the last entry in diary.txt, in early January 2003. This
+marks the first time that Chaos and me collaborated directly; before then,
+Chaos had used my packers, but we hadn't shared much code.
+
+After joining, I initially took over the Mesh generator and started work on
+the "FX Chain" (postprocessing effects), while Chaos focused on the GUI and
+Scripting parts of the system. After the first 2 months or so it rapidly
+becomes very hard to say who did exactly what because there was no clear
+top-level division of labor; we worked quite well together, to the point
+where we sometimes weren't certain who had written what. As an aside, if you
+can read German, "concept.txt" contains a bunch of notes by Chaos, again
+mostly from the early phases of the project. Some of these ideas ended up
+in GenThree (and later Werkkzeug3), some never got implemented, and some
+we tried but rejected.
+
+# Scripting
+
+Anyway; even when I started (this was in the lead-up to Candytron), we were
+very clearly aiming at producing kkrieger; Candytron was intended to be a
+kind of milestone. The thing that differentiates GenThree from our previous
+systems was that it was intended to replace the Operator Graph that had
+been at the center of our previous tools with a scripting language. The
+Operator Stacking UI still exists, but outputs script code instead of a
+blob describing the graph. The intention was to use this UI to build up
+components, but do all of the high-level glue (and, ideally, a lot of the
+game logic for kkrieger) as a script.
+
+We were considering several kinds of approaches, and different levels of
+abstraction - e.g. the top of concept.txt has a detailed sketch of a quite
+low-level scripting system top that would compile to regular x86 code, plus
+the associated back-end. This was never implemented; the idea evolved into
+another scripting system that was intended to run-time compile to regular
+x86 code. Then we'd store the (compressed) byte code plus a small runtime
+engine instead of regular x86 code, with the hope that the byte code would
+be smaller. The language was designed to facilitate easy compilation; it was
+very FORTH-like, so an initial interpreter could just use explicit stacks and
+threaded code. This one never happened either, primarily because we dreaded
+going all-in on something this experimental with a code base that was intended
+to last till kkrieger at the very least. However, the underlying idea (store
+all our code in a form that's more amenable to compression) never went away,
+and some years later metamorphosed into dispack/disfilter, the x86 code
+transform used by kkrunchy.
+
+But back to GenThree. Scripting system approach number three, and what you
+see here, was CSL - Chaos' Scripting Language (he did all the work on that
+one). The initial idea is described in concept.txt under "Scripted Demo
+System". The runtime system is still very FORTH-like, but it uses three stacks
+instead of the customary two:
+
+* The I-Stack or integer stack, which contains 16.16 fixed point numbers
+  (there's no support for floating-point types in script code)
+* The R-Stack or return stack, used to implement calls, loops etc.
+* The O-stack or object stack, which holds references to complex composite
+  objects like Bitmaps, Meshes and so forth. These objects are typed.
+
+The operation of the I- and R-stacks is only visible to the bytecode
+interpreter; the language itself is C-like and exposes familiar control
+structures to the user. The O-stack is different; it's explicitly manipulated
+by the code.
+
+Rather than explaining this to you in boring detail, I just recommend you
+check out "system.txt". This defines the set of operators available to every
+project, and displays some of the unconventional features of the system:
+
+At the beginning, a bunch of classes are defined. These correspond to classes
+of values on the O-stack. The fields listed define instance variables; I don't
+remember how exactly that particular binding worked. Each class also has a
+magic ID, written as hexadecimal number. Since we use 16.16 fixed point,
+they're written in a somewhat funky way here; they're regular 32-bit ints on
+the C++ side.
+
+After that, there are some global functions and variables. Note that functions
+can be assigned IDs, just like classes. This is part of a light-weight binding
+scheme. By convention, positive IDs are used for script functions that are
+called by C++ code (so the OnInit, OnFrame and OnSound functions are forward
+declarations for code that's supposed to be written in CSL), while negative IDs
+are script declarations for functions implemented in native C++ code. There's
+a table in the C++ code mapping those magic numbers to function pointers - and
+nothing else. Note that each function has type information on the parameters;
+this is detailed enough to manually build a stack frame and call into the given
+C++ function, without needing any layer of glue code or marshalling. This is
+one of the more unconventional design decisions in CSL; it was done both for
+convenience and to reduce code size, since mechanical wrapper/glue code is very
+repetitive and adds zero value. Also note that each function comes with a
+description of what types of objects are expected to be at the top of the
+O-stack before execution, and what ends up on the O-stack afterwards. To pick a
+declaration at random:
+
+    void MeshMaterial(
+      int id = 1 [ 1 .. 255 ],
+      int mask = 0 [ "mask8:f" ],
+    ) ( mesh material -- mesh ) = -0x0b,"mod link2",'m';
+
+the "( mesh material -- mesh )" line here denotes that this operator expects
+a mesh and a material object on the O-stack, and returns a new mesh object.
+It also means that the op has binding number -0xb (-11), the "mod link2" is a
+line of annotation tags that can influence GUI, code generation and memory
+allocation ("mod" here means that the operator can modify an object in-place,
+for example), and the 'm' assigns the hotkey 'm' to this operator in the GUI.
+You get the idea.
+
+There's even some operators completely written in CSL - cf. the "Crashzoom" and
+"FXWideBlur" filters, both of which make use of the language and call to a
+single underlying function "Blend4x" written in C++ that is used to implement
+various render-to-texture effects.
+
+Going back up a level, I mentioned that there's still a GUI behind all this.
+Well, the op-stacking UI is alive and kicking in GenThree, so how does that
+part work internally? Just look at genthree/data/candytron_final_064.csl, the
+final generated source code for Candytron. The first part of this is just
+system.txt, which I have just described. After that comes a bunch of generated
+code corresponding to whatever the user built in the Op-Stacking GUI (this
+is OnGenerate and friends) and the animation/timeline (timeline_OnInit and
+timeline_OnFrame). All of this is code with a very regular structure that's
+intended to compress well. Finally, at the very end there's the bit starting
+with "// new text" - this is actually code entered in the tool itself by the
+user. The idea was that you could code in there too, but it never saw serious
+use.
+
+So all this looks pretty nice on paper, right? C++ code providing low-level
+functions and runtime services, a script engine to tie it all together, and a
+very decoupled UI that's loosely coupled: anything that can compile to CSL
+goes.
+
+The only problem was that (language quirks like the fixed-point centric world
+view aside) it didn't work well for what we needed it for. It had reasonable
+density for code, but as a data representation (and all the Ops are really
+more data than code) it sucked. Our previous systems had a very compact
+representation for ops, and lots of tricks to quantize and pack parameter
+values into a small space. In the byte code-based system, it all boiled down
+into general "push value" and "call function" op codes, and while the type
+information was there for execution purposes (to convert the 16.16 ints into
+floats when necessary, for example), none of that structure was evident or
+easily exploitable in the byte code. As a result, compression ratios of the
+byte code sucked - compared to what we were used to, anyway. Candytron had
+significantly less procedurally generated content than our average intro,
+yet still spent about 8k (after compression!) on describing it, whereas most
+of our intros around that time needed maybe 6k for the ops.
+
+On the other side, the script runtime system was fairly big too - much bigger
+than the more specialized operator execution engines we'd used before (or
+after). And it just wasn't pulling its weight. So the summer after we released
+Candytron, Chaos threw away the scripting parts and most of the existing GUI,
+but kept the Operators - Werkkzeug3 was born. Still, the base system and most
+of the content generation parts (and their interface) survived. As one of
+several side effects, that means that Wz3 used (and still uses) the same
+"explicit description of stack layout" method for parameters. This has far
+less benefits in a non-script environment (and we probably wouldn't have done
+it if we had been shooting for ops from the beginning), but it's really just
+the only part of the original scripting engine that survived.
+
+# Code organization
+
+Let's start at the beginning: _start.cpp (and _startdx.cpp). These two files
+(plus associated header files) form the OS/rendering abstraction. Yes that's
+right, no other file in the project includes any of the Windows or D3D header
+files, it's all abstracted away. Fundamentally this is not hard because a
+demo or intro really doesn't care that much about what OS it's running on;
+what it wants is a window, a nice way to switch state and render triangles,
+a pipe to output sound to and a way to get current timing information (and
+maybe keypresses). The tools need a bit more on the input side (proper mouse
+and keyboard input at least) and some file IO, but it's still a very limited
+set of functionality.
+
+The tools use the aforementioned two files; intros use _startintro.cpp, which
+is a size-optimized mash-up of both _start and _startdx. There's also
+_startgdi (for GDI-based GUI-only rendering) and _startgl (GL-based), both of
+which were never properly completed and don't work, so there's not much to
+talk about.
+
+_start performs initialization and then calls sAppHandler. sAppHandler is
+implemented in the actual main program and is basically an event handler. To
+give an example of what constitutes events:
+
+* sAPPCODE_CONFIG - display a configuration dialog. (Called before the 3D
+  API is initialized)
+* sAPPCODE_INIT - main initialization phase (after 3D API is initialized).
+* sAPPCODE_EXIT - similarly, shutdown phase.
+* sAPPCODE_KEY - keyboard input.
+* sAPPCODE_PAINT - paint a new frame.
+
+There's a few more, but you get the idea. There's two main versions of this:
+the "tool" runtime in main.cpp and the "player" runtime in mainplayer.cpp.
+The tool version sets up a window and then runs the GUI event loop; the
+player version does whatever initialization is necessary and then plays back
+the demo.
+
+The GUI is a regular retained-mode event loop-based affair. Everything is
+rendered using the 3D API (D3D in our case) though, and re-rendered every
+frame, which greatly cuts down on updating bugs :). There's a lot of UI
+and UI-related code in GenThree, Werkkzeug3 etc., but that kind of code
+doesn't make for very exciting exposition, so I'll just gloss over it here.
+
+The scripting engine that I've talked about is split into two files:
+cslce.cpp, which implements the scanner, parser and bytecode generator,
+and cslrt.cpp, the bytecode interpreter and runtime system.
+
+CSL is a language suitable for one-pass compilation with semantic
+processing and code generation interleaved with code generation. It can be
+processed with a straightforward Recursive Descent parser. This class of
+languages has a long tradition and leads to simple, fast (but not very smart)
+compilers without depending on any special parser generator tools. CSL in
+particular was greatly inspired by LCC and its code as described in the book
+"A Retargetable C Compiler: Design and Implementation" - a very worthwhile
+read if you would like to expand your horizon on a type of Software
+Engineering that's underappreciated: Simple, straightforward, very well
+thought-out no-nonsense C code. (As you might be able to tell, Chaos and me
+really like that book). Anyway.
+
+The second part, cslrt, implements the runtime. Since the bytecode is
+stack-based with a small set of built-in operations, this is really quite
+straightforward. 
+
+On the player side, the rest of the source, including all the generators,
+binds loosely to the script runtime, which calls the shots. The table of
+script functions, together with some glue code, is in genplayer.cpp. The
+rest is just a bag of script-callable functions, which I'll describe one
+functional group at a time.
+
+# Mesh generation
+
+This is something we tried to push hard for this intro - much more so than
+in our previous releases. The mesh generator contains a bunch of ideas, some
+of which worked out well, and lots that didn't. The core mesh data structures
+are half-edge based, and the implementation is contained in genmesh.cpp and
+genmesh.hpp. I've written about this in detail on my blog - just look at the
+mesh-processing articles listed here:
+
+  http://fgiesen.wordpress.com/2012/02/13/debris-opening-the-box/
+
+One part I haven't talked about before, and that only appears in GenThree, is
+the Recorder - the Rec* group of functions in the GenMesh class. This was an
+experimental approach for mesh animation that we used heavily in Candytron.
+The basic idea was to separate the topological processing (which involves
+tricky and often slow manipulation of complex data structures) from the vertex
+processing (which, for a lot of operators, simply computs new vertices as
+linear combinations of existing ones, which is simple and relatively fast).
+
+So Chaos had the idea to separate the two. The topological processing just
+runs once, at init time. All the topological modifications are done at that
+time, but vertex manipulations get recorded to a log. Most of the time, this
+log is played back immediately and then thrown away - but if the user wants to
+animate something, he can turn on "proper" recording for the mesh, which means
+that we actually keep the log for runtime evaluation. Then, every frame, a
+bunch of input parameters can be changed and the log is played back. Since
+we only modify vertices not indices or connectivity, we just need to stream
+the new data into a vertex buffer. This system is far more flexible than
+regular skinning; several scenes in Candytron first skin the girl mesh
+(unsubdivided), then subdivide it once, extrude parts of it, and subdivide
+again, for example. The extrusion and subdivision operators are relatively
+heavyweight, since they try to deal correctly with hard edges, discontinuities
+and so forth, but the part that runs at runtime only only does very simple
+operations on vectors, so it's quite fast.
+
+While a neat idea, we ultimately killed this one off too. It worked just fine,
+but in practice just phrasing all our dynamic mesh animation in terms of
+skinning made things simpler and more orthogonal at the back end, allowed us
+to do more work in the mesh consolidation/vertex buffer generator phase,
+and simplified the mesh code a bit (since there was no longer a need to
+separate topology and geometry processing into two parts and explicitly record
+every parameter that went into vertex generation). And finally, a single
+static skinning setup can be baked into a vertex shader for performance; the
+more complex recorder system, with its variable input-output relationships and
+different operations done in different sequence, not so much. Note that we
+still ended up using SW skinning in kkrieger/debris for other reasons (shadow
+volumes), but the decision to remove the recorder was made long before we
+commited to shadow volumes.
+
+Finally, there's Mesh_Babe, which was used to get the girl mesh (actually,
+she's called "Josie", so that's what I'll call her from now on) into the
+intro. On the Editor side, this just loads an exported mesh (.XSI file
+in this case, since giZMo - the artist on this project - was using XSI).
+However, the XSI file is much too big to use in a 64k, so we implemented some
+(then) cutting-edge mesh compression; the papers had only been published a
+few months prior! The algorithm we ended up using was described in
+"Near-Optimal Connectivity Encoding of 2-Manifold Polygon Meshes" by
+Khodakovsky et al.; there was a separate paper "Compressing Polygon Mesh
+Connectivity with Degree Duality Prediction" by Isenburg that described
+the same basic idea in a slightly different framework that probably would've
+been easier to implement in GenMesh, but I realized that too late. I'll spare
+you the details - suffice to say this was my first (but by no means last)
+contact with the fact that being able to understand a paper and being able to
+implement it correctly are two different things, and one of them is much
+harder than the other :).
+
+Anyway, the idea was that we'd generate rough basic geometry for kkrieger
+using a conventional modeler and export it. That was in fact the main
+reason to be implementing a polygon mesh compression scheme that was this
+general. But in the end we went down a very different road for level
+building, so this code too ended up being unused anywhere else. (Starting to
+see a pattern here?)
+
+# Texture generation
+
+This code has the distinction of being the least experimental of all the
+things we tried in Candytron. It also is the *only* piece of the whole thing
+that survived into the Debris era without being substantially rewritten or
+outright replaced. Part of this was the Second System Effect (e.g. GenMesh
+was clearly overengineered for what we needed), but mostly it was just the
+result of us going out of our comfort zone established in previous tools and
+trying to approach things differently. Most of the time it didn't work out
+that well, but it wasn't at all obvious from the outset that this would
+happen, and it was certainly a learning experience.
+
+Anyway, on to the actual texture generator. Like the RG2 texture generator
+(but unlike the original fr-08 Generator or Werkkzeug1), GenThree uses an
+integer format with 16 bits per color channel, to make sure there's enough
+precision headroom even after several stages of color adjustment and layer
+composition. Though we store 16 bits per channel, we actually only use 15
+bits - a compromise to navigate the odd set of MMX instructions available
+at the time: note that PMULHUW was only added with the Pentium 3, and there's
+no unsigned version of PMADDWD - dealing with unsigned 16-bit quantities
+was simply awkward. We also allow ourselves to be slightly sloppy with regards
+to rounding and such, since we have enough extra bits not to care too deeply
+about what goes on in the least-significant bits. This makes the code
+somewhat simpler, though in the grand scheme of things, it probably didn't
+matter. Finally, this representation means that a single ARGB pixel fits
+inside a MMX register, and there's no need to do any unpacking or packing
+to do multiplies (MMX only provides 16-bit multiplies).
+
+As you might have noticed by now, all of these decisions were made with an
+eye towards reasonably fast and simple implementations of the basic operations
+using MMX. It was all designed long before using GPUs for texture generation
+was a serious option: when GenThree was written, we were already using D3D9
+(brand new at the time!), but we were using the fixed-function pipe - cards
+with shader support were still quite new and not very wide-spread. And when
+RG2 (which made many of these original design decisions) was written, there
+wasn't any programmable HW in the PC market, period.
+
+So you would expect that there's lots of MMX code in the texture generator.
+And you would be completely right. At the time, code generation when using
+intrinsics was simply dreadful, so it's mostly inline assembly too.
+
+The code itself is not terribly interesting - it does what you'd expect, and
+this was from before we did any tricky optimizations. It's probably worth
+looking at the Blur filter, however; it uses the old (as in, OLD) but still
+awesome rendering trick of factoring triangle filters and gaussian blurs as
+iterated box filters: 2x box gives you triangle, and 3x box gives you a
+uniform B-Spline that is within a few percent of a true Gaussian but *much*
+cheaper to compute. The nice bit about this is that box filters are really
+simple to do fast - for every pixel, you scroll the "window" by one pixel,
+meaning one pixel on the left "drops out" and one pixel on the right "comes
+in", while the rest of the sum stays the same. This is very cheap to perform
+incrementally, and Bitmap_Blur has a straightforward implementation of the
+idea. Look closely - by the time you'll see it next in this repository,
+namely in Werkkzeug3, it will support non-integer blur kernel widths and be
+all MMX'ed up and quite hard to follow :)
+
+# Lights, Camera, Action!
+
+Lighting, material, camera and scene description all happen in the same file,
+genmaterial.cpp. All of these are objects, so they have a description as a
+data structure, but in GenThree these are quite basic. A scene is a list of
+meshes with associated transform matrices. A camera is just a matrix with a
+few extra parameters describing FOV and such. A light is also just a bag of
+values that gets passed along to D3D. A material both contains D3D "material"
+parameters (which influence lighting) and the textures and render states used
+at the time. States are generally collected once at initialization time and
+compiled into a list (for faster state caching), but other than that it's
+pretty simple too. The most important part here is that an explicit material
+representation that describes *all* the state sent to the API is even there.
+In a heavily data-driven environment like our tools, that is just the natural
+way to handle things; that it also happens to be efficient is a nice bonus.
+
+The most interesting part of genmaterial has in fact nothing to do with
+materials at all; for reasons that I don't remember, part of the GenMesh
+implementation is in here, namely the part that actually converts GenMeshes
+to Vertex/Index buffers. Sometime in the middle of kkrieger development, all
+of the mesh preparation, lighting/material and multipass management stuff got
+pulled out into a separate module, engine.cpp, where it's resided ever since.
+Of course, when we wrote Candytron, all of this code was much simpler, so
+there you go.
+
+There's two interesting parts worth noting here: first, note how we handle
+vertex/index buffers. GenThree introduced "GeoBuffers", which bundle a
+Vertex Buffer with an associated Index Buffer into a neat little package. This
+model (in one form or another) has been around with us ever since - you really
+want to treat them as a unit most of the time. The system level code (in
+_startdx.cpp) handles all the memory management part of it - pretty sweet.
+There's also a special GeoBuffer that has a static index buffer (describing
+a list of quads) that's used to render, well, quads. For GUI, particles and
+such. It makes sense to have this as part of your rendering abstraction; quads
+are common, and having a simple way to render them just makes sense. Also, if
+you make them a thing at the system level, it's trivial to adapt to targets
+that natively support non-indexed quad lists.
+
+The second part is that the mesh preparation code supports several different
+modes (or "programs", as they're called in the code): There's MPP_STATIC and
+MPP_DYNAMIC, which are fairly obvious (allocate to dynamic/static vertex
+buffer please); more interestingly, there are also the "sprites", "trees",
+"thick lines", "outlines", and "finns" modes, which are also extensively used
+in Candytron. All of these represent different ways to turn a given mesh into a
+vertex and index buffer. The same mechanism was used in kkrieger to generate
+input data for shadow volume extrusion (note that while there is a MPP_SHADOW
+there, that's a different thing than what we did in kkrieger).
+
+# That's all, folks!
+
+There's more stuff in there, but this covers what I think are the most
+interesting bits. If there's questions or something is unclear, don't
+hesitate, just ask!
+
+-Fabian 'ryg' Giesen, April 2012.
