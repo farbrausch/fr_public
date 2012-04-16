@@ -307,4 +307,101 @@ that well, but it wasn't at all obvious from the outset that this would
 happen, and it was certainly a learning experience.
 
 Anyway, on to the actual texture generator. Like the RG2 texture generator
-(but unlike the original fr-08 Generator or Werkkzeug1),
+(but unlike the original fr-08 Generator or Werkkzeug1), GenThree uses an
+integer format with 16 bits per color channel, to make sure there's enough
+precision headroom even after several stages of color adjustment and layer
+composition. Though we store 16 bits per channel, we actually only use 15
+bits - a compromise to navigate the odd set of MMX instructions available
+at the time: note that PMULHUW was only added with the Pentium 3, and there's
+no unsigned version of PMADDWD - dealing with unsigned 16-bit quantities
+was simply awkward. We also allow ourselves to be slightly sloppy with regards
+to rounding and such, since we have enough extra bits not to care too deeply
+about what goes on in the least-significant bits. This makes the code
+somewhat simpler, though in the grand scheme of things, it probably didn't
+matter. Finally, this representation means that a single ARGB pixel fits
+inside a MMX register, and there's no need to do any unpacking or packing
+to do multiplies (MMX only provides 16-bit multiplies).
+
+As you might have noticed by now, all of these decisions were made with an
+eye towards reasonably fast and simple implementations of the basic operations
+using MMX. It was all designed long before using GPUs for texture generation
+was a serious option: when GenThree was written, we were already using D3D9
+(brand new at the time!), but we were using the fixed-function pipe - cards
+with shader support were still quite new and not very wide-spread. And when
+RG2 (which made many of these original design decisions) was written, there
+wasn't any programmable HW in the PC market, period.
+
+So you would expect that there's lots of MMX code in the texture generator.
+And you would be completely right. At the time, code generation when using
+intrinsics was simply dreadful, so it's mostly inline assembly too.
+
+The code itself is not terribly interesting - it does what you'd expect, and
+this was from before we did any tricky optimizations. It's probably worth
+looking at the Blur filter, however; it uses the old (as in, OLD) but still
+awesome rendering trick of factoring triangle filters and gaussian blurs as
+iterated box filters: 2x box gives you triangle, and 3x box gives you a
+uniform B-Spline that is within a few percent of a true Gaussian but *much*
+cheaper to compute. The nice bit about this is that box filters are really
+simple to do fast - for every pixel, you scroll the "window" by one pixel,
+meaning one pixel on the left "drops out" and one pixel on the right "comes
+in", while the rest of the sum stays the same. This is very cheap to perform
+incrementally, and Bitmap_Blur has a straightforward implementation of the
+idea. Look closely - by the time you'll see it next in this repository,
+namely in Werkkzeug3, it will support non-integer blur kernel widths and be
+all MMX'ed up and quite hard to follow :)
+
+# Lights, Camera, Action!
+
+Lighting, material, camera and scene description all happen in the same file,
+genmaterial.cpp. All of these are objects, so they have a description as a
+data structure, but in GenThree these are quite basic. A scene is a list of
+meshes with associated transform matrices. A camera is just a matrix with a
+few extra parameters describing FOV and such. A light is also just a bag of
+values that gets passed along to D3D. A material both contains D3D "material"
+parameters (which influence lighting) and the textures and render states used
+at the time. States are generally collected once at initialization time and
+compiled into a list (for faster state caching), but other than that it's
+pretty simple too. The most important part here is that an explicit material
+representation that describes *all* the state sent to the API is even there.
+In a heavily data-driven environment like our tools, that is just the natural
+way to handle things; that it also happens to be efficient is a nice bonus.
+
+The most interesting part of genmaterial has in fact nothing to do with
+materials at all; for reasons that I don't remember, part of the GenMesh
+implementation is in here, namely the part that actually converts GenMeshes
+to Vertex/Index buffers. Sometime in the middle of kkrieger development, all
+of the mesh preparation, lighting/material and multipass management stuff got
+pulled out into a separate module, engine.cpp, where it's resided ever since.
+Of course, when we wrote Candytron, all of this code was much simpler, so
+there you go.
+
+There's two interesting parts worth noting here: first, note how we handle
+vertex/index buffers. GenThree introduced "GeoBuffers", which bundle a
+Vertex Buffer with an associated Index Buffer into a neat little package. This
+model (in one form or another) has been around with us ever since - you really
+want to treat them as a unit most of the time. The system level code (in
+_startdx.cpp) handles all the memory management part of it - pretty sweet.
+There's also a special GeoBuffer that has a static index buffer (describing
+a list of quads) that's used to render, well, quads. For GUI, particles and
+such. It makes sense to have this as part of your rendering abstraction; quads
+are common, and having a simple way to render them just makes sense. Also, if
+you make them a thing at the system level, it's trivial to adapt to targets
+that natively support non-indexed quad lists.
+
+The second part is that the mesh preparation code supports several different
+modes (or "programs", as they're called in the code): There's MPP_STATIC and
+MPP_DYNAMIC, which are fairly obvious (allocate to dynamic/static vertex
+buffer please); more interestingly, there are also the "sprites", "trees",
+"thick lines", "outlines", and "finns" modes, which are also extensively used
+in Candytron. All of these represent different ways to turn a given mesh into a
+vertex and index buffer. The same mechanism was used in kkrieger to generate
+input data for shadow volume extrusion (note that while there is a MPP_SHADOW
+there, that's a different thing than what we did in kkrieger).
+
+# That's all, folks!
+
+There's more stuff in there, but this covers what I think are the most
+interesting bits. If there's questions or something is unclear, don't
+hesitate, just ask!
+
+-Fabian 'ryg' Giesen, April 2012.
