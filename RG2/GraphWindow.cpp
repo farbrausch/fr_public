@@ -1481,7 +1481,8 @@ public:
 	savedSelection* hlSaveSelection() const
 	{
 		savedSelection* sel = new savedSelection(m_selection.size());
-		memcpy(sel->selection, &m_selection[0], m_selection.size() * sizeof(sU32));
+    if (m_selection.size())
+		  memcpy(sel->selection, &m_selection[0], m_selection.size() * sizeof(sU32));
 
 		return sel;
 	}

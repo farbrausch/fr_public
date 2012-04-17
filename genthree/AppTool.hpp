@@ -207,7 +207,7 @@ public:
   sU32 CheckChange();
   void SetStat(sInt num,sChar *text);
   struct PageOpClass *FindPageOpClass(sInt i);
-  sBool DemoPrev(sBool export=0);
+  sBool DemoPrev(sBool doexport=0);
 
   WindowSetEntry WinSetData[sDW_MAXSET][2][sDW_MAXPERSET];
   ToolWindow *WinSetStorage[sDW_MAXWINDOW];

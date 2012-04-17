@@ -35,7 +35,8 @@ namespace fr
 
   fCurve::key& fCurve::addKey(sInt frame)
   {
-    for (keyVectorIt it=m_keys.begin(); it!=m_keys.end() && frame>it->frame; ++it);
+    keyVectorIt it;
+    for (it=m_keys.begin(); it!=m_keys.end() && frame>it->frame; ++it);
 
     it=m_keys.insert(it, key());
     it->frame=frame;

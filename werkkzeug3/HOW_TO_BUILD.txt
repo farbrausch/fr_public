@@ -1,0 +1,11 @@
+If you have VC 2010 installed and YASM in your path, you should be able to compile
+Werkkzeug3 out of the box, albeit with some warnings.
+
+As usual, there were some minor changes made to get it to compile with VS2010.
+The player_mobile stuff was just removed from the solution - the mobile stuff was
+for PDA targets running Windows CE, and compiled using Embedded VC6. Vile stuff.
+Didn't seem worth the hassle, because *nobody* has the right build environment for
+this anymore anyway.
+
+A clean compile should be able to play back debris, if you find the right op to
+view :).

@@ -5,6 +5,9 @@
 #include <stdio.h>
 
 #pragma warning (disable: 4996) // deprecated BS
+#ifdef _DEBUG
+#pragma comment (linker, "/nodefaultlib:libcmt.lib")
+#endif
 
 // Small helper to make cleanup code nicer
 struct CLibFile

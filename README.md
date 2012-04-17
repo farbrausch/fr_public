@@ -10,10 +10,14 @@ a bunch of different versions of Visual Studio. Some of it is really tricky
 to compile, some really easy. There's some nice clean stuff there, other parts
 are just a complete mess.
 
-We haven't tried to get any of this to run. We'll probably go over everything
-and try to get it to compile with VS2010 soon, but no promises - if I can't
-get it to work, then well, it won't compile :). You can still look at the
-source, of course. UPDATE: Check out the "vs2010" branch.
+The original unmodified code (with a few bug fixes) is archived under the
+"original" tag, in case there's historical interest, but as of April 16, 2012
+the master branch of this repository contains code that builds with Visual
+Studio 2010 (which is presumably more useful to people). We originally
+anticipated that getting everything to work with a recent compiler would
+prove difficult, but it turned out to be fairly easy and required only small
+changes to the code base, so there's little value in keeping the two branches
+separate.
 
 All of this is released either under a BSD license or put in the public
 domain (stated per project). Not that you're likely to want to use most of
@@ -61,16 +65,6 @@ So, here's the sightseeing tips:
   are unlikely to work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
   be possible to do dig up something from 2004 :)
-
-As a general rule, the "master" branch contains the original, unmodified code.
-There's a second branch ("vs2010") that contains project files and fixes to
-make the code compile (more or less) cleanly with VS2010. If you want to
-actually build any of this, that's the way to go, though of course it won't
-match the original projects or have the original size; but since this
-repository in general contains versions of the tools and players that are more
-recent than any production released with them, it would be hard to get the
-"original" executables back anyway, even if you had the necessary compilers,
-tools and libraries.
 
 Contributors (in alphabetical order):
 

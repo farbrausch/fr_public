@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\ronan.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\phonemtab.h" />
+    <ClInclude Include="..\dsio.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libv2.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\synth.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\types.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\dsio.asm" />
+    <CustomBuild Include="..\synth.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{211e9f7b-8ec8-482c-9f8d-5da2cf0973e2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

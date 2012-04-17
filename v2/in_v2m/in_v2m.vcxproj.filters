@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{d7f48df6-62f6-4a6b-9e4e-f46aa6cfe75b}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{62cadde1-2a77-4c1e-be0b-5984fb05f8b4}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Synth src">
+      <UniqueIdentifier>{24a9ad91-52ec-40ef-9c63-a5a479f5125b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Synth include">
+      <UniqueIdentifier>{785db97c-ef09-49a7-b358-1e9d7e3a10cd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\tool\file.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="In_v2m.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sounddef.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\v2mconv.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ronan.cpp">
+      <Filter>Synth src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\soundsys.cpp">
+      <Filter>Synth src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="In2.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="Out.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dsio.h">
+      <Filter>Synth include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\phonemtab.h">
+      <Filter>Synth include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ronan.h">
+      <Filter>Synth include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\soundsys.h">
+      <Filter>Synth include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\synth.h">
+      <Filter>Synth include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\synth.asm">
+      <Filter>Synth src</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

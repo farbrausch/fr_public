@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="generator">
+      <UniqueIdentifier>{b8127a9b-4dd0-4e64-a107-9839d3b8b44f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="windows">
+      <UniqueIdentifier>{a629c650-a1b5-4c0b-9e8c-7879bc0cb70b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="text">
+      <UniqueIdentifier>{4de930ce-d4c1-4793-a3e3-99c2af4950fd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <asc Include="..\cubehorde_shader.asc">
+      <Filter>generator</Filter>
+    </asc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\cubehorde_shader.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genbitmap.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genblobspline.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffect.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="geneffectcubes.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectdebris.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectex.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectipp.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gengeloet.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmaterial.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmesh.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genminmesh.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genoverlay.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genscene.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genvector.cpp">
+      <Filter>generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\wincalc.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winnova.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winnovaview.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winpage.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winpara.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winspline.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\wintimeline.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\wintool.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\winview.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\appbrowser.cpp" />
+    <ClCompile Include="..\apptext.cpp" />
+    <ClCompile Include="..\engine.cpp" />
+    <ClCompile Include="..\kdoc.cpp" />
+    <ClCompile Include="..\kkriegergame.cpp" />
+    <ClCompile Include="..\novaplayer.cpp" />
+    <ClCompile Include="..\script.cpp" />
+    <ClCompile Include="..\werkkzeug.cpp" />
+    <ClCompile Include="..\werkops.cpp" />
+    <ClCompile Include="wz3_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\cubehorde_shader.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genbitmap.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genblobspline.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffect.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="geneffectcubes.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectdebris.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectex.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectipp.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gengeloet.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmaterial.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmesh.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genminmesh.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genoverlay.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genscene.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genvector.hpp">
+      <Filter>generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wincalc.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winnova.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winnovaview.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winpage.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winpara.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winspline.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wintimeline.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wintool.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\winview.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\appbrowser.hpp" />
+    <ClInclude Include="..\apptext.hpp" />
+    <ClInclude Include="..\engine.hpp" />
+    <ClInclude Include="..\kdoc.hpp" />
+    <ClInclude Include="..\kkriegergame.hpp" />
+    <ClInclude Include="..\novaplayer.hpp" />
+    <ClInclude Include="..\script.hpp" />
+    <ClInclude Include="..\werkkzeug.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\concept.txt">
+      <Filter>text</Filter>
+    </None>
+    <None Include="..\history.txt">
+      <Filter>text</Filter>
+    </None>
+    <None Include="..\todo.txt">
+      <Filter>text</Filter>
+    </None>
+    <None Include="..\todo_chaos.txt">
+      <Filter>text</Filter>
+    </None>
+    <None Include="..\wz3tex.nsi">
+      <Filter>text</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="werkkzeug3.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="effect_colorcorrect.psh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_colorcorrect.vsh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare.psh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare.vsh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare2.psh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare2.vsh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare3.psh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_glare3.vsh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_jpeg.psh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="effect_jpeg.vsh">
+      <Filter>generator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="wz3_data.asm" />
+  </ItemGroup>
+</Project>

@@ -300,7 +300,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU16(params[0].intv);
     f.putsU8(params[1].intv);
@@ -432,7 +432,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     sInt type = params[0].selectv.sel | (colorClass(params[1].colorv) << 1) | (colorClass(params[2].colorv) << 3);
     f.putsU8(type);
@@ -692,7 +692,7 @@ public:
       strm << params[7].intv;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].intv | (params[2].intv << 4));
     f.putsU8(params[1].floatv*255.0f);
@@ -781,7 +781,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU16(params[0].intv);
     f.putsU16(params[1].intv);
@@ -851,7 +851,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].pointv.x*255);
     f.putsU8(params[1].pointv.x*255);
@@ -897,7 +897,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].colorv.b);
     f.putsU8(params[0].colorv.g);
@@ -1080,7 +1080,7 @@ public:
       strm << params[6].selectv;
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU16(params[0].pointv.x * data->w);
     f.putsU16(params[0].pointv.y * data->h);
@@ -1227,7 +1227,7 @@ public:
 		}
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
 		// ficken.
   }

@@ -1,0 +1,6 @@
+If you have VC 2010 installed and YASM in your path, you should be able to compile
+GenThree out of the box.
+
+There were some very minor changes made to the source code to make it compile
+with VS2010, but for the most part, this really is the original code for
+Candytron.

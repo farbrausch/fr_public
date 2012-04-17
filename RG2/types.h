@@ -30,4 +30,4 @@ typedef double            sF64;                 ///< 64bit-Floating point.
 
 #define FR_NOVTABLE       __declspec(novtable)  ///< Klasse hat keine VMT.
 
-#pragma warning (disable: 4244)
+#pragma warning (disable: 4018 4244 4996)

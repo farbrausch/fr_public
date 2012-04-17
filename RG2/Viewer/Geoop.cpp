@@ -1487,7 +1487,8 @@ class frOpGFObjMerge: public frGeometryOperator
       const frMesh* msh = temp.getMesh();
       const frMaterial* mat = temp.getMaterial();
 
-      for (sInt it2 = 0; it2 < nRealObjects; it2++)
+      sInt it2;
+      for (it2 = 0; it2 < nRealObjects; it2++)
       {
         frObject* inObj2 = data->objects + it2;
         frMesh* srcMesh2 = inObj2->getMesh();

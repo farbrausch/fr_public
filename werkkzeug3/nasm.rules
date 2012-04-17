@@ -7,7 +7,7 @@
 		<CustomBuildRule
 			Name="NASM"
 			DisplayName="Netwide Assembler"
-			CommandLine="nasmw.exe -f win32  [AllOptions] [AdditionalOptions] [Inputs]"
+			CommandLine="yasm -f win32  [AllOptions] [AdditionalOptions] [Inputs]"
 			Outputs="[$ObjectFileName]"
 			FileExtensions="*.asm"
 			ExecutionDescription="Assembling..."

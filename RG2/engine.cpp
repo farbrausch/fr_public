@@ -325,7 +325,7 @@ frRG2Engine::frRG2Engine()
   }
 
   sU16* inds = mesh->indices;
-  for (i = 0; i < 48; i++)
+  for (sInt i = 0; i < 48; i++)
   {
     const sInt ni=(i + 1) % 48;
 
@@ -549,7 +549,7 @@ void frRG2Engine::paintModel(const frModel *model, const fr::matrix &cam, sF32 w
   }
 
   // then draw everything
-  for (i = 0; i < 8; i++)
+  for (sInt i = 0; i < 8; i++)
   {
     const frObject* obj;
 

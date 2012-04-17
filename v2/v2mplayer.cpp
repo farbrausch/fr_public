@@ -1,6 +1,16 @@
+/*************************************************************************************/
+/*************************************************************************************/
+/**                                                                                 **/
+/**  V2 module player (.v2m)                                                        **/
+/**  (c) Tammo 'kb' Hinrichs 2000-2008                                              **/
+/**  This file is under the Artistic License 2.0, see LICENSE.txt for details       **/
+/**                                                                                 **/
+/*************************************************************************************/
+/*************************************************************************************/
+
 
 #include "v2mplayer.h"
-#include "synth.h"
+#include "libv2.h"
 
 #define GETDELTA(p, w) ((p)[0]+((p)[w]<<8)+((p)[2*w]<<16))
 #define UPDATENT(n, v, p, w) if ((n)<(w)) { (v)=m_state.time+GETDELTA((p), (w)); if ((v)<m_state.nexttime) m_state.nexttime=(v); }
@@ -34,7 +44,7 @@ namespace
 
 
 
-sBool CV2MPlayer::InitBase(const void *a_v2m)
+sBool V2MPlayer::InitBase(const void *a_v2m)
 ///////////////////////////////////////
 {
 	const sU8 *d=(const sU8*)a_v2m;
@@ -82,8 +92,8 @@ sBool CV2MPlayer::InitBase(const void *a_v2m)
 	d+=4;
 	m_base.patchmap=d;
 	d+=size;
-#ifdef RONAN
-	sU32 spsize=*((sU32*)d);
+
+  sU32 spsize=*((sU32*)d);
 	d+=4;
 	if (!spsize || spsize>=8192)
 	{
@@ -101,13 +111,13 @@ sBool CV2MPlayer::InitBase(const void *a_v2m)
 			m_base.speechptrs[i]=m_base.speechdata+*(p32++);
 		}
 	}
-#endif
-	return sTRUE;
+
+  return sTRUE;
 }
 
 
 
-void CV2MPlayer::Reset()
+void V2MPlayer::Reset()
 ////////////////////////
 {
 	m_state.time=0;
@@ -154,15 +164,13 @@ void CV2MPlayer::Reset()
 	{
 		synthInit(m_synth,(void*)m_base.patchmap,m_samplerate);
 		synthSetGlobals(m_synth,(void*)m_base.globals);
-#ifdef RONAN
 		synthSetLyrics(m_synth,m_base.speechptrs);
-#endif
 	}
 }
 
 
 
-void CV2MPlayer::Tick()
+void V2MPlayer::Tick()
 ///////////////////////
 {
 	if (m_state.state != PlayerState::PLAYING)
@@ -266,7 +274,7 @@ void CV2MPlayer::Tick()
 
 
 
-sBool CV2MPlayer::Open(const void *a_v2mptr, sU32 a_samplerate)
+sBool V2MPlayer::Open(const void *a_v2mptr, sU32 a_samplerate)
 ///////////////////////////////////////////////////////////////
 {
 	if (m_base.valid) Close();
@@ -282,7 +290,7 @@ sBool CV2MPlayer::Open(const void *a_v2mptr, sU32 a_samplerate)
 
 
 
-void CV2MPlayer::Close()
+void V2MPlayer::Close()
 ////////////////////////
 {
 	if (!m_base.valid) return;
@@ -293,7 +301,7 @@ void CV2MPlayer::Close()
 
 
 
-void CV2MPlayer::Play(sU32 a_time)
+void V2MPlayer::Play(sU32 a_time)
 //////////////////////////////////
 {
 	if (!m_base.valid || !m_samplerate) return;
@@ -337,7 +345,7 @@ void CV2MPlayer::Play(sU32 a_time)
 
 
 
-void CV2MPlayer::Stop(sU32 a_fadetime)
+void V2MPlayer::Stop(sU32 a_fadetime)
 //////////////////////////////////////
 {
 	if (!m_base.valid) return;
@@ -365,7 +373,7 @@ void CV2MPlayer::Stop(sU32 a_fadetime)
 
 
 
-void CV2MPlayer::Render(sF32 *a_buffer, sU32 a_len, sBool a_add)
+void V2MPlayer::Render(sF32 *a_buffer, sU32 a_len, sBool a_add)
 /////////////////////////////////////////////////////////////////
 {
 	if (!a_buffer) return;
@@ -427,7 +435,7 @@ void CV2MPlayer::Render(sF32 *a_buffer, sU32 a_len, sBool a_add)
 }
 
 
-sBool CV2MPlayer::IsPlaying()
+sBool V2MPlayer::IsPlaying()
 {
 	return m_base.valid && m_state.state==PlayerState::PLAYING;
 }
@@ -435,7 +443,7 @@ sBool CV2MPlayer::IsPlaying()
 
 #ifdef V2MPLAYER_SYNC_FUNCTIONS
 
-sU32 CV2MPlayer::CalcPositions(sS32 **a_dest)
+sU32 V2MPlayer::CalcPositions(sS32 **a_dest)
 /////////////////////////////////////////////
 {
 	if (!a_dest) return 0;
