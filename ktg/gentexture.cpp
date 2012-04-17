@@ -787,9 +787,6 @@ void GenTexture::ColorRemap(const GenTexture &inTex,const GenTexture &mapR,const
 {
   sVERIFY(SizeMatchesWith(inTex));
 
-  const Pixel *in = inTex.Data;
-  Pixel *out = Data;
-
   for(sInt i=0;i<NPixels;i++)
   {
     const Pixel &in = inTex.Data[i];
