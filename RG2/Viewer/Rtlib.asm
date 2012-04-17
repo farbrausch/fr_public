@@ -203,7 +203,6 @@ _floor:
 
 ; ---- void * __cdecl memcpy(void *d, const void *s, sInt c)
 
-%ifdef DEBUG
 global      _memcpy
 _memcpy:
 	push	esi
@@ -238,7 +237,31 @@ _memcpy:
 	pop		esi
   mov     eax, edi
   ret
-%endif
+
+; ---- void * __cdecl memset(void *d, char c, int count)
+
+global _memset
+_memset:
+	push	edi
+	mov		edi, [esp+8]
+	mov		eax, [esp+12]
+	mov		ecx, [esp+16]
+	mov		ah, al
+	mov		edx, eax
+	shl		eax, 16
+	mov		ax, dx
+	push	ecx
+	shr		ecx, 2
+	jz		.tail
+	rep		stosd
+.tail:
+	pop		ecx
+	and		ecx, byte 3
+	jz		.done
+	rep		stosb
+.done:
+	pop		edi
+	ret
 
 ; ---- void memzero(void *d, sInt c)
 

@@ -488,7 +488,7 @@ struct frGraphExporter::privateData
       frOpGraph::frOperator& op = g_graph->m_ops[opExportSet[i]];
       
       const sS32 startWritePtr = tmpStreams[op.def->ID].tell();
-      op.plg->export(tmpStreams[op.def->ID], exp);
+      op.plg->exportTo(tmpStreams[op.def->ID], exp);
 
       opTypeSizes[op.def->ID] += tmpStreams[op.def->ID].tell() - startWritePtr;
     }
@@ -840,9 +840,9 @@ struct frGraphExporter::privateData
       spawnl(_P_NOWAIT, fname, fname, 0);
 
     // dump data output for further analysis :)
-    fr::streamF export("export.dat", fr::streamF::wr | fr::streamF::cr);
-    export.copy(out[0]);
-    export.close();
+    fr::streamF exported("export.dat", fr::streamF::wr | fr::streamF::cr);
+    exported.copy(out[0]);
+    exported.close();
   }
 
   void printStats() // prints the oh-so-famous export statistics

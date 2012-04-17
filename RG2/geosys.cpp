@@ -218,7 +218,7 @@ public:
 			| (mtrl->filterMode[stage] << 4) | (mtrl->coordMode[stage] << 6));
 	}
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
 		exportStage(0, f);
     f.putsU8((mtrl->zMode << 0) | (mtrl->alphaMode << 2) | (mtrl->sortMode << 4)
@@ -385,7 +385,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
   }
 };
@@ -440,7 +440,7 @@ public:
       strm << params[0].linkv;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
   }
 };
@@ -587,7 +587,7 @@ class frGSLighting: public frGeometryPlugin
 		inds = m_dirMesh->indices;
 		inds[0] = 0;
 		inds[1] = 1;
-		for (i = 2; i < 6; i++)
+		for (sInt i = 2; i < 6; i++)
 		{
 			inds[i * 2 - 2] = 0;
 			inds[i * 2 - 1] = i;
@@ -600,17 +600,17 @@ class frGSLighting: public frGeometryPlugin
 
     verts = m_spotMesh->vertices;
     verts[0].pos.set(0.0f, 0.0f, 0.0f);
-    for (i = 0; i < 48; i++)
+    for (sInt i = 0; i < 48; i++)
       verts[i+1].pos.set(cos(i * 2 * PI / 48.0f), sin(i * 2 * PI / 48.0f), 2.0f);
 
 		inds = m_spotMesh->indices;
-		for (i = 0; i < 48; i++)
+		for (sInt i = 0; i < 48; i++)
 		{
 			inds[i * 2 + 0] = i + 1;
 			inds[i * 2 + 1] = ((i + 1) % 48) + 1;
 		}
 
-		for (i = 0; i < 4; i++)
+		for (sInt i = 0; i < 4; i++)
 		{
 			inds[i * 2 + 48 * 2 + 0] = 0;
 			inds[i * 2 + 48 * 2 + 1] = 1 + i * 12;
@@ -686,7 +686,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel);
 
@@ -798,7 +798,7 @@ public:
       strm << params[0].intv;
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].intv);
   }

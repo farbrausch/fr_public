@@ -1,0 +1,31 @@
+This project requires WTL. Surprisingly, even though it was written against
+a 2002-era WTL, it seems to run with WTL 8.0 without modifications. You can
+get it here:
+
+   http://wtl.sourceforge.net/ 
+
+The current project file assumes that WTL is installed in a directory named
+"WTL" one directory level below the "fr_public" root. In my case, it looks
+like this:
+
+  Code/                 the root directory for all coding-related stuff
+    WTL/                WTL 8.0 distribution
+    fr_public/          The fr_public repository
+      RG2/              RG2 lives here.
+
+If you want a different layout, feel free to install WTL elsewhere; all
+you have to do is change the "Additional Include Directories" in the
+project.
+
+You also need D3D8 header files and Libs, which I just include as part of
+the source tree for convenience since they're kinda hard to get - you need
+to download the WDK (Windows Driver Kit) to get the API headers, since D3D8
+is considered deprecated these days. If anyone at MS takes offence to me
+distributing these files here, I will gladly remove them.
+
+This code base was written for and with VS 2002; some things had to be fixed
+to make it build with VS 2010. The two main sticking points were that some of
+the code relied on old-style for-scoping and that the operator interface had
+a virtual function called "export" (now properly recognized as a keyword by
+VS2010) for, well, exporting. The former have been manually fixed, the latter
+were just renamed to exportTo.

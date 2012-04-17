@@ -1998,7 +1998,9 @@ sInt CParamWindow::GetFocusGroupLength(sInt start) const
 
   start=GetFocusGroupStart(start);
 
-  for (sInt len=1; (start+len<m_focusList.size()) && !m_focusList[start+len].group; len++);
+  sInt len = 1;
+  while ((start+len<m_focusList.size()) && !m_focusList[start+len].group)
+    len++;
 
   return len;
 }

@@ -10,7 +10,6 @@
 #include <windows.h>
 #include <d3d9.h>
 #undef new
-#include <d3dx9.h>                // problems with overloaded new operator
 #if _DEBUG                          // fix memory management
 #if !sINTRO
 #define new new(__FILE__,__LINE__)

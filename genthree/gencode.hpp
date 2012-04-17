@@ -106,7 +106,7 @@ public:
   void Begin();                   // initialize array
   void AddResult(ToolObject *);   // add ToolObject as result. Cache will be set for this one
   void AddTimeline(class TimeDoc *);    // add timeline_OnInit() and timeline_OnFrmae();
-  sBool End(ScriptCompiler *,sBool addsource=0,sBool export=0);    // resolve graph and generate code
+  sBool End(ScriptCompiler *,sBool addsource=0,sBool doexport=0);    // resolve graph and generate code
   sBool Execute(ScriptRuntime *); // (optional) execute code and set Cache 
   void Cleanup();                 // cleans resources
 };

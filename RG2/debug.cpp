@@ -1,11 +1,11 @@
 // This code is in the public domain. See LICENSE for details.
 
+#include "types.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
 #include "debug.h"
 #include "dbghelp.h"
 
@@ -76,9 +76,9 @@ namespace fr
 		static hotSpot *hotSpots[64];
 #endif
 
-		static sChar *stripFilename(const sChar *name)
+		static const sChar *stripFilename(const sChar *name)
 		{
-		  sChar *ptr;
+		  const sChar *ptr;
 
 		  ptr=strrchr(name, '\\');
 		  if (ptr)

@@ -217,10 +217,8 @@ typedef signed char               sS8;      // for packed arrays
 typedef short                     sS16;     // for packed arrays
 typedef int                       sS32;     // for packed arrays
 typedef signed __int64            sS64;     // use as needed
-#if !sMOBILE
 typedef float                     sF32;     // basic floatingpoint
 typedef double                    sF64;     // use as needed
-#endif
 typedef int                       sInt;     // use this most!
 typedef int __w64                 sDInt;    // type for pointer diff
 #if sUNICODE
@@ -321,7 +319,7 @@ __forceinline sInt sCmpMem(const void *dd,const void *ss,sInt c) { return (sInt)
 #if !sUNICODE
 __forceinline sInt sGetStringLen(const sChar *s)                { return (sInt)strlen(s); }
 #else
-__forceinline sInt sGetStringLen(const sChar *s)                { for(sInt i=0;s[i];i++); return i; }
+__forceinline sInt sGetStringLen(const sChar *s)                { sInt i;for(i=0;s[i];i++); return i; }
 #endif
 
 /****************************************************************************/

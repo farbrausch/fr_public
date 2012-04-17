@@ -75,9 +75,9 @@ namespace fr
 		static hotSpot *hotSpots[64];
 #endif
 
-		static sChar *stripFilename(const sChar *name)
+		static const sChar *stripFilename(const sChar *name)
 		{
-		  sChar *ptr;
+		  const sChar *ptr;
 
 		  ptr=strrchr(name, '\\');
 		  if (ptr)
@@ -87,7 +87,7 @@ namespace fr
 		  if (ptr)
 		    return ptr+1;
 
-		  return (sChar *) name;
+		  return name;
 		}
 
 		static const sChar *formatOwner(const sChar *file, const sU32 line)

@@ -122,7 +122,7 @@ void enginePaint(frGeometryOperator* plg, const fr::matrix& cam, sF32 w, sF32 h)
             vtx++;
           }
 
-          j = i * 4;
+          sInt j = i * 4;
           *inds++ = j + 0;
           *inds++ = j + 2;
           *inds++ = j + 1;

@@ -1,0 +1,440 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core Source Files">
+      <UniqueIdentifier>{e9399955-e55d-41f1-96a5-9485cbf56417}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Core Header Files">
+      <UniqueIdentifier>{d805b7dc-1c38-4eac-b189-7866ec075e0b}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="GUI Source Files">
+      <UniqueIdentifier>{5cefca38-e1cb-4317-8595-3eecdb88c71f}</UniqueIdentifier>
+      <Extensions>.cpp</Extensions>
+    </Filter>
+    <Filter Include="GUI Header Files">
+      <UniqueIdentifier>{6eae55b7-521c-477b-9e77-0fffbb52952b}</UniqueIdentifier>
+      <Extensions>*.h</Extensions>
+    </Filter>
+    <Filter Include="Library Source Files">
+      <UniqueIdentifier>{c1f89950-1ba4-4e79-8ae2-b428f68809a4}</UniqueIdentifier>
+      <Extensions>.cpp</Extensions>
+    </Filter>
+    <Filter Include="Library Header Files">
+      <UniqueIdentifier>{f21f64e7-d8cd-4a28-a977-3e349ec4b345}</UniqueIdentifier>
+      <Extensions>.h</Extensions>
+    </Filter>
+    <Filter Include="Operator Source Files">
+      <UniqueIdentifier>{7f737d1c-c40a-4893-9af9-a13fbd358f15}</UniqueIdentifier>
+      <Extensions>.cpp</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{06fa1c95-8216-4d45-ad4d-38a2954cea53}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="ViruzII source files">
+      <UniqueIdentifier>{24d4723d-0e08-43ba-8cdf-7462ca3ae418}</UniqueIdentifier>
+      <Extensions>*.cpp;*.h;*.asm</Extensions>
+    </Filter>
+    <Filter Include="ViruzII header files">
+      <UniqueIdentifier>{64f37bcc-2090-4fd9-a3b5-d43a5fd850f6}</UniqueIdentifier>
+      <Extensions>*.h;*.inc</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="animbase.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cmpbase.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exporter.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exportTool.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="frOpGraph.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geobase.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="performanceAnalyzer.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="plugbase.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texbase.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="undoBuffer.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="viruzII.cpp">
+      <Filter>Core Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="3dPreviewWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimMixer.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="frControl.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PageWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ParamWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PreviewWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ruleMouseInput.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SplineEdit.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TG2.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TG2Config.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TimelineWindow.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowMapper.cpp">
+      <Filter>GUI Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="curve.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directx.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="expression.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="guitool.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math3d_2.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memmgr.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sync.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tool.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tstream.cpp">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compose.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geocombine.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geofilter.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geogenerate.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geosys.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texcombine.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texfilter.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texgenerate.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texsys.cpp">
+      <Filter>Operator Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViruzII\ronan.cpp">
+      <Filter>ViruzII source files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViruzII\sounddef.cpp">
+      <Filter>ViruzII source files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViruzII\soundsys.cpp">
+      <Filter>ViruzII source files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViruzII\v2mconv.cpp">
+      <Filter>ViruzII source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="animbase.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmpbase.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exporter.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exportTool.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frOpGraph.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="geobase.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="performanceAnalyzer.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="plugbase.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="texbase.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="undoBuffer.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="viruzII.h">
+      <Filter>Core Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="3dPreviewWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimMixer.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frControl.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frlayout.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mainfrm.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PageWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ParamWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="preferences.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PreviewWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ruleMouseInput.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SplineEdit.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TG2Config.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TG2view.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TimelineWindow.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoDlg.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="viewcomm.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowMapper.h">
+      <Filter>GUI Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bezier.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="curve.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="directx.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="expression.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fontpage.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fvsconfig.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="guitool.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="math3d_2.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="memmgr.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pool.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stream.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sync.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tool.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tstream.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\dsio.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\phonemtab.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\ronan.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\sounddef.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\soundsys.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\synth.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViruzII\v2mconv.h">
+      <Filter>ViruzII header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\animmark.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\borders.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\buttons.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\combobox.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\fvs32.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\loadstor.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\menubg.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\pageview.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\panebg.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\pglvsymb.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\TG2.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\titlebar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\titlenew.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\tlbuttons.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ViruzII\tpinv2.v2m">
+      <Filter>ViruzII source files</Filter>
+    </None>
+    <None Include="ViruzII\d3d8types.inc">
+      <Filter>ViruzII header files</Filter>
+    </None>
+    <None Include="ViruzII\dsound.inc">
+      <Filter>ViruzII header files</Filter>
+    </None>
+    <None Include="ViruzII\win32.inc">
+      <Filter>ViruzII header files</Filter>
+    </None>
+    <None Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TG2.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="ViruzII\dsio.asm">
+      <Filter>ViruzII source files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ViruzII\loader.asm">
+      <Filter>ViruzII source files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ViruzII\synth.asm">
+      <Filter>ViruzII source files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

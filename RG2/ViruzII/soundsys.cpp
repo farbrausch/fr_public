@@ -573,7 +573,8 @@ sU32 __stdcall ssCalcPositions(sS32 **dest, sU8 *otherv2m)
 	gp=mybase.gptr;
 	lastevtime=0;
 	pb32=32;
-	for (sU32 pn=0; pn<posnum; pn++)
+  sU32 pn;
+	for (pn=0; pn<posnum; pn++)
 	{
 		sU32 curtime=pn*mybase.timediv/8;
 		if (gnr<mybase.gdnum)

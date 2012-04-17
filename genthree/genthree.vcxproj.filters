@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="System">
+      <UniqueIdentifier>{eab4b9a8-5ee7-4f9b-b270-6361888a79cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Player">
+      <UniqueIdentifier>{f8c0285b-e79c-442e-b64a-6516a8f67b4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Desktop">
+      <UniqueIdentifier>{f3073a0b-d2e8-4bfb-aed4-7d80429bdd5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChaosScriptingLanguage">
+      <UniqueIdentifier>{b1e91de5-fe9c-4f7e-afa9-4904d10e3923}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Apps">
+      <UniqueIdentifier>{b284e296-b655-494a-aefc-6aaa687ee166}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tool">
+      <UniqueIdentifier>{84ec9710-1f4a-47f2-a50f-10097a8b6b6a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="_config.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_mp3.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_ogg.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_start.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startdx.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startgdi.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startgl.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startintro.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_startprv.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_types.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_viruz2.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_xsi.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="codecoverage.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="genbitmap.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="gencode.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="genfx.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="genmaterial.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="genmesh.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="genmisc.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="genplayer.hpp">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="_gui.hpp">
+      <Filter>Desktop</Filter>
+    </ClInclude>
+    <ClInclude Include="_util.hpp">
+      <Filter>Desktop</Filter>
+    </ClInclude>
+    <ClInclude Include="main.hpp">
+      <Filter>Desktop</Filter>
+    </ClInclude>
+    <ClInclude Include="mainplayer.hpp">
+      <Filter>Desktop</Filter>
+    </ClInclude>
+    <ClInclude Include="cslce.hpp">
+      <Filter>ChaosScriptingLanguage</Filter>
+    </ClInclude>
+    <ClInclude Include="cslrt.hpp">
+      <Filter>ChaosScriptingLanguage</Filter>
+    </ClInclude>
+    <ClInclude Include="appbabewatch.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="appbrowser.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="appcube.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="appfractal.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="appprefs.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="apptext.hpp">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="AppTool.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="winpage.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="winpara.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="winproject.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="wintime.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="winview.hpp">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="_mp3.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_ogg.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_start.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_startdx.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_startgdi.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_startgl.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_startintro.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_types.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_viruz2.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_xsi.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="ronan.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="genbitmap.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="gencode.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="genfx.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="genmaterial.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="genmesh.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="genmisc.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="genplayer.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="_diskitem.cpp">
+      <Filter>Desktop</Filter>
+    </ClCompile>
+    <ClCompile Include="_gui.cpp">
+      <Filter>Desktop</Filter>
+    </ClCompile>
+    <ClCompile Include="_util.cpp">
+      <Filter>Desktop</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Desktop</Filter>
+    </ClCompile>
+    <ClCompile Include="mainplayer.cpp">
+      <Filter>Desktop</Filter>
+    </ClCompile>
+    <ClCompile Include="cslce.cpp">
+      <Filter>ChaosScriptingLanguage</Filter>
+    </ClCompile>
+    <ClCompile Include="cslrt.cpp">
+      <Filter>ChaosScriptingLanguage</Filter>
+    </ClCompile>
+    <ClCompile Include="appbabewatch.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="appbrowser.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="appcube.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="appfractal.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="appprefs.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="apptext.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="AppTool.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="winpage.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="winpara.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="winproject.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="wintime.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="winview.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="system.txt">
+      <Filter>Desktop</Filter>
+    </None>
+    <None Include="concept.txt" />
+    <None Include="diary.txt" />
+    <None Include="fr_64k.ico" />
+    <None Include="oldcon.txt" />
+    <None Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="genthree.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="_diskitem.hpp">
+      <Filter>Desktop</Filter>
+    </CustomBuildStep>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="_viruz2a.asm">
+      <Filter>System</Filter>
+    </CustomBuild>
+    <CustomBuild Include="assembler.asm">
+      <Filter>Desktop</Filter>
+    </CustomBuild>
+    <CustomBuild Include="introasm.asm">
+      <Filter>Desktop</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

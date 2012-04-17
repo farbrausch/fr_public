@@ -1402,7 +1402,7 @@ void sToolApp::SetStat(sInt num,sChar *text)
 
 /****************************************************************************/
 
-sBool sToolApp::DemoPrev(sBool export)
+sBool sToolApp::DemoPrev(sBool doexport)
 {
   sInt i,j;
   ToolObject *to;
@@ -1470,7 +1470,7 @@ sBool sToolApp::DemoPrev(sBool export)
 
 // generate code
 
-  if(!CodeGen.End(Player->SC,1,export))
+  if(!CodeGen.End(Player->SC,1,doexport))
   {
     OnCommand(CMD_VIEW_DEMOERROR);
     CodeGen.Cleanup();
@@ -1479,7 +1479,7 @@ sBool sToolApp::DemoPrev(sBool export)
 
 // execute code
 
-  if(!export)
+  if(!doexport)
   {
     if(CodeGen.Execute(Player->SR))
     {
