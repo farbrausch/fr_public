@@ -586,7 +586,7 @@ void GenTexture::Cells(const GenTexture &grad,const CellCenter *centers,sInt nCe
   sVERIFY(((mode & 1) == 0) ? nCenters >= 1 : nCenters >= 2);
 
   Pixel *out = Data;
-  CellPoint *points = new CellPoint[nCenters];
+  CellPoint *points = NULL;
 
   points = new CellPoint[nCenters];
 
