@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="materials">
+      <UniqueIdentifier>{7b12617d-2498-48a5-8349-8760caaff796}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="music">
+      <UniqueIdentifier>{453c2b88-324e-4d4c-ada1-efcf7df44e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{a2018bfb-36c1-4419-83c0-10b0928761ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generators">
+      <UniqueIdentifier>{69e78978-866f-4aff-bb59-cfe850780e7e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\materials\material11.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\materials\material20.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\materials\rtmanager.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercodegen.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_viruz2.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_lekktor.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_start.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_types.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genbitmap.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genblobspline.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffect.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmaterial.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmesh.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genoverlay.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genscene.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine.cpp" />
+    <ClCompile Include="..\kdoc.cpp" />
+    <ClCompile Include="kkrieger_oplist.cpp" />
+    <ClCompile Include="..\kkriegergame.cpp" />
+    <ClCompile Include="..\mainplayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\materials\material11.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\materials\material20.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\materials\rtmanager.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercodegen.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_viruz2.hpp">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_lekktor.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_start.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_startdx.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_types.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genbitmap.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genblobspline.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffect.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmaterial.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmesh.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genoverlay.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genscene.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine.hpp" />
+    <ClInclude Include="..\kdoc.hpp" />
+    <ClInclude Include="kkrieger_config.hpp" />
+    <ClInclude Include="..\kkriegergame.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\_viruz2a.asm">
+      <Filter>music</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

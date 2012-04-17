@@ -1,0 +1,13 @@
+Debug/
+Release/
+Player\ Debug/
+Player\ Release/
+werkkzeug3/backup/
+ipch/
+*.suo
+*.sln.old
+*.sdf
+*.opensdf
+*vs.hpp
+*ps.hpp
+cubehorde_shader.?pp

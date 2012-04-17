@@ -103,7 +103,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel);
   }
@@ -171,7 +171,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU8(params[0].selectv.sel);
   }
@@ -320,7 +320,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     for (sInt i=0; i<255; i++)
     {
@@ -528,7 +528,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsU16(params[0].floatv * 1024);
     f.putsU8(params[1].selectv.sel);
@@ -686,7 +686,7 @@ public:
     }
   }
   
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     f.putsS8(params[0].tfloatv.a);
     f.putsS8(params[0].tfloatv.b);

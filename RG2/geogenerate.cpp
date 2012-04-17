@@ -667,7 +667,7 @@ public:
     }
   }
 
-  void export(fr::stream &f, const frGraphExporter &exp)
+  void exportTo(fr::stream &f, const frGraphExporter &exp)
   {
     sBool tessPacked = sFALSE;
     
@@ -903,7 +903,7 @@ public:
 		}
 	}
 
-	void export(fr::stream& f, const frGraphExporter& exp)
+	void exportTo(fr::stream& f, const frGraphExporter& exp)
 	{
 		putSmallInt(f, params[3].floatv);
 		putPackedFloat(f, params[0].floatv);

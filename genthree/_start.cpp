@@ -11,6 +11,8 @@
 #define WINVER 0x500
 #define DIRECTINPUT_VERSION 0x0800
 
+#define INITGUID // to get rid of dxguid.lib
+
 #include <windows.h>
 #include <d3d9.h>
 #include <dinput.h>
@@ -28,8 +30,7 @@
 #undef GetCurrentDirectory
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"opengl32.lib")
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"dinput.lib")
+#pragma comment(lib,"dinput8.lib")
 #if sUSE_SHADERS
 #pragma comment(lib,"d3dx9.lib")
 #endif
@@ -1018,7 +1019,7 @@ sBool sSystemPrivate::InitDI()
   DIPROPDWORD  prop; 
   sU32 Scans[256];
   sInt i;
-  static dkeys[][2] = 
+  static sInt dkeys[][2] = 
   {
     { DIK_BACK    ,sKEY_BACKSPACE   },
     { DIK_TAB     ,sKEY_TAB         },

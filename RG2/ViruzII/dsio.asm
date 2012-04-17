@@ -9,8 +9,8 @@
 
 SECTION .bss
 
-%include    "ViruzII/win32.inc"
-%include    "ViruzII/dsound.inc"
+%include    "win32.inc"
+%include    "dsound.inc"
 
 %define BUFFERLEN 0C000h
 

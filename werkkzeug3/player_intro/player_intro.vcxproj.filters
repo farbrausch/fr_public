@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="materials">
+      <UniqueIdentifier>{bfb6014d-713c-4bf6-8d88-38e648a16a75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="music">
+      <UniqueIdentifier>{baf9c378-4199-43b9-9064-2190410173ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{0dcc7f77-3c67-410e-9f9d-5ac242bb8d1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generators">
+      <UniqueIdentifier>{2913aa41-f78d-4633-9563-48d4cbfb6141}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\materials\material11.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\materials\material20.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\materials\materialdirect.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\materials\rtmanager.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shadercodegen.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_viruz2.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_lekktor.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_start.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_types.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genbitmap.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genblobspline.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffect.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectdebris.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectex.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geneffectipp.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gengeloet.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmaterial.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genmesh.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genminmesh.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genoverlay.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genscene.cpp">
+      <Filter>generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine.cpp" />
+    <ClCompile Include="intro_oplist.cpp" />
+    <ClCompile Include="..\kdoc.cpp" />
+    <ClCompile Include="..\mainplayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\materials\material11.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\materials\material20.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\materials\materialdirect.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\materials\rtmanager.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shadercodegen.hpp">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_viruz2.hpp">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_lekktor.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_start.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_startdx.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_types.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genbitmap.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genblobspline.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffect.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectdebris.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectex.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geneffectipp.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gengeloet.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmaterial.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genmesh.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genminmesh.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genoverlay.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\genscene.hpp">
+      <Filter>generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine.hpp" />
+    <ClInclude Include="intro_config.hpp" />
+    <ClInclude Include="..\kdoc.hpp" />
+    <ClInclude Include="..\player_demo\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\player_demo\demo_resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\_viruz2a.asm">
+      <Filter>music</Filter>
+    </CustomBuild>
+    <CustomBuild Include="introdata.asm" />
+    <CustomBuild Include="minirtl.asm" />
+  </ItemGroup>
+</Project>

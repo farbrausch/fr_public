@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="System">
+      <UniqueIdentifier>{a13b3eba-6b94-46c6-bc22-f4b4ac20be7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Windows">
+      <UniqueIdentifier>{b8ada2bc-4ab4-4410-9b8d-e7d2ab22d6e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generator">
+      <UniqueIdentifier>{78360dcc-c1c0-4ffa-a558-8ec59f009051}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\_intmath.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="_types2.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="main_mobile.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="win_page.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="win_pagelist.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="win_para.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="win_view.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="win_viewmesh.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="doc.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+    <ClCompile Include="docpara.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\player_mobile\engine_soft.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+    <ClCompile Include="gen_bitmap_class.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+    <ClCompile Include="gen_mobmesh.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+    <ClCompile Include="importdoc.cpp">
+      <Filter>Generator</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\_intmath.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="_types2.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="GuiOpPage.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="GuiSingleList.hpp">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="config.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="main_mobile.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="win_page.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="win_pagelist.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="win_para.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="win_view.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="win_viewmesh.hpp">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="doc.hpp">
+      <Filter>Generator</Filter>
+    </ClInclude>
+    <ClInclude Include="doc2.hpp">
+      <Filter>Generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\player_mobile\engine_soft.hpp">
+      <Filter>Generator</Filter>
+    </ClInclude>
+    <ClInclude Include="gen_bitmap_class.hpp">
+      <Filter>Generator</Filter>
+    </ClInclude>
+    <ClInclude Include="gen_mobmesh.hpp">
+      <Filter>Generator</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="history.txt" />
+    <None Include="todo.txt" />
+  </ItemGroup>
+</Project>

@@ -233,7 +233,8 @@ namespace fr
       
       while ((pos = findAllocationSpace(size)) == -1)
       {
-        for (handleList::reverse_iterator it = m_accesses.rbegin(); it != m_accesses.rend(); it++)
+        handleList::reverse_iterator it;
+        for (it = m_accesses.rbegin(); it != m_accesses.rend(); it++)
         {
           bufferInfo& inf = m_buffers[*it];
           

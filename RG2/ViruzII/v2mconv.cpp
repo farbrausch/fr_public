@@ -124,7 +124,8 @@ int CheckV2MVersion(const unsigned char *inptr, const int inlen)
 		if (base.globsize==v2gsizes[i])
 		{
 			// ... and if the size of all patches makes sense
-			for (int p=0; p<base.maxp-1; p++)
+      int p;
+			for (p=0; p<base.maxp-1; p++)
 			{
 				sInt d=(poffsets[p+1]-poffsets[p])-(v2vsizes[i]-3*255);
 				if (d%3) break;

@@ -31,11 +31,13 @@ CTG2Config::CTG2Config()
   m_upKey='R';
   m_downKey='F';
 
-  key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ);
-  key.QueryStringValue(_T("ContentPath"), m_contentPath, &cpLen);
-  key.QueryStringValue(_T("BackupPath"), m_backupPath, &bpLen);
-  key.QueryDWORDValue(_T("SlopeKeyDelay"), m_slopeKeyDelay);
-  key.Close();
+  if (key.Open(HKEY_CURRENT_USER, lpcstrTG2RegKey, KEY_READ) == ERROR_SUCCESS)
+  {
+    key.QueryStringValue(_T("ContentPath"), m_contentPath, &cpLen);
+    key.QueryStringValue(_T("BackupPath"), m_backupPath, &bpLen);
+    key.QueryDWORDValue(_T("SlopeKeyDelay"), m_slopeKeyDelay);
+    key.Close();
+  }
 }
 
 CTG2Config::~CTG2Config()
