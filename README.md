@@ -28,7 +28,7 @@ So what do we have in here? Here's the basic directory structure:
     genthree/             - GenThree. Used for Candytron and nothing else.
       data/               - Candytron data files.
     kkrunchy/             - kkrunchy 0.23alpha code (latest we could find)
-    kkrunchy_k7/          - kkrunchy_k7 0.23a3 (didn't find a4; need to re-check)
+    kkrunchy_k7/          - kkrunchy_k7 0.23a4/asm07 (most recent version)
     ktg/                  - OpenKTG texture generator. See below.
     lekktor/              - May summon Eldritch Abominations. Handle with care.
     RG2/                  - RauschGenerator 2. Used for several 64k intros.
@@ -64,7 +64,7 @@ So, here's the sightseeing tips:
   game from there than you do from the "regular" werkkzeug3 tree - though both
   are unlikely to work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
-  be possible to do dig up something from 2004 :)
+  be possible to dig up something from 2004 :)
 
 Contributors (in alphabetical order):
 

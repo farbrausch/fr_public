@@ -8,21 +8,20 @@ bits          32
 
 section       .bss
 
-%define MEMSHIFT  18
+%define MEMSHIFT  23
 %define MEM       (1<<MEMSHIFT)
-%define NMODEL    9
-%define NINPUT    40
-%define NWEIGHT   (256+256+16)
+%define NMODEL    11
+%define NINPUT    48
+%define NWEIGHT   (256+256+16+128)
 %define MAXLEN    2047
 %define USEAPM    1
-%define APMSIZE   1024
+%define APMSIZE   8192
 
 struc ContextModel
   .cpr        resd 1
   .cps        resd 1
   .ctx        resd 1
   .st         resd 1
-  .t          resb MEM*2
   .size:
 endstruc
 
@@ -42,7 +41,8 @@ struc Work
   .APMi       resd 1
 %endif  
   .cm         resb ContextModel.size * NMODEL
-  .match      resd MEM
+  .match      resd MEM/16
+  .modelMem   resb MEM
   .tx         resw NINPUT
   .wx         resw NINPUT*NWEIGHT
   .tx2        resw 4
@@ -103,9 +103,9 @@ squash:
 
 contextHash:
   mov       edx, eax
-  shr       edx, MEMSHIFT-1
-  and       eax, ((MEM / 2) - 1) & ~1
-  lea       eax, [esi+ContextModel.t+eax*4]
+  shr       edx, 24
+  and       eax, ((MEM / 4) - 1) & ~1
+  lea       eax, [ebp+Work.modelMem+eax*4]
   
   cmp       dl, [eax]
   jne       .notequal1
@@ -135,7 +135,7 @@ contextHash:
 ;   in: eax=err
 ;       esi=t
 ;       edi=w
-;       ecx=n/8
+;       ecx=n/4
 ;   out: esi,edi advanced.
 train:
   movd      mm0, eax
@@ -144,8 +144,6 @@ train:
   pcmpeqb   mm1, mm1
   psrlw     mm1, 15
 
-%if 1
-  add       ecx, ecx
 .lp:
   movq      mm3, [esi]
   movq      mm2, [edi]
@@ -158,28 +156,6 @@ train:
   add       esi, byte 8
   add       edi, byte 8
   loop      .lp  
-%else  
-.lp:
-  movq      mm3, [esi]
-  movq      mm5, [esi+8]
-  movq      mm2, [edi]
-  movq      mm4, [edi+8]
-  paddsw    mm3, mm3
-  paddsw    mm5, mm5
-  pmulhw    mm3, mm0
-  pmulhw    mm5, mm0
-  paddsw    mm3, mm1
-  paddsw    mm5, mm1
-  psraw     mm3, 1
-  psraw     mm5, 1
-  paddsw    mm2, mm3
-  paddsw    mm4, mm5
-  movq      [edi], mm2    
-  movq      [edi+8], mm4
-  add       esi, byte 16
-  add       edi, byte 16
-  loop      .lp
-%endif  
   
   ret
 
@@ -343,7 +319,7 @@ global @modelASM@4
   xor       eax, eax
   call      contextHash
   mov       [esi+ContextModel.cps], eax
-  add       esi, ContextModel.size
+  add       esi, byte ContextModel.size
   loop      .ctxModelLoop
   
 %if USEAPM  
@@ -404,7 +380,7 @@ global @modelASM@4
   imul      edi, byte (NINPUT*2)
   lea       edi, [ebp+Work.wx+edi]
   mov       esi, WorkData+Work.tx
-  push      byte (NINPUT/8)
+  push      byte (NINPUT/4)
   pop       ecx
   call      train
   
@@ -459,25 +435,32 @@ global @modelASM@4
   ; fnv hash function
   ; assumes edi=_bufPtr
   mov       eax, 0x811c9dc5
+  inc       ecx
+  imul      eax, ecx
+  dec       ecx
   mov       bl, [masks+ecx-1]
+  mov       dh, [bitm+ecx-1]
   
 .hashnext:
   dec       edi
   shr       bl, 1
   jnc       .hashnotset
   
-  xor       al, [edi]
+  mov       dl, [edi]
+  and       dl, dh
+  xor       al, dl
+  
   imul      eax, 0x01000193
   jmp       short .hashnext
 
 .hashnotset:
   jnz       .hashnext
-  add       esi, ContextModel.size
+  add       esi, byte ContextModel.size
   loop      .updcontext
   
   ; match processing
   ; assumes esi points to "match"
-  and       eax, MEM-1
+  and       eax, (MEM/16)-1
   mov       edi, [_bufPtr]
   xchg      edi, [esi+eax*4] ; now edi=Match[h]
   mov       esi, [_bufPtr]
@@ -569,7 +552,7 @@ global @modelASM@4
   cmp       eax, 400
   jbe       .contextmodels
   
-  mov       dword [ebp+Work.ctx], 526
+  mov       dword [ebp+Work.ctx], 512+14
   jmp       .mix
 
   ; context models
@@ -655,7 +638,7 @@ global @modelASM@4
   cmp       ebx, byte 1
   sbb       dword [ebp+Work.ctx+8], byte -1
 
-  add       esi, ContextModel.size
+  add       esi, byte ContextModel.size
   dec       ecx
   jnz       near .contextloop
   
@@ -666,6 +649,17 @@ global @modelASM@4
   mov       al, [ebp+Work.c0]
   inc       ah
   mov       [ebp+Work.ctx+4], eax
+  
+  xor       ebx, ebx
+  mov       eax, [ebp+Work.matchl]
+  dec       eax
+  cmovs     eax, ebx
+  not       bl
+  cmp       eax, ebx
+  cmova     eax, ebx
+  mov       eax, [ebp+Work.runTable+eax*4]
+  shr       eax, 3
+  add       [ebp+Work.ctx+8], eax
   
 .mix:
   ; perform mixing
@@ -679,7 +673,6 @@ global @modelASM@4
   mov       esi, WorkData+Work.tx
     
   pxor      mm0, mm0
-%if 1
   push      byte (NINPUT/4)
   pop       ecx
 
@@ -691,23 +684,6 @@ global @modelASM@4
   add       esi, byte 8
   add       edi, byte 8
   loop      .mixdploop
-%else  
-  push      byte (NINPUT/8)
-  pop       ecx
-  
-.mixdploop:
-  movq      mm1, [esi]
-  movq      mm2, [esi+8]
-  pmaddwd   mm1, [edi]
-  pmaddwd   mm2, [edi+8]
-  psrad     mm1, 8
-  psrad     mm2, 8
-  paddd     mm0, mm1
-  paddd     mm0, mm2
-  add       esi, byte 16
-  add       edi, byte 16
-  loop      .mixdploop
-%endif  
   
   movq      mm1, mm0
   psrlq     mm1, 32
@@ -819,4 +795,6 @@ extern _startBufPtr
 squashTab     dw    1,   2,   4,   6,  10,  17,  27,  45,  74, 120, 194
               dw  311, 488, 747,1102,1546,2048,2550,2994,3349,3608,3785
               dw 3902,3976,4022,4051,4069,4079,4086,4090,4092,4094,4095
-masks         db 0x1f, 0x07, 0x0a, 0x09, 0x05, 0x03, 0x04, 0x02, 0x01
+masks         db 0x1f, 0x27, 0x88, 0x07, 0x0a, 0x09, 0x05, 0x03, 0x04, 0x02, 0x01
+bitm          db 0xff, 0xff, 0xff, 0xe0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+

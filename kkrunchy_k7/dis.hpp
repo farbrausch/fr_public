@@ -8,7 +8,7 @@
 
 /****************************************************************************/
 
-#define NBUFFERS  22
+#define NBUFFERS  20
 
 struct DataBuffer
 {
