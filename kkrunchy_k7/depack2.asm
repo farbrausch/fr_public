@@ -4,7 +4,7 @@
 
 bits 32
 
-%define NBUFFERS 22
+%define NBUFFERS 20
 %define BUFFER dataArea.buffer
 
 struc dataArea
@@ -243,9 +243,9 @@ DisUnfilter:
         cmp           al, 0x04
         jne           .nosib
         
-        xchg          esi, [ebp+BUFFER+21*4]
+        xchg          esi, [ebp+BUFFER+19*4]
         movsb
-        xchg          esi, [ebp+BUFFER+21*4]
+        xchg          esi, [ebp+BUFFER+19*4]
         
 .nosib  mov           dl, ch
         and           dl, 0xc0
@@ -276,13 +276,8 @@ DisUnfilter:
         inc           ebx
 .nomr5  xchg          esi, [ebp+BUFFER+13*4+ebx*4]
         lodsd
-        dec           esi
         xchg          esi, [ebp+BUFFER+13*4+ebx*4]
-        xchg          esi, [ebp+BUFFER+18*4]
-        shl           eax, 8
-        lodsb
-        xchg          esi, [ebp+BUFFER+18*4]
-        ror           eax, 8
+        bswap         eax
         stosd
         
         cmp           word [ebp+dataArea.codebuf], 0x24ff
@@ -301,15 +296,8 @@ DisUnfilter:
         jnz           .noad
         
         xchg          esi, [ebp+BUFFER+15*4]
-        lodsd
-        dec           esi
+        movsd
         xchg          esi, [ebp+BUFFER+15*4]
-        xchg          esi, [ebp+BUFFER+19*4]
-        shl           eax, 8
-        lodsb
-        xchg          esi, [ebp+BUFFER+19*4]
-        ror           eax, 8
-        stosd
         jmp           .main
         
 .noad   dec           cl
@@ -324,12 +312,8 @@ DisUnfilter:
         cmp           byte [edi-1], 0xe8
         je            .dwcal
         
-        xchg          esi, [ebp+BUFFER+20*4]
-        lodsw
-        xchg          esi, [ebp+BUFFER+20*4]
         xchg          esi, [ebp+BUFFER+17*4]
-        shl           eax, 16
-        lodsw
+        lodsd
         xchg          esi, [ebp+BUFFER+17*4]
         
         shr           eax, 1
@@ -350,14 +334,10 @@ DisUnfilter:
         mov           eax, [ebp+dataArea.funcTable+eax*4]
         jmp           short .storad
         
-.dcesc  xchg          esi, [ebp+BUFFER+20*4]
-        lodsw
-        xchg          esi, [ebp+BUFFER+20*4]
-        xchg          esi, [ebp+BUFFER+16*4]
-        shl           eax, 16
-        lodsw
-        xchg          esi, [ebp+BUFFER+16*4]
-        
+.dcesc  xchg          esi, [ebp+BUFFER+18*4]
+        lodsd
+        xchg          esi, [ebp+BUFFER+18*4]
+
         mov           ebx, [ebp+dataArea.funcTable]
         mov           [ebp+dataArea.funcTable+ebx*4], eax
 .dcinc  inc           byte [ebp+dataArea.funcTable]

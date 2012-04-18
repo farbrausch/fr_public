@@ -8,6 +8,8 @@
 #include "debuginfo.hpp"
 #include "dis.hpp"
 
+#define NODEPACK2 0
+
 /****************************************************************************/
 
 extern "C" sU8 depacker[],depacker2[];
@@ -816,15 +818,19 @@ sU8 *EXEPacker::Pack(sU8 *source,sInt &outSize,DebugInfo *info,PackerCallback cb
   sSetMem(UnImage,0,dataSize+8);
 
   UnImage += 8;
+#if !NODEPACK2
   sCopyMem(UnImage,depacker2,depacker2Size);
   depack2.Init(UnImage,depacker2Size);
+#endif
 
   *((sU32 *) (UnImage + depacker2Size)) = ImportSize;
   sCopyMem(UnImage + depacker2Size + 4,Imports,ImportSize);
   ImportSize += 4;
   delete[] Imports;
   
+#if !NODEPACK2
   sCopyMem(UnImage + depacker2Size + ImportSize,filter.Output.Data,filter.Output.Size);
+#endif
 
   UnImageVA = UnImage + depacker2Size + ImportSize + filter.Output.Size - Section[0].VirtAddr;
 
@@ -848,7 +854,9 @@ sU8 *EXEPacker::Pack(sU8 *source,sInt &outSize,DebugInfo *info,PackerCallback cb
 
   // clean up
   CleanupUnImage();
+#if !NODEPACK2
   sSetMem(UnImageVA + PH->CodeStart,0,codeSize);
+#endif
 
   // copy blobs (and write blob ptrs to ptrtable)
   if(blobs)
@@ -864,11 +872,13 @@ sU8 *EXEPacker::Pack(sU8 *source,sInt &outSize,DebugInfo *info,PackerCallback cb
   }
 
   // set up (stage2) depacker params
+#if !NODEPACK2
   depack2Base = PH->ImageStart + Section[0].VirtAddr - depacker2Size - ImportSize - filter.Output.Size;
   depack2.PatchOffsets(depack2Base);
   depack2.Patch("DEPACKTABLE",filter.Table,sizeof(filter.Table));
   depack2.PatchDWord("DCOD",PH->ImageStart + PH->CodeStart);
   depack2.PatchJump("ETRY",PH->ImageStart + PH->Entry,depack2Base);
+#endif
 
   skip = 0;
   while(skip<dataSize && !UnImage[dataSize-skip-1])
@@ -1056,3 +1066,4 @@ sU32 EXEPacker::GetActualSize()
 {
   return ActualSize;
 }
+

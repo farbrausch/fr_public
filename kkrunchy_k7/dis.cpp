@@ -94,6 +94,19 @@ static sU8 Tablefx[32] =
 // caaaaareful with this table (match disdeck!)
 
 /****************************************************************************/
+
+static sU32 bswap(sU32 x)
+{
+  __asm
+  {
+    mov eax, [x];
+    bswap eax;
+    mov [x], eax;
+  }
+
+  return x;
+}
+
 /****************************************************************************/
 
 DataBuffer::DataBuffer()
@@ -289,7 +302,7 @@ sInt DisFilter::ProcessInstr(sU8 *instr,sU32 memory,sU32 VA)
     if((modrm & 0x07) == 4 && (modrm & 0xc0) != 0xc0)
     {
       sib = *instr++;
-      Buffer[21].PutValue(sib,1);
+      Buffer[19].PutValue(sib,1);
     }
 
     if((modrm & 0xc0) == 0x40)
@@ -298,8 +311,7 @@ sInt DisFilter::ProcessInstr(sU8 *instr,sU32 memory,sU32 VA)
     if((modrm & 0xc0) == 0x80 || (modrm & 0xc7) == 0x05 || ((modrm & 0xc0) == 0 && (sib & 0x07) == 5))
     {
       val = *(sU32 *) instr; instr += 4;
-      Buffer[(modrm & 0xc7) == 5 ? 14 : 13].PutValue(val & 0xffffff,3);
-      Buffer[18].PutValue(val >> 24,1);
+      Buffer[(modrm & 0xc7) == 5 ? 14 : 13].PutValue(bswap(val),4);
 
       if(code == 0xff && modrm == 0x24)
         JumpTable = sMin(JumpTable,val);
@@ -312,8 +324,7 @@ sInt DisFilter::ProcessInstr(sU8 *instr,sU32 memory,sU32 VA)
     {
     case fAD:
       val = *(sU32 *) instr; instr += 4;
-      Buffer[15].PutValue(val & 0xffffff,3);
-      Buffer[19].PutValue(val >> 24,1);
+      Buffer[15].PutValue(val,4);
       break;
 
     case fBR:
@@ -323,12 +334,12 @@ sInt DisFilter::ProcessInstr(sU8 *instr,sU32 memory,sU32 VA)
     case fDR:
       val = *(sU32 *) instr; instr += 4;
       val += (instr - start) + memory;
+
       if(code != 0xe8)
       {
         i = val - LastJump;
         tmp = (i < 0) ? -i * 2 - 1 : i * 2;
-        Buffer[17].PutValue(tmp & 0xffff,2);
-        Buffer[20].PutValue(tmp >> 16,2);
+        Buffer[17].PutValue(tmp,4);
         LastJump = val;
       }
       else
@@ -340,8 +351,7 @@ sInt DisFilter::ProcessInstr(sU8 *instr,sU32 memory,sU32 VA)
         Buffer[16].PutValue(i+1,1);
         if(i == 255)
         {
-          Buffer[16].PutValue(val & 0xffff,2);
-          Buffer[20].PutValue(val >> 16,2);
+          Buffer[18].PutValue(val,4);
 
           FuncTable[FuncTablePos] = val;
           if(++FuncTablePos == 255)
@@ -573,8 +583,8 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
 
         if((modrm & 0x07) == 4 && (modrm & 0xc0) != 0xc0)
         {
-          reord.Add(newAddr + buffer[21] - opacked,1,dest - oldDest + oldAddr,1);
-          sib = *buffer[21]++;
+          reord.Add(newAddr + buffer[19] - opacked,1,dest - oldDest + oldAddr,1);
+          sib = *buffer[19]++;
           *dest++ = sib;
         }
 
@@ -588,11 +598,9 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
         {
           i = (modrm & 0xc7) == 5 ? 14 : 13;
 
-          reord.Add(newAddr + buffer[18] - opacked,1,dest - oldDest + oldAddr + 3,1);
-          reord.Add(newAddr + buffer[i] - opacked,3,dest - oldDest + oldAddr,3);
+          reord.Add(newAddr + buffer[i] - opacked,4,dest - oldDest + oldAddr,4);
 
-          val = (*buffer[18]++) << 24;
-          val |= (*(sU32 *) buffer[i]) & 0xffffff; buffer[i] += 3;
+          val = bswap(*(sU32 *) buffer[i]); buffer[i] += 4;
           *(sU32 *) dest = val; dest += 4;
 
           if(code == 0xff && modrm == 0x24)
@@ -610,10 +618,8 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
         switch(flags & fTYPE)
         {
         case fAD:
-          reord.Add(newAddr + buffer[19] - opacked,1,dest - oldDest + oldAddr + 3,1);
-          reord.Add(newAddr + buffer[15] - opacked,3,dest - oldDest + oldAddr,3);
-          val = (*buffer[19]++) << 24;
-          val |= (*(sU32 *) buffer[15]) & 0xffffff; buffer[15] += 3;
+          reord.Add(newAddr + buffer[15] - opacked,4,dest - oldDest + oldAddr,4);
+          val = *(sU32 *) buffer[15]; buffer[15] += 4;
           *(sU32 *) dest = val; dest += 4;
           break;
 
@@ -633,10 +639,8 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
             }
             else
             {
-              reord.Add(newAddr + buffer[16] - 1 - opacked,3,dest - oldDest + oldAddr,2);
-              reord.Add(newAddr + buffer[20] - opacked,2,dest - oldDest + oldAddr + 2,2);
-              val = *(sU16 *) buffer[16]; buffer[16] += 2;
-              val |= (*(sU16 *) buffer[20]) << 16; buffer[20] += 2;
+              reord.Add(newAddr + buffer[18] - opacked,4,dest - oldDest + oldAddr,4);
+              val = *(sU32 *) buffer[18]; buffer[18] += 4;
 
               funcTable[funcTablePos] = val;
               if(++funcTablePos == 256)
@@ -645,10 +649,8 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
           }
           else
           {
-            reord.Add(newAddr + buffer[17] - opacked,2,dest - oldDest + oldAddr,2);
-            reord.Add(newAddr + buffer[20] - opacked,2,dest - oldDest + oldAddr + 2,2);
-            val = *(sU16 *) buffer[17]; buffer[17] += 2;
-            val |= (*(sU16 *) buffer[20]) << 16; buffer[20] += 2;
+            reord.Add(newAddr + buffer[17] - opacked,4,dest - oldDest + oldAddr,4);
+            val = *(sU32 *) buffer[17]; buffer[17] += 4;
             if(val & 1)
               val = ~(val >> 1);
             else
@@ -700,3 +702,4 @@ void DisUnFilter(sU8 *packed,sU8 *dest,sU32 oldAddr,sU32 newAddr,ReorderBuffer &
     memory += dest - start;
   }
 }
+
