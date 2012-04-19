@@ -310,7 +310,7 @@ WerkkzeugApp::WerkkzeugApp()
   RadioScene = 0;
   NovaMode = 0;
   HelpSystemLocation = 0;
-  HideSplashScreen = 0;
+  HideSplashScreen = 1;
 
   Status = new sStatusBorder;
   AddBorder(Status);
@@ -1555,7 +1555,7 @@ sBool WerkkzeugApp::LoadConfig()
   sU32 flags;
   sInt budget;
 
-  TextureMode = 1;
+  //TextureMode = 1;
   result = 1;
   mem = sSystem->LoadFile("werkkzeug.config");
   if(!mem) return 0;
