@@ -15,6 +15,9 @@ add_library(OpenKTG ${openKTG_SOURCES})
 install(TARGETS OpenKTG ARCHIVE DESTINATION lib)
 install(FILES ${openKTG_HEADERS} DESTINATION include/OpenKTG)
 
+set(openKTG_DOC_FILES LICENSE README.txt)
+install(FILES ${openKTG_DOC_FILES} DESTINATION share/doc/OpenKTG)
+
 #
 # demo executable
 add_executable(demo demo.cpp)
