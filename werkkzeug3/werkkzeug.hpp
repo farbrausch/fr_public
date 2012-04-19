@@ -378,6 +378,7 @@ public:
   WerkSpline *FindSpline(sChar *name);
 
   void ClearCycleFlag();
+  void DumpOpByName(sChar *name);
   void DumpOpByClassR(sChar *name,WerkOp *op);
   void DumpOpByClass(sChar *name);
   void DumpUsedSwitchesR(WerkOp *op);

@@ -25,7 +25,7 @@
 
 #define APPNAME "werkkzeug"
 #define VERSION "3.1"
-#define BUILD "425"
+#define BUILD "426"
 #define MAXSAVE (128*1024*1024)
 #define BACKUPDIR "backup"
 
@@ -99,6 +99,8 @@ extern "C" sU8 SplashTGA[];
 #define CMD_EDIT_TEXONLY      0x1110
 #define CMD_EDIT_TEXDXT       0x1111
 #define CMD_EDIT_TEXLL        0x1112
+#define CMD_EDIT_FINDOP       0x1113
+#define CMD_EDIT_FINDOP2      0x1114
 
 #define CMD_MUSIC_START       0x1201
 #define CMD_MUSIC_TOGGLE      0x1202
@@ -615,8 +617,11 @@ sBool WerkkzeugApp::OnShortcut(sU32 key)
     if(!TextureMode)
       OnCommand(CMD_MENU_SCENE);
     return sTRUE;
+  case 'f'|sKEYQ_CTRL:
+    OnCommand(CMD_EDIT_FINDOP);
+    return sTRUE;
   case 'i'|sKEYQ_CTRL:
-     OnCommand(CMD_EDIT_STATS);
+    OnCommand(CMD_EDIT_STATS);
     return sTRUE;
   case 'g'|sKEYQ_CTRL:
     if(!TextureMode)
@@ -668,6 +673,7 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
   static sChar buffer[sDI_PATHSIZE];
   static sChar buffer2[sDI_PATHSIZE];
   static sChar classname[64];
+  static sChar findname[KK_NAME];
   sInt i,max;
 
   switch(cmd)
@@ -737,6 +743,7 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
     if(!TextureMode)
     {
       mf->AddSpacer();
+      mf->AddMenu("Find Op",CMD_EDIT_FINDOP,sKEYQ_CTRL|'f');
       mf->AddMenu("Find Class",CMD_EDIT_FINDCLASS,0);
       mf->AddMenu("Find Bugs",CMD_EDIT_FINDBUGS,0);
       mf->AddMenu("Clear Respawn Points",CMD_EDIT_CLEARRESPAWN,0);
@@ -846,12 +853,23 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
 
   case CMD_EDIT_FINDCLASS:
     dw = new sDialogWindow;
-    dw->InitString(classname,KK_NAME);
+    dw->InitString(classname,sizeof(classname));
     dw->InitOkCancel(this,"Find Class","Name of Class to look for..",CMD_EDIT_FINDCLASS2,0);
     return sTRUE;
 
   case CMD_EDIT_FINDCLASS2:
     Doc->DumpOpByClass(classname);
+    FindResults(sTRUE);
+    return sTRUE;
+
+  case CMD_EDIT_FINDOP:
+    dw = new sDialogWindow;
+    dw->InitString(findname,KK_NAME);
+    dw->InitOkCancel(this,"Find Op","Name of Op to look for...",CMD_EDIT_FINDOP2,0);
+    return sTRUE;
+
+  case CMD_EDIT_FINDOP2:
+    Doc->DumpOpByName(findname);
     FindResults(sTRUE);
     return sTRUE;
 
@@ -6846,6 +6864,23 @@ void WerkDoc::ClearCycleFlag()
   }
 }
 
+void WerkDoc::DumpOpByName(sChar *name)
+{
+  WerkPage *page;
+  WerkOp *op;
+
+  App->FindResultsWin->Clear();
+  sFORLIST(Pages,page)
+  {
+    sFORLIST(page->Ops,op)
+    {
+      if(sCmpStringI(op->Name,name)==0)
+        App->FindResultsWin->Add(op);
+    }
+  }
+
+  App->FindResultsWin->Update();
+}
 
 void WerkDoc::DumpOpByClassR(sChar *name,WerkOp *op)
 {

@@ -3,6 +3,10 @@
 HISTORY
 -------
 
+3.426 (120418)
+- default to texture mode, splash screen off
+- new "find op" function (ctrl-f)
+
 3.424 (080220)
 [werkkzeug for textures]
 - paste op (beta)

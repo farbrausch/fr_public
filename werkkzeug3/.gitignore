@@ -4,6 +4,7 @@ Player\ Debug/
 Player\ Release/
 werkkzeug3/backup/
 ipch/
+backup/
 *.suo
 *.sln.old
 *.sdf
