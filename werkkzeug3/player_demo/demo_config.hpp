@@ -43,8 +43,8 @@
 #define sLINK_XSI         0                         // link softimage dotXSI loader
 #define sLINK_UTIL        0                         // link sPainter and sPerfMon
 #define sLINK_MP3         0                         // link mp3 player (patent issues!)
-#define sLINK_OGG         1                         // link ogg vorbis decoder
-#define sLINK_VIRUZ2      0                         // link viruz2 softsynth (assemblercode is always linked!)
+#define sLINK_OGG         0                         // link ogg vorbis decoder
+#define sLINK_VIRUZ2      1                         // link viruz2 softsynth (assemblercode is always linked!)
 #define sLINK_KKRIEGER    0                         // link special code for kkrieger
 #define sLINK_MINMESH     1                         // link minmesh
 #define sLINK_LOADER      0                         // link new model loader (XSI2)

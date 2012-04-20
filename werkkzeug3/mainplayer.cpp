@@ -11,7 +11,7 @@
 #include "rtmanager.hpp"
 
 #define WAITFORKEY  0
-#define LINKEDIN    1
+#define LINKEDIN    0
 #define LOADERTUNE  0//!sINTRO
 
 #if sNOCRT
