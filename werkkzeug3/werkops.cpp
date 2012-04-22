@@ -1391,10 +1391,10 @@ void Edit_Mesh_Perlin(WerkkzeugApp *app,WerkOp *op)
 {
   app->ParaWin->EditOp(op);
   app->ParaWin->EditMask  ("Select"       , 0, 0,8,"v");
-  app->ParaWin->EditFloat ("*1Scale"       , 1,3, 1.0f,-4096, 4096,0.01f);
-  app->ParaWin->EditFloat ("*2Rotate"      , 4,3, 0.0f,  -64,   64,0.002f);
-  app->ParaWin->EditFloat ("*3Translate"   , 7,3, 0.0f,-4096, 4096,0.001f);
-  app->ParaWin->EditFloat ("*Amplify"     ,10,3, 0.125f,-64,   64,0.001f);
+  app->ParaWin->EditFloat ("Scale"        , 1,3, 1.0f,-4096, 4096,0.01f);
+  app->ParaWin->EditFloat ("Rotate"       , 4,3, 0.0f,  -64,   64,0.002f);
+  app->ParaWin->EditFloat ("Translate"    , 7,3, 0.0f,-4096, 4096,0.001f);
+  app->ParaWin->EditFloat ("Amplify"      ,10,3, 0.125f,-64,   64,0.001f);
 }
 
 void Edit_Mesh_Add(WerkkzeugApp *app,WerkOp *op)
@@ -2166,10 +2166,10 @@ void Edit_MinMesh_Perlin(WerkkzeugApp *app,WerkOp *op)
   app->ParaWin->EditOp(op);
   if(!app->TextureMode)
     app->ParaWin->EditFlags ("Select"       , 0,0,"all|selected|unselected");
-  app->ParaWin->EditFloat ("*1Scale"      , 1,3, 1.0f,-4096, 4096,0.01f);
-  app->ParaWin->EditFloat ("*2Rotate"     , 4,3, 0.0f,  -64,   64,0.002f);
-  app->ParaWin->EditFloat ("*3Translate"  , 7,3, 0.0f,-4096, 4096,0.001f);
-  app->ParaWin->EditFloat ("*Amplify"     ,10,3, 0.125f,-64,   64,0.001f);
+  app->ParaWin->EditFloat ("Scale"        , 1,3, 1.0f,-4096, 4096,0.01f);
+  app->ParaWin->EditFloat ("Rotate"       , 4,3, 0.0f,  -64,   64,0.002f);
+  app->ParaWin->EditFloat ("Translate"    , 7,3, 0.0f,-4096, 4096,0.001f);
+  app->ParaWin->EditFloat ("Amplify"      ,10,3, 0.125f,-64,   64,0.001f);
 }
 
 void Edit_MinMesh_ExtrudeNormal(WerkkzeugApp *app,WerkOp *op)

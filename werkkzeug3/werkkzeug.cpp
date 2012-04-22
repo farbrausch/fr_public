@@ -1003,6 +1003,7 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
     Clear();
     *sFileFromPathString(FilenameBuffer) = 0;
     sAppendString(FilenameBuffer,"new file.k",sCOUNTOF(FilenameBuffer));
+    SetWindowTitle();
     return sTRUE;
 
   case CMD_FILE_OPENAS:
