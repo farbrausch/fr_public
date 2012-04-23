@@ -990,8 +990,7 @@ struct sSystem_
   sBool DeleteFile(const sChar *name);                          // delete file from disk
   void GetCurrentDir(sChar *buffer,sInt size);            // get current dir as "c:/nxn/genthree"
   sU32 GetDriveMask();                                    // get bitmask of available drives
-
-  
+  sChar *GetModuleName();										// get current exe name
 
   sBitmap *LoadBitmap(const sU8 *data,sInt size);               // load bitmap using windows loader
   sBool LoadBitmapCore(const sU8 *data,sInt size,sInt &x,sInt &y,sU8 *&d);   // simplified version for intro

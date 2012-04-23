@@ -251,9 +251,12 @@ sBool sAppHandler(sInt code,sDInt value)
       data = sSystem->LoadFile(sSystem->GetCmdLine());
       if(data==0)
       {
-        
-        data = sSystem->LoadFile("id08.kx");
-        if(data==0)        
+		// get module name and load a .kx file with the same name 		  
+		sChar * kxData = sSystem->GetModuleName();
+		sAppendString(kxData, ".kx", sGetStringLen(kxData)+3 );	
+		data = sSystem->LoadFile(kxData);
+        //data = sSystem->LoadFile("id08.kx");
+		if(data==0)        
           sSystem->Abort("need data file");
       }
     }

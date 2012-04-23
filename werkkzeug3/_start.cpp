@@ -6147,6 +6147,30 @@ sU8 *sSystem_::LoadFile(const sChar *name)
 
 /****************************************************************************/
 
+
+//----------------------------------------------------------------------------
+// retrieve current exe name
+//----------------------------------------------------------------------------
+sChar *sSystem_::GetModuleName()
+{	
+	// Retrieves the full path for the file that contains the specified module
+	char str[MAX_PATH];
+	GetModuleFileName(NULL, str, MAX_PATH);
+	
+	// remove full path to just keep filename
+	char * fileName;
+	fileName = strrchr(str,'\\')+1;
+
+	// remove .exe extension to just keep basename
+	char baseName[MAX_PATH] = "";  
+	strncpy(baseName, fileName, strlen(fileName)-4);
+
+	return baseName;
+}
+
+
+/****************************************************************************/
+
 sU8 *sSystem_::LoadFileIfNewerThan(const sChar *name,const sChar *other,sInt &size)
 {
   WIN32_FILE_ATTRIBUTE_DATA fa1,fa2;
