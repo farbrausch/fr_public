@@ -913,6 +913,7 @@ public:
   sInt AutoSaveTimer;             // time of last save
   sInt HideSplashScreen;
   sInt HelpSystemLocation;
+  sInt KeyboardLayout;			  // 0=qwerty 1=azerty
   sChar UserName[KK_NAME];        // user name for multiuser sync
   sInt UserCount;                 // count for user usage 
   sInt MusicVolume;               // 0..256

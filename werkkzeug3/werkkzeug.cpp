@@ -313,6 +313,7 @@ WerkkzeugApp::WerkkzeugApp()
   NovaMode = 0;
   HelpSystemLocation = 0;
   HideSplashScreen = 1;
+  KeyboardLayout = 0;		// default = qwerty;
 
   Status = new sStatusBorder;
   AddBorder(Status);
@@ -2956,6 +2957,14 @@ void WinEditPara::SetApp(WerkkzeugApp *app)
     Grid->AddChild(con);
 
     line++;
+
+	// add qwerty/azerty keyboard selection
+	con = new sControl;
+    con->EditCycle(0x111,&App->KeyboardLayout,"Keyboard Location","Qwerty|Azerty");
+    con->Style |= sCS_SIDELABEL;
+    con->LabelWidth = lw;
+    con->LayoutInfo.Init(0,line,16,line+1); line++;
+    Grid->AddChild(con);
 
     con = new sControl;
     con->EditCycle(0x111,&GSTitle,"Title Bar","No Title Bar|Title Bar");

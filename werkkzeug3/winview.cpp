@@ -821,13 +821,25 @@ void WinView::OnKey(sU32 key)
     if(!App->TextureMode)
       OnCommand(CMD_VIEW_LINKEDIT);
     break;
-  case 'z':                       // mesh: free camera
-    if(!App->TextureMode)
-      OnCommand(CMD_VIEW_FREECAMERA);
+  case 'z':                       // mesh: free camera with qwerty keyboard
+    if(App->KeyboardLayout == 0)
+	  if(!App->TextureMode)
+		OnCommand(CMD_VIEW_FREECAMERA);
     break;
-  case 'Z'|sKEYQ_SHIFT:                       // mesh: viewport to free camera
-    if(!App->TextureMode)
-      OnCommand(CMD_VIEW_GOFREECAMERA);
+  case 'Z'|sKEYQ_SHIFT:                       // mesh: viewport to free camera with qwerty keyboard
+    if(App->KeyboardLayout == 0)
+	  if(!App->TextureMode)
+		OnCommand(CMD_VIEW_GOFREECAMERA);
+    break;
+  case 'w':                       // mesh: free camera with azerty keyboard
+    if(App->KeyboardLayout == 1)
+	  if(!App->TextureMode)
+		OnCommand(CMD_VIEW_FREECAMERA);
+    break;
+  case 'W'|sKEYQ_SHIFT:                       // mesh: viewport to free camera with azerty keyboard
+    if(App->KeyboardLayout == 1)
+	  if(!App->TextureMode)
+		OnCommand(CMD_VIEW_GOFREECAMERA);
     break;
   case 'f':                       // mesh: wireoptions
     OnCommand(CMD_VIEW_WIREOPT);
@@ -973,57 +985,116 @@ void WinView::OnKey(sU32 key)
 
   if(!((DragCID==KC_MESH || DragCID == KC_MINMESH || DragCID==KC_SCENE || DragCID==KC_IPP || DragCID==KC_DEMO || DragCID==KC_SMESH || DragCID==KC_EFFECT) && GameMode && Game.OnKey(key))) 
   if(DragCID!=KC_BITMAP) 
-  switch(key&(0x8001ffff))
-  {
-  case 'w':
-  case 'W':
-    QuakeMask |= 1;
-    break;
-  case 's':
-  case 'S':
-    QuakeMask |= 2;
-    break;
-  case 'd':
-  case 'D':
-    QuakeMask |= 4;
-    break;
-  case 'a':
-  case 'A':
-    QuakeMask |= 8;
-    break;
-  case 'q':
-  case 'Q':
-    QuakeMask |= 16;
-    break;
-  case 'e':
-  case 'E':
-    QuakeMask |= 32;
-    break;
-  case 'w'|sKEYQ_BREAK:
-  case 'W'|sKEYQ_BREAK:
-    QuakeMask &= ~1;
-    break;
-  case 's'|sKEYQ_BREAK:
-  case 'S'|sKEYQ_BREAK:
-    QuakeMask &= ~2;
-    break;
-  case 'd'|sKEYQ_BREAK:
-  case 'D'|sKEYQ_BREAK:
-    QuakeMask &= ~4;
-    break;
-  case 'a'|sKEYQ_BREAK:
-  case 'A'|sKEYQ_BREAK:
-    QuakeMask &= ~8;
-    break;
-  case 'q'|sKEYQ_BREAK:
-  case 'Q'|sKEYQ_BREAK:
-    QuakeMask &= ~16;
-    break;
-  case 'e'|sKEYQ_BREAK:
-  case 'E'|sKEYQ_BREAK:
-    QuakeMask &= ~32;
-    break;
-  }
+	  if(App->KeyboardLayout == 0)
+	  {
+		  // qwerty keyboard
+		  switch(key&(0x8001ffff))
+		  {
+		  case 'w':
+		  case 'W':
+			QuakeMask |= 1;
+			break;
+		  case 's':
+		  case 'S':
+			QuakeMask |= 2;
+			break;
+		  case 'd':
+		  case 'D':
+			QuakeMask |= 4;
+			break;
+		  case 'a':
+		  case 'A':
+			QuakeMask |= 8;
+			break;
+		  case 'q':
+		  case 'Q':
+			QuakeMask |= 16;
+			break;
+		  case 'e':
+		  case 'E':
+			QuakeMask |= 32;
+			break;
+		  case 'w'|sKEYQ_BREAK:
+		  case 'W'|sKEYQ_BREAK:
+			QuakeMask &= ~1;
+			break;
+		  case 's'|sKEYQ_BREAK:
+		  case 'S'|sKEYQ_BREAK:
+			QuakeMask &= ~2;
+			break;
+		  case 'd'|sKEYQ_BREAK:
+		  case 'D'|sKEYQ_BREAK:
+			QuakeMask &= ~4;
+			break;
+		  case 'a'|sKEYQ_BREAK:
+		  case 'A'|sKEYQ_BREAK:
+			QuakeMask &= ~8;
+			break;
+		  case 'q'|sKEYQ_BREAK:
+		  case 'Q'|sKEYQ_BREAK:
+			QuakeMask &= ~16;
+			break;
+		  case 'e'|sKEYQ_BREAK:
+		  case 'E'|sKEYQ_BREAK:
+			QuakeMask &= ~32;
+			break;
+		  }
+	  } 
+	  else
+	  {
+		  // azerty keyboard
+		  switch(key&(0x8001ffff))
+		  {
+		  case 'z':
+		  case 'Z':
+			QuakeMask |= 1;
+			break;
+		  case 's':
+		  case 'S':
+			QuakeMask |= 2;
+			break;
+		  case 'd':
+		  case 'D':
+			QuakeMask |= 4;
+			break;
+		  case 'q':
+		  case 'Q':
+			QuakeMask |= 8;
+			break;
+		  case 'a':
+		  case 'A':
+			QuakeMask |= 16;
+			break;
+		  case 'e':
+		  case 'E':
+			QuakeMask |= 32;
+			break;
+		  case 'z'|sKEYQ_BREAK:
+		  case 'Z'|sKEYQ_BREAK:
+			QuakeMask &= ~1;
+			break;
+		  case 's'|sKEYQ_BREAK:
+		  case 'S'|sKEYQ_BREAK:
+			QuakeMask &= ~2;
+			break;
+		  case 'd'|sKEYQ_BREAK:
+		  case 'D'|sKEYQ_BREAK:
+			QuakeMask &= ~4;
+			break;
+		  case 'q'|sKEYQ_BREAK:
+		  case 'Q'|sKEYQ_BREAK:
+			QuakeMask &= ~8;
+			break;
+		  case 'a'|sKEYQ_BREAK:
+		  case 'A'|sKEYQ_BREAK:
+			QuakeMask &= ~16;
+			break;
+		  case 'e'|sKEYQ_BREAK:
+		  case 'E'|sKEYQ_BREAK:
+			QuakeMask &= ~32;
+			break;
+		  }
+	  }
 }
 
 /****************************************************************************/
