@@ -6148,26 +6148,25 @@ sU8 *sSystem_::LoadFile(const sChar *name)
 /****************************************************************************/
 
 
+#if !sINTRO
 //----------------------------------------------------------------------------
-// retrieve current exe name
+// get base name of current exe
 //----------------------------------------------------------------------------
-sChar *sSystem_::GetModuleName()
+void sSystem_::GetModuleBaseName(sChar *buffer,sInt size)
 {	
 	// Retrieves the full path for the file that contains the specified module
 	char str[MAX_PATH];
 	GetModuleFileName(NULL, str, MAX_PATH);
-	
-	// remove full path to just keep filename
-	char * fileName;
-	fileName = strrchr(str,'\\')+1;
+  
+  // strip path
+  sCopyString(buffer,sFileFromPathString(str),size);
 
-	// remove .exe extension to just keep basename
-	char baseName[MAX_PATH] = "";  
-	strncpy(baseName, fileName, strlen(fileName)-4);
-
-	return baseName;
+  // remove extension (if present) to just keep base name
+  sChar *ext = sFileExtensionString(buffer);
+  if (ext)
+    *ext = 0;
 }
-
+#endif
 
 /****************************************************************************/
 

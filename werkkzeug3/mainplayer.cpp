@@ -245,22 +245,23 @@ sBool sAppHandler(sInt code,sDInt value)
 #if !LINKEDIN
     data = PtrTable[0];
 
-//#if !sINTRO
+#if !sINTRO
     if(((sInt)data)==0x54525450)
     {
       data = sSystem->LoadFile(sSystem->GetCmdLine());
       if(data==0)
       {
-		// get module name and load a .kx file with the same name 		  
-		sChar * kxData = sSystem->GetModuleName();
-		sAppendString(kxData, ".kx", sGetStringLen(kxData)+3 );	
-		data = sSystem->LoadFile(kxData);
+        // get module name and load a .kx file with the same name
+        sChar kxData[256];
+        sSystem->GetModuleBaseName(kxData, sizeof(kxData));
+        sAppendString(kxData, ".kx", sizeof(kxData));
+        data = sSystem->LoadFile(kxData);
         //data = sSystem->LoadFile("id08.kx");
-		if(data==0)        
+		    if(data==0)        
           sSystem->Abort("need data file");
       }
     }
-//#endif
+#endif
 #else
     data = DebugData;
 #endif
