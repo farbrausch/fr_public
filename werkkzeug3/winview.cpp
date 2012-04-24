@@ -778,10 +778,27 @@ void WinView::OnPaint3d(sViewport &viewPort)
 
 void WinView::OnKey(sU32 key)
 {
+  const sChar *quake_keymap;
+  sU32 key_freecam;
+  sU32 keym = key&(0x8001ffff|sKEYQ_SHIFT|sKEYQ_CTRL|sKEYQ_ALT);
+
   if(key&sKEYQ_CTRL) key |= sKEYQ_CTRL;
   if(key&sKEYQ_SHIFT) key |= sKEYQ_SHIFT;
 
-  switch(key&(0x8001ffff|sKEYQ_SHIFT|sKEYQ_CTRL|sKEYQ_ALT))
+  switch (App->KeyboardLayout)
+  {
+  case 0: // qwerty
+  default:
+    quake_keymap = "wsdaqe"; // forward, back, right, left, up, down
+    key_freecam = 'z';
+    break;
+  case 1: // azerty
+    quake_keymap = "zsdqae"; // forward, back, right, left, up, down
+    key_freecam = 'w';
+    break;
+  }
+
+  switch(keym)
   {
     // uijyxbnm
   case sKEY_APPPOPUP:
@@ -820,26 +837,6 @@ void WinView::OnKey(sU32 key)
   case 'l':
     if(!App->TextureMode)
       OnCommand(CMD_VIEW_LINKEDIT);
-    break;
-  case 'z':                       // mesh: free camera with qwerty keyboard
-    if(App->KeyboardLayout == 0)
-	  if(!App->TextureMode)
-		OnCommand(CMD_VIEW_FREECAMERA);
-    break;
-  case 'Z'|sKEYQ_SHIFT:                       // mesh: viewport to free camera with qwerty keyboard
-    if(App->KeyboardLayout == 0)
-	  if(!App->TextureMode)
-		OnCommand(CMD_VIEW_GOFREECAMERA);
-    break;
-  case 'w':                       // mesh: free camera with azerty keyboard
-    if(App->KeyboardLayout == 1)
-	  if(!App->TextureMode)
-		OnCommand(CMD_VIEW_FREECAMERA);
-    break;
-  case 'W'|sKEYQ_SHIFT:                       // mesh: viewport to free camera with azerty keyboard
-    if(App->KeyboardLayout == 1)
-	  if(!App->TextureMode)
-		OnCommand(CMD_VIEW_GOFREECAMERA);
     break;
   case 'f':                       // mesh: wireoptions
     OnCommand(CMD_VIEW_WIREOPT);
@@ -962,6 +959,15 @@ void WinView::OnKey(sU32 key)
   case sKEY_ENTER:
     OnCommand(CMD_VIEW_EXPORTBITMAP);
     break;
+  default:
+    if (!App->TextureMode)
+    {
+      if (keym == key_freecam) // mesh: free camera
+        OnCommand(CMD_VIEW_FREECAMERA);
+      else if (keym == ((key_freecam-0x20)|sKEYQ_SHIFT)) // mesh: viewport to free camera
+        OnCommand(CMD_VIEW_GOFREECAMERA);
+    }
+    break;
 
     /*
   case '0'|sKEYQ_CTRL:
@@ -984,117 +990,21 @@ void WinView::OnKey(sU32 key)
   // quake cam
 
   if(!((DragCID==KC_MESH || DragCID == KC_MINMESH || DragCID==KC_SCENE || DragCID==KC_IPP || DragCID==KC_DEMO || DragCID==KC_SMESH || DragCID==KC_EFFECT) && GameMode && Game.OnKey(key))) 
-  if(DragCID!=KC_BITMAP) 
-	  if(App->KeyboardLayout == 0)
-	  {
-		  // qwerty keyboard
-		  switch(key&(0x8001ffff))
-		  {
-		  case 'w':
-		  case 'W':
-			QuakeMask |= 1;
-			break;
-		  case 's':
-		  case 'S':
-			QuakeMask |= 2;
-			break;
-		  case 'd':
-		  case 'D':
-			QuakeMask |= 4;
-			break;
-		  case 'a':
-		  case 'A':
-			QuakeMask |= 8;
-			break;
-		  case 'q':
-		  case 'Q':
-			QuakeMask |= 16;
-			break;
-		  case 'e':
-		  case 'E':
-			QuakeMask |= 32;
-			break;
-		  case 'w'|sKEYQ_BREAK:
-		  case 'W'|sKEYQ_BREAK:
-			QuakeMask &= ~1;
-			break;
-		  case 's'|sKEYQ_BREAK:
-		  case 'S'|sKEYQ_BREAK:
-			QuakeMask &= ~2;
-			break;
-		  case 'd'|sKEYQ_BREAK:
-		  case 'D'|sKEYQ_BREAK:
-			QuakeMask &= ~4;
-			break;
-		  case 'a'|sKEYQ_BREAK:
-		  case 'A'|sKEYQ_BREAK:
-			QuakeMask &= ~8;
-			break;
-		  case 'q'|sKEYQ_BREAK:
-		  case 'Q'|sKEYQ_BREAK:
-			QuakeMask &= ~16;
-			break;
-		  case 'e'|sKEYQ_BREAK:
-		  case 'E'|sKEYQ_BREAK:
-			QuakeMask &= ~32;
-			break;
-		  }
-	  } 
-	  else
-	  {
-		  // azerty keyboard
-		  switch(key&(0x8001ffff))
-		  {
-		  case 'z':
-		  case 'Z':
-			QuakeMask |= 1;
-			break;
-		  case 's':
-		  case 'S':
-			QuakeMask |= 2;
-			break;
-		  case 'd':
-		  case 'D':
-			QuakeMask |= 4;
-			break;
-		  case 'q':
-		  case 'Q':
-			QuakeMask |= 8;
-			break;
-		  case 'a':
-		  case 'A':
-			QuakeMask |= 16;
-			break;
-		  case 'e':
-		  case 'E':
-			QuakeMask |= 32;
-			break;
-		  case 'z'|sKEYQ_BREAK:
-		  case 'Z'|sKEYQ_BREAK:
-			QuakeMask &= ~1;
-			break;
-		  case 's'|sKEYQ_BREAK:
-		  case 'S'|sKEYQ_BREAK:
-			QuakeMask &= ~2;
-			break;
-		  case 'd'|sKEYQ_BREAK:
-		  case 'D'|sKEYQ_BREAK:
-			QuakeMask &= ~4;
-			break;
-		  case 'q'|sKEYQ_BREAK:
-		  case 'Q'|sKEYQ_BREAK:
-			QuakeMask &= ~8;
-			break;
-		  case 'a'|sKEYQ_BREAK:
-		  case 'A'|sKEYQ_BREAK:
-			QuakeMask &= ~16;
-			break;
-		  case 'e'|sKEYQ_BREAK:
-		  case 'E'|sKEYQ_BREAK:
-			QuakeMask &= ~32;
-			break;
-		  }
-	  }
+  if(DragCID!=KC_BITMAP)
+  {
+    sU32 realkey=key&0x1ffff;
+    sU32 mask=0;
+    if(realkey>='A' && realkey<='Z') realkey+=0x20; // lower case
+
+    for(sInt i=0;i<6;i++)
+      if(realkey==quake_keymap[i])
+        mask = 1<<i;
+
+    if(key&sKEYQ_BREAK)
+      QuakeMask &= ~mask;
+    else
+      QuakeMask |= mask;
+  }
 }
 
 /****************************************************************************/
