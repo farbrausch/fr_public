@@ -256,8 +256,7 @@ sBool sAppHandler(sInt code,sDInt value)
         sSystem->GetModuleBaseName(kxData, sizeof(kxData));
         sAppendString(kxData, ".kx", sizeof(kxData));
         data = sSystem->LoadFile(kxData);
-        //data = sSystem->LoadFile("id08.kx");
-		    if(data==0)        
+        if(data==0)
           sSystem->Abort("need data file");
       }
     }

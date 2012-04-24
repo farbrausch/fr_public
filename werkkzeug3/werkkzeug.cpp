@@ -2962,8 +2962,8 @@ void WinEditPara::SetApp(WerkkzeugApp *app)
 
     line++;
 
-	// add qwerty/azerty keyboard layout selection
-	con = new sControl;
+    // add qwerty/azerty keyboard layout selection
+    con = new sControl;
     con->EditCycle(0x111,&App->KeyboardLayout,"Keyboard Layout","QWERTY|AZERTY");
     con->Style |= sCS_SIDELABEL;
     con->LabelWidth = lw;
