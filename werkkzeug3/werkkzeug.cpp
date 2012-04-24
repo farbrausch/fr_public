@@ -1545,9 +1545,11 @@ sBool WerkkzeugApp::SaveConfig()
 
   *data++ = HideSplashScreen;
   *data++ = HelpSystemLocation;
-  *data++ = KeyboardLayout;
   *data++ = GenBitmapDefaultFormat;
-  *data++ = 0;
+  *data++ = KeyboardLayout;
+
+  // dummy fields, currently unassigned - so you can add extra flags
+  // without breaking the format or bumping up the version number.
   *data++ = 0;
   *data++ = 0;
   *data++ = 0;
@@ -1672,9 +1674,9 @@ sBool WerkkzeugApp::LoadConfig()
 #endif
       HideSplashScreen = *data++;
       HelpSystemLocation = *data++;
-	  KeyboardLayout = *data++;
       GenBitmapDefaultFormat = *data++;
-      data += 4;
+      KeyboardLayout = *data++;
+      data += 3;
 
       if(!GenBitmapDefaultFormat)
         GenBitmapDefaultFormat = sTF_A8R8G8B8;
