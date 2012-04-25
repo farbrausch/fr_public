@@ -852,6 +852,7 @@ class WerkkzeugApp : public sDummyFrame
 
 public:
   WinView *ViewWin;
+  WinView *ViewWin2;
   WinPage *PageWin;
   WinPagelist *PagelistWin;
   WinStatus *StatusWin;
@@ -886,6 +887,7 @@ public:
   sSwitchFrame *Switch1;          // main window (page, spline, timeline,...)
   sSwitchFrame *Switch2;          // list window (pagelist, scenelist)
   sSwitchFrame *SwitchView;       // normal view / nova view
+  sSwitchFrame *SwitchView2;      // second view
   sVSplitFrame *TopSplit;
   sHSplitFrame *ParaSplit;
   sStatusBorder *Status;

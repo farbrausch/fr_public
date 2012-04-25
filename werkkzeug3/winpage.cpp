@@ -560,6 +560,8 @@ void WinPage::Delete()
     {
       if(po == App->ViewWin->Object)
         App->ViewWin->SetOff();
+      if(po == App->ViewWin2->Object)
+        App->ViewWin2->SetOff();
       if(po == App->ParaWin->Op)
         App->ParaWin->SetOp(0);
       Page->Ops->Rem(po);
@@ -834,6 +836,8 @@ void WinPage::OnPaint()
           sPainter->Paint(tagMaterial,r.x0+xOffs,r.y0+2,4,3,0x7f0000|useAlpha);
         if(App->ViewWin->Object==po)
           sPainter->Paint(tagMaterial,r.x0+xOffs,r.y1-5,4,3,0x007f00|useAlpha);
+        if(App->ViewWin2->Object==po)
+          sPainter->Paint(tagMaterial,r.x0+xOffs,r.y1-5,4,3,0xd2691e|useAlpha);
         if(po->Op.Cache)
           sPainter->Paint(tagMaterial,r.x0+xOffs,(r.y0+r.y1)/2-1,4,3,0x00007f|useAlpha);
       }
@@ -843,6 +847,8 @@ void WinPage::OnPaint()
           sPainter->Paint(tagMaterial,r.x0+xOffs,r.y0+4,8,4,0x7f0000|useAlpha);
         if(App->ViewWin->Object==po)
           sPainter->Paint(tagMaterial,r.x0+xOffs,r.y1-8,8,4,0x007f00|useAlpha);
+        if(App->ViewWin2->Object==po)
+          sPainter->Paint(tagMaterial,r.x0+xOffs,r.y1-8,8,4,0xd2691e|useAlpha);
         if(po->Op.Cache)
           sPainter->Paint(tagMaterial,r.x0+xOffs,r.y0+8,8,4,0x00007f|useAlpha);
       }
@@ -1411,8 +1417,9 @@ void WinPage::OnKey(sU32 key)
 {
   if(key&sKEYQ_SHIFT) key|=sKEYQ_SHIFT;
   if(key&sKEYQ_CTRL)  key|=sKEYQ_CTRL;
+  if(key&sKEYQ_ALT)  key|=sKEYQ_ALT;
 
-  switch(key&(0x8001ffff|sKEYQ_REPEAT))
+  switch(key&(0x8001ffff|sKEYQ_REPEAT|sKEYQ_ALT))
   {
   case sKEY_APPFOCUS:
 //    App->SetActiveWindow(this);
@@ -1486,6 +1493,9 @@ void WinPage::OnKey(sU32 key)
 
   case 's':
     OnCommand(CMD_PAGE_SHOW);
+    break;
+  case 's'|sKEYQ_ALT:
+    OnCommand(CMD_PAGE_SHOW2);
     break;
   case 'S':
     if(!App->TextureMode)
@@ -1655,7 +1665,8 @@ sBool WinPage::OnCommand(sU32 cmd)
     mf->AddSpacer();
     mf->AddMenu("Rename All Occurences",CMD_PAGE_RENAMEALL,'r');
     mf->AddMenu("Rename Op",CMD_PAGE_RENAMEONE,0);
-    mf->AddMenu("Show Operator",CMD_PAGE_SHOW,'s');
+    mf->AddMenu("Show Operator in main view",CMD_PAGE_SHOW,'s');
+    mf->AddMenu("Show Operator in second view",CMD_PAGE_SHOW2,'s'|sKEYQ_ALT);
     if(!App->TextureMode)
     {
       mf->AddMenu("Show Root",CMD_PAGE_SHOWROOT,'S'|sKEYQ_SHIFT);
@@ -1698,6 +1709,12 @@ sBool WinPage::OnCommand(sU32 cmd)
     App->SetStat(STAT_MESSAGE,"");
     if(EditOp)
       App->ViewWin->SetObject(EditOp);
+    return sTRUE;
+
+  case CMD_PAGE_SHOW2:
+      App->SetStat(STAT_MESSAGE,"");
+      if(EditOp)
+      App->ViewWin2->SetObject(EditOp);
     return sTRUE;
 
   case CMD_PAGE_SHOWROOT:
