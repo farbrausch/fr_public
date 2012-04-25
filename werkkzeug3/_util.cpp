@@ -669,7 +669,7 @@ sInt sGuiPainter::LoadFont(sChar *name,sInt height,sInt width,sInt style)
       let[i].pad = 0;
     }
   }
-  delete hlet;
+  delete [] hlet;
   delete hf;
 
   return handle;

@@ -284,7 +284,7 @@ void __stdcall Exec_Effect_Wirbeln(KOp *op,KEnvironment *kenv,
 
   if(firsttime || s_speeddelta!=_speeddelta || s_size!=_size)
   {
-    for(sInt i=0;i<0x10000;i++)
+    for(sInt i=0;i<wirbelcount;i++)
     {
       wirbels *w = &wirbeln[i];
       w->phi = rnd.Float(sPI2F);
@@ -314,6 +314,8 @@ void __stdcall Exec_Effect_Wirbeln(KOp *op,KEnvironment *kenv,
   sF32 phase = kenv->BeatTime/65536.0f*_speed;
   sInt used = 0;
   sF32 __declspec(align(16)) x[4],s[4],c[4];
+  // make we'll stay within the bounds of 'wirbeln' during the loop
+  sVERIFY(_count >=0 && count < wirbelcount);
   for(sInt i=0;i<_count;i++)
   {
     {
