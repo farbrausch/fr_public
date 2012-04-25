@@ -117,7 +117,14 @@ void DataBuffer::Append(sU8 *data,sInt size)
   if(Size+size>Max)
   {
     Max = (Max*2 < Size+size) ? Size+size : Max*2;
-    Data = (sU8 *) realloc(Data,Max);
+    sU8* newData = (sU8*) realloc(Data, Max);
+    if (newData == NULL) {
+      // realloc failed; memory pointed to by 'Data' didn't get free'd
+      free(Data);
+      sVERIFY(newData != NULL);
+    } else {
+      Data = newData;
+    }
   }
 
   sCopyMem(Data+Size,data,size);

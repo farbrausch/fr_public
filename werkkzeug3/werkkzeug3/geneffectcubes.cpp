@@ -315,7 +315,7 @@ void __stdcall Exec_Effect_Wirbeln(KOp *op,KEnvironment *kenv,
   sInt used = 0;
   sF32 __declspec(align(16)) x[4],s[4],c[4];
   // make we'll stay within the bounds of 'wirbeln' during the loop
-  sVERIFY(_count >=0 && count < wirbelcount);
+  sVERIFY(_count >=0 && _count < wirbelcount);
   for(sInt i=0;i<_count;i++)
   {
     {
