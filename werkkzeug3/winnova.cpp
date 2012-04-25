@@ -825,7 +825,7 @@ WinEventPara2::WinEventPara2()
   GroupName = 0;
 
   Grid = new sGridFrame;
-  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
   Grid->AddScrolling(0,1);
   AddChild(Grid);
   AddAnim_Id = 0;
@@ -1544,12 +1544,12 @@ sInt sMatrixEditor::Init(sMatrixEdit *ed,sMatrix *mat,const sChar *name,sInt rel
   Name = name;
 
   Grid = new sGridFrame;
-  Grid->SetGrid(11,8,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(11,8,0,sPainter->GetHeight(sGui->PropFont)+4);
   AddChild(Grid);
 
   ReadMatrix();
   lines = AddControl();
-  Grid->SetGrid(11,lines,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(11,lines,0,sPainter->GetHeight(sGui->PropFont)+4);
 
   return lines;
 }
@@ -2225,7 +2225,7 @@ void WinSceneAnim::OnPaint()
 WinScenePara::WinScenePara()
 {
   Grid = new sGridFrame;
-  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
   AddChild(Grid);
   Scene = 0;
   Node = 0;

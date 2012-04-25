@@ -1640,7 +1640,7 @@ void WinSpline::LinkEdit(sF32 *srt,sBool spline_to_srt)
 WinSplinePara::WinSplinePara()
 {
   Grid = new sGridFrame;
-  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
   Grid->AddScrolling(0,1);
   AddChild(Grid);
   Spline = 0;
@@ -1683,7 +1683,7 @@ void WinSplinePara::SetSpline(WerkSpline *spline)
   Spline = spline;
   if(Spline)
   {
-    Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+    Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
     Line = 0;
     
     Label("Name");

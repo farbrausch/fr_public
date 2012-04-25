@@ -829,7 +829,7 @@ void WinTimeline::Bypass()
 WinEvent::WinEvent()
 {
   Grid = new sGridFrame;
-  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+  Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
   Grid->AddScrolling(0,1);
   AddChild(Grid);
   Event = 0;
@@ -882,7 +882,7 @@ void WinEvent::SetEvent(WerkEvent *we)
   {
     EventToControl();
 
-    Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+2);
+    Grid->SetGrid(12,4,0,sPainter->GetHeight(sGui->PropFont)+4);
     Line = 0;
     
     con = new sControl;
