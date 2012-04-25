@@ -284,7 +284,7 @@ void __stdcall Exec_Effect_Wirbeln(KOp *op,KEnvironment *kenv,
 
   if(firsttime || s_speeddelta!=_speeddelta || s_size!=_size)
   {
-    for(sInt i=0;i<0x10000;i++)
+    for(sInt i=0;i<wirbelcount;i++)
     {
       wirbels *w = &wirbeln[i];
       w->phi = rnd.Float(sPI2F);
