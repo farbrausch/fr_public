@@ -1346,10 +1346,11 @@ GenBitmap * __stdcall Bitmap_Blur(GenBitmap *bm,sInt flags,sF32 sx,sF32 sy,sF32 
 
 // prepare
 
-  pp = (sU16 *)bm->Data;
-  qq = (sU16 *) new sU64[bm->Size];
   order = flags & 15;
   if(order==0) return bm;
+
+  pp = (sU16 *)bm->Data;
+  qq = (sU16 *) new sU64[bm->Size];
 
 // blur x
 
