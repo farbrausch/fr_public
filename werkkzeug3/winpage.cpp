@@ -1709,12 +1709,16 @@ sBool WinPage::OnCommand(sU32 cmd)
     App->SetStat(STAT_MESSAGE,"");
     if(EditOp)
       App->ViewWin->SetObject(EditOp);
+    else
+      App->ViewWin->SetOff();
     return sTRUE;
 
   case CMD_PAGE_SHOW2:
-      App->SetStat(STAT_MESSAGE,"");
-      if(EditOp)
+    App->SetStat(STAT_MESSAGE,"");
+    if(EditOp)
       App->ViewWin2->SetObject(EditOp);
+    else
+      App->ViewWin2->SetOff();
     return sTRUE;
 
   case CMD_PAGE_SHOWROOT:
