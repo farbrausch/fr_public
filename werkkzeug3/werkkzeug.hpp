@@ -915,6 +915,7 @@ public:
   sInt AutoSaveTimer;             // time of last save
   sInt HideSplashScreen;
   sInt HelpSystemLocation;
+  sInt DualViewMode;
   sInt KeyboardLayout;			  // 0=qwerty 1=azerty
   sChar UserName[KK_NAME];        // user name for multiuser sync
   sInt UserCount;                 // count for user usage 
@@ -975,6 +976,7 @@ public:
   void SoundHandler(sS16 *buffer,sInt samples); // internal sound handler
   void OpBrowser(sGuiWindow *sendto=0,sU32 cmd=0);
   void OpBrowserOff();
+  void UpdateDualViewMode();
 
   void FindResults(sBool toggle);           // turn find results window on/off
   sBool GetNovaMode() { return NovaMode; }

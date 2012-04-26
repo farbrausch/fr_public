@@ -284,7 +284,6 @@ WerkkzeugApp::WerkkzeugApp()
   h0->Pos[1] = si.YSize*40/100+1;
   h0->AddChild(v1);
   v0->AddChild(SwitchView);
-  v0->AddChild(SwitchView2);
   v0->AddChild(Switch0);
   v0->Pos[1] = 600;
   v1->AddChild(Switch2);
@@ -331,6 +330,7 @@ WerkkzeugApp::WerkkzeugApp()
   NovaMode = 0;
   HelpSystemLocation = 0;
   HideSplashScreen = 1;
+  DualViewMode = 0;
   KeyboardLayout = 0;		// default = qwerty;
 
   Status = new sStatusBorder;
@@ -506,6 +506,7 @@ void WerkkzeugApp::Tag()
   sBroker->Need(OpBrowserWin);
   sBroker->Need(FindResultsWin);
   sBroker->Need(AnimPageWin);
+  sBroker->Need(SwitchView2);
 }
 
 /****************************************************************************/
@@ -1576,10 +1577,10 @@ sBool WerkkzeugApp::SaveConfig()
   *data++ = HelpSystemLocation;
   *data++ = GenBitmapDefaultFormat;
   *data++ = KeyboardLayout;
+  *data++ = DualViewMode;
 
   // dummy fields, currently unassigned - so you can add extra flags
   // without breaking the format or bumping up the version number.
-  *data++ = 0;
   *data++ = 0;
   *data++ = 0;
   
@@ -1709,7 +1710,8 @@ sBool WerkkzeugApp::LoadConfig()
       HelpSystemLocation = *data++;
       GenBitmapDefaultFormat = *data++;
       KeyboardLayout = *data++;
-      data += 3;
+      DualViewMode = *data++;
+      data += 2;
 
       if(!GenBitmapDefaultFormat)
         GenBitmapDefaultFormat = sTF_A8R8G8B8;
@@ -1746,6 +1748,7 @@ sBool WerkkzeugApp::LoadConfig()
     sGui->Palette[sGC_SELECT]  = ((color[0]&0xfefefe)>>1)+0xff808080;
     sGui->Palette[sGC_SELBACK] = color[2];
     sGui->SetStyle(flags);
+    UpdateDualViewMode();
   }
 
   if(result)
@@ -2980,6 +2983,11 @@ void WinEditPara::SetApp(WerkkzeugApp *app)
     Grid->AddChild(con);
 
     con = new sControl;
+    con->EditCycle(0x116,&App->DualViewMode,0,"|Dual View Mode");
+    con->LayoutInfo.Init(8,4,16,5);
+    Grid->AddChild(con);
+
+    con = new sControl;
     con->EditURGB(0x101,(sInt *)&Color[0],0);
     con->LayoutInfo.Init(0,line,8,line+1); line++;
     Grid->AddChild(con);
@@ -2999,7 +3007,7 @@ void WinEditPara::SetApp(WerkkzeugApp *app)
     con->LayoutInfo.Init(0,line,8,line+1); line++;
     Grid->AddChild(con);
 
-    line++;
+    line += 2;
 
     // add qwerty/azerty keyboard layout selection
     con = new sControl;
@@ -3347,6 +3355,9 @@ sBool WinEditPara::OnCommand(sU32 cmd)
       sGui->SetStyle(sGui->GetStyle() & ~sGS_SKIN05);
       OnCommand(0x101);
     }
+    return sTRUE;
+  case 0x116: // toggle dual view mode
+    App->UpdateDualViewMode();
     return sTRUE;
   }
   return sFALSE;
@@ -9392,6 +9403,16 @@ void WerkkzeugApp::OpBrowser(sGuiWindow *sendto,sU32 cmd)
   OpBrowserWin->SetPath(OpBrowserPath);
   sGui->AddPopup(OpBrowserWin);
   OpBrowserWin->TreeFocus();
+}
+
+/****************************************************************************/
+
+void WerkkzeugApp::UpdateDualViewMode()
+{
+    TopSplit->RemoveSplit(SwitchView2);
+    if(DualViewMode)
+      TopSplit->SplitChild(1, SwitchView2);
+    TopSplit->Flags |= sGWF_LAYOUT|sGWF_UPDATE;
 }
 
 /****************************************************************************/

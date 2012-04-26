@@ -1665,8 +1665,13 @@ sBool WinPage::OnCommand(sU32 cmd)
     mf->AddSpacer();
     mf->AddMenu("Rename All Occurences",CMD_PAGE_RENAMEALL,'r');
     mf->AddMenu("Rename Op",CMD_PAGE_RENAMEONE,0);
-    mf->AddMenu("Show Operator in main view",CMD_PAGE_SHOW,'s');
-    mf->AddMenu("Show Operator in second view",CMD_PAGE_SHOW2,'s'|sKEYQ_ALT);
+    if (App->DualViewMode)
+    {
+      mf->AddMenu("Show Operator in main view",CMD_PAGE_SHOW,'s');
+      mf->AddMenu("Show Operator in second view",CMD_PAGE_SHOW2,'s'|sKEYQ_ALT);
+    }
+    else
+      mf->AddMenu("Show Operator",CMD_PAGE_SHOW,'s');
     if(!App->TextureMode)
     {
       mf->AddMenu("Show Root",CMD_PAGE_SHOWROOT,'S'|sKEYQ_SHIFT);

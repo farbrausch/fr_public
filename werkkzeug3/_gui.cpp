@@ -1367,7 +1367,6 @@ void sGuiWindow::RemChild(sGuiWindow *win)
     }
     p = &((*p)->Next);
   }
-  sVERIFYFALSE;
 }
 
 /****************************************************************************/
