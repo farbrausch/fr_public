@@ -54,6 +54,7 @@ extern "C" sU8 SplashTGA[];
 #define CMD_MENU_NOVA         0x1017
 #define CMD_MENU_CAMSPEED     0x1018
 #define CMD_MENU_VIEWCONTEXT2 0x1019
+#define CMD_MENU_DUALVIEW     0x1020
 
 #define CMD_BROWSERPREVIEW    0x1060
 #define CMD_LOG_PULLDOWN      0x1061
@@ -785,6 +786,11 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
   case CMD_MENU_VIEWCONTEXT2:
     ViewWin2->OnCommand(CMD_VIEW_PULLDOWN);
     return sTRUE;
+
+  case CMD_MENU_DUALVIEW:
+    // toggle single/dual view
+    UpdateDualViewMode();
+    break;
 
   case CMD_MENU_CAMSPEED:
     // synchronize winview cam speed
@@ -2225,6 +2231,11 @@ void WerkkzeugApp::InitToolBorder()
 
     con = new sControl;
     con->EditCycle(CMD_MENU_SOUND,&GenOverlayManager->SoundEnable,0,"|Sound");
+    con->Style |= sCS_SMALLWIDTH;
+    ToolBorder->AddChild(con);
+
+    con = new sControl;
+    con->EditCycle(CMD_MENU_DUALVIEW,&this->DualViewMode,0,"|Dual View");
     con->Style |= sCS_SMALLWIDTH;
     ToolBorder->AddChild(con);
 
