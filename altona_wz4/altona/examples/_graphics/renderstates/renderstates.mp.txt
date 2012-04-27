@@ -1,0 +1,26 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{A07F5FB9-E9CF-4a03-A044-36798333C17B}";
+
+license altona;
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+file "main.?pp";
+file "renderstates.mp.txt";
+

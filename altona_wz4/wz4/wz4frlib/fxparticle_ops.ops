@@ -1,0 +1,825 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/fxparticle.hpp"
+#include "wz4frlib/fxparticle_mc.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Particles Cloud()
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    int Count(1..65536) = 256;
+    anim float CloudSize[2] (-1024..1024 step 0.01) = 1;
+    anim float CloudFreq[2] (-1024..1024 step 0.01) = { 1,4 };
+    anim float30 CloudPos(-1000000..1000000 step 0.0001) = { 0,0,0 };
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RPCloud *node = new RPCloud();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Ballistic(?Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    if(!input[0])
+      int Count(1..65536) = 256;
+    int Seed(0..255) = 1;
+    group "Movement";
+    flags CreateFlags("Sphere|Square|Bouble");
+    anim float30 Gravity(-1000000..1000000 step 0.001) = { 0,-0.01,0 };
+    anim float31 PosStart(-1024..1024 step 0.01);
+    anim float30 PosRand(-1024..1024 step 0.01) = 1;
+    anim float30 SpeedStart(-1024..1024 step 0.01) = { 0,0.25,0 };
+    anim float30 SpeedRand(-1024..1024 step 0.01) = 0.25;
+    group "Timing";
+    anim float BurstPercent(0..1 step 0.01);
+    layout flags TimeFlags("Once|Loop|Clamp");
+    anim float LifeTime(0..1024 step 0.25)=16;
+    anim float Delay(0..1 step 0.01);
+    
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RPBallistic *node = new RPBallistic();
+    node->ParaBase = node->Para = *para;
+    if(in0)
+    {
+      node->Source = in0->RootNode; in0->RootNode->AddRef();
+    }
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Mesh(Wz4Mesh)
+{
+  tab = Wz4Render;
+  column = 3;
+  code
+  {
+    if(!in0)
+      return 0;
+
+    RPMesh *node = new RPMesh();
+    in0->Charge();
+    node->Init(in0);
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+type Wz4Explosion
+{
+  name = "Wz4 Explosion";
+  //color = 0xffa0a060;
+  color = 0xffff7800;
+  gui = base3d;
+  flags = render3d|notab;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    sSetTarget(sTargetPara(sCLEAR_ALL,pi.BackColor,pi.Spec));
+  }
+}
+
+operator Wz4Explosion Explosion()
+{
+  tab = Wz4Render;
+  column = 3;
+
+  parameter
+  {
+    float31 Position (-65536..65536 step 0.001);
+    float Falloff (-1024..1024 step 0.001) = -2;
+    float30 SpeedConstant(-65536..65536 step 0.001)={0,0,0};
+    float30 SpeedExplode (-65536..65536 step 0.001)={1,1,1};
+    float30 SpeedRandom  (-65536..65536 step 0.001)={0.1,0.1,0.1};
+
+    group "Timing";
+    layout flags TimingFlags ("use position|separate origin:*1clamp time|reject time");
+    if(TimingFlags&1)
+      float31 IgnitionPos (-65536..65536 step 0.001);
+
+    float IgnitionTime (0..256 step 0.001) = 0;
+    float IgnitionRand (0..256 step 0.001) = 0.1;
+    float IgnitionSpeed (-65536..65536 step 0.001) = 1;
+    float30 Shape (-65536..65536 step 0.001) = { 1,1,1 };
+    float30 Rotation (-64..64 step 0.001) = { 0,0,0 };
+    float DistancePower (-256..256 step 0.001) = 1;
+    float TimeMin (-1024..1024 step 0.001) = -256;
+    float TimeMax (-1024..1024 step 0.001) = 256;
+  }
+
+  code
+  {
+    out->Para = *para;
+  }
+
+  handles
+  {
+    pi.Handle3D(op,1,para->Position,wHM_PLANE);
+  }
+}
+
+operator Wz4Particles Exploder(Wz4Mesh,?*Wz4Explosion)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    int Seed(0..255) = 1;
+    group "Physics";
+    anim float30 Gravity(-65536..65536 step 0.001)={0,-0.01,0};
+    float Density(0..65536 step 0.01)=100;
+    float MaxAngularVelocity(0..1024 step 0.01)=20;
+    float AirDrag(0..256 step 0.001)=1.0;
+    float RotationAirDrag(0..256 step 0.001)=0.3;
+  }
+
+  code
+  {
+    if(!in0)
+      return 0;
+
+    RPExploder *node = new RPExploder();
+    node->Para = *para;
+    in0->Charge();
+    node->Init(in0,cmd);
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Cloud2()
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    float Speed(-1000000..1000000 step 0.01);
+    float SpeedSpread(0..2 step 0.001);
+    array 
+    {
+      float30 Pos(-1000000..1000000 step 0.01);
+      float30 Scale(-1000000..1000000 step 0.01)=1;
+      float Speed(-1000000..1000000 step 0.01);
+      float Rot(-16..16 step 0.01);
+      int Count(1..65536 step 16);
+    }
+  }
+
+  code
+  {
+    RPCloud2 *node = new RPCloud2();
+    node->ParaBase = node->Para = *para;
+    node->Init((Wz4ParticlesArrayCloud2 *) cmd->Array,cmd->ArrayCount);
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Wobble(Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    layout flags Source("Part Time|Part Pos|Abs Time");
+    layout flags Function("Perlin|Lissajous:*4flow|center"); 
+    anim float31 Freq(-1024..1024 step 0.01) = 0;
+    anim float30 Amp(-1024..1024 step 0.01) = 0;
+    if(Function&1==0)
+      int Seed(0..255) = 1;
+    anim float30 Phase(-16..16 step 0.001);
+    if(Source==0 || Source==2)
+    {
+      anim float Spread(0..256 step 0.01)=0;
+      anim float TimeFactor(-256..256 step 0.01)=1;
+      anim float DeltaFactor(-256..256 step 0.01)=1;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RPWobble *node = new RPWobble();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Add(?*Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  code
+  {
+    RPAdd *node = new RPAdd();
+    //node->ParaBase = *para;
+    node->Sources.HintSize(cmd->InputCount);
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Wz4Particles *in = cmd->GetInput<Wz4Particles *>(i);
+      if(in && in->RootNode)
+      {
+        node->Sources.AddTail(in->RootNode);
+        in->RootNode->AddRef();
+      }
+    }
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Lissajous(?Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    if(!input[0])
+      int Count(1..0x10000)=1;
+    anim float Lifetime(0..1024 step 0.01) = 1;
+    anim float Spread(0..1 step 0.01) = 1;
+    float31 Scale(-1024..1024 step 0.01);
+    layout flags Flags ("-|Clamp:*1-|Tube:*2Random|Ordered");
+    anim float30 Tweak(-16..16 step 0.001) = 0;
+    anim float LinearTwirl(-256..256 step 0.01) = 0;
+    anim float30 LinearStretch(-1024..1024 step 0.01) = 0;
+    int Seed(0..256) = 1;
+    anim float MasterPhase(-16..16 step 0.001) = 0;
+    if(Flags & 2)
+      anim float TubeRandom(0..1024 step 0.001) = 0;
+    anim float MasterScale(0..1024 step 0.001) = 1;
+    anim float SpeedSpread(0..1 step 0.001) = 0;
+    anim float LinearTwist(-256..256 step 0.01) = 0;
+    if(Flags&4)
+      anim float Randomness(0..16 step 0.001) = 0;
+    anim float31 Translate(-1000000..1000000 step 0.01) = 0;
+
+    array
+    {
+      flags Axis "* Axis" ("x|y|z|twirl|scale");
+      float Phase "* Phase" (-16..16 step 0.001) = 0;
+      float Freq "* Freq" (-1024..1024 step 0.001) = 1;
+      float Amp "* Amp" (-0x10000..0x10000 step 0.01) = 1;
+    }
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RPLissajous *node = new RPLissajous();
+    node->ParaBase = node->Para = *para;
+    node->Curves.Resize(cmd->ArrayCount);
+    Wz4ParticlesArrayLissajous *ar = (Wz4ParticlesArrayLissajous *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      node->Curves[i].Axis  = ar[i].Axis;
+      node->Curves[i].Phase = ar[i].Phase;
+      node->Curves[i].Freq  = ar[i].Freq;
+      node->Curves[i].Amp   = ar[i].Amp;
+    }
+    if(in0)
+    {
+      node->Source = in0->RootNode; 
+      in0->RootNode->AddRef();
+    }
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles SplinedParticles(?Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    string Spline:1;
+    string AltSpline:2;
+    
+    if(!input[0])
+      int Count(1..0x10000)=1;
+    anim float Lifetime(0..1024 step 0.01) = 1;
+    anim float Spread(0..100 step 0.01) = 1;
+    float31 Scale(-1024..1024 step 0.01);
+    layout flags Flags ("-|Clamp Begin:*4Wrap|-:*1-|Tube:*2Random|Ordered");
+    continue flags Flags "Upvector" ("*3auto|specify");
+    if (Flags & 8)
+      anim float30 Tweak "Tweak Upvector"(-16..16 step 0.001) = 0;
+    anim float LinearTwirl(-256..256 step 0.01) = 0;
+    anim float Epsilon(0..1 step 0.001) = 0.01;
+    anim float AltShift(-64..64 step 0.01) = 0;
+    int Seed(0..256) = 1;
+    if(Flags & 2)
+      anim float TubeRandom(0..1024 step 0.001) = 0;
+    if(Flags & 4)
+      anim float Randomness(0..15 step 0.001) = 0;
+    anim float MasterPhase(-16..16 step 0.001) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    RPSplinedParticles *node = new RPSplinedParticles();
+    node->ParaBase = node->Para = *para;
+    node->Name = cmd->Strings[1] && cmd->Strings[1][0] ? cmd->Strings[1] : L"spline";
+    node->AltName = cmd->Strings[2] && cmd->Strings[2][0] ? cmd->Strings[2] : L"altspline";
+    if(in0)
+    {
+      node->Source = in0->RootNode; 
+      in0->RootNode->AddRef();
+    }
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Trails(Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    flags Lifetime("Source|Trail|Both");
+    int Count(1..255) = 5;
+    float Delta(-1024..1024 step 0.001) = 0.05;
+  }
+  code
+  {
+    RPTrails *node = new RPTrails();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles StaticParticles()
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    layout flags Flags("*0-|Rotation:*1-|Color");
+
+    array
+    {
+      float Time(0..1 step 0.001);
+      float31 Pos(-1000000..1000000 step 0.01);
+      if(Flags & 1)
+        float30 Rot(-4..4 step 0.001);
+      if(Flags & 2)
+        color Color("rgba")=0xffffffff;
+    }
+  }
+  code
+  {
+    RPStaticParticles *node = new RPStaticParticles();
+    node->ParaBase = node->Para = *para;
+    node->Init((Wz4ParticlesArrayStaticParticles *) cmd->Array,cmd->ArrayCount);
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+  handles
+  {
+    void *data;
+    sFORALL(op->ArrayData,data)
+    {
+      Wz4ParticlesArrayStaticParticles *e = (Wz4ParticlesArrayStaticParticles *)data;
+      pi.Handle3D(op,_i+1,e->Pos,wHM_PLANE);
+      sVector31 p0 =e->Pos;
+      p0.y = 0;
+      pi.Line3D(e->Pos,p0);
+    }
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Render Sprites(Wz4Particles,Texture2D,?Texture2D)
+{
+  column = 2;
+  parameter
+  {
+    anim float31 Trans(-1024..1024 step 0.01);
+    anim float Size(0..1024 step 0.01) = 0.125;
+    anim float Aspect(-16..16 step 0.01) = 0;
+    layout flags Mode ("*0add|premul alpha|mul|mul2|smooth|alpha (please use pm-alpha):*4zoff|zread|zwrite|zon:*8-|sort")=0x4000;
+    continue layout flags Mode ("*9atlas anim|atlas multi:*11fade in out|-:*12screen align|vector align:*13-|particle color:*14-|scale by transform");
+    continue layout flags Mode ("*16dest alpha from shader|dest alpha unchanged|dest alpha = 0|dest alpha blend:*20Center|Button:*24-|Tree Lock :*28Alpha Test Off|Alpha Test On");    
+    anim color Color("rgba") = 0xffffffff;
+    padding(1);
+    
+    group "Randomization";
+    anim float RotStart(-1024..1024 step 0.01) = 0;
+    anim float RotSpeed(-1024..1024 step 0.01) = 0;
+    anim float RotRand(-1024..1024 step 0.01) = 0;
+    anim float RotSpread(0..1024 step 0.01) = 0;
+    float SizeRand(0..1 step 0.01);
+    
+    group "Particle Size";
+    flags GrowMode("const|linear|sine|smoothstep");
+    anim float FadeIn(0..1 step 0.01) = 0;
+    anim float FadeOut(0..1 step 0.01) = 0;
+    int Renderpass(-127..127);
+	
+    if(!(Mode & 0x200))
+    {
+	    group "Texture Animation";
+	    anim float TexAnimSpeed(-1024..1024 step 0.01) = 1;
+	    anim float TexAnimRand(0..1 step 0.01) = 0;
+    }
+
+    group "Misc";
+    int GroupCount(1..256) = 1;
+
+    if(!(Mode & 0x800))
+    {
+      float NearFadeDistance(0..0x100000 step 0.125) = 1;
+      float FarFadeDistance (0..0x100000 step 0.125) = 1000;
+      float FarFadeRange    (0..0x100000 step 0.125) = 100;
+    }
+
+    if(Mode & 0x1000)
+      float30 AlignDir(-1..1 step 0.001) = 0;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNSprites *node = new RNSprites();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    node->TextureDiff = in1; in1->AddRef();
+    node->TextureFade = in2; in2->AddRef();
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Chunks(Wz4Particles,*Wz4Mesh)
+{
+  column = 2;
+  parameter
+  {
+    anim float31 Trans(-1024..1024 step 0.01);
+    anim float Scale(0..1024 step 0.01) = 1.0;
+    layout flags Direction ("random|forward|fly")=0;
+    int Seed(0..255) = 1;
+    anim float LookAhead(-1024..1024 step 0.001) = 0.05;
+
+    anim float30 RotStart(0..1 step 0.01) = 0;
+    anim float30 RotSpeed(-1024..1024 step 0.01) = 0;
+    anim float30 RotRand(-1024..1024 step 0.01) = 0;
+
+    if((Direction&15)==1)
+    {
+      flags UpVector("x|y|z")=1;
+      anim float SpiralRand(0..1 step 0.01) = 0;
+      anim float SpiralSpeed(-1024..1024 step 0.01) = 0;
+      anim float SpiralRandSpeed(-1024..1024 step 0.01) = 0;
+    }
+    int Renderpass(-127..127);
+    int LightEnv(0..15);
+
+    layout continue flags Direction "Flags" ("*4-|animated (SLOW):*5-|Color:*6-|NoRandom");
+    if(Direction & 16)
+    {
+      anim float AnimRand(0..1 step 0.01) = 1;
+      anim float AnimSpeed(-1000..1000 step 0.01) = 16;
+      anim float AnimSpeedRand(-1000..1000 step 0.01) = 0;
+      anim int AnimDifferent(1..100000) = 10;
+    }
+    anim float ScaleRand(0..1 step 0.001) = 0.0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNChunks *node = new RNChunks();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    for(sInt i=1;i<cmd->InputCount;i++)
+    {
+      Wz4Mesh *in = cmd->GetInput<Wz4Mesh *>(i);
+      if(in)
+      {
+        in->Charge();
+        node->Meshes.AddTail(in);
+        in->AddRef();
+      }
+    }
+    if(!node->Init())
+      cmd->SetError(L"only one bone object allowed");
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Debris "ExplodeChunks" (Wz4Particles,Wz4Mesh)
+{
+  column = 2;
+//  flags = obsolete;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim int LightEnv(0..15) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNDebris *node = new RNDebris();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    if(in1)
+    {
+      node->Mesh = in1;
+      in1->AddRef();
+    }
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Trails(Wz4Particles,Wz4Mtrl)
+{
+  tab = Wz4Render;
+  column = 2;
+  parameter
+  {
+    int Count(3..255) = 5;
+    anim float Delta(-1024..1024 step 0.001) = 0.05;
+    anim float Width(0..1024 step 0.001) = 0.125;
+    anim int LightEnv(0..15) = 0;
+    padding(1); 
+    layout flags Orientation("camera|x|y|z|fly");
+    continue flags Orientation "Faces" ("*4flat|round|square");
+    int Renderpass(-127..127);
+    if((Orientation&15)==4)
+      anim float30 Tweak(-16..16 step 0.001);
+    anim int TrailStep(1..127) = 1;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNTrails *node = new RNTrails();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Mtrl = in1; in1->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Metaballs(Wz4Particles)
+{
+  column = 2;
+  flags = hide;
+  parameter
+  {
+    int Renderpass(-127..127);
+    int Peels(0..8)=4;
+    anim float31 Trans(-1024..1024 step 0.01);
+    anim float Size(0..1024 step 0.01) = 0.125;
+    flags Debug("off|show peel");
+    flags Flags "Binning"("tiny|small|large");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNMetaballs *node = new RNMetaballs();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render MarchingCubes(Wz4Particles,Wz4Mtrl)
+{
+  column = 2;
+  parameter
+  {
+    float GridSize:0(0.001..16 step 0.001)=1.0;
+    float Influence:1(0..16 step 0.01) = 0.5;
+    float IsoValue:2(0..1000 step 0.01) = 10.0;
+    flags BaseGrid:5(" 1| 2| 4| 8| 16| 32")=3;
+    flags Subdivide:6(" 0| 1")=0;
+
+    group "render";
+    int LightEnv:3(0..15);
+    int Renderpass:4(-127..127);
+    flags Multithreading:7("off|limited on|pipelined on");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNMarchingCubes *node = new RNMarchingCubes();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    node->Mtrl = in1; in1->AddRef();
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render MarchingCubesColor(Wz4Particles,Wz4Mtrl)
+{
+  column = 2;
+  parameter
+  {
+    float GridSize:0(0.001..16 step 0.001)=1.0;
+    float Influence:1(0..16 step 0.01) = 0.5;
+    float IsoValue:2(0..1000 step 0.01) = 10.0;
+    flags BaseGrid:5(" 1| 2| 4| 8| 16| 32")=3;
+    flags Subdivide:6(" 0| 1")=0;
+
+    group "render";
+    int LightEnv:3(0..15);
+    int Renderpass:4(-127..127);
+    flags Multithreading:7("off|limited on|pipelined on");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNMarchingCubesColor *node = new RNMarchingCubesColor();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; node->Source->AddRef();
+    node->Mtrl = in1; in1->AddRef();
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Particles Bulge(Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    layout flags Function(" 3D Bulge|S-Bulge") = 0;
+    anim float31 Center(-65536..65536 step 0.01) = 0;
+    anim float30 Size(-65536..65536 step 0.01) = 1;
+    anim float30 Stretch(-65536..65536 step 0.01) = 1;
+    anim float FadeGamma(0..256 step 0.001) = 0;
+    anim float Warp(-1..16 step 0.001) = 1;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RPBulge *node= new RPBulge();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles Sparcle(Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    int SamplePoints(1..4096) = 100;
+    float Percentage(0..1 step 0.001) = 0.01;
+    float Lifetime(0..1 step 0.001) = 0.04;
+    float RandomSpeed(-1024..1024 step 0.001) = 0.5;
+    float DirectionSpeed(-1024..1024 step 0.001) = 0.0;
+    float Gravity(-1024..1024 step 0.001) = 0;
+    int RandomSeed(0..255);
+  }
+  code
+  {
+    RPSparcle *node = new RPSparcle();
+    node->ParaBase = node->Para = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Particles FromMesh(Wz4Mesh)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    float Raster (0..1024 step 0.01) = 0.125;
+    float31 Offset (-1024..1024 step 0.001) = 0;
+    flags Flags ("-|Hollow");
+  }
+  code
+  {
+    RPFromMesh *node = new RPFromMesh();
+    node->ParaBase = node->Para = *para;
+    node->Init(in0);
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/

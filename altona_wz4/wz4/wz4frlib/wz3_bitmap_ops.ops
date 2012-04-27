@@ -1,0 +1,1420 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+code
+{
+  #include "wz4frlib/wz3_bitmap_code.hpp"
+  #include "wz4lib/poc_ops.hpp"
+  void xInitPerlin();
+}
+header
+{
+  #include "wz4lib/basic_ops.hpp"
+  #include "wz4lib/basic.hpp"
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Class                                                              ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type GenBitmap : BitmapBase
+{
+  color = 0xffc040c0;
+  name = "wz3 Bitmap";
+  gui = base2d;
+  flags = uncache;
+  columnheader[0] = "generator";
+  columnheader[1] = "filters";
+  columnheader[2] = "special";
+  columnheader[3] = "samplers";
+
+  extern void Init()
+  {
+    xInitPerlin();
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    ((GenBitmap *)obj)->CopyTo(pi.Image);
+
+    pi.SetSizeTex2D(pi.Image->SizeX,pi.Image->SizeY);
+    pi.PaintTex2D(pi.Image);
+    pi.PaintHandles();
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap MakeWz3Bitmap(BitmapBase)
+{
+  flags = conversion|hide;
+  code
+  {
+    sImage img;
+    in0->CopyTo(&img);
+    out->Init(&img);
+  }
+}
+
+/****************************************************************************/
+
+operator Texture2D MakeTexture2(GenBitmap)
+{
+  flags = conversion;
+  tab = GenBitmap;
+  parameter
+  {
+    flags Format ("default|argb8888|a8|i8|DXT1|DXT1A|DXT3|DXT5|R16F|R32F|ARGB16F|ARGB32F");
+  }
+  code
+  {
+    static sInt modes[] = 
+    { 
+      0,sTEX_ARGB8888,sTEX_A8,sTEX_I8,sTEX_DXT1,sTEX_DXT1A,sTEX_DXT3,sTEX_DXT5,sTEX_R16F,sTEX_R32F,sTEX_ARGB16F,sTEX_ARGB32F
+    };
+
+    sInt format = modes[para->Format];
+    sImage *img;
+    switch(format)
+    {
+    case sTEX_R16F:
+      {
+        sImageData *id = new sImageData;
+        id->Init2(format|sTEX_2D,1,in0->XSize,in0->YSize,1);
+        sU64 *s = (sU64 *)in0->Data;
+        sU16 *d = (sU16 *)id->Data;
+        for(sInt i=0;i<in0->XSize*in0->YSize;i++)
+        {
+          sU64 v = s[i]; 
+          d[i] = sFloatToHalf(((v>>32)&0x7fff)/sF32(0x7fff));
+        }
+        out->ConvertFrom(id);
+      }
+      break;
+    case sTEX_ARGB16F:
+      {        
+        sImageData *id = new sImageData;
+        id->Init2(format|sTEX_2D,1,in0->XSize,in0->YSize,1);
+        sU64 *s = (sU64 *)in0->Data;
+        sU16 *d = (sU16 *)id->Data;
+        for(sInt i=0;i<in0->XSize*in0->YSize;i++)
+        {
+          sU64 v = s[i]; 
+          d[i*4+0] = sFloatToHalf(((v>>32)&0x7fff)/sF32(0x7fff));
+          d[i*4+1] = sFloatToHalf(((v>> 8)&0x7fff)/sF32(0x7fff));
+          d[i*4+2] = sFloatToHalf(((v>> 0)&0x7fff)/sF32(0x7fff));
+          d[i*4+3] = sFloatToHalf(((v>>48)&0x7fff)/sF32(0x7fff));
+        }
+        out->ConvertFrom(id);
+      }
+      break;
+    case sTEX_R32F:
+      {
+        sImageData *id = new sImageData;
+        id->Init2(format|sTEX_2D,1,in0->XSize,in0->YSize,1);
+        sU64 *s = (sU64 *)in0->Data;
+        sF32 *d = (sF32 *)id->Data;
+        for(sInt i=0;i<in0->XSize*in0->YSize;i++)
+        {
+          sU64 v = s[i]; 
+          d[i] = (((v>>32)&0x7fff)/sF32(0x7fff));
+        }
+        out->ConvertFrom(id);
+      }
+      break;
+    case sTEX_ARGB32F:
+      {
+        sImageData *id = new sImageData;
+        id->Init2(format|sTEX_2D,1,in0->XSize,in0->YSize,1);
+        sU64 *s = (sU64 *)in0->Data;
+        sF32 *d = (sF32 *)id->Data;
+        for(sInt i=0;i<in0->XSize*in0->YSize;i++)
+        {
+          sU64 v = s[i]; 
+          d[i*4+0] = (((v>>32)&0x7fff)/sF32(0x7fff));
+          d[i*4+1] = (((v>> 8)&0x7fff)/sF32(0x7fff));
+          d[i*4+2] = (((v>> 0)&0x7fff)/sF32(0x7fff));
+          d[i*4+3] = (((v>>48)&0x7fff)/sF32(0x7fff));
+        }
+        out->ConvertFrom(id);
+      }
+      break;
+    default:
+      img = new sImage;
+      in0->CopyTo(img);
+      if(format==0)
+      {
+        if(Doc->DocOptions.TextureQuality>0)
+        {
+          if(img->HasAlpha())
+            format = sTEX_DXT5;
+          else
+            format = sTEX_DXT1;
+        }
+        else
+          format = sTEX_ARGB8888;
+        if(Doc->DocOptions.TextureQuality>1)
+        {
+          sImage *x = img->Half();
+          delete img;
+          img = x;
+        }
+      }
+
+      out->ConvertFrom(img,format|sTEX_2D);
+      delete img;
+    }
+    out->Atlas=in0->Atlas;
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator UnitTest UnitTestBitmap(GenBitmap)
+{
+  tab = GenBitmap;
+  column = 3; 
+  parameter
+  {
+    fileout TestName;
+    flags Flags "Always Pass" ("-|compare:*1-|cross compare");
+  }
+  code
+  {
+    sImage img;
+    in0->CopyTo(&img);
+    return out->Test(img,cmd->Strings[0],para->Flags);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Generators                                                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Flat()
+{
+  shortcut = 'f';
+  column = 0;
+  flags = passoutput;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    color Color ("rgba")=0xff000000;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    out->Flat(para->Color);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Perlin()
+{
+  shortcut = 'p';
+  column = 0;
+  flags = passoutput;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Frequency(0..16)=1;
+    int Octaves(0..16)=2;
+    float FadeOff(-8..8 step 0.01) = 1.0;
+    int Seed(0..255)=1;
+    flags Mode("-|abs:*1-|sin");
+    float Amplify(0..16 step 0.01) = 1.0;
+    float Gamma(0..16 step 0.01) = 1.0;
+    color Color0 ("rgba")=0xff000000;
+    color Color1 ("rgba")=0xffffffff;
+  }
+
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    out->Perlin(para->Frequency,para->Octaves,para->FadeOff,para->Seed,para->Mode,para->Amplify,para->Gamma,para->Color0,para->Color1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Cell()
+{
+  shortcut = 'c';
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    color Color0 ("rgba")=0xffff0000;
+    color Color1 ("rgba")=0xffffff00;
+    int Max(2..255 step 0.25) = 255;
+    float MinDistance (0..1 step 0.001) = 0.125;
+    int Seed(0..255) = 1;
+    float Amplify(0..16 step 0.001) = 1;
+    float Gamma(0..16 step 0.001) = 0.5;
+    float Aspect(-8..8 step 0.01) = 0;
+    flags Mode("inner|outer:*1-|cell-color:*2-|invert")=7;
+    group "Cell-Color-Mode";
+    color Color2("rgba") = 0xff000000;
+    int Percentage(0..255) = 0;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    out->Cell(para->Color0,para->Color1,para->Color2,para->Max,para->Seed,
+              para->Amplify,para->Gamma,para->Mode,para->MinDistance,para->Percentage,para->Aspect);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Gradient()
+{
+  column = 0;
+  parameter 
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0408;
+    flags Flags ("step|linear|hermite|smoothstep:*4-|premul alpha")=0x12;
+    array
+    {
+      float Pos (0..1 step 0.01);
+      color Color("rgba");
+    }
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+
+    GenBitmapGradientPoint *g = new GenBitmapGradientPoint[cmd->ArrayCount];
+    GenBitmapArrayGradient *a = (GenBitmapArrayGradient *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      g[i].Pos = a[i].Pos;
+      g[i].Color.InitColor(a[i].Color);
+    }
+    out->Gradient(g,cmd->ArrayCount,para->Flags);
+    delete[] g;
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Import()
+{
+  column = 0;
+  parameter
+  {
+    filein Filename;
+  }
+  code
+  {
+    sImage img;
+
+    if(img.Load(cmd->Strings[0]))
+    {
+      if(sIsPower2(img.SizeX) && sIsPower2(img.SizeY))
+      {
+        out->Init(&img);
+        return 1;
+      }
+      else
+        cmd->SetError(L"Image dimensions not power of two");
+    }
+    cmd->SetError(L"couldn't load image");
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap ImportAnim()
+{
+  column = 0;
+  parameter
+  {
+    filein Filename;
+  }
+  code
+  {
+    if (LoadAtlas(cmd->Strings[0], out)==0)
+    {
+      return 1;
+    }
+    else
+    {
+      cmd->SetError(L"couldn't load image");
+    }
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap GlowRect(GenBitmap = GenBitmap Flat)
+{
+  shortcut = 'g';
+  column = 0;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Center[2](-4..4 step 0.001)=0.5;
+    float Radius[2](0..4 step 0.001)=0.5;
+    float Size[2](0..4 step 0.001) = 0;
+    color Color("rgba")=0xffffffff;
+    float Blend(0..1 step 0.01) = 1;
+    float Power "Power (hardness)" (0..16 step 0.001) = 0.5;
+    flags Wrap ("-|wrap");
+    flags Flags ("*0-|alt power:*1ellipse|rectangle");
+  }
+
+  code
+  {
+    out->GlowRect(para->Center[0],para->Center[1],para->Radius[0],para->Radius[1],para->Size[0],para->Size[1],
+                  para->Color,para->Blend,para->Power,para->Wrap,para->Flags);
+  }
+
+  helper
+  {
+    sF32 x1;
+    sF32 y1;
+    sF32 x2;
+    sF32 y2;
+    sF32 cx;
+    sF32 cy;
+    sF32 a1;
+    sF32 a2;
+  }
+  
+  handles
+  {
+    if(!pi.Dragging)
+    {
+      if(sAbs(para->Size[0])>0.00001 && sAbs(para->Size[1])>0.00001)
+        helper->a1 = para->Size[0]/para->Size[1];
+      else
+        helper->a1 = 1;
+      if(sAbs(para->Radius[0])>0.00001 && sAbs(para->Radius[1])>0.00001)
+        helper->a2 = para->Radius[0]/para->Radius[1];
+      else
+        helper->a2 = 1;
+    }
+    else
+    {
+      if(pi.IsSelected(op,2))
+      {
+        para->Size[0] = sAbs(helper->x1-para->Center[0]);
+        para->Size[1] = sAbs(helper->y1-para->Center[1]);
+      }
+
+      if(pi.IsSelected(op,3))
+        para->Size[0] = sAbs(helper->x1-para->Center[0]);
+
+      if(pi.IsSelected(op,4))
+        para->Size[1] = sAbs(helper->y1-para->Center[1]);
+
+      if(pi.IsSelected(op,5))
+      {
+        para->Radius[0] = sAbs(helper->x2-helper->x1);
+        para->Radius[1] = sAbs(helper->y2-helper->y1);
+      }
+
+      if(pi.IsSelected(op,6))
+        para->Radius[0] = sAbs(helper->x2-helper->x1);
+
+      if(pi.IsSelected(op,7))
+        para->Radius[1] = sAbs(helper->y2-helper->y1);
+    }
+
+    helper->x1 = para->Size[0]+para->Center[0];
+    helper->y1 = para->Size[1]+para->Center[1];
+
+    helper->x2 = para->Size[0]+para->Center[0]+para->Radius[0];
+    helper->y2 = para->Size[1]+para->Center[1]+para->Radius[1];
+
+    helper->cx = para->Center[0];
+    helper->cy = para->Center[1];
+
+
+    pi.HandleTex2D(op,2,helper->x1,helper->y1);
+    pi.HandleTex2D(op,3,helper->x1,helper->cy);
+    pi.HandleTex2D(op,4,helper->cx,helper->y1);
+
+    pi.HandleTex2D(op,5,helper->x2,helper->y2);
+    pi.HandleTex2D(op,6,helper->x2,helper->cy);
+    pi.HandleTex2D(op,7,helper->cx,helper->y2);
+
+        pi.HandleTex2D(op,1,para->Center[0],para->Center[1]);
+
+    pi.LineTex2D(para->Center[0],para->Center[1],helper->x1,helper->y1);
+    pi.LineTex2D(para->Center[0],helper->y1,helper->x1,helper->y1);
+    pi.LineTex2D(helper->x1,para->Center[1],helper->x1,helper->y1);
+
+    pi.LineTex2D(helper->x1,helper->y1,helper->x2,helper->y2);
+    pi.LineTex2D(helper->x1,helper->y2,helper->x2,helper->y2);
+    pi.LineTex2D(helper->x2,helper->y1,helper->x2,helper->y2);
+  }  
+  shortcut = 'g';
+}
+
+/****************************************************************************/
+
+operator GenBitmap Dots(GenBitmap = GenBitmap Flat)
+{
+  column = 0;
+  flags = passinput|passoutput;
+  parameter
+  {
+    color Color0("rgba")=0xff000000;
+    color Color1("rgba")=0xffffffff;
+    int Count(0..0x10000) = 16;
+    int Seed(0..255) = 1;
+  }
+  code
+  {
+    out->Dots(para->Color0,para->Color1,para->Count,para->Seed);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Atlas(?*GenBitmap)
+{
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    color Color ("rgba")=0xffff00ff;
+  }
+  code
+  {
+    sInt x = 0;
+    sInt y = 0;
+    sInt ymax = 0;
+    sInt xs = 1<<(para->Size&0xff);
+    sInt ys = 1<<((para->Size>>8)&0xff);
+
+    out->Init(xs,ys);
+    out->Flat(para->Color);
+
+    out->Atlas.Entries.Clear();
+    out->Atlas.Entries.HintSize(cmd->InputCount);
+    
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      GenBitmap *bm = cmd->GetInput<GenBitmap *>(i);
+      if(bm)
+      {
+        out->Blit(x,y,bm);
+        ymax = sMax(ymax,bm->YSize);
+        
+        if (bm->Atlas.Entries.IsEmpty())
+        {
+          BitmapAtlasEntry *ae=out->Atlas.Entries.AddMany(1);
+          ae->Pixels.Init(x,y,x+bm->XSize,y+bm->YSize);
+          ae->UVs.x0 = sF32(ae->Pixels.x0)/out->XSize;
+          ae->UVs.y0 = sF32(ae->Pixels.y0)/out->YSize;
+          ae->UVs.x1 = sF32(ae->Pixels.x1)/out->XSize;
+          ae->UVs.y1 = sF32(ae->Pixels.y1)/out->YSize;
+        }
+        else
+        {
+          BitmapAtlasEntry *ain, *ae=out->Atlas.Entries.AddMany(bm->Atlas.Entries.GetCount());
+          sFORALL(bm->Atlas.Entries,ain)
+          {
+            ae->Pixels.Init(x+ain->Pixels.x0,y+ain->Pixels.y0,x+ain->Pixels.x1,y+ain->Pixels.y1);
+            ae->UVs.x0 = sF32(ae->Pixels.x0)/out->XSize;
+            ae->UVs.y0 = sF32(ae->Pixels.y0)/out->YSize;
+            ae->UVs.x1 = sF32(ae->Pixels.x1)/out->XSize;
+            ae->UVs.y1 = sF32(ae->Pixels.y1)/out->YSize;
+            ae++;        
+          }
+        }
+        
+        x+= bm->XSize;
+        if(x>=xs)
+        {
+          x = 0;
+          y += ymax;
+          ymax = 0;
+        }
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***    Filters                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Color(GenBitmap)
+{
+  column = 1;
+  shortcut = 'C';
+  parameter
+  {
+    flags Mode("mul|add|sub|gray|invert|scale");
+    color Color("rgba") = 0xff000000;
+  }
+
+  code
+  {
+    sU64 col = GenBitmap::GetColor64(para->Color);
+    out->InitSize(in0);
+    out->Loop(para->Mode+BI_MULCOL,&col,in0);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Range(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Mode("adjust|range:*1normal|invert");
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+
+  code
+  {
+    sU64 cx[2];
+
+    cx[0] = GenBitmap::GetColor64(para->Color0);
+    cx[1] = GenBitmap::GetColor64(para->Color1);
+
+    out->InitSize(in0);
+    GenBitmap *in = in0;
+
+    if(para->Mode&1)
+    {
+      out->Loop(BI_GRAY,cx,in);
+      in = out;
+    }
+    if(para->Mode&2)
+    {
+      out->Loop(BI_INVERT,cx,in);
+      in = out;
+    }
+    out->Loop(BI_RANGE,cx,in);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap HSCB(GenBitmap)
+{
+  shortcut = 'h';
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Hue (-4..4 step 0.001) = 0;
+    float Saturation (-16..16 step 0.001) = 1;
+    float Contrast (0..16 step 0.001) = 1;
+    float Brightness (0..16 step 0.001) = 1;
+  }
+  code
+  {
+    out->HSCB(para->Hue,para->Saturation,para->Contrast,para->Brightness);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Bitcrusher(GenBitmap)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Steps(1..128 step 0.1) = 2;
+    float Phase(-1..1 step 0.01) = 0;
+  }
+  code
+  {
+    sU16 *p = (sU16 *) out->Data;
+    sInt s = sInt(para->Steps*128);
+    sInt h = sInt(para->Phase*0x7fff*128);
+    sInt is = sInt(0x7fff/sRoundUp(para->Steps));
+    for(sInt i=0;i<out->Size;i++)
+    {
+      p[0] = sU16(sClamp((p[0]*s+h)>>22,0,s-1)*is);
+      p[1] = sU16(sClamp((p[1]*s+h)>>22,0,s-1)*is);
+      p[2] = sU16(sClamp((p[2]*s+h)>>22,0,s-1)*is);
+      p+=4;
+    }
+  }
+} 
+
+/****************************************************************************/
+
+operator GenBitmap Merge(*GenBitmap)
+{
+  shortcut = 'a';
+  column = 2;
+  parameter
+  {
+    flags Mode("add|sub|mul|diff|alpha|brightness|hardlight|over|addsmooth|min|max|premul alpha");
+  }
+  code
+  {
+    GenBitmap *in;
+    static sU8 modes[] = 
+    {
+      BI_ADD,BI_SUB,BI_MUL,BI_DIFF,BI_ALPHA,
+      BI_BRIGHTNESS,
+      BI_HARDLIGHT,BI_OVER,BI_ADDSMOOTH,
+      BI_MIN,BI_MAX,
+      BI_ALPHA,
+    };
+    sInt mode = modes[para->Mode];
+
+    for(sInt i=1;i<cmd->InputCount;i++)
+    {
+      in = cmd->GetInput<GenBitmap *>(i);
+
+      if(in0->XSize!=in->XSize || in0->YSize!=in->YSize)
+        return 0;
+    }
+
+    out->CopyFrom(in0);
+    for(sInt i=1;i<cmd->InputCount;i++)
+    {
+      in = cmd->GetInput<GenBitmap *>(i);
+
+      out->Loop(mode,in,out);
+    }
+    if(para->Mode==11)
+      out->PreMulAlpha();
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap PreMulAlpha(GenBitmap)
+{
+  column = 1; 
+  flags = passinput|passoutput;
+  code
+  {
+    out->PreMulAlpha();
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Mask(GenBitmap,GenBitmap,GenBitmap)
+{
+  column = 2;
+  parameter
+  {
+    flags Mode("mix|add|sub|mul");
+  }
+  code
+  {
+    if(in0->XSize!= in1->XSize || in0->XSize!=in2->XSize) return 0;
+    if(in0->YSize!= in1->YSize || in0->YSize!=in2->YSize) return 0;
+    out->InitSize(in0);
+    out->Loop(BI_GRAY,in0,in0);
+    switch(para->Mode)
+    {
+    case 0:
+      out->Loop(BI_MERGE,in1,in2);
+      break;
+    case 1:
+      out->Loop(BI_MUL,in1,out);
+      out->Loop(BI_ADD,in2,out);
+      break;
+    case 2:
+      out->Loop(BI_MUL,in1,out);
+      out->Loop(BI_SUBR,in2,out);
+      break;
+    case 3:
+      out->Loop(BI_MULMERGE,in1,in2);
+      break;
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap ColorBalance(GenBitmap)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float30 Shadows(-1..1 step 0.001) = 0;
+    float30 Midtones(-1..1 step 0.001) = 0;
+    float30 Highlights(-1..1 step 0.001) = 0;
+  }
+  code
+  {
+    out->ColorBalance(para->Shadows,para->Midtones,para->Highlights);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Blur(GenBitmap)
+{
+  column = 1;
+  shortcut = 'b';
+  parameter
+  {
+    flags Passes(" 0| 1| 2| 3| 4| 5")=2;
+    float Blur[2](0..1 step 0.0001) = 0.015;
+    float Amplify(0..16 step 0.01) = 1;
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    out->Blur(para->Passes,para->Blur[0],para->Blur[1],para->Amplify);
+  }
+}
+
+
+operator GenBitmap Sharpen(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Passes(" 0| 1| 2| 3| 4| 5")=2;
+    float Blur[2](0..1 step 0.0001) = 0.015;
+    float Amplify(0..16 step 0.01) = 1;
+  }
+  code
+  {
+    out->InitSize(in0);
+    out->Sharpen(in0,para->Passes,para->Blur[0],para->Blur[1],para->Amplify);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***    Samplers                                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Rotate(GenBitmap)
+{
+  column = 3;
+  shortcut = 'r';
+  parameter
+  {
+    flags Size("current| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8current| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0000;
+    float Center[2] (-4..4 step 0.001) = 0.5;
+    float Angle(-4..4 step 0.0001) = 0;
+    float Scale[2](-16..16 step 0.001) = 1;
+    float Offset[2](-4..4 step 0.001) = 0.5;
+    flags Flags "Border Clamp" ("off|x|y|both");
+    continue flags Flags "Filter"("*2bilinear|nearest");
+  }
+  code
+  {
+    sInt sx = para->Size&0xff;
+    sInt sy = (para->Size>>8)&0xff;
+    
+    sx = sx ? 1<<(sx-1) : in0->XSize;
+    sy = sy ? 1<<(sy-1) : in0->YSize;
+
+    out->Init(sx,sy);
+    out->Rotate(in0,para->Center[0],para->Center[1],para->Angle,para->Scale[0],para->Scale[1],para->Offset[0],para->Offset[1],para->Flags);
+  }
+
+  helper
+  {
+    sF32 dx;
+    sF32 dy;
+    sF32 sxx;
+    sF32 sxy;
+    sF32 syx;
+    sF32 syy;
+  }
+
+  handles
+  {
+    if(pi.Dragging && pi.IsSelected(op,2))
+    {
+      para->Angle = sFATan2(para->Center[0]-helper->dx , para->Center[1]-helper->dy)/sPI2F;
+    }
+    
+    if(pi.Dragging && pi.IsSelected(op,3))
+    {
+      sF32 x = helper->sxx - para->Center[0];
+      sF32 y = helper->sxy - para->Center[1];
+      para->Scale[0] = 
+      para->Scale[1] = sFSqrt(x*x+y*y);
+    }
+    /*
+    if(pi.Dragging && pi.IsSelected(op,4))
+    {
+      sF32 x = helper->syx - para->Center[0];
+      sF32 y = helper->syy - para->Center[1];
+      para->Scale[0] = sFSqrt(x*x+y*y);
+    }
+    */
+
+    sF32 s = sFSin(para->Angle*sPI2F);
+    sF32 c = sFCos(para->Angle*sPI2F);
+    helper->dx = para->Center[0] - 0.25f*s;
+    helper->dy = para->Center[1] - 0.25f*c;
+    helper->sxx = para->Center[0] + para->Scale[1]*s;
+    helper->sxy = para->Center[1] + para->Scale[1]*c;
+    helper->syx = para->Center[0] + para->Scale[0]*c;
+    helper->syy = para->Center[1] - para->Scale[0]*s;
+
+    pi.HandleTex2D(op,1,para->Center[0],para->Center[1]);
+    pi.HandleTex2D(op,2,helper->dx,helper->dy);
+    pi.HandleTex2D(op,3,helper->sxx,helper->sxy);
+//    pi.HandleTex2D(op,4,helper->syx,helper->syy);
+    pi.LineTex2D(para->Center[0],para->Center[1],helper->dx,helper->dy);
+    pi.LineTex2D(para->Center[0],para->Center[1],helper->sxx,helper->sxy);
+//    pi.LineTex2D(para->Center[0],para->Center[1],helper->syx,helper->syy);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap RotateMul(GenBitmap)
+{
+  shortcut = 'R';
+  column = 3;
+  parameter
+  {
+    float Angle(-4..4 step 0.0001) = 0;
+    float Scale[2](-16..16 step 0.0001) = 1;
+    float Offset[2](-4..4 step 0.001) = 0.5;
+    flags Flags "Border Clamp" ("off|x|y|both");
+    continue flags Flags "Filter"("*2bilinear|nearest");
+    group "multiply";
+    color PreAdjust("rgba")=0xffffffff;
+    flags Mode("add|sub|mul|diff|alpha:*4linear|recursive");
+    int Count(1..255) = 2;
+    color Fade("rgba")=0xffffffff;
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    out->RotateMul(0.5f,0.5f,para->Angle,para->Scale[0],para->Scale[1],para->Offset[0],para->Offset[1],
+                   para->Flags,para->PreAdjust,para->Mode,para->Count,para->Fade);
+  }
+  handles
+  {
+    pi.HandleTex2D(op,1,para->Offset[0],para->Offset[1]);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Twirl(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    float Strength(-64..64 step 0.001) = 0.5;
+    float Gamma(0..64 step 0.01) = 2;
+    float Radius[2] (0..4 step 0.001) = 0.25;
+    float Center[2] (-4..4 step 0.001) = 0.5;
+    flags Flags "Border Clamp" ("off|x|y|both");
+  }
+  code
+  {
+    out->InitSize(in0);
+    out->Twirl(in0,para->Strength,para->Gamma,para->Radius[0],para->Radius[1],para->Center[0],para->Center[1],para->Flags);
+  }
+
+
+  helper
+  {
+    sF32 x1;
+    sF32 y1;
+    sF32 cx;
+    sF32 cy;
+    sF32 a1;
+  }
+  
+  handles
+  {
+    if(!pi.Dragging)
+    {
+
+      if(sAbs(para->Radius[0])>0.00001 && sAbs(para->Radius[1])>0.00001)
+        helper->a1 = para->Radius[0]/para->Radius[1];
+      else
+        helper->a1 = 1;
+    }
+    else
+    {
+      if(pi.IsSelected(op,2))
+      {
+        para->Radius[0] = sAbs(helper->x1-para->Center[0]);
+        para->Radius[1] = sAbs(helper->y1-para->Center[1]);
+      }
+
+      if(pi.IsSelected(op,3))
+        para->Radius[0] = sAbs(helper->x1-para->Center[0]);
+
+      if(pi.IsSelected(op,4))
+        para->Radius[1] = sAbs(helper->y1-para->Center[1]);
+    }
+
+    helper->x1 = para->Radius[0]+para->Center[0];
+    helper->y1 = para->Radius[1]+para->Center[1];
+
+    helper->cx = para->Center[0];
+    helper->cy = para->Center[1];
+
+    pi.HandleTex2D(op,1,para->Center[0],para->Center[1]);
+
+    pi.HandleTex2D(op,2,helper->x1,helper->y1);
+    pi.HandleTex2D(op,3,helper->x1,helper->cy);
+    pi.HandleTex2D(op,4,helper->cx,helper->y1);
+
+    pi.LineTex2D(para->Center[0],para->Center[1],helper->x1,helper->y1);
+    pi.LineTex2D(para->Center[0],helper->y1,helper->x1,helper->y1);
+    pi.LineTex2D(helper->x1,para->Center[1],helper->x1,helper->y1);
+  }  
+  shortcut = 'g';
+}
+
+/****************************************************************************/
+
+operator GenBitmap Distort(GenBitmap,GenBitmap)
+{
+  shortcut = 'd';
+  column = 3;
+  parameter
+  {
+    float Strength(-64..64 step 0.001) = 0.5;
+    flags Flags "Border Clamp" ("off|x|y|both");
+  }
+  code
+  {
+    if(in0->XSize!=in1->XSize || in0->YSize!=in1->YSize) return 0;
+    out->InitSize(in0);
+    out->Distort(in0,in1,para->Strength,para->Flags);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Normals(GenBitmap)
+{
+  shortcut = 'n';
+  column = 3;
+  parameter
+  {
+    float Strength(-64..64 step 0.001) = 0.5;
+    flags Mode (" 2d| 3d|tangent 2d|tangent 3d:*2normal|extra sharp");
+  }
+  code
+  {
+    out->InitSize(in0);
+    out->Normals(in0,para->Strength,para->Mode);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***    Special                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Light(GenBitmap)
+{
+  shortcut = 'L';
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    layout flags Mode("spot|point|directional");
+    if(Mode!=2)
+      float31 Pos(-16..16 step 0.02) = 0.5;
+    if(Mode!=1)
+      float Dir[2](-4..4 step 0.001) = { 0.125,0.250 };
+    color Diffuse("rgba") = 0xffffffff;
+    color Ambient("rgba") = 0xffffffff;
+    float Outer(0..1 step 0.001) = 0.75;
+    float Falloff(0..17 step 0.001) = 1.00;
+    float Amplify(-4..4 step 0.001) = 0.5;
+  }
+  code
+  {
+    out->Bump(0,para->Mode,
+              para->Pos.x,para->Pos.y,para->Pos.z,para->Dir[0],para->Dir[1],
+              para->Diffuse,para->Ambient,para->Outer,para->Falloff,para->Amplify,
+              para->Ambient,0,0);
+  }
+  helper
+  {
+    sF32 x;
+    sF32 y;
+  }
+  handles
+  {
+    sF32 dx,dy,dist;
+    if(pi.IsSelected(op,2))
+    {
+      dx = helper->x - para->Pos.x;
+      dy = helper->y - para->Pos.y;
+      dist = sClamp<sF32>(sSqrt(dx*dx+dy*dy)*2,-1,1);
+      para->Dir[1] = sACos(dist)/sPIF;
+      para->Dir[0] = sATan2(dx,dy)/sPI2F;
+    }
+
+    dist = (sCos(para->Dir[1]*sPIF))*0.5f;
+    dx = sSin(para->Dir[0]*sPI2F)*dist;
+    dy = sCos(para->Dir[0]*sPI2F)*dist;
+    helper->x = para->Pos.x + dx;
+    helper->y = para->Pos.y + dy;
+
+    pi.HandleTex2D(op,1,para->Pos.x,para->Pos.y);
+    if(para->Mode!=1)
+    {
+      pi.HandleTex2D(op,2,helper->x,helper->y);
+      pi.LineTex2D(para->Pos.x,para->Pos.y,helper->x,helper->y);
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Bump(GenBitmap,GenBitmap)
+{
+  shortcut = 'B';
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    layout flags Mode("spot|point|directional");
+    if(Mode!=2)
+      float31 Pos(-16..16 step 0.02) = 0.5;
+    if(Mode!=1)
+      float Dir[2](-4..4 step 0.001) = { 0.125,0.250 };
+    color Diffuse("rgba") = 0xffffffff;
+    color Ambient("rgba") = 0xffffffff;
+    float Outer(0..1 step 0.001) = 0.75;
+    float Falloff(0..17 step 0.001) = 1.00;
+    float Amplify(-4..4 step 0.001) = 0.5;
+
+    group "specular";
+    color Specular("rgba")=0xffffffff;
+    float Power "Power (hardness)" (0..256 step 0.02) = 16;
+    float SpecAmp "Amplify" (0..4 step 0.001) = 1.0;
+  }
+
+  code
+  {
+    if(out->Incompatible(in1)) return 0;
+
+    out->Bump(in1,para->Mode,
+              para->Pos.x,para->Pos.y,para->Pos.z,para->Dir[0],para->Dir[1],
+              para->Diffuse,para->Ambient,para->Outer,para->Falloff,para->Amplify,
+              para->Specular,para->Power,para->SpecAmp);
+  }
+
+  helper
+  {
+    sF32 x;
+    sF32 y;
+  }
+  handles
+  {
+    sF32 dx,dy,dist;
+    if(pi.IsSelected(op,2))
+    {
+      dx = helper->x - para->Pos.x;
+      dy = helper->y - para->Pos.y;
+      dist = sClamp<sF32>(sSqrt(dx*dx+dy*dy)*2,-1,1);
+      para->Dir[1] = sACos(dist)/sPIF;
+      para->Dir[0] = sATan2(dx,dy)/sPI2F;
+    }
+
+    dist = (sCos(para->Dir[1]*sPIF))*0.5f;
+    dx = sSin(para->Dir[0]*sPI2F)*dist;
+    dy = sCos(para->Dir[0]*sPI2F)*dist;
+    helper->x = para->Pos.x + dx;
+    helper->y = para->Pos.y + dy;
+
+    pi.HandleTex2D(op,1,para->Pos.x,para->Pos.y);
+    if(para->Mode!=1)
+    {
+      pi.HandleTex2D(op,2,helper->x,helper->y);
+      pi.LineTex2D(para->Pos.x,para->Pos.y,helper->x,helper->y);
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Downsample(GenBitmap)
+{
+  column = 3;
+  shortcut = 'r';
+  parameter
+  {
+    flags Size("current| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8current| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0000;
+    flags Flags "Mode" ("point|box");
+  }
+  code
+  {
+    sInt sx = para->Size&0xff;
+    sInt sy = (para->Size>>8)&0xff;
+    
+    sx = sx ? 1<<(sx-1) : in0->XSize;
+    sy = sy ? 1<<(sy-1) : in0->YSize;
+
+    out->Init(sx,sy);
+    out->Downsample(in0,para->Flags);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Text(GenBitmap=GenBitmap Flat) 
+{
+  shortcut = 't';
+  column = 0;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Position[2](-4..4 step 0.001) = 0;
+    float Height(-16..16 step 0.001) = 0.125;
+    float Leading(-16..16 step 0.001) = 1.0;
+    float Stretch(0..16 step 0.001) = 0;
+    color Color("rgba")=0xffffffff;
+    flags Flags "Center" ("-|x:*1-|y");
+    continue flags Flags "Style" ("*8-|italics:*9-|bold:*10-|symbols");
+    string Font = "arial";
+    group "Text";
+    overbox overlabel lines 5 string Text = "hund."; 
+  }
+  code
+  {
+    out->Text(para->Position[0],para->Position[1],para->Stretch,para->Height,para->Color,para->Flags,
+              para->Leading,cmd->Strings[1],cmd->Strings[0])
+  }
+  handles
+  {
+    pi.HandleTex2D(op,1,para->Position[0],para->Position[1]);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Export(GenBitmap)
+{
+  parameter
+  {
+    fileout Filename;
+  }
+  code
+  {
+    sImage img;
+    out->CopyFrom(in0);
+    out->CopyTo(&img);
+    return img.Save(cmd->Strings[0]);
+  }
+}
+ 
+operator GenBitmap Unwrap(GenBitmap)
+{
+  parameter
+  {
+    flags Mode("polar2normal|normal2polar|rect2normal");
+    continue flags Mode "Border Clamp" ("*4off|x|y|both");
+  }
+  code
+  {
+    out->Unwrap(in0,para->Mode);
+  }
+}
+
+operator GenBitmap Bulge(GenBitmap)
+{
+  parameter
+  {
+    float Amount(-0.5..16 step 0.001)=0;
+  }
+  code
+  {
+    out->Bulge(in0,para->Amount);
+  }
+}
+
+operator GenBitmap Bricks()
+{
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    color Color0("rgba") = 0xffff0000;
+    color Color1("rgba") = 0xffffff00;
+    color Joints("rgba") = 0xff000000;
+    float SizeJoints[2](0..1 step 0.001) = { 0.18,0.28 };
+    int Count[2](1..256 step 0.25) = { 18,28 };
+    int Seed(0..255) = 0;
+    int SingleWidthStones(0..255) = 80;
+    flags Flags("*2-|no adjacent singles:*3-|joints color");
+    continue flags Flags "Multiply"("*4 1| 2| 4| 8| 16| 32| 64| 128");
+    float Side(0..1 step 0.01) = 0.25;
+    float ColorBalance(0..16 step 0.01)=1.0;
+  }
+  code
+  {
+    out->Bricks(
+      1<<(para->Size&0xff),1<<((para->Size&0xff00)>>8),
+      para->Color0,para->Color1,para->Joints,
+      para->SizeJoints[0],para->SizeJoints[1],para->Count[0],para->Count[1],
+      para->Seed,para->SingleWidthStones,para->Flags,
+      para->Side,para->ColorBalance)
+  }
+}
+
+operator GenBitmap Vector(GenBitmap = GenBitmap Flat)
+{
+  parameter
+  {
+    color Color("rgba")=0xffffffff;
+    array
+    {
+      float x(-4..4 step 0.01);
+      float y(-4..4 step 0.01);
+      color col("rgba")=0xffffffff;
+      flags restart "mode" ("-|line|spline:*3-|hole:*4-|evenodd");      
+    }
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    out->Vector(para->Color,(GenBitmapArrayVector *)cmd->Array,cmd->ArrayCount);
+  }
+  handles
+  {
+    sInt max = op->GetArrayCount();
+    GenBitmapArrayVector *e = new GenBitmapArrayVector[max];
+    for(sInt i=0;i<max;i++)
+      e[i] = *op->GetArray<GenBitmapArrayVector>(i);
+
+    sArray<GenBitmapVectorLoop> l;
+    CalcGenBitmapVectorLoop(e,max,l);
+
+    GenBitmapVectorLoop *le;
+    sFORALL(l,le)
+    {
+      if((le->mode&7)==1)
+      {
+        for(sInt i=le->start;i<le->end;i++)
+        {
+          GenBitmapArrayVector *p0 = op->GetArray<GenBitmapArrayVector>(i);
+          pi.HandleTex2D(op,i+1,p0->x,p0->y,i);
+        }
+      }
+      else if((le->mode&7)==2)
+      {
+        for(sInt i=le->start;i<le->end;i+=3)
+        {
+          sInt ie = i+3; 
+          if(ie==le->end)
+            ie = le->start;
+          GenBitmapArrayVector *p0 = op->GetArray<GenBitmapArrayVector>(i+0);
+          GenBitmapArrayVector *p1 = op->GetArray<GenBitmapArrayVector>(i+1);
+          GenBitmapArrayVector *p2 = op->GetArray<GenBitmapArrayVector>(i+2);
+          GenBitmapArrayVector *p3 = op->GetArray<GenBitmapArrayVector>(ie );
+          pi.HandleTex2D(op,i+1,p0->x,p0->y,i+0);
+          pi.HandleTex2D(op,i+2,p1->x,p1->y,i+1);
+          pi.HandleTex2D(op,i+3,p2->x,p2->y,i+2);
+          pi.LineTex2D(p0->x,p0->y,p1->x,p1->y);
+          pi.LineTex2D(p2->x,p2->y,p3->x,p3->y);
+        }
+      }
+    }
+
+    delete[] e;
+  }
+  setdefaultsarray
+  {
+    GenBitmapArrayVector *k0,*k1;
+    sInt max = op->ArrayData.GetCount();
+
+    if(max==0)
+    {
+      e->restart = 1;
+      e->col = 0xffffffff;
+      e->x = 0.5f;
+      e->y = 0.5f;
+    }
+    else if(max==1)
+    {
+      e->restart = 0;
+      e->col = 0xffffffff;
+      e->x = 0.4f;
+      e->y = 0.5f;
+    }
+    else 
+    {
+      if(pos==0)
+      {
+        k0 = (GenBitmapArrayVector *) op->ArrayData[0];
+        k1 = (GenBitmapArrayVector *) op->ArrayData[1];
+        e->restart = 0;
+        e->col = k0->col;
+        e->x = k0->x - (k1->x - k0->x);
+        e->y = k0->y - (k1->y - k0->y);
+      }
+      else if(pos==max)
+      {
+        k0 = (GenBitmapArrayVector *) op->ArrayData[max-1];
+        k1 = (GenBitmapArrayVector *) op->ArrayData[max-2];
+        e->restart = 0;
+        e->col = k0->col;
+        e->x = k0->x - (k1->x - k0->x);
+        e->y = k0->y - (k1->y - k0->y);
+      }
+      else
+      {
+        k0 = (GenBitmapArrayVector *) op->ArrayData[pos-1];
+        k1 = (GenBitmapArrayVector *) op->ArrayData[pos];
+
+        e->restart = 0;
+        e->col = k0->col;
+        e->x = (k1->x + k0->x)/2;
+        e->y = (k1->y + k0->y)/2;
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***    Missing Ops                                                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/*
+
+operator GenBitmap Paste() {}
+
+*/
+
+/****************************************************************************/
+

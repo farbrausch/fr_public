@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{FABBFEE1-CBD2-4783-9898-96E52CC25074}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "ipp.mp.txt";

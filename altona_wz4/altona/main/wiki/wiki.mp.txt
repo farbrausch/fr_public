@@ -1,0 +1,23 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{0BCE9F23-C97F-4f0a-BB12-8F2A2CE75E2B}";
+
+depend "altona/main/base";
+depend "altona/main/gui";
+
+license altona;
+include "altona/main";
+library;
+
+file "layoutwindow.?pp";
+file "markup.?pp";
+file "pdf.?pp";
+file "resources.?pp";
+file "wiki.mp.txt";
+
+

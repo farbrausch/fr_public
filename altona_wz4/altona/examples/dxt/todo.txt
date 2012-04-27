@@ -1,0 +1,6 @@
+- nvidia
+- ati
+- convert all timing (pushbutton in grid - use same dxt mode for all)
+
+- job-based multithreadig
+- keep gui running

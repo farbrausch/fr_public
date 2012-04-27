@@ -1,0 +1,304 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "util/image.hpp"
+#include "base/graphics.hpp"
+#include "util/shaders.hpp"
+#include "wz4frlib/wz4_mtrl.hpp"
+}
+code
+{
+#include "wz4frlib/chaosmesh_ops.hpp"
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Material                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+
+type Wz4Material
+{
+  color = 0xff60a060;
+  name = "Obsolete Wz4 Material";
+  flags = render3d|notab;
+  
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    Wz4Material *mtrl;
+  
+    sSetTarget(sTargetPara(sCLEAR_ALL,pi.BackColor,pi.Spec));
+    pi.View->SetTargetCurrent();
+    pi.View->SetZoom(pi.Zoom3D);
+    pi.View->Prepare();
+
+    if(obj && obj->Type==Wz4MaterialType)
+    {
+      mtrl = (Wz4Material *) obj;
+
+      sCBuffer<Wz4ShaderCamera> cb_cam;
+      sCBuffer<Wz4ShaderUV> cb_uv;
+      mtrl->Material->SetCam(cb_cam.Data,pi.View);
+      mtrl->Material->SetUV(cb_uv.Data,pi.View);
+      mtrl->Material->Set(&cb_cam,&cb_uv);
+
+      sInt ty = 24;
+      sInt tx = 24;
+      sF32 ro = 2;
+      sF32 ri = 0.5;
+      sF32 u,v,fx,fy;
+      sU16 *ip;
+
+      sGeometry *Geo = new sGeometry;
+      Geo->Init(sGF_TRILIST|sGF_INDEX16,sVertexFormatTSpace4);
+
+  
+      sVertexTSpace4 *vp;
+      Geo->BeginLoadVB(tx*ty,sGD_STREAM,(void **)&vp);
+
+      for(sInt y=0;y<ty;y++)
+      {
+        for(sInt x=0;x<tx;x++)
+        {
+          u = sF32(x)/tx; fx = u*sPI2F;
+          v = sF32(y)/ty; fy = v*sPI2F;
+          vp->px = -sFCos(fy)*(ro+sFSin(fx)*ri);
+          vp->py = -sFCos(fx)*ri;
+          vp->pz = sFSin(fy)*(ro+sFSin(fx)*ri);
+          vp->nx = -sFCos(fy)*sFSin(fx);
+          vp->ny = -sFCos(fx);
+          vp->nz = sFSin(fy)*sFSin(fx);
+          vp->tx = sFSin(fy);
+          vp->ty = 0;
+          vp->tz = sFCos(fy);
+          vp->tsign = 1;
+          vp->c0 = 0;
+          vp->u0 = u;
+          vp->v0 = v;
+          vp->u1 = u;
+          vp->v1 = v;
+          vp++;
+        }
+      }
+      Geo->EndLoadVB();
+      
+      Geo->BeginLoadIB(tx*ty*6,sGD_STREAM,(void **)&ip);
+      for(sInt y=0;y<ty;y++)
+      {
+        for(sInt x=0;x<tx;x++)
+        {
+          sQuad(ip,0,
+            (y+0)%ty*tx+(x+0)%tx,
+            (y+1)%ty*tx+(x+0)%tx,
+            (y+1)%ty*tx+(x+1)%tx,
+            (y+0)%ty*tx+(x+1)%tx);
+        }
+      }
+      Geo->EndLoadIB();
+
+      Geo->Draw();
+
+      delete Geo;
+    }
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Material Material(?Texture2D,?Texture2D,?Texture2D,?TextureCube,?TextureCube,?Texture2D)
+{
+  shortcut = 'm';
+  flags = obsolete;
+
+  parameter  
+  {
+    flags Flags ("zoff|zread|zwrite|zon:*4culloff|cullon|cullinv:*7-|light")=0x93;
+    continue flags "Write Mask" Flags ("*8-|no A:*9-|no R:*10-|no G:*11-|no B");
+    flags Blend ("opaque|add|mul|mul2|smooth|alpha");
+
+    group "Bump";
+    link Texture:0 (choose);
+    if(input[0])
+    {
+      label "Modes";
+      nolabel flags TFlags0 ("point|linear|trilinear|aniso:*4tile|clamp|mirror")=0x02;
+      layout continue flags "Scale" TFlags0 ("*14-|scale|mat0|mat1");
+      if(TFlags0.scale)
+        nolabel float Scale0 (-1024..1024 step 0.01)=1;
+    }
+
+    group "Diffuse";
+    link Texture:1 (choose);
+    if(input[1])
+    {
+      label "Modes";
+      nolabel flags TFlags1 ("point|linear|trilinear|aniso:*4tile|clamp|mirror")=0x02;
+      layout continue flags "Scale" TFlags1 ("*14-|scale|mat0|mat1");
+      if(TFlags1.scale)
+        nolabel float Scale1 (-1024..1024 step 0.01)=1;
+    }
+
+    group "Detail";
+    link Texture:2 (choose);
+    if(input[2])
+    {
+      label "Modes";
+      nolabel flags TFlags2 ("point|linear|trilinear|aniso:*4tile|clamp|mirror")=0x02;
+      flags DetailMode ("off|mul|add|bump|specmul:*4uv0|uv1|model|world|sphere|reflect") = 1;
+      layout continue flags "Scale" TFlags2 ("*14-|scale|mat0|mat1");
+      if(TFlags2.scale)
+        nolabel float Scale2 (-1024..1024 step 0.01)=1;
+    }
+
+    group "Specular Cube";
+    link Texture:3 (choose);
+    if(input[3])
+    {
+      label "Modes";
+      nolabel flags TFlags3 ("point|linear|trilinear|aniso")=0x02;
+    }
+
+    group "Diffuse Cube";
+    link Texture:4 (choose);
+    if(input[4])
+    {
+      label "Modes";
+      nolabel flags TFlags4 ("point|linear|trilinear|aniso")=0x02;
+    }
+
+    group "Envi";
+    link Texture:5 (choose);
+    if(input[5])
+    {
+      label "Modes";
+      nolabel flags TFlags5 ("point|linear|trilinear|aniso")=0x02;
+    }
+
+    if(TFlags0.mat0 || TFlags1.mat0 || TFlags2.mat0)
+    {
+      group "Matrix 0";
+      float Mat0Scale[2] ( -64..64 step 0.01) = 1;
+      float Mat0Rot ( -64..64 step 0.01) = 0;
+      float Mat0Trans[2] ( -64..64 step 0.01) = 0;
+    }
+    if(TFlags0.mat1 || TFlags1.mat1 || TFlags2.mat1)
+    {
+      group "Matrix 1";
+      float31 Mat1Scale ( -64..64 step 0.01) = 1;
+      float31 Mat1Rot ( -64..64 step 0.01) = 0;
+      float31 Mat1Trans ( -64..64 step 0.01) = 0;
+    }
+
+    group "Misc";
+    flags VertexMode ("-|anim");
+    continue flags DetailMode "Alpha" ("*8one|distance|||diffuse");
+  }
+
+  code
+  {
+    static sU32 blend[8] =
+    {
+      sMB_OFF,sMB_ADD,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_ALPHA
+    };
+    out->Material = new Wz4Shader;
+    out->Material->Flags = para->Flags;
+    out->Material->BlendColor = blend[para->Blend&7];
+
+    out->Material->DetailMode = 0;
+    if(in2)
+    {
+      out->Material->DetailMode = para->DetailMode;
+      if((out->Material->DetailMode&0x0f)==3 && in0==0)
+        out->Material->DetailMode = 0;
+      if((out->Material->DetailMode&0x0f)==4 && in3==0)
+        out->Material->DetailMode = 0;
+    }
+    out->Material->DetailMode |= para->DetailMode&0xff00;
+
+    if(in0)
+    {
+      out->Tex[0] = in0; in0->AddRef();
+      out->Material->Texture[0] = in0->Texture;
+      out->Material->TFlags[0] = (para->TFlags0 ^ 2)&0xff;
+      out->Material->MakeMatrix(0,para->TFlags0,para->Scale0,&para->Mat0Scale[0],&para->Mat1Scale.x);
+    }
+
+    if(in1)
+    {
+      out->Tex[1] = in1; in1->AddRef();
+      out->Material->Texture[1] = in1->Texture;
+      out->Material->TFlags[1] = (para->TFlags1 ^ 2)&0xff;
+      out->Material->MakeMatrix(1,para->TFlags1,para->Scale1,&para->Mat0Scale[0],&para->Mat1Scale.x);
+    }
+
+    if(out->Material->DetailMode & 0x0f)
+    {
+      sVERIFY(in2);
+      out->Tex[2] = in2; in2->AddRef();
+      out->Material->Texture[2] = in2->Texture;
+      out->Material->TFlags[2] = (para->TFlags2 ^ 2)&0xff;
+      out->Material->MakeMatrix(2,para->TFlags2,para->Scale2,&para->Mat0Scale[0],&para->Mat1Scale.x);
+    }
+
+    if(in3)
+    {
+      out->Tex[3] = in3; in3->AddRef();
+      out->Material->Texture[3] = in3->Texture;
+      out->Material->TFlags[3] = ((para->TFlags3 ^ 2)&0x0f)|sMTF_CLAMP;
+    }
+
+    if(in4)
+    {
+      out->Tex[4] = in4; in4->AddRef();
+      out->Material->Texture[4] = in4->Texture;
+      out->Material->TFlags[4] = ((para->TFlags4 ^ 2)&0x0f)|sMTF_CLAMP;
+    }
+
+    if(in5)
+    {
+      out->Tex[5] = in5; in5->AddRef();
+      out->Material->Texture[5] = in5->Texture;
+      out->Material->TFlags[5] = ((para->TFlags5 ^ 2)&0x0f)|sMTF_CLAMP;
+    }
+
+    // build vertex format
+
+    sU32 desc[16];
+    sInt di = 0;
+
+    sInt det = out->Material->DetailMode&0xf0;
+
+    desc[di++] = sVF_POSITION;
+    if(para->VertexMode)
+    {
+      desc[di++] = sVF_BONEINDEX|sVF_I4;
+      desc[di++] = sVF_BONEWEIGHT|sVF_C4;
+    }
+    if(out->Material->Texture[0] || out->Material->Texture[3] || out->Material->Texture[4] || det==0x40 || det==0x50)
+      desc[di++] = sVF_NORMAL;
+    if(out->Material->Texture[0])
+      desc[di++] = sVF_TANGENT|sVF_F4;
+    desc[di++] = sVF_UV0;
+    if(det==0x10)
+      desc[di++] = sVF_UV1;
+    desc[di++] = 0;
+
+    out->Format = sCreateVertexFormat(desc);
+    out->Material->Prepare(out->Format);
+
+    return 1;
+  }
+}
+
+
+/****************************************************************************/

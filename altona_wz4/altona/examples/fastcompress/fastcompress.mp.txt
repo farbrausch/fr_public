@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{B849843A-E142-4155-9210-4D7886D34A6C}";
+
+license altona;
+
+create "debug_blank_shell";
+create "debugfast_blank_shell";
+create "release_blank_shell";
+
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.cpp";
+file "fastcompress.mp.txt";

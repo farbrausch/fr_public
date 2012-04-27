@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{24841DE4-241F-4500-A1AB-2378E9A2DB5D}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "render2texture.mp.txt";

@@ -1,0 +1,128 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+  #include "wz4lib/basic_ops.hpp"
+  #include "wz4lib/basic.hpp"
+  #include "wz4frlib/wz4_demo2_ops.hpp"
+  #include "wz4frlib/wz4_demo2.hpp"
+}
+code
+{
+  #include "wz4frlib/chaos_font.hpp"
+}
+
+/**************************************************************************+*/
+
+type ChaosFont : BitmapBase
+{
+  name = "Chaos Font";
+  gui = base2d;
+  flags = notab;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    sImage *img = 0;
+    img = ((ChaosFont *) obj)->Image;
+    pi.SetSizeTex2D(img->SizeX,img->SizeY);
+    pi.PaintTex2D(img);
+    pi.PaintHandles();
+  }
+}
+
+operator ChaosFont Font()
+{
+//  tab = Wz4Render;
+//  column = 1;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    string Name;
+    string Letters;
+    int Height(1..1024) = 14;
+    int Width(0..1024) = 0;
+    flags Style("*0-|Bold:*1-|Italics:*2-|Underline:*3-|Strikeout:*4-|symbols");
+    int Safety(0..1024) = 1;
+    int Outline(0..1024) = 0;
+    int LineFeed(-1024..1024) = 0;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    out->InitFont(cmd->Strings[0],para->Height,para->Width,para->Style,para->Safety,para->Outline);
+    out->LineFeed = para->LineFeed;
+    const sChar *s = cmd->Strings[1];
+    while(*s)
+    {
+      if(s[0]==0x5c && s[1]!=0)
+      {
+        out->Letter(s[1]);  
+        s+=2;
+      }
+      else if(s[1]=='-')
+      {
+        sInt c0 = s[0];
+        sInt c1 = s[2];
+        s+=3;
+
+        for(sInt i=c0;i<=c1;i++)
+          out->Letter(i);
+      }
+      else
+      {
+        out->Letter(*s);
+        s++;
+      }
+    }
+    out->Finish();
+  }
+}
+
+operator ChaosFont MergeFont(ChaosFont,BitmapBase)
+{
+//  tab = Wz4Render;
+//  column = 1;
+  code
+  {
+    out->CopyFrom(in0);
+    in1->CopyTo(out->Image)
+  }
+}
+
+operator ChaosFont AddSymbol(ChaosFont,BitmapBase)
+{
+//  tab = Wz4Render;
+//  column = 1;
+  parameter
+  {
+    int Start[2](0..4096 step 16) = 0;
+    int Size[2](0..4096 step 16) = 16;
+    int Char(0..0xffff);
+    int Count(1..256) = 1;
+    int OffsetX(0..4096 step 16) = 16;
+    int AdjustY(-1024..1024 step 1) = 0;
+    link Image:1(both);
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    sImage img;
+    in1->CopyTo(&img);
+    sRect r;
+    r.Init(para->Start[0],para->Start[1],para->Start[0]+para->Size[0],para->Start[1]+para->Size[1]);
+    for(sInt i=0;i<para->Count;i++)
+    {
+      out->Symbol(para->Char+i,r,&img,para->AdjustY);
+      r.x0 += para->OffsetX;
+      r.x1 += para->OffsetX;
+    }
+  }
+}
+
+/**************************************************************************+*/

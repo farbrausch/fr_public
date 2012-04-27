@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{E1344963-E400-453b-8031-E6DE0DEECF07}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+
+file "recttoy.mp.txt";
+file "main.?pp";
+file "recttoy.wire.txt";
+
+

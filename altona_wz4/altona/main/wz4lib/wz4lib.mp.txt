@@ -1,0 +1,50 @@
+// die idee: die wz4 gui und die Base/proof of concept operatoren sind OpenSource
+// TC3 implementation ist (c) 49games
+// wz4 ops sind (c) fr oder tp
+
+guid "{76A7AACC-4853-4bef-9C17-7BF204C51270}";
+
+license altona;
+include "altona/main";
+library;
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/wiki";
+
+folder "app"
+{
+  file "doc.?pp";
+  file "gui.?pp";
+  file "view.?pp";
+  file "build.?pp";
+  file "script.?pp";
+  file "wz4lib.mp.txt";
+  file "werkkzeug4.wire.txt";
+  file "incbin.asm" { depend "werkkzeug4.wire.txt"; } // { config "*" { tool "YASM" { AdditionalDependencies="werkkzeug4.wire.txt"; } } }
+  file "todo.txt";
+  file "doc.txt";
+  file "serials.hpp";
+  file "version.hpp";
+  file "stb_vorbis.inl";
+  file "wiki.?pp";
+  file "videoencoder.hpp";
+  file "videoencoder_win.cpp";
+  file "wz4shaders.asc";
+}
+
+folder "misc"
+{
+  file "basic_ops.ops";
+  file "basic.?pp";
+  file "poc_ops.ops";
+  file "poc.?pp";
+}
+
+folder "_generated"
+{
+  file nonew "poc_ops.?pp";
+  file nonew "basic_ops.?pp";
+  file nonew "wz4shaders.?pp";
+}

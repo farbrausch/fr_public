@@ -1,0 +1,259 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   SPH - Smoothed Particle Hydrodynamics                              ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/fxparticle_ops.hpp"
+#include "wz4frlib/fr063_sph.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+/****************************************************************************/
+
+type SphGenerator
+{
+  name = "Smooth Particle Hydrodynamics";
+  gui = base3d;
+  flags = render3d;
+  columnheader[0] = "system";
+  columnheader[1] = "generators";
+  columnheader[2] = "collision";
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  { sSetTarget(sTargetPara(sCLEAR_ALL,pi.BackColor,pi.Spec)); }
+}
+
+type SphCollision
+{
+  name = "SphCollision";
+  gui = base3d;
+  flags = render3d|notab;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  { sSetTarget(sTargetPara(sCLEAR_ALL,pi.BackColor,pi.Spec)); }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles SphSimulator(*? AnyType)
+{
+  tab = SphGenerator;
+  column = 0;
+
+  parameter
+  { 
+    if(0) int TimeStep_Old "TimeStep (ms)"(0..1000) = 0;
+    action Restart(1);
+    float Gravity (-1024..1024  step 0.000001) = 0;
+    float CentralGravity (-1024..1024 step 0.000001) = 0;
+    float OuterForce(0..1       step 0.000001) = 0.0001;
+    float InnerForce(0..1       step 0.0001)   = 0.01;
+    float InteractRadius(0..1   step 0.0001)   = 0.1;
+    float Friction(0..1         step 0.0001)   = 0.995;
+    float BasePressure(0..1     step 0.002)   = 0;
+    float Viscosity(0..1        step 0.002)   = 0;
+
+    group "Control";
+    int MaxPart(0..1000000 step 100) = 10000;
+    int StartSteps(0..100000) = 0;
+    layout flags Flags("synchonized|as fas as possible:*1-|Colors:*3can break|no breaking");
+    if(Flags & 1)
+      int TicksPerFrame(1..1024) = 1;
+    if(!(Flags & 1))
+    {
+      float TimeStep "TimeStep" (0.0001..10.000) = 0.02;
+      nolabel continue flags Flags("*2s|ms");
+      int MaxSteps (1..100) = 10;
+    }
+
+    group "other";
+
+    float ColorSmooth (0..1 step 0.001) = 0;
+    float SpringForce (0..1024 step 0.0001) = 0;
+    float SpringBreakForce (0..1024 step 0.0001) = 1;
+    int PhysicsCycles(1..1024) = 1;
+    float SpringBreakForceDot (0..1024 step 0.0001) = 1;
+
+    flags Multithreading ("off|limited");
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  actions
+  {
+    if(code==1)
+      return 1;
+    else
+      return 0;
+  }
+
+  code
+  {
+    RPSPH *node = new RPSPH();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      wObject *obj = cmd->GetInput<wObject *>(i);
+      if(obj)
+      {
+        if(obj->Type==SphGeneratorType)
+        {
+          node->Gens.AddTail((SphGenerator *)obj);
+          obj->AddRef();
+        }
+        if(obj->Type==SphCollisionType)
+        {
+          node->Colls.AddTail((SphCollision *)obj);
+          obj->AddRef();
+        }
+      }
+    }
+    node->Init();
+
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
+operator SphGenerator SphObject(?Wz4Mesh)
+{
+  tab = SphGenerator;
+  column = 1;
+  new = SphGenObject;
+
+  parameter
+  {
+    flags Shape "Flags"("*4-|springs");
+    if(!input[0])
+    {
+      continue flags Shape("box|sphere");
+      float31 Center(-1024..1024 step 0.01);
+      float30 Radius(0..1024 step 0.01);
+    }
+    float Raster(0..1024 step 0.001)=1.0;
+    float Randomness(0..1 step 0.01)=0;
+    color Color("rgb");
+    float30 StartSpeed(-1024..1024 step 0.001);
+    int Time0(0..65536) = 0;
+  }
+
+  code
+  {    
+    out->Para = *para;
+    out->Init(in0);
+  }
+}
+
+operator SphGenerator SphSource()
+{
+  tab = SphGenerator;
+  column = 1;
+  new = SphGenSource;
+
+  parameter
+  {
+    flags Shape("Square|Round");
+    float31 Center(-1024..1024 step 0.01);
+    float30 Speed(-1024..1024 step 0.001);
+    float Radius(-1024..1024 step 0.01);
+    float Density(0..1024 step 0.0001);
+    float Randomness(0..1 step 0.01)=0;
+    color Color("rgb");
+    
+    int StartTime(0..1000000);
+    int EndTime(0..1000000);
+  }
+
+  code
+  {
+    out->Para = *para;
+    out->Init();
+  }
+}
+
+/****************************************************************************/
+
+operator SphCollision SphSimpleColl()
+{
+  tab = SphGenerator;
+  column = 2;
+  new = SphCollSimple;
+
+  parameter 
+  {
+    flags Flags("contain|kill");
+    flags Shape("box|sphere");
+    float31 Center(-1024..1024 step 0.01);
+    float30 Radius(0..1024 step 0.01);
+    int StartTime (0..100000) = 0;
+    int EndTime(0..100000) = 0;
+  }
+
+  code
+  {
+    out->Para = *para;
+  }
+}
+
+operator SphCollision SphPlaneColl()
+{
+  tab = SphGenerator;
+  column = 2;
+  new = SphCollPlane;
+
+  parameter
+  {
+    flags Flags("contain|kill");
+    float y(-1024..1024 step 0.01);
+    int StartTime (0..100000) = 0;
+    int EndTime(0..100000) = 0;
+  }
+
+  code
+  {
+    out->Para = *para;
+  }
+}
+
+operator SphCollision SphShock()
+{
+  tab = SphGenerator;
+  column = 2;
+  new = SphCollShock;
+
+  parameter
+  {
+    int Time:0(0..100000) = 0;
+    group "global speed";
+    nolabel flags Flags:9 ("-|always on");
+    float30 Speed:1(-1024..1024 step 0.0001);
+    group "center force";
+    float31 Center:4(-1024..1024 step 0.001);
+    float Radius:7(0..1024 step 0.001);
+    float Force:8(-1024..1024 step 0.001);
+  }
+
+  code
+  {
+    out->Para = *para;
+  }
+}
+
+/****************************************************************************/

@@ -1,0 +1,11 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+EXPORTS
+	NP_GetEntryPoints
+	NP_Initialize
+	NP_Shutdown

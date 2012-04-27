@@ -1,0 +1,127 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/fr063_mandelbulb.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+/**************************************************************************+*/
+
+operator Wz4Render FR063_Mandelbulb(Wz4Mtrl)
+{
+  column = 1;
+  parameter
+  {
+    group "Lod";
+    float LodSplit(0..16 step 0.001) = 0.075;
+    float LodDraw(0..16 step 0.001) = 0.070;
+    float LodDrop(0..16 step 0.001) = 0.060;
+    float LodAll(0..16 step 0.001) = 1.0;
+
+    group "Fractal";
+    action Reset(1);
+    float IsoValue(0..16 step 0.01) = 0.5;
+    int Iterations(1..16) = 5;
+    float Scale(0..1024 step 0.01) = 1;
+
+    group "Render";
+    int LightEnv(0..15)=0;
+    int Renderpass(-127..127);
+    group "new paras";
+    flags ShadowLevel"directional shadow level"(" 0| 1| 2| 3| 4| 5| 6| 7")=0;
+    flags Multithreading("-|limited|pipelined");
+    int NodesPerFrame(1..1024 step 0.25) = 16;
+    int GeoBufferCount(4..64) = 24;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNFR063_Mandelbulb *node = new RNFR063_Mandelbulb();
+    node->ParaBase = node->Para = *para;
+    node->Mtrl = in0; in0->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out;
+      cmd->Op->RefObj->AddRef();
+    }
+  }
+}
+
+
+type MandelbulbIsoData
+{
+  name = "MandelbulbIsoData";
+  gui = base3d;
+  flags = render3d|notab;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  { sSetTarget(sTargetPara(sCLEAR_ALL,pi.BackColor,pi.Spec)); }
+}
+
+operator MandelbulbIsoData FR063_MandelbulbIsoData()
+{
+  tab = Wz4Render;
+  column = 1;
+  parameter
+  {
+    int Iterations(1..16) = 5;
+    flags OctreeDivisions(" 0| 1| 2| 3| 4| 5| 6| 7")=2;
+    flags Multithreading("*2-|initialization");
+  }
+  code
+  {
+    out->Para = *para;
+    out->Init();
+  }
+}
+
+
+operator Wz4Render FR063_MandelbulbIso(Wz4Mtrl,MandelbulbIsoData=MandelbulbIsoData FR063_MandelbulbIsoData)
+{
+  column = 1;
+  parameter
+  {
+    group "Fractal";
+    anim float IsoValue(0..16 step 0.01) = 0.5;
+    if(0) anim int Iterations_(1..16) = 5;
+    if(0) anim float Scale_(0..1024 step 0.01) = 1;
+    if(0) flags OctreeDivisions_(" 0| 1| 2| 3| 4| 5| 6| 7")=2;
+    group "Render";
+    int LightEnv(0..15)=0;
+    int Renderpass(-127..127);
+    flags Flags ("dynamic|static");
+    flags Multithreading("-|limited");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNFR063_MandelbulbIso *node = new RNFR063_MandelbulbIso();
+    node->ParaBase = node->Para = *para;
+    node->IsoData = in1; in1->AddRef();
+    node->Mtrl = in0; in0->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/**************************************************************************+*/

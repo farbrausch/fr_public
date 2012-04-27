@@ -1,0 +1,413 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/gui.hpp"
+#include "wz4lib/poc_ops.hpp"
+#include "base/graphics.hpp"
+#include "wz4frlib/wz4_mtrl2_shader.hpp"
+#include "wz4frlib/wz4_mtrl2.hpp"
+#include "wz4frlib/wz4_demo2.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+}
+
+/****************************************************************************/
+
+type Wz4Mtrl
+{
+  name = "New Wz4 Material";
+  color = 0xff60e160;
+  flags = render3d;
+  gui = base3d;
+  columnheader[0] = "Material";
+  columnheader[1] = "Environment";
+  columnheader[4] = "Mod Shader";
+  columnheader[5] = "Mod Texture";
+  columnheader[6] = "Mod Mapping";
+  columnheader[7] = "Mod FX";
+
+  header
+  {
+  friend class Wz4Mtrl;
+  private:
+    sGeometry *Torus;
+
+    sMaterial *Shaders[sRF_TOTAL];
+    sVertexFormatHandle *Formats[sRF_TOTAL];
+
+    sCBuffer<Wz4MtrlWireframePara> WireCB;
+    sCBuffer<Wz4MtrlModelPara> WireCBModel;
+    sCBuffer<Wz4MtrlZOnlyPara> ZOnlyCB;
+
+    sArray<Wz4MtrlType_ *> Materials;    // used to reset all LightEnv's when camera changes
+    sCBufferBase SkinCB;
+    sArray<sMatrix34CM> SkinCBBuffer;
+    sMatrix34CM *SkinCBPtr;
+  public:
+    void Init();
+    void Exit();
+    void Show(wObject *obj,wPaintInfo &pi);
+    void MakeTorus();
+
+    sCBufferBase *MakeSkinCB(sInt SkinMatCount,const sMatrix34CM *SkinMats,sInt *SkinMatMap,sInt cb);
+    void SetDefaultShader(sInt flags,const sMatrix34CM *mat,sInt variant,sInt SkinCount,const sMatrix34CM *SkinMats,sInt *SkinMatMap);  // variant: culloff, cullon, cullinv
+    sVertexFormatHandle *GetDefaultFormat(sInt flags);
+    sCBuffer<Wz4MtrlModelPara> IdentCBModel;
+
+    void PrepareRender(Wz4RenderContext *ctx);  // called first. then Mtrl->BeforeFrame will be called. here you can query the viewport of the main render pass
+    void BeginRender(Wz4RenderContext *ctx);    // after Mtrl->BeforeFrame and before actual painting
+    void PrepareView(sViewport &view);          // called before each pass is actrually painted, with the appropriate viewport
+    void EndRender(Wz4RenderContext *ctx);      // after actual painting
+    void RegisterMtrl(Wz4MtrlType_ *);
+    virtual void PrepareViewR(sViewport &view) {}
+    virtual void PrepareRenderR(Wz4RenderContext *ctx) {}
+    virtual void BeginRenderR(Wz4RenderContext *ctx) {}
+    virtual void EndRenderR(Wz4RenderContext *ctx) {}
+
+    sMatrix34 View;
+    sMatrix44 Proj;
+    sMatrix44 VP;
+  }
+}
+
+/****************************************************************************/
+
+type SimpleMtrl : Wz4Mtrl
+{
+  name = "Simple Material";
+  color = 0xff60e060;
+  flags = render3d|notab;
+  gui = base3d;
+
+  header
+  {
+    void Init();
+    void Exit();
+    void BeginShow(wPaintInfo &pi);
+    void PrepareViewR(sViewport &view);
+
+    struct LightEnv_
+    {
+      sCBuffer<SimpleShaderVEnv> cbv;
+      sCBuffer<SimpleShaderPEnv> cbp;
+      sCBuffer<Wz4MtrlModelPara> cbm;
+      sMatrix34 TexTrans;
+    };
+    
+    LightEnv_ *LightEnv[sMAX_LIGHTENV];
+    sMatrix34 ViewMatrix;
+  }
+  //extern void Show(wObject *obj,wPaintInfo &pi) { Wz4MtrlType->Show(obj,pi); }
+}
+
+operator SimpleMtrl SimpleMaterial(?Texture2D,?Texture2D,?Texture2D)
+{
+  tab = Wz4Mtrl;
+  column = 0;
+  parameter
+  {
+    flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted:*7-|Light")=0x93;
+    continue flags Flags "ColorMask" ("*8-|MaskAlpha:*9-|MaskRed:*10-|MaskGreen:*11-|MaskBlue");
+    continue flags Flags "VertexColor" ("*12-|Light:*14-|Material:*24zrender|-");
+    flags Blend("solid|alpha premul|add|sub|mul|mul2|addsmooth|alpha plain");
+    if(input[0])
+      flags Texture0("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix|LightEnv");
+    if(input[1])
+      flags Texture1("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix|LightEnv");
+    layout flags AlphaTest ("|||inverted|on|||off")=7;
+    if(AlphaTest!=7)
+      nolabel int AlphaRef (0..255 step 1);
+    layout flags Extras "Fog" ("off|on|black|clip3");
+    continue flags Extras "Clip Planes" ("*3off|on");
+    continue flags Extras "Normal Storage" ("*12precise|compact");
+    if(input[1])
+    {
+      continue flags Extras "Texture Op" ("*2add|mul");
+      nolabel flags UVTrans ("uv|model|world|camera|envi-sphere|envi-reflect");
+    }
+
+    group "Transforms";
+    float SimpleScale(-1024..1024 step 0.01) = 1;
+    float31 Scale(-1024..1024 step 0.01) = 1;
+    float30 Rot(-16..16 step 0.001);
+    float31 Trans(-1024..1024 step 0.01);
+
+
+    group "Vertex Displacement";
+    link VertexTexture:2;
+    if(input[2])
+    {
+      flags Texture2("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix|LightEnv");
+      continue flags Extras "Mapping" ("*8uv|model|noise");
+      float VertexScale (0..1024 step 0.01) = 1;
+    }
+  }
+  code
+  {
+    static sU32 blend[] = 
+    { 0,sMB_PMALPHA,sMB_ADD,sMB_SUB,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_ALPHA };
+    sMatrix34 mat;
+
+    sInt extras = para->Extras;
+    sInt detail = 0 ;
+    switch(para->UVTrans)
+    {
+    case 0: extras |= 0x00; detail = 0; break;
+    case 1: extras |= 0x10; detail = 0; break;
+    case 2: extras |= 0x10; detail = 1; break;
+    case 3: extras |= 0x10; detail = 2; break;
+    case 4: extras |= 0x20; detail = 3; break;
+    case 5: extras |= 0x30; detail = 3; break;
+    }
+
+    out->SetMtrl(para->Flags,blend[para->Blend],extras);
+    out->DetailTexSpace = detail;
+    out->SetTex(0,in0,para->Texture0);
+    out->SetTex(1,in1,para->Texture1);
+    out->SetTex(2,in2,para->Texture2);
+    out->SetAlphaTest(para->AlphaTest,para->AlphaRef);
+    out->VertexScale = para->VertexScale;
+
+    sInt tflags[3];
+    tflags[0] = para->Texture0;
+    tflags[1] = para->Texture1;
+    tflags[2] = para->Texture2;
+    sSRT srt;
+    for(sInt j=0;j<3;j++)
+    {
+      switch(tflags[j]&0x30000)
+      {
+      case 0x00000:
+        mat.Init();
+        break;
+      case 0x10000:
+        mat.Scale(para->SimpleScale);
+        break;
+      case 0x20000:
+        srt.Rotate = para->Rot;
+        srt.Translate = para->Trans;
+        srt.Scale = para->Scale;
+        srt.MakeMatrix(mat);
+        break;
+      case 0x30000:
+        mat.Init();
+        out->DetailTexSpace |= 0x100<<j;
+        break;
+      }
+      out->TexTrans[j] = mat;
+    }
+
+    out->Prepare();
+  }
+}
+
+/****************************************************************************/
+
+type CustomMtrl : Wz4Mtrl
+{
+  name = "Custom Material";
+  color = 0xff60e060;
+  flags = render3d|notab;
+  gui = base3d;
+
+  header
+  {
+    void Init();
+    void Exit();
+    void BeginShow(wPaintInfo &pi);
+    void PrepareViewR(sViewport &view);
+
+    const sViewport *Viewport;
+  }
+
+}
+
+operator CustomMtrl CustomMaterial(TextObject,TextObject)
+{
+  tab = Wz4Mtrl;
+  column = 0;
+  parameter
+  {
+    flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted:*7-|Light")=0x93;
+    continue flags Flags "ColorMask" ("*8-|MaskAlpha:*9-|MaskRed:*10-|MaskGreen:*11-|MaskBlue");
+    continue flags Flags "VertexColor" ("*12-|Light:*14-|Material:*24zrender|-");
+    flags Blend("solid|alpha premul|add|sub|mul|mul2|addsmooth|alpha plain");
+    /*
+    if(input[0])
+      flags Texture0("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix|LightEnv");
+    if(input[1])
+      flags Texture1("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix|LightEnv");
+      */
+    layout flags AlphaTest ("|||inverted|on|||off")=7;
+    if(AlphaTest!=7)
+      nolabel int AlphaRef (0..255 step 1);
+
+    link VertexShader:0 (choose);
+    link PixelShader:1 (choose);
+
+    group "debug";
+    action Shadercode(1);
+    action FlushShaders(2);
+  }
+
+  code
+  {
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out; out->AddRef();
+    }
+
+    static sU32 blend[] = { 0,sMB_PMALPHA,sMB_ADD,sMB_SUB,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_ALPHA };
+    sMatrix34 mat;
+
+    out->SetMtrl(para->Flags,blend[para->Blend]);
+//    out->SetTex(0,in0,para->Texture0);
+//    tflags[0] = para->Texture0;
+    out->SetAlphaTest(para->AlphaTest,para->AlphaRef);
+    out->Log.Clear();
+
+    sShader *vs=out->CompileShader(sSTF_VERTEX|sSTF_HLSL23,in0->Text.Get());
+    if (!vs)
+    {
+      cmd->SetError(L"Vertex shader compile failed");
+      return 0;
+    }
+
+    sShader *ps=out->CompileShader(sSTF_PIXEL|sSTF_HLSL23,in1->Text.Get());
+    if (!ps)
+    {
+      cmd->SetError(L"Pixel shader compile failed");
+      return 0;
+    }
+
+    out->SetShader(vs,ps);
+    out->Prepare();
+  }
+
+  actions
+  {
+    if(code==1)
+    { 
+      if(op->RefObj)
+      {
+        CustomMtrl *mtrl = (CustomMtrl*) op->RefObj;
+        if(mtrl && mtrl->Log.GetCount())
+          App->PopupText(mtrl->Log.Get());
+      }
+      return 0;
+    }
+    if(code==2)
+    { 
+      return 1;
+    }
+
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+header_end
+{
+  class RNSimpleMtrlEnv : public Wz4RenderNode
+  {
+  public: 
+    Wz4RenderParaSimpleMtrlEnv Para,ParaBase;
+    Wz4RenderAnimSimpleMtrlEnv Anim;
+
+    RNSimpleMtrlEnv();
+
+    void Simulate(Wz4RenderContext *);
+    void Render(Wz4RenderContext *);
+  };
+}
+ 
+operator Wz4Render SimpleMtrlEnv()
+{
+  tab = Wz4Mtrl;
+  column = 1;
+  parameter
+  {
+    int Index "LightEnv" :0 (0..15);
+    int Renderpass:23 (-127..127);
+
+    group "light";
+
+    anim color Ambient:1 ("rgba") = 0xff404040;
+
+    anim color Color0:2 ("rgba") = 0xffc0c0c0;
+    anim nolabel float Color0Amp:41 (-16..16 step 0.01) = 1;
+    anim float30 Dir0:3 (-2..2 step 0.001) = { 0,0,0 };
+    nolabel flags Headlights:22 ("-|HeadLight");
+
+    anim color Color1:6 ("rgba") = 0xff000000;
+    anim nolabel float Color1Amp:42 (-16..16 step 0.01) = 1;
+    anim float30 Dir1:7 (-2..2 step 0.001) = { 0,0,0 };
+    continue nolabel flags Headlights ("*4-|HeadLight");
+
+    anim color Color2:10 ("rgba") = 0xff000000;
+    anim nolabel float Color2Amp:43 (-16..16 step 0.01) = 1;
+    anim float30 Dir2:11 (-2..2 step 0.001) = { 0,0,0 };
+    continue nolabel flags Headlights ("*8-|HeadLight");
+
+    anim color Color3:14 ("rgba") = 0xff000000;
+    anim nolabel float Color3Amp:44 (-16..16 step 0.01) = 1;
+    anim float30 Dir3:15(-2..2 step 0.001) = { 0,0,0 };
+    continue nolabel flags Headlights ("*12-|HeadLight");
+
+    group "fog";
+    anim float FogNear:18 (-65536..65536 step 1) = 10;
+    anim float FogFar:19 (0..65536 step 1) = 1000;
+    anim color FogColor:20 ("rgba") = 0x80ffffff;
+    layout flags ClipPlanes "FogClip3":24 ("*4-|need");
+//    float FogCurve_Unused:21 (0..1 step 0.001);
+    group "clipplanes";
+    continue layout flags ClipPlanes ("-| 0:*1-| 1:*2-| 2:*3-| 3");
+    if(ClipPlanes&1)
+    {
+      anim float30 "Plane 0" Plane0Dir:25 (-2..2 step 0.001);
+      anim nolabel float Plane0Dist:28 (-0x10000..0x10000);
+    }
+    if(ClipPlanes&2)
+    {
+      anim float30 "Plane 1" Plane1Dir:29 (-2..2 step 0.001);
+      anim nolabel float Plane1Dist:32 (-0x10000..0x10000);
+    }
+    if(ClipPlanes&4)
+    {
+      anim float30 "Plane 2" Plane2Dir:33 (-2..2 step 0.001);
+      anim nolabel float Plane2Dist:36 (-0x10000..0x10000);
+    }
+    if(ClipPlanes&0x18)
+    {
+      anim float30 "Plane 3" Plane3Dir:37 (-2..2 step 0.001);
+      anim nolabel float Plane3Dist:40 (-0x10000..0x10000);
+    }
+    group "optional texture transform";
+
+    anim float31 TexScale:45 (-1024..1024 step 0.001) = 1;
+    anim float30 TexRot:48 (-16..16 step 0.01) = 0;
+    anim float31 TexTrans:51 (-1024..1024 step 0.01) = 0;    
+
+    // free:21
+    // next:54
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNSimpleMtrlEnv *node = new RNSimpleMtrlEnv();
+    node->ParaBase = *para;
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/

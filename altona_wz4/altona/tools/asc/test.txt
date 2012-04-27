@@ -1,0 +1,394 @@
+asc
+{
+
+  cbuffer sIppVsParam : register(c0) : slot vs 0
+  {
+    row_major float4x4 mvp;
+    float4 TexelOffset;     // uv offset for one texel in src image
+    
+    extern void Set(const sViewport &view, const sVector2 texelOffset)
+    {
+      mvp = view.ModelScreen;
+      TexelOffset = sVector4(texelOffset.x, texelOffset.y, 0.0f, 0.0f);
+    }
+  };
+  
+
+  cbuffer sIppBrightPsParam : register(c0) : slot ps 0
+  {
+    float4 SubColor;    // Color to substarct from src
+    float4 MaxUV;       // Max texcoords to prevent leaking between splitscreens
+
+    extern void Set(sU32 subColor, sF32 pushFactor, sVector4 maxUV)
+    {
+      SubColor.InitColor(subColor);
+      SubColor.w = pushFactor;
+      MaxUV = maxUV;
+    }
+  };
+
+
+  cbuffer sIppShrinkPsParam : register(c0) : slot ps 0
+  {
+    float4 CoCNear;         // x,y: CoC scale & bias, z: blur scale
+    float4 DepthParams;     // parameters to linearize depth values
+    float4 TexelOffsetY;    // 1, 2, 3, 4 * y offset in fullres src texture
+    float4 MaxUV;           // max texcoord to clamp to (to prevent leaking between splitscreens)
+
+    extern void Set(const sVector4 &cocNear, const sVector4 &depthParams, sVector4 maxUV, sVector4 texelOffsetY)
+    {
+      CoCNear = cocNear;
+      DepthParams = depthParams;
+      TexelOffsetY = texelOffsetY;
+      MaxUV = maxUV;
+    }
+  };
+
+
+  cbuffer sIppBlurPsParam : register(c0) : slot ps 0
+  {
+    float4 PushFactor;
+    float4 MaxUV;           // max texcoord to clamp to (to prevent leaking between splitscreens)
+
+    extern void Set(float pushFactor, sVector4 maxUV)
+    {
+      PushFactor.x = PushFactor.y = PushFactor.z = PushFactor.w = pushFactor;
+      MaxUV = maxUV;
+    }
+  };
+
+
+  cbuffer sIppMotionPsParam : register(c0) : slot ps 0
+  {
+    row_major float4x4 vp;  // proj * view
+    row_major float4x4 pvp; // last frames proj * view
+    float4 CamPos;          // Worldspace cam pos, w = blur factor
+    float4 DepthParams;     // Depth liniearize factors
+    float4 TexelOffset;     // uv offset for one texel in src image
+    float4 MaxUV;           // max texcoord to clamp to (to prevent leaking between splitscreens)
+
+    extern void Set(const sMatrix44 &VP, const sMatrix44 &PVP, const sVector31 &camPos, float mbFactor, const sVector2 texelOffset, const sVector4 &depthParams, sVector4 maxUV)
+    {
+      vp = VP;
+      pvp = PVP;
+      CamPos = camPos;
+      CamPos.w = mbFactor;
+      TexelOffset = sVector4(texelOffset.x, texelOffset.y, 0.0f, 0.0f);
+      DepthParams = depthParams;
+      MaxUV = maxUV;
+    }
+  };
+
+
+  cbuffer sIppFinalPsParam : register(c0) : slot ps 0
+  {
+    float4 DepthParams;     // Linearisation factors
+    float4 CoCFar;          // x,y: CoC scle & bias; z: max far blur, w: skip near blur flag
+    float4 CopyColor;       // Color correction factor
+    float4 AddColor;        // Tint for the glare
+    float4 MaxUV_F;         // max texcoord to clamp to (to prevent leaking between splitscreens)
+    float4 MaxUV_H;         // max texcoord to clamp to (to prevent leaking between splitscreens)
+    float4 MaxUV_Q;         // max texcoord to clamp to (to prevent leaking between splitscreens)
+    float4 SbOffsets1;      // uv offset for small blur kernel -> 4, 8, 16 texel average
+    float4 SbOffsets2;      // uv offset for small blur kernel -> 4, 8, 16 texel average
+
+    extern void Set(const sVector4 &cocFar, const sVector4 &sbOffsets1, const sVector4 &sbOffsets2, sU32 copyColor, sU32 addColor, const sVector4 &depthParams, sVector4 maxUV_F, sVector4 maxUV_H, sVector4 maxUV_Q, sBool skyBlur, sBool nearBlur, sBool showGlare)
+    {
+      CoCFar = cocFar;
+      CoCFar.w = sF32(nearBlur);  // "dynamic" branch flag
+      SbOffsets1 = sbOffsets1;
+      SbOffsets2 = sbOffsets2;
+      CopyColor.InitColor(copyColor);
+      AddColor.InitColor(addColor);
+      DepthParams = depthParams;
+      DepthParams.z = sF32(skyBlur);    // branch flag
+      DepthParams.w = sF32(showGlare);  // branch flag (debug only)
+      MaxUV_F = maxUV_F;
+      MaxUV_H = maxUV_H;
+      MaxUV_Q = maxUV_Q;
+    }
+  };
+  
+
+  permute sIppBlurVsPerm
+  {
+    Vertical;    
+  };
+
+  permute sIppBlurPsPerm
+  {
+    PushColor;
+    Clamp;
+  };
+
+  permute sIppShrinkPsPerm
+  {
+    CalcCoC;
+    BrightPass;
+    RawZ;            // If depth lookup returns 24bit fixed format or single channel float
+    Clamp;
+  };
+
+  permute sIppFinalPsPerm
+  {    
+    DoF;
+    Glare;
+    MotionBlur;
+    RawZ;            // If depth lookup returns 24bit fixed format or single channel float
+    Clamp;
+  };
+
+  permute sIppBrightPerm
+  {
+    Shrink;            // perform downsampling?
+  };
+
+  permute sIppMotionPsPerm
+  {
+    RawZ;            // If depth lookup returns 24bit fixed format or single channel float
+    Clamp;
+  };
+
+  permute sIppDebugPsPerm
+  {
+    RawZ;
+    CoC;            // show depth buffer or CoC
+  };
+
+}
+
+
+
+material sMtrlIppCombine : sEngBaseMtrl
+{
+  header
+  {
+    sBool DoF;
+    sBool Glare;
+    sBool MotionBlur;
+    sBool RawZ;
+    sBool Clamp;
+  }
+
+  new
+  {
+    DoF = sFALSE;
+    Glare = sFALSE;
+    MotionBlur = sFALSE;
+    RawZ = sTRUE;
+    Clamp = sFALSE;
+  }
+
+  prepare
+  {
+    VertexShader = VS();
+    
+    // pick fragment shader
+    sInt n = 0;
+    if (DoF)            n |= sIppFinalPsPermMask_DoF;
+    if (Glare)          n |= sIppFinalPsPermMask_Glare;
+    if (MotionBlur)     n |= sIppFinalPsPermMask_MotionBlur;
+    if (RawZ)           n |= sIppFinalPsPermMask_RawZ;
+    if (Clamp)          n |= sIppFinalPsPermMask_Clamp;
+
+    PixelShader = PS(n);
+  }
+
+  vs
+  {
+    asc vs_3_0 // hlsl code
+    {
+      use sIppVsParam;
+
+      void main
+      (
+        in float3 in_pos   : POSITION,
+        in float2 in_uv0   : TEXCOORD0,
+        
+        out float4 out_pos : POSITION,
+        out float2 out_uv0 : TEXCOORD0,
+      )
+      {
+        out_uv0 = in_uv0; 
+        out_pos = mul(float4(in_pos, 1.0), mvp);
+      }
+    }
+  }
+
+  ps
+  {
+    asc ps_3_0
+    {
+      use sIppFinalPsParam;
+      use sIppFinalPsPerm;
+
+      sampler2D t_scene     : register(s0);
+      sampler2D t_depth     : register(s1);
+      sampler2D t_blurSmall : register(s2) : pif(DoF);
+      sampler2D t_blurLarge : register(s3) : pif(DoF || Glare);
+      sampler2D t_motion    : register(s4) : pif(MotionBlur);
+    
+      // returns a linear [0|1] float depth value
+      float GetLinearDepth(in float2 uv)
+      {
+        float depth;
+
+        pif(RawZ) //Convert 24 Bit fixed point to float
+        {
+          const float3 factor = float3(65536.0/16777215.0, 256.0/16777215.0, 1.0/16777215.0);
+          depth = dot(floor(tex2D(t_depth, uv).arg * 255.0 + 0.5), factor);
+        }
+        pelse
+        {
+          depth = tex2D(t_depth, uv).r;
+        }
+
+        // linearize        
+        return (DepthParams.x / (depth + DepthParams.y)); 
+      }
+
+      float2 GetUV(float2 in_uv, float4 max_uv)
+      {
+        pif(Clamp)
+          return clamp(in_uv, max_uv.xz, max_uv.yw);
+        pelse
+          return in_uv;
+      }
+     
+
+      // 4 tab small blur (fast, but suffers from color leaking)
+      half3 GetSmallBlur(in half3 sharp, float2 uv)
+      {
+        const half weight = 4.0 / 17;
+
+        half3 sum;        
+        sum = sharp * (1.0 / 17.0);
+        sum += weight * tex2D(t_scene, GetUV(uv + SbOffsets1.xy, MaxUV_F));
+        sum += weight * tex2D(t_scene, GetUV(uv + SbOffsets1.zw, MaxUV_F));
+        sum += weight * tex2D(t_scene, GetUV(uv + SbOffsets2.xy, MaxUV_F));
+        sum += weight * tex2D(t_scene, GetUV(uv + SbOffsets2.zw, MaxUV_F));
+        return sum;
+      }
+
+      // prevents color leaking from sharp foreground to blury background
+      half4 GetBlurSample(float4 sum, float centerDepth, float centerCoC, float2 uv)
+      {
+        // skip samples, which are in front of the center tab and not blury
+        const float weight = 4.0 / 17.0;
+
+        half3 color  = tex2D(t_scene, uv).rgb;
+        float depth  = GetLinearDepth(uv);
+        
+        float farCoC = (CoCFar.x * depth + CoCFar.y) > 0.0 ? weight : 0.0;
+        float factor = centerDepth > depth ? farCoC : weight;
+
+        return half4(color.rgb * factor + sum.rgb, sum.a + factor);
+      }
+
+      // 4 tab small blur, compare sample depth and coc
+      half3 GetSmallBlurCmp(in half3 sharp, float2 uv, float centerDepth, float centerCoC)
+      {
+        half4 sum = half4(sharp.rgb * 1.0/17.0, 1.0/17.0);
+        sum = GetBlurSample(sum, centerDepth, centerCoC, GetUV(uv + SbOffsets1.xy, MaxUV_F));
+        sum = GetBlurSample(sum, centerDepth, centerCoC, GetUV(uv + SbOffsets1.zw, MaxUV_F));
+        sum = GetBlurSample(sum, centerDepth, centerCoC, GetUV(uv + SbOffsets2.xy, MaxUV_F));
+        sum = GetBlurSample(sum, centerDepth, centerCoC, GetUV(uv + SbOffsets2.zw, MaxUV_F));
+        return sum.rgb / sum.a;
+      }
+
+
+      // Interpolate between the different blur stregths (there might be a smarter way to do this...)
+      half4 CrossblendBlur(half3 sharp, half3 small, half3 medium, half3 large, half t)
+      {
+        const half CoC0 = 0.0;     // sharp
+        const half CoC1 = 0.20;    // small blur
+        const half CoC2 = 0.80;    // medium blur
+        const half CoC3 = 1.00;    // large blur
+
+        const half invD0 = 1.0 / (CoC1 - CoC0);
+        const half invD1 = 1.0 / (CoC2 - CoC1);
+        const half invD2 = 1.0 / (CoC3 - CoC2);
+
+        const half2 CoC      = float2(CoC1, CoC2);       
+        const half4 invDist  = float4(invD0, invD1, invD1, invD2);
+        
+        const half2 T = t;
+        half4 weights;
+
+        weights.x   = 1.0 - (T.x * invD0);
+        weights.yz  = 1.0 - (abs(min((T - CoC) * invDist.xy, 0.0)) + max(T - CoC, 0.0) * invDist.zw);
+        weights.w   = (T.x - CoC2) * invD2;       
+        weights     = max(weights, 0.0);
+
+        half3 color = sharp * weights.x + small * weights.y + medium * weights.z + large * weights.w;
+
+	      return half4(color, 1.0);
+      }
+
+      // Apply effects
+      void main
+      (
+        in float2 in_uv0 : TEXCOORD0,
+        out half4 result : COLOR0,
+      )
+      {
+        //clamp to splitscreen viewport
+        float2 uvF = GetUV(in_uv0, MaxUV_F);
+        float2 uvH = GetUV(in_uv0, MaxUV_H);
+        float2 uvQ = GetUV(in_uv0, MaxUV_Q);
+
+        half3 sharp = tex2D(t_scene, uvF).rgb;
+        half4 large = 0.0;
+        
+        pif (MotionBlur)
+        {
+          half4 mb = tex2D(t_motion, uvH);
+          sharp = lerp(sharp, (sharp * (3.0/14.5)) + mb.rgb, mb.a);
+        }
+
+        pif (DoF || Glare)
+          large = tex2D(t_blurLarge, uvQ);
+
+        pif (DoF)
+        {
+          float depth = GetLinearDepth(uvF);         
+          half farCoC	= clamp(CoCFar.x * depth + CoCFar.y, 0.0, CoCFar.z);  //z: max far blur
+
+          half3 small = GetSmallBlur(sharp, uvF);
+          //half3 small = GetSmallBlurCmp(sharp, uvF, depth, farCoC);   // better quality, but slower
+
+          //if (DepthParams.z > 0.0) // don't blur the sky, reduces color leaking in some cases
+          //  farCoc = depth >= 1.0f ? 0.0 : farCoc;
+
+          if (CoCFar.w > 0.0) //
+          {
+            half4 medium = tex2D(t_blurSmall, uvQ);            
+                           
+            // choose max near / far coc
+            half blur = max(medium.a, farCoC);   
+
+            result = CrossblendBlur(sharp, small, medium.rgb, large.rgb, blur);   // interpolate blured samples
+          }
+          else
+          {
+            result = half4(lerp(sharp, small, farCoC / CoCFar.z), 1.0);  // GetFarBlur(uvF, depth, sharp, farCoc); //
+          }
+
+        }
+        pelse
+        {
+          result = half4(sharp, 1.0); // pass through the scene color / motion blur
+        }
+        
+        pif(Glare)
+        {
+          half4 glare = AddColor * large.a;
+          result = result * CopyColor + glare;
+        }
+
+      }
+
+    }
+  }
+};
+

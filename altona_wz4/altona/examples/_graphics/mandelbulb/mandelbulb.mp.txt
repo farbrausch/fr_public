@@ -1,0 +1,31 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{34B16C3B-6D3C-4862-9EB3-B9AA3A2EE1F6}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/extra";
+
+
+file "main.?pp";
+file "mandel.?pp";
+file "mandelbulb.mp.txt";
+file "mandelshader.asc";
+file nonew "mandelshader.?pp";
+

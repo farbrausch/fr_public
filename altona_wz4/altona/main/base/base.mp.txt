@@ -1,0 +1,53 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{F13B45DE-3700-45fb-B651-E652B962BE4F}";
+
+license altona;
+include "altona/main";
+//if (sSDK_TC3) include "tc3/main";
+library;
+
+file "graphics.?pp";
+file "graphics_dx9.cpp" { config !"*_dx9*" { exclude; } }
+file "graphics_dx9_private.hpp" { config !"*_dx9*" { exclude; } }
+file "graphics_dx11.cpp" { config !"*_dx11*" { exclude; } }
+file "graphics_dx11_private.hpp" { config !"*_dx11*" { exclude; } }
+file "graphics_ogl2.cpp" { config !"*_ogl2*" { exclude; } }
+file "graphics_blank.cpp" { config !"*_blank*" { exclude; } }
+file "graphics_ogles2.cpp" { config !"*_ogles2*" { exclude; } }
+file "graphics_ogles2_private.hpp" { config !"*_ogles2*" { exclude; } }
+file "math.?pp";
+file "sound.?pp";
+file "system.?pp";
+file "system_win.cpp" { config "*_linux_*" { exclude; } }
+file "system_linux.cpp" { config !"*_linux_*" { exclude; } }
+file "input2.?pp";
+
+file "devices.hpp";
+file "devices_win.cpp";
+
+file "types.?pp";
+file "types2.?pp";
+file "serialize.?pp";
+file "windows.?pp";
+file "windows_xlib.cpp" { config !"*_linux_*" { exclude; } }
+
+file "npplugin.cpp" { config !"*_npplugin" { exclude;} }
+file "npplugin.def" { config !"*_npplugin" { exclude;} }
+
+file "base.mp.txt";
+folder "glsdk"
+{
+  license default;
+  file "gl.h";
+  file "glext.h";
+  file "wglext.h";
+  file "glprocs.c" { config !"*_ogl2*" { exclude; } }
+  file "glprocs.h";
+}
+

@@ -1,0 +1,615 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_demo2.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4lib/basic_ops.hpp"
+#include "wz4lib/basic.hpp"
+}
+code  
+{
+#include "wz4frlib/tron.hpp"
+#include "wz4frlib/tron_ops.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4frlib/wz4_ipp.hpp"
+}
+
+/****************************************************************************/
+
+operator Wz4Particles PlaceOnMesh(Wz4Particles, Wz4Mesh)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  { 
+    flags "Plane thickness (epsilon)" PlaneThickness("Molecular|Tiny|Small|Normal|Large|Huge|San Andreas Gap|Ridiculous")=3;       
+    float Length(0.01..1024 step 0.001) = 1.0;
+    float30 Direction(-1024..1024 step 0.001) = {0.0,0.0,0.0};     
+    flags Mode("Static|Dynamic")=0;
+  }
+  code
+  {
+    static const sF32 thick[9] =
+    {
+      1e-10f,
+      3e-7f,
+      1e-6f,
+      2e-5f,
+      1e-4f,
+      1e-2f,
+      2.0f,
+      100.0f,
+    };
+    
+    TronPOM *node = new TronPOM();
+    out->RootNode = node;   
+    node->ParaBase = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Mesh = in1; in1->AddRef();    
+    Wz4BSPError err = node->Init(thick[sClamp<sInt>(para->PlaneThickness,0,6)]);
+
+    if(err != WZ4BSP_OK)
+    {
+      cmd->SetError(Wz4BSPGetErrorString(err));
+      return 0;
+    }
+    
+    out->AddCode(cmd);    
+    
+    if (cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out; out->AddRef();    
+    }    
+  }
+
+  handles
+  {
+    TronPOM::Handles(pi,para,op);    
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Particles SingleForceField(Wz4Particles)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {        
+    layout flags FieldType("Ellipsoid|Plane");
+    layout flags ForceType("x|sinx|recx|recquadx");        
+    anim float31 Position(-1024..1024 step 0.001) = 0;
+    anim float   Scale(-1024..1024 step 0.001) = 1;
+
+    if (FieldType==0)
+    {
+      anim float30 Size(-1024..1024 step 0.001) = 1;
+    }
+
+    if (FieldType==1)
+    {
+      anim float30 Rotation(-1024..1024 step 0.001) = 0;
+      anim float   Distance(-1024..1024 step 0.001) = 1;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    TronSFF *node = new TronSFF();
+    node->ParaBase = *para;
+    node->Source = in0->RootNode; in0->RootNode->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd);    
+  }
+
+  handles
+  {
+    sVector31 p0,p1,p2,p3,p4,p5,p6,p7;
+
+    if (para->FieldType==0)
+    {
+      p0 = p1 = p2 = p3 = p4 = p5 = para->Position;
+      p0.x += para->Size.x;
+      p1.x -= para->Size.x;
+      p2.y += para->Size.y;
+      p3.y -= para->Size.y;
+      p4.z += para->Size.z;
+      p5.z -= para->Size.z;
+
+      pi.Line3D(p0,p1);
+      pi.Line3D(p2,p3);
+      pi.Line3D(p4,p5);
+    }
+    else
+    {
+      p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = para->Position;
+      p0.x += 0.1f;
+      p1.x -= 0.1f;
+      p2.y += 0.1f;
+      p3.y -= 0.1f;
+      p4.z += 0.1f;
+      p5.z -= 0.1f;
+      
+      sVector30 pn;
+      sMatrix34 mat;
+      mat.EulerXYZ(para->Rotation.x, para->Rotation.y, para->Rotation.z);
+      pn.Init(0.0f,1.0f,0.0f);  
+      pn = pn * mat;
+      
+      p7 = p7 + pn * para->Distance;
+
+      pi.Line3D(p0,p1);
+      pi.Line3D(p2,p3);
+      pi.Line3D(p4,p5);
+      pi.Line3D(p6,p7);
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Retexturizer(Wz4Mesh, Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {        
+    //float   Epsilon(0..1024 step 0.0001) = 1;
+  }
+  code
+  {        
+    TronRTR(out, in0, in1);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Particles FR033_MeteorShowerSim(GroupType)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {        
+    group "Meteor Field";
+    int MF_Seed(10..1000 step 1) = {100};
+    int MF_Count(1..1000 step 1) = 100;
+    float31 MF_StartPos(-1024..1024 step 0.001) = {0,0,0};
+    float31 MF_RandPos(-1024..1024 step 0.001) = {0,0,0};
+    float31 MF_StartSpeed(-1024..1024 step 0.001) = {0,0,0};
+    float31 MF_RandSpeed(-1024..1024 step 0.001) = {0,0,0};
+    float   MF_StartTime(0..1024 step 0.0001) = 0;
+    float   MF_RandTime(0..1024 step 0.0001) = 0;
+    float   MF_OnTime(0..1024 step 0.01) = 0.1;
+    float   MF_OffTime(0..1024 step 0.01) = 0.1;    
+  }
+  
+  code
+  {			
+    FR033_MeteorShowerSim *node = new FR033_MeteorShowerSim();
+    node->ParaBase = *para;
+    in0->AddRef();
+    node->GroupLogos = in0;
+    out->RootNode = node;
+    out->AddCode(cmd); 
+    node->Init();  
+  }
+}
+
+
+operator Wz4Render FR033_WaterSimRender(Wz4Mtrl, Texture2D, Wz4Particles)
+{
+  column = 3;
+  parameter
+  {        
+    group "Water Grid";
+    int WG_VertXZ[2](10..1000 step 1) = {100,100};
+    float31 WG_Pos(-1024..1024 step 0.001) = {0,0,0};
+    float WG_SizeXZ[2](0.001..1024 step 0.001) = {1.0,1.0};    
+    float WG_ScaleUV[2](-1024..1024 step 0.001) = {1.0,1.0};
+    float WG_OffsetUV[2](-1024..1024 step 0.0001) = {0.0,0.0}; 
+
+    group "Water Sim";
+    float WS_Amplitude(0.001..1024 step 0.001) = {1.0};
+    float WS_DampingTime(0.001..1024 step 0.001) = {1.0};
+    float WS_DampingExpansion(0.001..1024 step 0.001) = {1.0};
+    float WS_Freq(0.001..1024 step 0.001) = {1.0};
+    float WS_FreqTime(0.001..1024 step 0.001) = {1.0};
+    float WS_FreqExpansion(0.001..1024 step 0.001) = {1.0};   
+    
+    group "Dancer Para";
+    int DP_Seed(10..1000 step 1) = 100;
+    int DP_Count(1..10000 step 1) = 100;
+    float DP_Scale[2](0.001..1024 step 0.001) = {1.0,1.0};
+    float DP_RandScale[2](0.001..1024 step 0.001) = {0.0,0.0};
+    float DP_StartPos[3](0.001..1024 step 0.001) = {0.0,0.0,0.0};
+    float DP_DimXZ[2](0.001..1024 step 0.001) = {1.0,1.0};        
+  }
+  
+  code
+  {			
+    FR033_WaterSimRender *node = new FR033_WaterSimRender();
+    node->ParaBase = *para;
+    in0->AddRef();    
+    in1->AddRef();
+    in2->AddRef();
+    node->WaterMtrl = in0;
+    node->Dancer = in1;
+    node->MeteorSim = in2;
+
+    node->Init();  
+
+    out->RootNode = node;
+    out->AddCode(cmd,0); 
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render Sharpen(Wz4Render)
+{
+  column = 4;
+  parameter
+  {    
+    anim float Strength(0..9.99 step 0.1) = 2;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  
+  code
+  {
+    RNSharpen *node = new RNSharpen();
+    node->ParaBase = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render SBlur(Wz4Render)
+{
+  column = 4;
+  parameter
+  {    
+    float Radius(1..4096 step 0.01) = 1.0;
+    float Amp(0..256 step 0.01) = 1;
+    float Intensity(0..999.99 step 0.1) = 3;
+  }
+
+  code
+  {
+    RNSBlur *node = new RNSBlur();
+    node->ParaBase = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render Bloom(Wz4Render)
+{
+  column = 4;
+  parameter
+  { 
+    group "GrayMask";
+    flags CalcMaskFromScreen "screen size"("*2half|full|quarter");
+    continue layout flags CalcMaskFromScreen("Off|On");
+
+    if (CalcMaskFromScreen&1)
+    {      
+      continue flags CalcMaskFromScreen "Signed MaskCol" ("*1off|on");
+      anim color HighlightCol ("rgba") = 0;
+      anim color MaskCol      ("rgba") = 0xffffffff;    
+      anim float MaskAmp(-1024..1024 step 0.001) = 1.0;
+      anim float MaskBias(-1024..1024 step 0.001) = 0.0;             
+    }
+ 
+    layout flags UseAlpha("Off|On");
+    if (UseAlpha==1)
+    {
+      anim float AlphaAmp(-1024..1024 step 0.001) = 1.0;
+      anim float AlphaBias(-1024..1024 step 0.001) = 0.0;
+    }
+    
+    layout flags UseZBuf("Off|On");
+    if (UseZBuf==1)
+    {
+      anim float ZBufAmp(-1024..1024 step 0.001) = 1.0;
+      anim float ZBufBias(-1024..1024 step 0.001) = 0.0;
+    }
+
+    layout flags MultiplyScreenCol("Off|On");
+    if (MultiplyScreenCol==1)
+    {
+      anim float4 BlendFactor(0..1 step 0.001) = 0.5;
+    }
+
+    anim color GrayMaskCol("rgba") = 0xffffffff;
+    anim float GrayMaskAmp(-1024..1024 step 0.001) = 1.0;
+    anim float GrayMaskBias(-1024..1024 step 0.001) = 0.0;
+
+    group "Blur";
+    anim float BlurRadius(1..4096 step 0.01) = 50.0;
+    anim float BlurAmp(0..256 step 0.001) = 1.0;
+
+    group "Composition";
+    anim color CompBloomCol     ("rgba") = 0xffffffff;    
+    anim float CompBloomAmp(-1024..1024 step 0.001) = 0.0;
+
+    anim color CompScreenCol    ("rgba") = 0xffffffff;    
+    anim float CompScreenAmp(-1024..1024 step 0.001) = 1.0;
+
+    layout flags CompFormula("Add|Screen|Mul");
+
+    group "Debug:";
+    layout flags DebugShow("Result|Mask|Blur");
+
+    group "Pre HighlightCol Blur";
+    flags  PreBlurMode("off| 5 Tap| 9 Tap");
+    anim float PreBlurSize(0..16 step 0.01) = 2;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+    
+    
+  }
+
+  code
+  {
+    RNBloom *node = new RNBloom();
+    node->ParaBase = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render Promist(Wz4Render)
+{
+  column = 4;
+  parameter
+  {                        
+    group "GrayMask";
+    layout flags CalcMaskFromScreen("Off|On");
+
+    if (CalcMaskFromScreen==1)
+    {      
+      anim color HighlightCol ("rgba") = 0;
+      anim color MaskCol      ("rgba") = 0xffffffff;    
+      anim float MaskAmp(-1024..1024 step 0.001) = 1.0;
+      anim float MaskBias(-1024..1024 step 0.001) = 0.0;             
+    }
+ 
+    layout flags UseAlpha("Off|On");
+    if (UseAlpha==1)
+    {
+      anim float AlphaAmp(-1024..1024 step 0.001) = 1.0;
+      anim float AlphaBias(-1024..1024 step 0.001) = 0.0;
+    }
+    
+    layout flags UseZBuf("Off|On");
+    if (UseZBuf==1)
+    {
+      anim float ZBufAmp(-1024..1024 step 0.001) = 1.0;
+      anim float ZBufBias(-1024..1024 step 0.001) = 0.0;
+    }
+
+    layout flags MultiplyScreenCol("Off|On");
+    if (MultiplyScreenCol==1)
+    {
+      anim float4 BlendFactor(0..1 step 0.001) = 0.5;
+    }
+
+    anim color GrayMaskCol("rgba") = 0xffffffff;
+    anim float GrayMaskAmp(-1024..1024 step 0.001) = 1.0;
+    anim float GrayMaskBias(-1024..1024 step 0.001) = 0.0;
+
+    group "Gray MaskBlur";
+    anim float BlurRadius(1..4096 step 0.01) = 50.0;
+    anim float BlurAmp(0..256 step 0.001) = 1.0;
+
+    group "Screen Blur";
+    anim float BlurScreenRadius(1..4096 step 0.01) = 50.0;    
+    anim float BlurScreenAmp(-1024..1024 step 0.001) = 1.0;
+
+    group "Composition";
+    anim color CompBloomCol     ("rgba") = 0xffffffff;    
+    anim float CompBloomAmp(-1024..1024 step 0.001) = 0.0;
+
+    anim color CompScreenCol    ("rgba") = 0xffffffff;    
+    anim float CompScreenAmp(-1024..1024 step 0.001) = 1.0;
+
+    group "Debug:";
+    layout flags DebugShow("Result|Mask|BlurMask|BlurScreen");
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+        
+  }
+
+  code
+  {
+    RNPromist *node = new RNPromist();
+    node->ParaBase = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+
+
+/****************************************************************************/
+
+operator Wz4Render DepthOfField3(Wz4Render)
+{
+  column = 4;
+  parameter
+  {                                    
+    anim float FocalDepth(0..16384 step 0.001) = 1.0;
+    anim float FocusRange(-16384..16384 step 0.001) = 0.0;
+    anim float UnfocusRangeBefore(0..16384 step 0.001) = 1.0;
+    anim float UnfocusRangeAfter(0..16384 step 0.001) = 1.0;
+    anim float BlurMaskRadius(2..4096 step 0.01) = 10.0;
+    anim float BlurMaskAmb(-4096..4096 step 0.01) = 1.0;
+
+    group "Advanced";
+    layout flags Advanced("Off|On");
+    if (Advanced==1)
+    {
+      anim float BlurScreenRadius(2..4096 step 0.01) = 1.0;
+      anim float BlurScreenAmb(-4096..4096 step 0.01) = 1.0;
+      anim float CompScreenAmb(-4096..4096 step 0.01) = 1.0;
+      anim float CompMaskAmb(-4096..4096 step 0.01) = 1.0;
+    }   
+
+    group "Debug";
+    layout flags DebugShow("Result|ZMask|ZBlurMask|BlurScreen");
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;        
+  }
+
+  code
+  {
+    RNDoF3 *node = new RNDoF3();
+    node->ParaBase = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Glow(Wz4Render)
+{
+  column = 4;
+  parameter
+  {                        
+    group "Gradient";
+    anim color GradInColor ("rgba") =  0xffffffff;    
+    anim color GradOutColor ("rgba") = 0xffffffff;    
+    anim float GradShift(0.0 .. 128 step 0.001) = 1.0;
+    anim float GradIntensity(0..999.99 step 0.01) = 10.0;
+    anim float GradOffset(-10.0 .. 10.0 step 0.001) = 1.0;
+
+    group "Mask";
+    layout flags MaskEdgeGlow("Off|On");
+    anim float MaskThres(0.0 .. 1.0 step 0.001) = 0.5;
+    anim float MaskSoftenThres(0.001 .. 1.0 step 0.001) = 0.001;
+
+    group "BlurMask";
+    anim float BlurMaskRadius(0.0..4096 step 0.01) = 1.0;
+    anim float BlurMaskAmp(0..256 step 0.01) = 1.0;
+
+    group "Combine";
+    layout flags CombineMode("Add|Blend|Multiply|Sub");
+
+    group "Debug";
+    layout flags DebugShow("Result|BlurMask|Mask|Gradient");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;        
+  }
+
+  code
+  {
+    RNGlow *node = new RNGlow();
+    node->ParaBase = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render FocusBlur(Wz4Render)
+{
+  column = 4;
+  parameter
+  {                            
+    anim float FocusPoint[2](-100..200 step 0.01) = {50.0,50.0};
+    anim float FocusAmp(-16..16 step 0.0001) = 1.0;
+    anim float FocusBias(-16..16 step 0.0001) = 0.0;
+    
+    anim float BlurScreenRadius(0..256 step 0.001) = 1.0;
+    anim float BlurScreenAmp(0..256 step 0.001) = 1.0;    
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;        
+  }
+
+  code
+  {
+    RNFocusBlur *node = new RNFocusBlur();
+    node->ParaBase = node->Para = *para;    
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+
+operator GenBitmap TronFont()
+{
+//  tab = Wz4Render;
+//  column = 1;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    string Name;
+    string Letters;
+    int Height(1..1024) = 14;
+    int Width(0..1024) = 0;
+    flags Style("*0-|Bold:*1-|Italics:*2-|Underline:*3-|Strikeout:*4-|symbols");
+    int Safety(0..1024) = 1;
+    int SpacePreCellPost[3](-1024..1024) = 0;
+    color Col("rgba") = 0xffffffff;
+  }
+  code
+  {
+    TronInitFont(out, cmd->Strings[0], cmd->Strings[1],1<<(para->Size&0xff),1<<((para->Size>>8)&0xff), para->Width, para->Height, para->Style, para->Safety, para->SpacePreCellPost[0], para->SpacePreCellPost[1], para->SpacePreCellPost[2], (sU32)(para->Col));
+  }
+}
+
+operator Wz4Mesh TronPrint(?*GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    color Color("rgba")=0xffffffff;
+    float Zoom(0..16 step 0.0001) = 1.0;
+    int Width(1..8192) = 1024;
+    float Space[2](-1024..1024 step 0.1) = 0.0;
+
+    group "Text";
+    overbox overlabel lines 5 string Text:1 = "hund.";     
+  }
+  code
+  {
+    sInt nb=0;
+    static GenBitmap *input[256];
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      GenBitmap *in = cmd->GetInput<GenBitmap *>(i);
+      if(in)
+      {
+        input[nb++]=in;
+      }
+    }
+
+    TronPrint(out, input, nb, cmd->Strings[1],para->Zoom,para->Width,para->Space[0],para->Space[1]);
+  }
+}
+

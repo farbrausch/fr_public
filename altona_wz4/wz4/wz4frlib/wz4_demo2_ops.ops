@@ -1,0 +1,1408 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+//#include "wz4frlib/chaosmesh_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+}
+code
+{
+#include "wz4frlib/wz4_demo2.hpp"
+#include "wz4frlib/wz4_demo2nodes.hpp"
+//#include "wz4frlib/chaosmesh_code.hpp"
+#include "wz4lib/script.hpp"
+#include "wz4frlib/wz4_gui.hpp"
+}
+
+/****************************************************************************/
+
+type Wz4Render
+{
+  name = "wz4 RenderTree";
+  gui = base3d;
+  color = 0xfffbda66;
+  flags = render3d;
+
+  columnheader[0] = "system";
+  columnheader[1] = "effects";
+  columnheader[2] = "part render";
+  columnheader[3] = "part node";
+  columnheader[4] = "ipp";
+
+  header
+  {
+    class ScriptContext *Script;
+    struct ScriptSymbol *_Time;
+    struct ScriptSymbol *_BaseTime;
+    struct ScriptSymbol *_LocalTime;
+    struct ScriptSymbol *_LowQuality;
+//    struct ScriptSymbol *_Fader;
+//    struct ScriptSymbol *_Rotor;
+    class IppHelper2 *IppHelper;
+    sU8 MidiHigh[16];
+    sF32 MidiFloat[16];
+
+    void Init();
+    void Exit();
+    void BeginShow(wPaintInfo &pi);
+    void Show(wObject *obj,wPaintInfo &pi);
+
+    void Midi();
+  }
+}
+
+type Wz4Particles
+{
+  name = "wz4 Particles";
+  gui = base3d;
+  color = 0xffa0a060;
+  flags = render3d|notab;
+
+  header
+  {
+    void Show(wObject *obj,wPaintInfo &pi);
+  }
+}
+
+type Rendertarget2D : Texture2D
+{
+  flags = notab|render3d;
+  gui = base2d;
+
+  header
+  {
+  public:
+    sArray<Rendertarget2D *> Targets;
+  }
+  extern void EndShow(wPaintInfo &pi)
+  {
+    Rendertarget2D *rt;
+    sFORALL(Targets,rt)
+      rt->EndShow();
+    Targets.Clear();
+  }
+}
+
+/****************************************************************************/
+
+operator Rendertarget2D Rendertarget2 "Rendertarget"()
+{
+  parameter
+  {
+    layout flags Flags ("*0power2|relative|absolute:*4discard|keep");
+    if((Flags & 3)==0)
+      flags Size2 "Size" (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+              ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    if((Flags & 3)==1)
+      int Divider[2](1..256)=1;
+    if((Flags & 3)==2)
+      int Size[2](1..0x4000)=256;
+    flags Mode("argb8888|argb32f");
+    flags AtlasCount(" 1| 2| 4| 8| 16| 32");
+  }
+  code
+  {
+    static int modes[] = { sTEX_ARGB8888,sTEX_ARGB32F };
+    out->Flags = para->Flags;
+    out->Format = modes[para->Mode];
+    switch(para->Flags & 3)
+    {
+    case 0:
+      out->SizeX = 1<<((para->Size2>>0)&255);
+      out->SizeY = 1<<((para->Size2>>8)&255);
+      break;
+    case 1:
+      out->SizeX = para->Divider[0];
+      out->SizeY = para->Divider[1];
+      break;
+    case 2:
+      out->SizeX = para->Size[0];
+      out->SizeY = para->Size[1];
+      break;
+    }
+    out->AtlasPower = para->AtlasCount;
+    out->Init();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Render "Add" (?*Wz4Render) 
+{
+  shortcut = 'a';
+  column = 0;
+  parameter
+  {
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    if(cmd->Strings[0][0]==0)
+    {
+      out->RootNode = new Wz4RenderNode;
+      out->RootNode->MayCollapse = 1;
+    }
+    else
+    {
+      out->RootNode = new RNAdd;
+    }
+    out->AddChilds(cmd,0);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Camera(?Rendertarget2D,?*Wz4Render) 
+{
+  column = 0;
+  parameter
+  {
+    action CopyCam (1);
+    layout flags Mode:13("target|rot|schleuder|spline");
+    if(Mode==3)
+    {
+      string Spline:1;
+      anim float SplineTime:18(0..1 step 0.01)=0;
+    }
+    if(Mode!=3)
+    {
+      if(Mode==0 || Mode==1)
+        anim float31 Position:3 (-1024..1024 step 0.01) = { 0,0,-5 };
+      if(Mode==0 || Mode==2)
+        anim float31 Target:0 (-1024..1024 step 0.01) = { 0,0,0 };
+      if(Mode==1 || Mode==2)
+        anim float31 Rot:14(-64..64 step 0.001);
+      if(Mode==2)
+        anim float Distance:10(-1024..1024 step 0.01) = 5;
+      anim float Tilt:6 (-16 .. 16 step 0.001) = 0;
+    }
+    group "Projection";
+    if(Mode!=3)
+      anim float Zoom:7 (0..64 step 0.001) = 1.5;
+    anim float ClipNear:8 (0..65536 step 0.01) = 0.125;
+    anim float ClipFar:9 (0..65536 step 1) = 1024;
+    group "Rendering";
+    layout flags Clear:17("nothing|color|z|both")=3;
+    if(Clear & 1)
+      anim color ClearColor:11 ("rgba") = 0xff000000;
+    continue flags Clear "Perpective"("*4-|ortho");
+    continue flags Clear "Override FreeCam"("*5default|off");
+    continue flags Clear "React to FreeCam"("*6default|off");
+    continue flags Clear "Other" ("*7-|Disable Shadows");
+
+    int Renderpass:12(-127..127); 
+    link Rendertarget:0;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+
+    // next:18
+  }
+  
+  actions
+  {
+    if(code==1)
+    {
+      para->Position = Doc->LastView.Camera.l;
+      para->Target = para->Position + Doc->LastView.Camera.k;
+      para->Zoom = Doc->LastView.ZoomY;
+
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  handles
+  {
+    if(pi.CamOverride)
+    {
+      if(para->Mode==0 || para->Mode==1)
+        pi.Handle3D(op,1,para->Position,wHM_PLANE);
+      if(para->Mode==0 || para->Mode==2)
+        pi.Handle3D(op,2,para->Target,wHM_PLANE);
+    }
+  }
+
+  code
+  {
+    RNCamera *node = new RNCamera();
+    node->ParaBase = node->Para = *para;
+    node->Init(cmd->Strings[1]);
+    node->Target = in0; in0->AddRef();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,1);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render BillboardCamera(?Rendertarget2D,?*Wz4Render) 
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127); 
+    link Rendertarget;
+    anim color ClearColor ("rgba") = 0x40000000;
+    flags Flags(" around| copy");
+    group "Projection";
+    anim float Distance(0..1024 step 0.001) = 5;
+    anim float Zoom(0..64 step 0.001) = 1.5;
+    anim float ClipNear(0..65536 step 0.01) = 0.125;
+    anim float ClipFar(0..65536 step 1) = 1024;
+    int AtlasId(0..31);
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+
+    // next:18
+  }
+  
+  code
+  {
+    RNBillboardCamera *node = new RNBillboardCamera();
+    node->ParaBase = node->Para = *para;
+    node->Init(cmd->Strings[1]);
+    node->Target = in0; in0->AddRef();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,1);
+  }
+}
+
+/****************************************************************************/
+
+code
+{
+  void RenderCode(GenBitmapParaRender *para,Wz4Render *in0,GenBitmap *out);
+}
+
+operator GenBitmap Render(Wz4Render)
+{
+  parameter
+  {
+    layout flags Flags ("*0power2|relative|absolute:*4color|depth");
+    if((Flags & 3)==0)
+      flags Size2 "Size" (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+              ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    if((Flags & 3)==1)
+      int Divider[2](1..256)=1;
+    if((Flags & 3)==2)
+      int Size[2](1..0x4000)=256;
+    float Time(0..1) = 0;
+    float BaseTime(0..0x10000) = 0;
+  }
+  code
+  {
+    RenderCode(para,in0,out);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render RenderMesh(Wz4Mesh)
+{
+  column = 0;
+  shortcut = 'r';
+  flags = conversion;
+  parameter
+  {
+    anim int LightEnv (0..15);
+    anim float BoneTime (0..1024 step 0.001);
+    int Renderpass(-127..127);
+    flags Instances("off|on");
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNRenderMesh *node = new RNRenderMesh();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh = in0; in0->AddRef();
+
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render MultiplyMesh(Wz4Mesh)
+{
+  column = 0;
+  shortcut = 'M';
+  parameter
+  {
+    flags Flags ("-|Center:*1-|reverse");
+    anim int LightEnv:40 (0..15);
+    int Renderpass(-127..127);
+    group "Pre-Transform"; 
+    anim float31 Scale:1 (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+
+    group "First Multiply";
+    anim int Count1(0..1024) = 2;
+    anim float31 Scale1 (-1024..1024 step 0.01) = 1;
+    anim float30 Rot1 (-16..16 step 0.01) = 0;
+    anim float31 Trans1 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+
+    group "Second Multiply";
+    anim layout int Count2(1..1024) = 1;
+    if(Count2!=1)
+    {
+      anim float31 Scale2 (-1024..1024 step 0.01) = 1;
+      anim float30 Rot2 (-16..16 step 0.01) = 0;
+      anim float31 Trans2 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+      group "Last Multiply";
+      anim layout int Count3(1..1024) = 1;
+      if(Count3!=1)
+      {
+        anim float31 Scale3 (-1024..1024 step 0.01) = 1;
+        anim float30 Rot3 (-16..16 step 0.01) = 0;
+        anim float31 Trans3 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+      }
+    }
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNMultiplyMesh *node = new RNMultiplyMesh();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh = in0; in0->AddRef();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render Script (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+    group "Animation Script"; overbox overlabel linenumber lines 15 string Script;
+  }
+  code
+  {
+    Wz4RenderNode *node = new Wz4RenderNode();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+/****************************************************************************/
+
+operator Wz4Render Transform (?*Wz4Render)
+{
+  column = 0;
+  shortcut = 't';
+  parameter
+  {
+    anim float31 Scale (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNTransform *node = new RNTransform();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+  handles
+  {
+    sSRT srt;
+    sMatrix34 mul;
+
+    pi.Handle3D(op,1,para->Trans,wHM_PLANE);
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(mul);
+
+    pi.Transform3D(mul);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render TransformPivot (?*Wz4Render)
+{
+  column = 0;
+  shortcut = 'p';
+  parameter
+  {
+    anim float31 Scale (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-1000000..1000000 step 0.01) = 0;
+    int Renderpass(-127..127);
+    anim float31 Pivot (-1000000..1000000 step 0.01) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNTransformPivot *node = new RNTransformPivot();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+  handles
+  {
+    sSRT srt;
+    sMatrix34 mat0,mat1;
+
+    pi.Handle3D(op,1,para->Trans,wHM_PLANE);
+    pi.Handle3D(op,2,para->Pivot,wHM_PLANE);
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(mat1);
+    mat1.l = mat1.l + sVector30(para->Pivot*mat1);
+    mat0.l = -para->Pivot;
+
+    pi.Transform3D(mat0*mat1);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render SplinedObject (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    string SplineName:1;
+    anim float Tick(0..1 step 0.002);
+    anim float TimeDelta(0..0.25 step 0.0001) = 0.0005;
+    layout flags Mode ("Forward|Fly|rotate only:*4y is up|center is up");
+    int Renderpass(-127..127);
+    if((Mode & 3)==2)
+      float RotateAmount(-1024..1024 step 0.01) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    RNSplinedObject *node = new RNSplinedObject();
+    node->ParaBase = node->Para = *para;
+    node->Init(cmd->Strings[1]);
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render LookAt (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    anim float31 Pos (-0x10000..0x10000 step 0.01) = 0;
+    anim float31 Target (-0x10000..0x10000 step 0.01) = 0;
+    anim float30 UpVector (-16..16 step 0.01) = {0,1,0} ;
+    anim float Tilt(-16..16 step 0.01) = 0;
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNLookAt *node = new RNLookAt();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render SkyCube (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNSkyCube *node = new RNSkyCube();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Shaker(?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    layout flags Mode("fadein|fadeout|smooth|always:*4around cam|around center:*5sin|perlin");
+    if((Mode&15)!=3)
+      anim float Animate(0..1 step 0.001);
+    if(Mode&16)
+      anim float31 Center(-4096..4096 step 0.1);
+    anim float Amp(0..1 step 0.001) = 1;
+    anim float TimeRange[2](0..1 step 0.01) = { 0,1 };
+
+    group "shaking";
+    anim float31 TranslateAmp(-256..256 step 0.01);
+    anim float30 TranslateFreq(-4096..4096 step 0.01);
+    anim float31 RotateAmp(-16..16 step 0.0001);
+    anim float30 RotateFreq(-4096..4096 step 0.01);
+
+    int Renderpass(-127..127);
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNShaker *node = new RNShaker();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);  
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Multiply(Wz4Render)
+{
+  column = 0;
+  shortcut = 'm';
+  parameter
+  {
+    int Renderpass(-127..127);
+    flags Flags ("-|Center");
+    group "Pre-Transform"; 
+    anim float31 PreScale (-1024..1024 step 0.01) = 1;
+    anim float30 PreRot (-16..16 step 0.01) = 0;
+    anim float31 PreTrans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+    group "Multiply Transform";
+    anim int Count(1..1024) = 2;
+    anim float31 Scale (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    RNMultiply *node = new RNMultiply();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Clip (?*Wz4Render)
+{
+  column = 0;
+  shortcut = 'c';
+  customed = Wz4TimelineCed;
+  parameter
+  {
+    float StartTime:0(0..65536 step 0.25) = 0;
+    float Length:1(0..65536 step 0.25) = 16;
+    int Line:2(0..32)=1;
+    layout flags Flags:3 ("-|OffsetTime:*2-|Local:*3-|Hide:*4-|Cache Warmup")=1;
+    int Renderpass:4(-127..127);
+    float Time0:5 (-1024..1024 step 0.001) = 0;
+    float Time1:6 (-1024..1024 step 0.001) = 1;
+    anim flags Enable:7 ("Disable|Enable")=1;
+    if(Flags&4)
+      float LocalOffset(-0x10000..0x10000 step 0.25) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNClip *node = new RNClip();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  } 
+}
+
+operator Wz4Render ClipRandomizer (?*Wz4Render)
+{
+  column = 0;
+  customed = Wz4TimelineCed;
+  parameter
+  {
+    float StartTime:0(0..65536 step 0.25) = 0;
+    float Length:1(0..65536 step 0.25) = 16;
+    int Line:2(0..32)=1;
+    int Renderpass:4(-127..127);
+    anim flags Enable:7 ("Disable|Enable")=1;
+    float DefaultClipLength(0..65536 step 0.25) = 16;
+    label Action;
+    action Shuffle(1);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNClipRand *node = new RNClipRand();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+    node->Init();
+  } 
+  actions
+  {
+    return 1;         // just returning 1 will reevaluate the op. that causes reshuffling
+  }
+}
+
+operator Wz4Render ClipRandDuration(?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    float Length:1(0..65536 step 0.25) = 16;
+  }
+  code
+  {
+    Wz4RenderNode *node = new Wz4RenderNode;
+    node->ClipRandDuration = para->Length;
+    out->RootNode = node;
+    out->AddChilds(cmd,0);
+  }
+}
+
+operator Wz4Render MultiClip (?*Wz4Render)
+{
+  column = 0;
+  customed = Wz4TimelineCed;
+  parameter
+  {
+    flags Flags ("-|OffsetTime:*4-|Cache Warmup")=1;
+    int Renderpass(-127..127);
+    int Line(0..32)=1;
+    anim flags MasterEnable ("Disable|Enable")=1;
+    array
+    {
+      float Start(0..65536 step 0.25) = 0;
+      float Length(0..65536 step 0.25) = 16;
+      float Time0(0..1 step 0.001) = 0;
+      float Time1(0..1 step 0.001) = 1;
+      flags Enable("disable|enable") = 1;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNMultiClip *node = new RNMultiClip();
+    node->Init(*para,cmd->ArrayCount,(const Wz4RenderArrayMultiClip *)cmd->Array);
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+
+  setdefaultsarray
+  {
+    Wz4RenderArrayMultiClip *f;
+    sInt max = op->ArrayData.GetCount();
+
+    if(max==0 || pos==0)
+    {
+      e->Start = 0;
+      e->Length = 16;
+      e->Time0 = 0;
+      e->Time1 = 1;
+      e->Enable = 1;
+    }
+    else
+    {
+      f = (Wz4RenderArrayMultiClip *) op->ArrayData[pos-1];
+      e->Start = f->Start + f->Length;
+      e->Length = f->Length;
+      e->Time0 = f->Time0;
+      e->Time1 = f->Time1;
+      e->Enable = 1;
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Fader (?*Wz4Render)    // keep in sync with Fader2!
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float4 FaderA "Fader[0..3]" (0..1 step 0.001)=0.5;   // does not use the animation structure...
+    anim float4 FaderB "Fader[4..7]" (0..1 step 0.001)=0.5;   // the anim keyword is used to indicate
+    anim float4 RotorA "Rotor[0..3]" (0..1 step 0.001)=0.5;   // the possiblility of animation to the user
+    anim float4 RotorB "Rotor[4..7]" (0..1 step 0.001)=0.5;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNFader *node = new RNFader();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Fader2 (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float4 FaderA "Fader[0..3]" (-1000000..1000000 step 0.01)=0;   // does not use the animation structure...
+    anim float4 FaderB "Fader[4..7]" (-1000000..1000000 step 0.01)=0;   // the anim keyword is used to indicate
+    anim float4 RotorA "Rotor[0..3]" (-1000000..1000000 step 0.01)=0;   // the possiblility of animation to the user
+    anim float4 RotorB "Rotor[4..7]" (-1000000..1000000 step 0.01)=0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNFader *node = new RNFader();
+    node->ParaBase = node->Para = *(Wz4RenderParaFader *)para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Variable (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+    string Name:1;
+    flags Count("| 1| 2| 3| 4")=3;
+    float4 Value(-1000000..1000000 step 0.001)=0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNVariable *node = new RNVariable();
+    node->Init(para,cmd->Strings[1]);
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Spline (Wz4Render)
+{
+  column = 0;
+  customed = Wz4SplineCed;
+  parameter 
+  {
+    string Name;
+    layout flags Dimensions(" 1D| 2D| 3D| 4D| 5D| 6D | 7D| 8D")=2;
+    flags Spline("step|linear|uni. hermite|hermite|uni. bspline")=2;
+    float MaxTime(0..1024)=1;
+    nolabel flags Flags("-|Loop|zero|extrapolate");
+    flags GrabCamMode("pos|rot|pos-rot-zoom|pos-target-zoom-tilt")=3;
+    action CreateNew(2);
+    action Sort(1);
+    action RelaxByArclength(3);
+
+    array group defaultmode=auto  
+    {
+      float Time(-1024..1024 step 0.01);
+      if(Dimensions==0)
+        flags Use("#X");
+      if(Dimensions==1)
+        continue flags Use("#X|Y");
+      if(Dimensions==2)
+        continue flags Use("#X|Y|Z");
+      if(Dimensions==3)
+        continue flags Use("#X|Y|Z|W");
+      if(Dimensions==4)
+        continue flags Use("# 0| 1| 2| 3| 4");
+      if(Dimensions==5)
+        continue flags Use("# 0| 1| 2| 3| 4| 5");
+      if(Dimensions==6)
+        continue flags Use("# 0| 1| 2| 3| 4| 5| 6");
+      if(Dimensions==7)
+        continue flags Use("# 0| 1| 2| 3| 4| 5| 6| 7");
+      float Value(-0x10000..0x10000 step 0.01) = 0;
+      filter flags Select("-|Select");
+    }
+  }
+  actions
+  {
+    if(code==2)
+    {
+      Wz4RenderArraySpline *key;
+      sInt max = para->Dimensions+1;
+
+      sDeleteAll(op->ArrayData);
+      for(sInt i=0;i<max*2;i++)
+        op->ArrayData.AddTail(new Wz4RenderArraySpline);
+      for(sInt i=0;i<max;i++)
+      {
+        key = (Wz4RenderArraySpline *) op->ArrayData[i*2+0];
+        key->Time = 0;
+        key->Value = 0;
+        key->Use = i;
+        key->Select = 0;
+        key = (Wz4RenderArraySpline *) op->ArrayData[i*2+1];
+        key->Time = 1;
+        key->Value = 0;
+        key->Use = i;
+        key->Select = 0;
+      }
+      Doc->Change(op);
+      App->CustomWin->ChangeOp();
+
+      // fall through
+//      return 1;
+    }
+    if(code==1 || code==2 || code==3) // relax by arclength auto-sorts
+    {
+      sInt max = op->ArrayData.GetCount();
+      for(sInt i=0;i<max-1;i++)
+      {
+        for(sInt j=i+1;j<max;j++)
+        {
+          Wz4RenderArraySpline *a = (Wz4RenderArraySpline *) op->ArrayData[i];
+          Wz4RenderArraySpline *b = (Wz4RenderArraySpline *) op->ArrayData[j];
+
+          if(a->Time > b->Time || (a->Time==b->Time && a->Use > b->Use))
+            op->ArrayData.Swap(i,j);
+        }
+      }
+      if(code != 3)
+        return 1;
+    }
+    if(code==3) // relax by arclength
+    {
+      static const sInt nDim = 8;
+      sF64 currentArclen[nDim] = { 0.0 };
+      sF32 currentTime[nDim] = { 0.0f };
+
+      Wz4Render *rn = (Wz4Render *)op->RefObj;
+      RNSpline *rns = (RNSpline *)rn->RootNode;
+      ScriptSpline *spline = rns->Spline;
+
+      sInt max = op->ArrayData.GetCount();
+
+      // accumulate arclengths over all partial segments
+      for(sInt i=0;i<max;i++)
+      {
+        Wz4RenderArraySpline *a = (Wz4RenderArraySpline *) op->ArrayData[i];
+        sVERIFY(a->Use < nDim);
+
+        // we subtract a bit from the end points to work around discontinuities at the transition
+        // between spline segments
+        sF32 time0 = currentTime[a->Use];
+        sF32 time1 = a->Time;
+        sF32 startTime = sFade(0.0001f,time0,time1);
+        sF32 endTime = sFade(0.9999f,time0,time1);
+
+        sF32 partialArcLen = spline->ArcLength(startTime,endTime);
+        currentTime[a->Use] = a->Time;
+        currentArclen[a->Use] += partialArcLen;
+        a->Time = sF32(currentArclen[a->Use]);
+      }
+
+      // renormalize
+      sF64 rescale[nDim];
+      for(sInt i=0;i<nDim;i++)
+        rescale[i] = currentArclen[i] ? currentTime[i] / currentArclen[i] : 0.0;
+
+      for(sInt i=0;i<max;i++)
+      {
+        Wz4RenderArraySpline *a = (Wz4RenderArraySpline *) op->ArrayData[i];
+        a->Time *= sF32(rescale[a->Use]);
+      }
+
+      Doc->Change(op);
+      App->CustomWin->ChangeOp();
+      return 1;
+    }
+    return 0;
+  }
+  code
+  {
+    RNSpline *node = new RNSpline();
+    node->Init(para,cmd->ArrayCount,(Wz4RenderArraySpline *)cmd->Array,cmd->Strings[0]);
+    out->RootNode = node;
+    cmd->Strings[0] = 0; // we don't want code..
+    out->AddChilds(cmd,0);
+
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out; out->AddRef();
+    }
+  }
+  handles
+  {    
+    Wz4Render *rn = (Wz4Render *)op->RefObj;
+    RNSpline *rns = (RNSpline *)rn->RootNode;
+    ScriptSpline *spline = rns->Spline;
+    if(para->Dimensions+1>=3 && spline)
+    {
+      sVector31 v0,v1;
+      spline->Eval(0,&v0.x,3);
+      for(sInt i=1;i<256;i++)
+      {
+        spline->Eval(spline->MaxTime*i/256,&v1.x,3);
+        pi.Line3D(v0,v1,(i&1)?0xffff0000:0xff00ff00);
+        v0 = v1;
+      }
+    }
+    sF32 time = 0;
+    sF32 *slots[3] = { 0,0,0 };
+    sInt n = 1;
+    for(sInt i=0;i<op->ArrayData.GetCount();i++)
+    {
+      Wz4RenderArraySpline *e = (Wz4RenderArraySpline *)op->ArrayData[i];
+      if(e->Time!=time)
+      {
+        time = e->Time;
+        sClear(slots);
+      }
+      if(e->Time==time && e->Use>=0 && e->Use<3)
+        slots[e->Use] = &e->Value;
+      if(slots[0] && slots[1] && slots[2])
+      {
+        pi.Handle3D(op,n++,slots[0],slots[1],slots[2],wHM_PLANE);
+        pi.Line3D(sVector31(*slots[0],*slots[1],*slots[2]),sVector31(*slots[0],0,*slots[2]),0);
+        sClear(slots);
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Layer2D(Texture2D,?Texture2D)
+{
+  column = 0;
+  parameter
+  { 
+    int Renderpass(-128..128);
+    anim float Center[2](-4..4 step 0.01) = 0.5;
+    anim float Size[2](-1024..1024 step 0.01) = 1.0;
+    anim float ScaleUV[2](-1024..1024 step 0.01) = 1.0;
+    anim float ScrollUV[2](-1024..1024 step 0.01) = 0.0;
+    anim color Color ("rgba") = 0xffffffff;
+    group "modes";
+    flags Aspect("Square|Screen|Image");
+    continue flags Aspect "Size Ref" ("*2screen|image");
+    flags Blend("solid|alpha premul|add|sub|mul|mul2|addsmooth|alpha plain|monochrome|add dest alpha|add inv dest alpha:*16dest alpha from shader|dest alpha unchanged|dest alpha = 0|dest alpha blend");
+    flags Align("left|center|right:*2top|center|bottom") = 5;
+    flags Filter("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    group "second texture";
+    link SecondTexture:1 (both);
+    if(input[1])
+    {
+      flags Mix("mul|add|sub");
+      anim float ScaleUV2[2](-1024..1024 step 0.01) = 1.0;
+      anim float ScrollUV2[2](-1024..1024 step 0.01) = 0.0;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNLayer2D *node = new RNLayer2D();
+    node->ParaBase = node->Para = *para;
+    node->Texture[0] = in0; in0->AddRef();
+    node->Texture[1] = in1; in1->AddRef();
+    node->DocScreenY = sF32(Doc->DocOptions.ScreenY);
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Beat (Wz4Render)
+{
+  column = 0;
+  customed = Wz4BeatCed;
+  parameter
+  {
+    string Name;
+    flags Tempo:48(" 1/1| 1/2 | 1/4| 1/8| 1/16| 1/32| 1/64| 1/128| 1/256");
+    action Init(1);
+    action DoubleSpeed(2);
+    action HalfSpeed(3);
+    layout int Levels:59(2..15)=2;
+    action MakeLevels(4);
+
+    group "shape";
+    layout flags Mode :50("linear|spline:*4preattack|normal attack:*5-|individual control");
+    float Attack:51 (0..100 step 0.01) = 0.0;
+    float Release:52 (0..100 step 0.01) = 1.0;
+
+    group "scale";
+    float Amp:53 (-1000..1000 step 0.001) = 1.0;
+    float Bias:54 (-1000..1000 step 0.001) = 0.0;
+    float Timeshift:55 (-16..16 step 0.001) = 0.0;
+    flags SplineFlags:56 ("clamp|wrap|zero");
+
+    group "levels";
+
+    if(0)
+    {
+      float Level0:0(0..1 step 0.01)=0;
+      if(Mode&32)
+      {
+        nolabel float Att0(0..100 step 0.01) = 1.0;
+        nolabel float Rel0(0..100 step 0.01) = 1.0;
+      }
+    }
+
+    float Level1(0..1 step 0.01)=0.5;
+    if(Mode&32)
+    {
+      nolabel float Att1(0..100 step 0.01) = 1.0;
+      nolabel float Rel1(0..100 step 0.01) = 1.0;
+    }
+
+    float Level2(0..1 step 0.01)=1.0;
+    if(Mode&32)
+    {
+      nolabel float Att2(0..100 step 0.01) = 1.0;
+      nolabel float Rel2(0..100 step 0.01) = 1.0;
+    }
+
+    if(Levels>= 3)
+    {
+      float Level3(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att3(0..100 step 0.01) = 1.0;
+        nolabel float Rel3(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 4)
+    {
+      float Level4(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att4(0..100 step 0.01) = 1.0;
+        nolabel float Rel4(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 5)
+    {
+      float Level5(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att5(0..100 step 0.01) = 1.0;
+        nolabel float Rel5(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 6)
+    {
+      float Level6(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att6(0..100 step 0.01) = 1.0;
+        nolabel float Rel6(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 7)
+    {
+      float Level7(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att7(0..100 step 0.01) = 1.0;
+        nolabel float Rel7(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 8)
+    {
+      float Level8(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att8(0..100 step 0.01) = 1.0;
+        nolabel float Rel8(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>= 9)
+    {
+      float Level9(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att9(0..100 step 0.01) = 1.0;
+        nolabel float Rel9(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=10)
+    {
+      float Level10(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att10(0..100 step 0.01) = 1.0;
+        nolabel float Rel10(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=11)
+    {
+      float Level11(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att11(0..100 step 0.01) = 1.0;
+        nolabel float Rel11(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=12)
+    {
+      float Level12(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att12(0..100 step 0.01) = 1.0;
+        nolabel float Rel12(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=13)
+    {
+      float Level13(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att13(0..100 step 0.01) = 1.0;
+        nolabel float Rel13(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=14)
+    {
+      float Level14(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att14(0..100 step 0.01) = 1.0;
+        nolabel float Rel14(0..100 step 0.01) = 1.0;
+      }
+    }
+    if(Levels>=15)
+    {
+      float Level15(0..1 step 0.01)=1.0;
+      if(Mode&32)
+      {
+        nolabel float Att15(0..100 step 0.01) = 1.0;
+        nolabel float Rel15(0..100 step 0.01) = 1.0;
+      }
+    }
+
+    array
+    {
+      int Hex[4](0..0x7f7f7f7f hex 8);
+    }
+  }
+  actions
+  {
+    if(code==1)
+    {
+      sInt beats = Doc->DocOptions.Beats;
+      sInt lines = ((beats<<para->Tempo)+15)/16;
+      sInt old = op->ArrayData.GetCount();
+
+      if(lines>old)
+      {
+        for(sInt i=old;i<lines;i++)
+          op->AddArray(i);
+      }
+      else if(lines<old)
+      {
+        for(sInt i=old-1;i>=lines;i--)
+          op->RemArray(i);
+      }
+      Doc->Change(op);
+      App->ChangeDoc();
+    }
+    else if(code==2)
+    {
+      if(para->Tempo<7)
+      {
+        para->Tempo++;
+        sInt len = op->ArrayData.GetCount();
+
+        for(sInt i=0;i<len;i++)
+          op->AddArray(len+i);
+
+        for(sInt i=len-1;i>=0;i--)
+        {
+          sU8 *s = (sU8 *) op->ArrayData[i];    s+=15;
+          sU8 *d0 = (sU8 *) op->ArrayData[i*2+0]; d0+=15;
+          sU8 *d1 = (sU8 *) op->ArrayData[i*2+1]; d1+=15;
+
+          for(sInt j=0;j<8;j++)
+          {
+            *d1-- = 0;
+            *d1-- = *s--;
+          }
+          for(sInt j=0;j<8;j++)
+          {
+            *d0-- = 0;
+            *d0-- = *s--;
+          }
+        }
+      }
+      Doc->Change(op);
+      App->ChangeDoc();
+    }
+    else if(code==3)
+    {
+      if(para->Tempo>0)
+      {
+        sU8 null[16];
+        sSetMem(null,0,16);
+
+        para->Tempo--;
+        sInt oldlen = op->ArrayData.GetCount();
+        sInt len = (oldlen+1)/2;
+
+        for(sInt i=0;i<len;i++)
+        {
+          sU8 *s0 = (sU8 *) op->ArrayData[i*2+0];  
+          sU8 *s1 = null;
+          if(i*2+1<oldlen)
+            s1 = (sU8 *) op->ArrayData[i*2+1];  
+          sU8 *d = (sU8 *) op->ArrayData[i];
+
+          for(sInt j=0;j<8;j++)
+          {
+            sU8 loop=0,level=0;
+
+            if(s0[0]&RNB_LoopMask) loop=s0[0]&RNB_LoopMask;
+            if(s0[1]&RNB_LoopMask) loop=s0[1]&RNB_LoopMask;
+            level = sU8(sMax(s0[0]&RNB_LevelMask,s0[1]&RNB_LevelMask));
+
+            *d++ = loop|level;
+            s0+=2;
+          }
+          for(sInt j=0;j<8;j++)
+          {
+            sU8 loop=0,level=0;
+
+            if(s1[0]&RNB_LoopMask) loop=s1[0]&RNB_LoopMask;
+            if(s1[1]&RNB_LoopMask) loop=s1[1]&RNB_LoopMask;
+            level = sU8(sMax(s1[0]&RNB_LevelMask,s1[1]&RNB_LevelMask));
+
+            *d++ = loop|level;
+            s1+=2;
+          }
+        }
+
+        for(sInt i=oldlen-1;i>=len;i--)
+          op->RemArray(i);
+      }
+      Doc->Change(op);
+      App->ChangeDoc();
+    }
+    else if(code==4)
+    {
+      for(sInt i=0;i<=para->Levels;i++)
+        (&para->Level0)[i*3] = sF32(i)/para->Levels;
+      for(sInt i=para->Levels+1;i<16;i++)
+        (&para->Level0)[i*3] = 1;
+      Doc->Change(op);
+      App->ChangeDoc();
+    }
+    else
+    {
+      return 0;
+    }
+    return 1;
+  }
+  code
+  {
+    RNBeat *node = new RNBeat();
+    node->Init(para,cmd->ArrayCount,(Wz4RenderArrayBeat *)cmd->Array,cmd->Strings[0]);
+    out->RootNode = node;
+    cmd->Strings[0] = 0; // we don't want code..
+    out->AddChilds(cmd,0);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render BoneTrain(Wz4Mesh)
+{
+  column = 1;
+  parameter
+  {
+    string SplineName:1;
+
+    int Renderpass(-127..127);
+    anim int LightEnv(0..15) = 0;
+
+    anim float Start(-4..4 step 0.01);
+    anim float Length(-4..4 step 0.01)= 1;
+
+    flags Flags("free|upvector|shear")=1;
+    anim float30 UpVector(-16..16 step 0.001);
+    anim float Twist(-1024..1024 step 0.001)=0;
+    anim float Twirl(-1024..1024 step 0.001)=0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    RNBoneTrain *node = new RNBoneTrain();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh = in0; in0->AddRef();
+    node->Init(cmd->Strings[1]);
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator UnitTest UnitTestWz4 (Wz4Render)
+{
+  tab = Wz4Render;
+  column = 1;
+  parameter
+  {
+    fileout TestName;
+    flags Size (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+             ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    flags Flags "Always Pass" ("-|compare:*1-|cross compare");
+  }
+  code
+  {
+    sImage img;
+    UnitTestWz4Render(img,para,in0);
+    return out->Test(img,cmd->Strings[0],para->Flags);
+  }
+}
+
+/****************************************************************************/

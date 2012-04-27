@@ -1,0 +1,23 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{5645F39A-CA4F-4595-A773-9F8522673846}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+create "stripped_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "compoview.mp.txt";
+file "readme.txt";

@@ -1,0 +1,28 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{3B622118-29C2-42b2-8242-A3BAE7AC7A02}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "vertextexture.mp.txt";
+file "shader.asc";
+file nonew "shader.?pp";
+

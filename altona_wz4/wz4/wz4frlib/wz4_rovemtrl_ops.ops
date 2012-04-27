@@ -1,0 +1,232 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_rovemtrl.hpp"
+#include "wz4frlib/wz4_rovemtrl_shader.hpp"
+#include "wz4frlib/wz4_mtrl2.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+}
+
+/****************************************************************************/
+
+type RoveMtrl : Wz4Mtrl
+{
+  name = "Rove Material";
+  color = 0xff60e060;
+  flags = render3d|notab;
+  gui = base3d;
+
+  header
+  {
+    void Init();
+    void Exit();
+    void PrepareViewR(sViewport &view);
+
+    sTextureCube *EmptyCube;
+
+    struct LightEnv_
+    {
+      sCBuffer<RoveShaderVEnv> cbv;
+      sCBuffer<RoveShaderPEnv> cbp;
+      sCBuffer<Wz4MtrlModelPara> cbm;
+      sMatrix34 TexTrans;
+      sTextureCube *LightCube; // no ownership
+    };
+
+    LightEnv_ *LightEnv[sMAX_LIGHTENV];
+    sMatrix34 ViewMatrix;
+  }
+}
+
+operator RoveMtrl RoveMaterial(?Texture2D,?Texture2D)
+{
+  tab = Wz4Mtrl;
+  column = 0;
+  parameter
+  {
+    flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted") = 0x13;
+    if(input[0])
+      flags Texture0("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix");
+    if(input[1])
+      flags Texture1("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*16-|scale|matrix");
+
+    layout flags Extras "Fog" ("off|on|black|clip3");
+    continue flags Extras "Clip Planes" ("*3off|on");
+
+    if(input[1])
+    {
+      continue flags Extras "Texture Op" ("*2add|mul");
+      nolabel flags UVTrans ("uv|model|world|camera|envi-sphere|envi-reflect|from LightEnv");
+    }
+
+    group "Transforms";
+    float SimpleScale(-1024..1024 step 0.01) = 1;
+    float31 Scale(-1024..1024 step 0.01) = 1;
+    float30 Rot(-16..16 step 0.001);
+    float31 Trans(-1024..1024 step 0.01);
+  }
+  code
+  {
+    sInt extras = para->Extras;
+    sInt detail = 0;
+    switch(para->UVTrans)
+    {
+    case 0: extras |= 0x00; detail = 0; break;
+    case 1: extras |= 0x10; detail = 0; break;
+    case 2: extras |= 0x10; detail = 1; break;
+    case 3: extras |= 0x10; detail = 2; break;
+    case 4: extras |= 0x20; detail = 3; break;
+    case 5: extras |= 0x30; detail = 3; break;
+    case 6: extras |= 0x00; detail = 4; break;
+    }
+
+    out->SetMtrl(para->Flags,extras);
+    out->DetailTexSpace = detail;
+    out->SetTex(0,in0,para->Texture0);
+    out->SetTex(1,in1,para->Texture1);
+
+    sMatrix34 mat;
+    sInt tflags[2] = { para->Texture0,para->Texture1 };
+    for(sInt j=0;j<2;j++)
+    {
+      if(tflags[j]&0x10000)
+      {
+        mat.Scale(para->SimpleScale);
+      }
+      else if(tflags[j]&0x20000)
+      {
+        sSRT srt;
+        srt.Rotate = para->Rot;
+        srt.Translate = para->Trans;
+        srt.Scale = para->Scale;
+        srt.MakeMatrix(mat);
+      }
+      else
+      {
+        mat.Init();
+      }
+      out->TexTrans[j] = mat;
+    }
+
+    out->Prepare();
+  }
+}
+
+/****************************************************************************/
+
+header_end
+{
+  class RNRoveMtrlEnv : public Wz4RenderNode
+  {
+  public:
+    Wz4RenderParaRoveMtrlEnv Para,ParaBase;
+    Wz4RenderAnimRoveMtrlEnv Anim;
+
+    TextureCube *LightCube;
+
+    RNRoveMtrlEnv();
+    ~RNRoveMtrlEnv();
+
+    void Simulate(Wz4RenderContext *);
+    void Render(Wz4RenderContext *);
+  };
+}
+
+operator Wz4Render RoveMtrlEnv(?TextureCube)
+{
+  tab = Wz4Mtrl;
+  column = 1;
+  parameter
+  {
+    int Index "LightEnv" (0..15);
+    int Renderpass (-127..127);
+
+    group "Lights";
+    link LightCubemap:0 (both);
+
+    anim color Ambient ("rgba") = 0xff000000;
+
+    anim color Color0 ("rgba") = 0xffc0c0c0;
+    anim nolabel float Color0Amp (-16..16 step 0.01) = 1;
+    anim float31 Pos0 (-65536..65536 step 0.001) = { 0,0,0 };
+    anim float Range0 (0..65536 step 0.001) = 0;
+    nolabel flags LightType ("-|Shadows");
+
+    anim color Color1 ("rgba") = 0xff000000;
+    anim nolabel float Color1Amp (-16..16 step 0.01) = 1;
+    anim float31 Pos1 (-65536..65536 step 0.001) = { 0,0,0 };
+    anim float Range1 (0..65536 step 0.001) = 0;
+
+    anim color Color2 ("rgba") = 0xff000000;
+    anim nolabel float Color2Amp (-16..16 step 0.01) = 1;
+    anim float31 Pos2 (-65536..65536 step 0.001) = { 0,0,0 };
+    anim float Range2 (0..65536 step 0.001) = 0;
+
+    anim color Color3 ("rgba") = 0xff000000;
+    anim nolabel float Color3Amp (-16..16 step 0.01) = 1;
+    anim float31 Pos3 (-65536..65536 step 0.001) = { 0,0,0 };
+    anim float Range3 (0..65536 step 0.001) = 0;
+
+    group "Fog";
+    anim float FogNear (-65536..65536 step 1) = 10;
+    anim float FogFar (0..65536 step 1) = 1000;
+    anim color FogColor ("rgba") = 0x80ffffff;
+    layout flags ClipPlanes "FogClip3" ("*4-|need");
+
+    group "Clip planes";
+
+    continue layout flags ClipPlanes ("-| 0:*1-| 1:*2-| 2:*3-| 3");
+    if(ClipPlanes&1)
+    {
+      anim float30 "Plane 0" Plane0Dir (-2..2 step 0.001);
+      anim nolabel float Plane0Dist (-0x10000..0x10000);
+    }
+    if(ClipPlanes&2)
+    {
+      anim float30 "Plane 1" Plane1Dir (-2..2 step 0.001);
+      anim nolabel float Plane1Dist (-0x10000..0x10000);
+    }
+    if(ClipPlanes&4)
+    {
+      anim float30 "Plane 2" Plane2Dir (-2..2 step 0.001);
+      anim nolabel float Plane2Dist (-0x10000..0x10000);
+    }
+    if(ClipPlanes&0x18)
+    {
+      anim float30 "Plane 3" Plane3Dir (-2..2 step 0.001);
+      anim nolabel float Plane3Dist (-0x10000..0x10000);
+    }
+
+    group "Optional texture transform";
+
+    anim float31 TexScale (-1024..1024 step 0.01) = 1;
+    anim float30 TexRot (-16..16 step 0.01) = 0;
+    anim float31 TexTrans (-1024..1024 step 0.01) = 0;    
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNRoveMtrlEnv *node = new RNRoveMtrlEnv;
+    node->ParaBase = *para;
+    node->LightCube = in0; if(in0) in0->AddRef();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+  handles
+  {
+    if((para->Color0 & 0xffffff) && para->Color0Amp) pi.Handle3D(op,0,para->Pos0,wHM_PLANE);
+    if((para->Color1 & 0xffffff) && para->Color1Amp) pi.Handle3D(op,1,para->Pos1,wHM_PLANE);
+    if((para->Color2 & 0xffffff) && para->Color2Amp) pi.Handle3D(op,2,para->Pos2,wHM_PLANE);
+    if((para->Color3 & 0xffffff) && para->Color3Amp) pi.Handle3D(op,3,para->Pos3,wHM_PLANE);
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/

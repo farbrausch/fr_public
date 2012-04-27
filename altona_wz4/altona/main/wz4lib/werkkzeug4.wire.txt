@@ -1,0 +1,573 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+menu menu_hidden_globals
+{
+  item main.Exit "Exit" ESCAPE|SHIFT|GLOBAL;
+}
+
+menu menu_file "File"
+{
+  item main.New "New";
+  item main.Open "Open .." 'o'|CTRL|SCOPE0;
+  item main.OpenBackup "Open Backup";
+  item main.Merge "merge ..";
+  item main.Save "Save" 's'|CTRL|SCOPE0;
+  item main.SaveAs "SaveAs ..";
+  spacer;
+  item main.AutoSave "Autosave Now";
+  item main.SaveConfig "Save Config";
+  item main.Exit "Exit" F4|ALT|GLOBAL;
+}
+
+menu menu_edit "Edit"
+{
+  item main.EditOptions "Editor Options" 'j'|CTRL|SCOPE0;
+  item main.DocOptions "Document Options" 'k'|CTRL|SCOPE0;
+  item main.TestOptions "Unit Test Options";
+  item main.ShellSwitches "Override Shell Switches";
+  spacer;
+  item main.Panic "Panic" PAUSE|SCOPE0;
+  item main.FlushCache "Uncalc all Ops";
+  item main.UnblockChange 'e'|CTRL|SCOPE0;
+  item main.ChargeCache "Calc whole timeline" 'w'|CTRL|SCOPE0;
+  item main.KillClips "Hide Disabled Clips";
+  item main.SelUnconnected "Select Unconnected Ops";
+  item main.DelUnconnected "Delete Unconnected Ops";
+  spacer;
+  item main.StartTime "Start Timeline" F5|SCOPE0;
+  item main.StartTime "Start Timeline" '<'|CTRL|SCOPE0;
+  item main.RestartTime "Restart Timeline" F6|SCOPE0;
+  item main.RestartTime "Restart Timeline" '>'|SHIFT|CTRL|SCOPE0;
+  //item main.RestartTime "Restart Timeline" 'y'|CTRL|SCOPE0;
+  item main.LoopTime "Loop Timeline" F7|SCOPE0;
+}
+
+
+menu menu_nav "Navigation"
+{
+  item main.FindStore "Find Store" 'f'|CTRL|SCOPE0;
+  item main.FindString "Find String" 'F'|SHIFT|CTRL|SCOPE0;
+  item main.FindClass "Find Class" 'g'|CTRL|SCOPE0;
+  item main.FindObsolete "Find Obsolete" 'G'|SHIFT|CTRL|SCOPE0;
+  item main.Wiki "Wiki" 'h'|CTRL|SCOPE0;
+  spacer;
+  item main.Switch0 "Page" F1|SCOPE0;
+  item main.Switch1 "Page Dual" F2|SCOPE0;
+}
+
+/*
+menu menu_goto "Goto"
+{
+  item main.Goto0 "Goto '_0'" '!'|CTRL|SCOPE0;
+  item main.Goto1 "Goto '_1'" '1'|CTRL|SCOPE0;
+  item main.Goto2 "Goto '_2'" '2'|CTRL|SCOPE0;
+  item main.Goto3 "Goto '_3'" '3'|CTRL|SCOPE0;
+  item main.Goto4 "Goto '_4'" '4'|CTRL|SCOPE0;
+  item main.Goto5 "Goto '_5'" '5'|CTRL|SCOPE0;
+  item main.Goto6 "Goto '_6'" '6'|CTRL|SCOPE0;
+  item main.Goto7 "Goto '_7'" '7'|CTRL|SCOPE0;
+  item main.Goto8 "Goto '_8'" '8'|CTRL|SCOPE0;
+  item main.Goto9 "Goto '_9'" '9'|CTRL|SCOPE0;
+}
+*/
+window PageList
+{
+  drag SelectSingle LMB;
+  drag Edit LMB|DOUBLE; 
+  drag Scroll MMB;
+
+  key Help MENU;
+  key AddStack "Add Stack Page" INSERT;
+  key AddTree "Add Tree Page" 't';
+  key DeleteSave "Delete" DELETE;
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+  key MoveUp UP|CTRL|REPEAT|CURSOR;
+  key MoveDown DOWN|CTRL|REPEAT|CURSOR;
+  key MovePageUp PAGEUP|CTRL|REPEAT|CURSOR;
+  key MovePageDown PAGEDOWN|CTRL|REPEAT|CURSOR;
+  key MoveLeft LEFT|CTRL|CURSOR;
+  key MoveRight RIGHT|CTRL|CURSOR;
+  key Rename ENTER;
+  key Cut 'x';
+  key Copy 'c';
+  key Paste 'v';
+  
+  key Help RMB;
+}
+
+window ClipOps,CurveOps
+{
+  drag SelectSingle LMB;
+  drag Scroll MMB;
+
+  key Help MENU;
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+  
+  key Help RMB;
+}
+
+window TreeView
+{
+  drag SelectMulti LMB;
+  drag SelectAddMulti LMB|SHIFT;
+  drag SelectToggleMulti LMB|CTRL;
+  drag Edit LMB|DOUBLE;
+  drag Scroll MMB;
+
+  key Help MENU;
+  key Add INSERT|EXTRA;
+  key Add "Add Op" 'a'|EXTRA;
+  key AddMore "Add Op (more)" 'A'|SHIFT|EXTRA;
+  key Conversions "Add Conversions" NULL|EXTRA;
+  key Delete DELETE|EXTRA;
+  key View0.Focus 'f';
+
+  key Cut 'x'|EXTRA;
+  key Copy 'c'|EXTRA;
+  key Paste 'v'|EXTRA;
+  
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+  key MoveUp UP|CTRL|REPEAT|CURSOR;
+  key MoveDown DOWN|CTRL|REPEAT|CURSOR;
+  key MovePageUp PAGEUP|CTRL|REPEAT|CURSOR;
+  key MovePageDown PAGEDOWN|CTRL|REPEAT|CURSOR;
+  key MoveLeft LEFT|CTRL|CURSOR;
+  key MoveRight RIGHT|CTRL|CURSOR;
+
+  key Add1 "Add Type 1" '1'|EXTRA2;
+  key Add2 "Add Type 2" '2'|EXTRA2;
+  key Add3 "Add Type 3" '3'|EXTRA2;
+  key Add4 "Add Type 4" '4'|EXTRA2;
+  key Add5 "Add Type 5" '5'|EXTRA2;
+  key Add6 "Add Type 6" '6'|EXTRA2;
+  key Add7 "Add Type 7" '7'|EXTRA2;
+  key Add8 "Add Type 8" '8'|EXTRA2;
+  key Add9 "Add Type 9" '9'|EXTRA2;
+
+  key main.Goto0 "Goto '_0'" '0'|SHIFT|EXTRA3;
+  key main.Goto1 "Goto '_1'" '1'|SHIFT|EXTRA3;
+  key main.Goto2 "Goto '_2'" '2'|SHIFT|EXTRA3;
+  key main.Goto3 "Goto '_3'" '3'|SHIFT|EXTRA3;
+  key main.Goto4 "Goto '_4'" '4'|SHIFT|EXTRA3;
+  key main.Goto5 "Goto '_5'" '5'|SHIFT|EXTRA3;
+  key main.Goto6 "Goto '_6'" '6'|SHIFT|EXTRA3;
+  key main.Goto7 "Goto '_7'" '7'|SHIFT|EXTRA3;
+  key main.Goto8 "Goto '_8'" '8'|SHIFT|EXTRA3;
+  key main.Goto9 "Goto '_9'" '9'|SHIFT|EXTRA3;
+  
+  key main.GotoUndo BACKSPACE|CURSOR;
+  key main.GotoRedo BACKSPACE|SHIFT|CURSOR;
+  key main.Browser 'G'|SHIFT|CURSOR;
+    
+  key Show 's';
+  key Show2 'd';
+  key ShowRoot 's'|SHIFT;
+  
+  
+  key Help RMB;
+}
+
+window Para,AnimPara
+{
+  drag Scroll MMB;
+}
+
+window StoreBrowser
+{
+  drag SelectSingle LMB;  
+  drag Scroll MMB;
+  key Close ESCAPE;
+  key SelectClose LMB|DOUBLE;
+
+  key Help RMB;
+
+  key Help MENU;
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+  key MoveUp UP|CTRL|REPEAT|CURSOR;
+  key MoveDown DOWN|CTRL|REPEAT|CURSOR;
+  key MovePageUp PAGEUP|CTRL|REPEAT|CURSOR;
+  key MovePageDown PAGEDOWN|CTRL|REPEAT|CURSOR;
+  key MoveLeft LEFT|CTRL|CURSOR;
+  key MoveRight RIGHT|CTRL|CURSOR;
+}
+
+window View2
+{
+  key StoreBrowser.Close ESCAPE;
+}
+
+window OpList
+{
+  drag SelectSingle LMB;  
+  drag Scroll MMB;
+  key Close ESCAPE;
+  key SelectClose LMB|DOUBLE;
+
+  key Help RMB;
+
+  key Help MENU;
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+}
+
+window Page
+{
+
+  drag Select "Pick" LMB|HIT;
+  drag SelectAdd "Select" LMB|HIT|SHIFT;
+  drag SelectToggle "Toggle" LMB|HIT|CTRL;
+  drag Frame "Frame" LMB|MISS;
+  drag FrameAdd "Frame Add" LMB|MISS|SHIFT;
+  drag FrameToggle "Frame Toggle" LMB|MISS|CTRL;
+  drag Width "Width" RMB|HIT|SHIFT;
+  drag Duplicate "Duplicate" RMB|HIT|CTRL;
+  drag Scroll "Scroll" MMB;
+
+  tool Birdseye 'y'|ONOFF;
+  tool ShowArrows 'w'|ONOFF;
+  drag Scroll:Birdseye "Scroll" MMB;
+  drag BirdScroll:Birdseye "Scroll Birdseye" LMB;
+
+  tool ScratchTool 't'|ONOFF;
+  drag ScratchSlow:ScratchTool "Scratch Time" LMB;
+  drag ScratchFast:ScratchTool "Scratch Time Fast" RMB;
+
+  key Help MENU;
+  key Del "Delete" DELETE|EXTRA;
+  key Add "Add Op" 'a'|EXTRA;
+  key AddMore "Add Op (more)" 'A'|SHIFT|EXTRA;
+  key Conversions "Add Conversions" NULL|EXTRA;
+  key Cut "Cut" 'x'|EXTRA;
+  key Copy "Copy" 'c'|EXTRA;
+  key Paste "Paste" 'v'|EXTRA;
+  key SelectAll 'a'|CTRL|EXTRA;
+  key SelectTree 'T'|SHIFT|EXTRA;
+  
+  key Cut "Cut" 'x'|CTRL|EXTRA;
+  key Copy "Copy" 'c'|CTRL|EXTRA;
+  key Paste "Paste" 'v'|CTRL|EXTRA;
+
+  key Add1 "Add Type 1" '1'|EXTRA2;
+  key Add2 "Add Type 2" '2'|EXTRA2;
+  key Add3 "Add Type 3" '3'|EXTRA2;
+  key Add4 "Add Type 4" '4'|EXTRA2;
+  key Add5 "Add Type 5" '5'|EXTRA2;
+  key Add6 "Add Type 6" '6'|EXTRA2;
+  key Add7 "Add Type 7" '7'|EXTRA2;
+  key Add8 "Add Type 8" '8'|EXTRA2;
+  key Add9 "Add Type 9" '9'|EXTRA2;
+  
+  key main.Goto0 "Goto '_0'" '0'|SHIFT|EXTRA3;
+  key main.Goto1 "Goto '_1'" '1'|SHIFT|EXTRA3;
+  key main.Goto2 "Goto '_2'" '2'|SHIFT|EXTRA3;
+  key main.Goto3 "Goto '_3'" '3'|SHIFT|EXTRA3;
+  key main.Goto4 "Goto '_4'" '4'|SHIFT|EXTRA3;
+  key main.Goto5 "Goto '_5'" '5'|SHIFT|EXTRA3;
+  key main.Goto6 "Goto '_6'" '6'|SHIFT|EXTRA3;
+  key main.Goto7 "Goto '_7'" '7'|SHIFT|EXTRA3;
+  key main.Goto8 "Goto '_8'" '8'|SHIFT|EXTRA3;
+  key main.Goto9 "Goto '_9'" '9'|SHIFT|EXTRA3;
+  key main.GotoRoot "Goto Root" HOME|SHIFT|EXTRA3;
+  
+  key Up UP|REPEAT|CURSOR;
+  key Down DOWN|REPEAT|CURSOR;
+  key Left LEFT|REPEAT|CURSOR;
+  key Right RIGHT|REPEAT|CURSOR;
+  key Goto "Goto / Edit" 'g'|CURSOR;
+  key main.GotoUndo BACKSPACE|CURSOR;
+  key main.GotoRedo BACKSPACE|SHIFT|CURSOR;
+  key main.Browser 'G'|SHIFT|CURSOR;
+  
+  key Show 's';
+  key Show2 'd';
+  key Show LMB|DOUBLE;
+  key Show2 MMB|DOUBLE;
+  key ShowRoot 'S'|SHIFT;
+  
+  key Exchange 'e';
+  key Hide 'h';
+  key Bypass 'b';
+  key UnCache 'u';
+  key main.RenameAll 'r';
+  key main.References 'R'|SHIFT;
+  key main.FindClass 'C'|SHIFT;
+
+  key Maximize TAB;
+   
+  key Help RMB;
+}
+
+window View0,View1,View2
+{
+  sets base2d,base3d,mode;
+  key Help RMB;
+
+  // handle tool
+
+  drag EditXZ "EditXZ" LMB|HIT|SHIFT;
+  drag EditXY "EditXY" LMB|HIT|ALT;
+  drag EditY "EditY" LMB|HIT|CTRL;
+  tool SelectTool ' '|ONOFF;
+  drag SelectFrame:SelectTool LMB|MISS;
+  drag SelectFrameAdd:SelectTool RMB|MISS;
+  drag SelectFrameToggle:SelectTool MMB|MISS;
+  drag SelectSet:SelectTool LMB|HIT;
+  drag SelectAdd:SelectTool RMB|HIT;
+  drag SelectToggle:SelectTool MMB|HIT;
+  
+//  tool MoveHandleTool 'v'|ONOFF;
+//  drag MoveSelection:MoveHandleTool "Move Selected Handles" LMB;
+  
+//  tool DupHandleTool 'f'|ONOFF;
+//  drag DupSelection:DupHandleTool "Duplicate Selected Handles" LMB;
+  
+  tool SpecialTool 'h'|ONOFF;
+  drag SpecialH:SpecialTool "Special Hover" HOVER;
+  drag Special0:SpecialTool "Special" LMB;
+  drag Special1:SpecialTool "Special RMB" RMB;
+  drag Special2:SpecialTool "Special MMB" MMB;
+  drag Special3:SpecialTool "Special MB5" X5;
+  key Special4:SpecialTool "Special Wheel Up" WHEELUP;
+  key Special5:SpecialTool "Special Wheel Down" WHEELDOWN;
+ 
+  tool TeleportHandleTool;
+  drag TeleportHandle:TeleportHandleTool "Teleport Handle" LMB;
+  key TeleportAbort:TeleportHandleTool ESCAPE;
+  
+  key Help MENU;
+  key HandlesAll "Show All Handles" 'y';
+  key HandlesCurrent "Show Handles from selected op" 'Y'|SHIFT ;
+  key HandlesGroup "Show Handles from selected op and deeper" 'y'|CTRL;
+  key Maximize2 "Maximize" TAB;
+  key LockCamera 'l';
+  key FreeCamera 'o';
+  key Fps 'F'|SHIFT;
+  key MultithreadingMonitor 'M'|SHIFT;
+  key DeleteHandles "Delete Handles" DELETE;
+  
+  key AddHandleBefore '-';
+  key AddHandleAfter '+';
+  
+  // special sets
+  
+  sets(base3d)
+  {
+    drag Orbit LMB|MISS|ALT;
+    drag Orbit X4;
+    drag Move MMB|ALT;
+    drag Dolly RMB|ALT;
+    drag Rotate LMB;
+    drag Rotate LMB|MISS|CTRL;
+    drag Rotate LMB|MISS|SHIFT;
+    drag Tilt MMB|CTRL;   // dangerous key.
+
+    tool ScratchTool 't'|ONOFF;
+    drag ScratchSlow:ScratchTool "Scratch Time" LMB;
+    drag ScratchFast:ScratchTool "Scratch Time Fast" RMB;
+    
+    key QuakeForwToggle "Move Forward" 'w'|ONOFF|ALLSHIFT;
+    key QuakeBackToggle "Move Backward" 's'|ONOFF|ALLSHIFT;
+    key QuakeLeftToggle "Move Left" 'a'|ONOFF|ALLSHIFT;
+    key QuakeRightToggle "Move Right" 'd'|ONOFF|ALLSHIFT;
+
+    drag Zoom RMB|SHIFT;
+    key Grid__ "Grid" 'g';
+    key Wireframe '^';
+    key Reset3D "Reset" 'r';
+    key ResetTilt "ResetTilt" 'R'|SHIFT;
+    key Screenshot 'p';
+    key Color 'c';
+    key Letterbox 'b';
+    key Focus 'f';
+    key GearUp WHEELUP;
+    key GearDown WHEELDOWN;
+    key GearUp 'e';
+    key GearDown 'q';
+    key main.BlackAmbient 'i'|SHIFT;
+    key main.WhiteAmbient 'i';
+    key QuantizeCamera 'Q'|SHIFT;
+  }
+  sets(base2d)
+  {
+    drag Scroll2D "Scroll" MMB;
+    drag Scroll2DFast "Scroll Fast" MMB|SHIFT;
+    key Zoom2DIn "ZoomIn" WHEELUP;
+    key Zoom2DOut "ZoomOut" WHEELDOWN;
+    drag Scroll2D "Scroll" LMB|MISS;
+
+
+    key Reset2D "Reset" 'r';
+    key Tile 't';
+    key Alpha 'a';
+  }
+}
+
+window Timeline
+{
+  drag Scratch LMB;
+  drag Loop RMB;
+  key ToggleLoop LMB|DOUBLE;
+}
+
+window WikiRead
+{
+  drag Click LMB;
+  drag Click RMB;
+  drag Click MMB;
+}
+
+/****************************************************************************/
+
+screen "Page"
+{
+  horizontal
+  {
+    border Timeline;
+    border Status;
+    toolborder { menu menu_file; menu menu_edit; menu menu_nav; /*menu menu_goto;*/ spacer; 
+                 button main.TextureQuality; window UnblockChange; button main.Lod; window Volume; window CamSpeed;
+                 spacer; button main.Switch0; button main.Switch1; }
+    vertical 520
+    {
+      window View0 820 { focusborder; toolborder { label "View 0"; button View0.CalcSlowOps; } }
+      window Para 
+      { focusborder; scrolly; 
+        toolborder 
+        { 
+          label "Para"; 
+          window ParaPreset; 
+          button main.Wiki; 
+        } 
+      }
+    }
+    vertical
+    {
+      window PageList 150 { focusborder; scrolly; toolborder { label "Page List"; } }
+      switch StackOrTree
+      {
+        window Page { focusborder; scroll; toolborder { label "Stacking"; } }
+        window TreeView { focusborder; scroll; toolborder { label "Op Tree"; } }
+        window Custom;
+        vertical
+        {
+          toolborder 
+          { 
+            label "Operator Wiki"; 
+            button main.WikiIndex "Index"; 
+            button main.WikiBack "Back"; 
+            button main.WikiUndo "Undo"; 
+            button main.WikiDefault "Default"; 
+            button main.WikiLink "Copy Link"; 
+          }
+          window WikiRead;
+          window WikiWrite;
+        }
+      }
+    }
+  }
+}
+
+screen "Page Dual"
+{
+  horizontal
+  {
+    border Timeline;
+    border Status;
+    toolborder { menu menu_file; menu menu_edit; menu menu_nav; /*menu menu_goto;*/ spacer; 
+                 button main.TextureQuality; window UnblockChange; button main.Lod; window Volume; window CamSpeed;
+                 spacer; button main.Switch0; button main.Switch1; }
+    vertical
+    {
+      window View0 { focusborder; toolborder { label "View 0"; button View0.CalcSlowOps; } }
+      window View1 { focusborder; toolborder { label "View 1"; button View1.CalcSlowOps; } }
+      window Para 
+      { focusborder; scrolly; toolborder 
+        { 
+          label "Para"; 
+          window ParaPreset; 
+          button main.Wiki; 
+        } 
+      }
+    }
+    vertical
+    {
+      window PageList 150 { focusborder; scrolly; toolborder { label "Page List"; } }
+      switch StackOrTree
+      {
+        window Page { focusborder; scroll; toolborder { label "Stacking"; } }
+        window TreeView { focusborder; scroll; toolborder { label "Op Tree"; } }
+        window Custom;
+        vertical
+        {
+          toolborder 
+          { 
+            label "Operator Wiki"; 
+            button main.WikiIndex "Index"; 
+            button main.WikiBack "Back"; 
+            button main.WikiUndo "Undo"; 
+            button main.WikiDefault "Default"; 
+            button main.WikiLink "Copy Link"; 
+          }
+          window WikiRead;
+          window WikiWrite;
+        }
+      }
+    }
+  }
+}
+
+screen "Fullscreen"
+{
+  horizontal
+  {
+    border Timeline;
+    window View0;
+  }
+}
+
+/****************************************************************************/
+
+popup "Picker"
+{
+  vertical
+  {
+    window StoreBrowser { scrolly; }
+    window View2;
+  }
+}
+
+popup "References" { vertical { window OpList { scrolly; } } }
+popup "Find Class" { vertical { window OpList { scrolly; } } }
+
+/****************************************************************************/
+
+popup "PopupTextPopup"
+{
+  vertical
+  {
+    window PopupText { scrolly; }
+  }
+}
+
+/****************************************************************************/

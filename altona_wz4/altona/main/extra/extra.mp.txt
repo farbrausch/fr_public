@@ -1,0 +1,24 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{36014AD8-5EA0-4d34-A04A-40DC4BE27C31}";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+license altona;
+include "altona/main";
+library;
+
+
+file "extra.mp.txt";
+
+file "freecam.?pp";
+file "mcubes.?pp";
+file "blobheap.?pp";
+
+

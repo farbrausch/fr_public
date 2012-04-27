@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="altona rules"
+	Version="8.00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="asc"
+			DisplayName="altona shader compiler"
+			CommandLine="asc [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [OldD3DCompiler][OldEngineXBox][GenCg]"
+			Outputs="&quot;$(InputDir)$(InputName).cpp&quot;; &quot;$(InputDir)$(InputName).hpp&quot;"
+			FileExtensions="*.asc"
+			ExecutionDescription="ASC &quot;$(InputDir)$(InputName)&quot;"
+			>
+			<Properties>
+				<BooleanProperty
+					Name="Quiet"
+					DisplayName="Quiet operation"
+					Description="suppresses printing of logo"
+					Switch="-q"
+					DefaultValue="true"
+				/>
+				<BooleanProperty
+					Name="Debug"
+					DisplayName="Include debug output"
+					Description="includes shader debug output in bytecode"
+					Switch="-d"
+				/>
+				<BooleanProperty
+					Name="NoOpt"
+					DisplayName="Turn off optimizations"
+					Description="turns off shader optimizations (please only use in case of emergency)"
+					Switch="-n"
+				/>
+				<BooleanProperty
+					Name="NoAuto"
+					DisplayName="Turn off auto shader constant generation"
+					Description="Disables automatic generation of C++ representations of shader constants"
+					Switch="-noauto"
+				/>
+				<BooleanProperty
+					Name="OldEngine"
+					DisplayName="Create code for old engine"
+					Description="Will only generate shaders for DirectX as C++-array"
+					Switch="--oldengine"
+				/>
+				<BooleanProperty
+					Name="OldD3DCompiler"
+					DisplayName="Use old d3d compiler"
+					Description="Use old d3d compiler"
+					Switch="--d3dold"
+				/>
+				<BooleanProperty
+					Name="OldEngineXBox"
+					DisplayName="Generate xbox360 material for old engine"
+					Description="Generate xbox360 material for old engine"
+					Switch="--oldengxbox"
+				/>
+				<BooleanProperty
+					Name="GenCg"
+					DisplayName="GenCg"
+					Description="Generate OGL Cg shaders"
+					Switch="--gen_cg"
+				/>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="ops"
+			DisplayName="wz4ops [inputs]"
+			CommandLine="wz4ops [inputs]"
+			Outputs="&quot;$(ProjectDir)\$(InputName).cpp&quot;; &quot;$(ProjectDir)\$(InputName).hpp&quot;"
+			FileExtensions="*.ops"
+			ExecutionDescription="$(InputFileName)"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

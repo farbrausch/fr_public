@@ -1,0 +1,28 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{D0680A16-2E58-4f6c-8DE9-98A31BE3B548}";
+
+license altona;
+include "altona/main";
+if (sSDK_CHAOS) include "chaos-code/lib";
+
+create "debug_dx9";
+create "debug_dx11";
+create "debug_ogl2";
+create "debug_blank";
+create "release_dx9";
+create "release_dx11";
+create "release_ogl2";
+create "release_blank";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "clearscreen.mp.txt";
+

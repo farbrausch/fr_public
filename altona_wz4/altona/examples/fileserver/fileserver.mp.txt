@@ -1,0 +1,21 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{A54558AC-96BB-418f-92BF-5B362E987CFD}";
+
+license altona;
+
+create "debug_blank_shell";
+create "release_blank_shell";
+
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/network";
+
+file "main.cpp";
+file "fileserver.mp.txt";

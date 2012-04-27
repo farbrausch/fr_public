@@ -1,0 +1,26 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{F7BE36EF-859A-497c-86EC-886E3B752326}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/extra";
+
+file "main.?pp";
+file "shaders.asc";
+file nonew "shaders.?pp";
+file "graphics.?pp";
+file "graphics.mp.txt";
+

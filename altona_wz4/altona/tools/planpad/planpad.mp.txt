@@ -1,0 +1,31 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{8293D35A-4CF4-4aba-84DD-3B6FA7281247}";
+
+license altona;
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/wiki";
+
+include "altona/main";
+
+create "debug_blank";
+create "debugfast_blank";
+create "release_blank";
+create "stripped_blank";
+
+file "main.?pp";
+file "planpad.mp.txt";
+file "planpad.wire.txt";
+file "icon.ico" license default;
+file "resource.rc";
+file "incbin.asm" { config "*" { tool "YASM" { AdditionalDependencies="planpad.wire.txt"; } } }
+file "index.wiki.txt" license default;
+

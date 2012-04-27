@@ -1,0 +1,513 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   win32                                                              ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+definetarget "ClCompile" { alias = "VCCLCompilerTool"; extensions = { "c", "cpp" } }
+definetarget "ClInclude" { extensions = { "h", "hpp", "inl" } }
+definetarget "Link"      { alias = "VCLinkerTool"; }
+definetarget "YASM"      { alias = "YASM"; extensions = { "asm" } }
+definetarget "ASC"       { extensions = { "asc" } }
+definetarget "ops"       { extensions = { "ops" } }
+definetarget "ResourceCompile" { extensions = { "rc" } } 
+definetarget "Library"   { extensions = { "lib" } }
+
+build "windows"
+{
+  props "altona/doc/altona.win32.props";
+
+  define "WIN32";
+  define "NDEBUG";
+  define "_WINDOWS";
+  link "user32.lib";
+  link "gdi32.lib";
+  link "ole32.lib";
+  link "winmm.lib";
+  link "dsound.lib";
+  link "dinput8.lib";
+  link "dxguid.lib";
+  link "comdlg32.lib";
+  link "xinput.lib";
+  platform "win32";
+  platform "win64";
+  tool "VCCLCompilerTool"
+  {
+    Optimization="3"; 
+    InlineFunctionExpansion="2";
+		EnableIntrinsicFunctions="true";
+		EnableEnhancedInstructionSet="2";
+		FloatingPointModel="2";
+		OmitFramePointers="true";
+    RuntimeLibrary="0";
+    UsePrecompiledHeader="0";
+    WarningLevel="3";
+    if(vsver<"2008")
+      Detect64BitPortabilityProblems="true";
+    DebugInformationFormat="3";
+    ExceptionHandling="0";
+		BufferSecurityCheck="false";
+		EnableFunctionLevelLinking="true";
+		StringPooling="true";
+		RuntimeTypeInfo="false";
+  	
+  	AdditionalOptions += "/w34239"; // nonstandard extension used : 'token' : conversion from 'type' to 'type'
+  	AdditionalOptions += "/w34265"; // 'class' : class has virtual functions, but destructor is not virtual
+  	AdditionalOptions += "/w34706"; // assignment within conditional expression
+  	AdditionalOptions += "/w34700"; // uninitialized local variable 'name' used
+  	AdditionalOptions += "/w34706"; // assignment within conditional expression
+  	AdditionalOptions += "/w34389"; // 'operator' : signed/unsigned mismatch
+  	AdditionalOptions += "/w34265"; // 'class' : class has virtual functions, but destructor is not virtual
+  	AdditionalOptions += "/w34189"; // 'identifier' : local variable is initialized but not referenced
+  	AdditionalOptions += "/w34065"; // switch statement contains 'default' but no 'case' labels
+  	AdditionalOptions += "/w34060"; // switch statement contains no 'case' or 'default' labels
+  	AdditionalOptions += "/w34062"; // enumerator 'identifier' in switch of enum 'enumeration' is not handled
+  	AdditionalOptions += "/w34064"; // switch of incomplete enum 'enumeration'
+  	AdditionalOptions += "/w34296"; // 'operator' : expression is always false
+  	//AdditionalOptions += "/w34263"; // member function does not override any base class virtual member function
+  	//AdditionalOptions += "/w34266"; // no override available for virtual member function from base 'CLASSNAME'; function is hidden
+  	
+    if(vsver>="2008")
+      AdditionalOptions += "/MP";
+  }
+  tool "VCLinkerTool"
+  {
+    LinkIncremental="1";
+    GenerateDebugInformation="true";
+    SubSystem="2";
+    LargeAddressAware="2";
+    OptimizeReferences="2";
+    EnableCOMDATFolding="2";
+    GenerateManifest="false";
+  }
+  tool "asc"
+  {
+    Quiet="true";
+  }
+}
+
+build "debug"
+{
+  props "altona/doc/altona.win32.debug.props";
+
+  define "sCONFIG_BUILD_DEBUG";
+  tool "VCCLCompilerTool"
+  {
+    Optimization="0";
+		EnableIntrinsicFunctions="false";
+		OmitFramePointers="false";
+		MinimalRebuild="true";
+    BasicRuntimeChecks="3";
+    RuntimeLibrary="1";
+    DebugInformationFormat="4";
+		BufferSecurityCheck="true";
+    InlineFunctionExpansion="0";
+  }
+  tool "VCLinkerTool"
+  {
+    LinkIncremental="2";
+    OptimizeReferences="0";
+    GenerateDebugInformation="true";
+    EnableCOMDATFolding="0";
+  }
+}
+
+build "debugfast"
+{
+  props "altona/doc/altona.win32.debugfast.props";
+
+  define "sCONFIG_BUILD_DEBUGFAST";
+  tool "VCCLCompilerTool"
+  {
+		Optimization="4";
+		EnableIntrinsicFunctions="true";
+		OmitFramePointers="true";
+		MinimalRebuild="false";
+		BasicRuntimeChecks="0";
+		RuntimeLibrary="1";
+		UsePrecompiledHeader="0";
+		WarningLevel="3";
+		DebugInformationFormat="4";
+		BufferSecurityCheck="true";
+    InlineFunctionExpansion="0";
+  }
+  tool "VCLinkerTool"
+  {
+		LinkIncremental="2";
+		GenerateDebugInformation="true";
+		OptimizeReferences="0";
+		EnableCOMDATFolding="0";
+  }
+}
+
+build "release"
+{
+  define "sCONFIG_BUILD_RELEASE";
+}
+
+build "stripped"
+{
+  define "sCONFIG_BUILD_STRIPPED";
+// generate .pdb for crashdump analysis
+//  tool "VCLinkerTool"
+//  {
+//    GenerateDebugInformation="false";
+//  }
+}
+
+/****************************************************************************/
+
+build "blank"
+{
+  define "sCONFIG_RENDER_BLANK";
+}
+
+build "dx9"
+{
+  requires DX9;
+  define "sCONFIG_RENDER_DX9";
+  link "d3d9.lib";
+  link "d3dx9.lib";
+}
+
+build "dx11"
+{
+  requires DX11;
+  define "sCONFIG_RENDER_DX11";
+  link "d3d11.lib";
+  link "d3d11.lib";
+  link "dxgi.lib";
+}
+
+build "ogl2"
+{
+  requires CG;
+  define "sCONFIG_RENDER_OGL2";
+  link "opengl32.lib";
+}
+
+build "ogl2_x11"
+{
+  requires CG;
+  define "sCONFIG_RENDER_OGL2";
+  link "GL";
+}
+
+build "shell"
+{
+  props "altona/doc/altona.win32.shell.props";
+
+  define "sCONFIG_OPTION_SHELL";
+  tool "VCLinkerTool"
+  {
+    SubSystem="1";
+  }
+}
+
+build "xsi"
+{
+  requires XSI;
+  define "sCONFIG_OPTION_XSI";
+  define "SHADERS_EXPORTS";
+  define "XSI_TC3_EXPORTS";
+  link "sicppsdk.lib";
+  link "sicoresdk.lib";
+  link "opengl32.lib";
+  link "glu32.lib";
+  tool "VCCLCompilerTool"
+  {
+    TreatWChar_tAsBuiltInType="false";
+  }
+}
+
+build "npp"
+{
+  requires GECKO;
+  define "sCONFIG_OPTION_NPP";
+  tool "VCLinkerTool"
+	{
+		ModuleDefinitionFile="c:\svn2\altona\main\base\npplugin.def";
+	}	
+}
+
+build "nosystem"
+{
+  define "sCONFIG_OPTION_NOSYSTEM";
+}
+
+build "x11"
+{
+  define "sCONFIG_GUI_X11";
+  makedefine
+  {
+    "CFLAGS     += `xft-config --cflags`"
+    "CXXFLAGS   += `xft-config --cflags`"
+  }
+  define "sCONFIG_GUI_X11 `xft-config --cflags`"; // yes, one line. that's important.
+  link "X11";
+  link "Xft";
+}
+
+/****************************************************************************/
+
+build "player"
+{
+  requires FR;
+  define "sCONFIG_OPTION_PLAYER";
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   linux                                                                ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+build "linux"
+{
+  platform "linux";
+  makedefine
+  {
+    "INCDIR     += -I$(ALTONAPATH)/altona/main"
+    "INCDIR     += -I./"
+  //  "INCDIR     += -msse" // some header files will #error without this!
+
+    "CFLAGS      = -Wall -Wno-unused-function $(INCDIR) $(DEFINES) -fno-common -fno-strict-aliasing -fshort-wchar -finput-charset=ISO8859-1"
+    "CXXFLAGS    = -Wall -Wno-unused-function -Wno-invalid-offsetof $(INCDIR) $(DEFINES) -fno-exceptions -fno-common -fno-strict-aliasing -fno-rtti -fshort-wchar -finput-charset=ISO8859-1"
+    "ASFLAGS     = -c -xassembler-with-cpp $(INCDIR) "
+    "NASMFLAGS   = -f elf $(INCDIR) $(DEFINES)"
+    "LDFLAGS     = $(LIBDIR) -lm -lrt"
+    "DEPDIR      = $(CONFIG)/.deps"
+    "DEPF        = $(DEPDIR)/$(*F)"
+    ""
+    "ifndef ASCC"
+    "ASCC        = asc"
+    "endif"
+    "ifndef WZ4OPSC"
+    "WZ4OPSC     = wz4ops"
+    "endif"
+    ""
+    ".SUFFIXES:"
+    "$(CONFIG)/%.o:%.s"
+    "  @echo GCC $<"
+    "  @mkdir -p $(DEPDIR)"
+    "  @mkdir -p $(@D)"
+    "  @gcc -MM $(INCDIR) $(DEFINES) -o $(DEPF).d $<; \"
+    "    cp $(DEPF).d $(DEPF).P; \"
+    "    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \"
+    "        -e '/^$$/ d' -e 's/$$/ :/' < $(DEPF).d >> $(DEPF).P; \"
+    "    rm -f $(DEPF).d"
+    "  @gcc $(ASFLAGS) -o $@ $<"
+    ""
+    "$(CONFIG)/%.o:%.asm"
+    "  @echo ASM $<"
+    "  @mkdir -p $(DEPDIR)"
+    "  @mkdir -p $(@D)"
+    "  @nasm -M $(INCDIR) $(DEFINES) $< > $(DEPF).d; \"
+    "    cp $(DEPF).d $(DEPF).P; \"
+    "    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \"
+    "        -e '/^$$/ d' -e 's/$$/ :/' < $(DEPF).d >> $(DEPF).P; \"
+    "    rm -f $(DEPF).d"
+    "  @nasm $(NASMFLAGS) -o $@ $<"
+    ""
+    "$(CONFIG)/%.o:%.c"
+    "  @echo GCC $<"
+    "  @mkdir -p $(DEPDIR)"
+    "  @mkdir -p $(@D)"
+    "  @gcc -MM $(INCDIR) $(DEFINES) -o $(DEPF).d $<; \"
+    "    cp $(DEPF).d $(DEPF).P; \"
+    "    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \"
+    "        -e '/^$$/ d' -e 's/$$/ :/' < $(DEPF).d >> $(DEPF).P; \"
+    "    rm -f $(DEPF).d"
+    "  @gcc $(CFLAGS) -c $< -o $@"
+    ""
+    "$(CONFIG)/%.o:%.cpp"
+    "  @echo G++ $<"
+    "  @mkdir -p $(DEPDIR)"
+    "  @mkdir -p $(@D)"
+    "  @g++ -MM $(INCDIR) $(DEFINES) -o $(DEPF).d $<; \"
+    "    cp $(DEPF).d $(DEPF).P; \"
+    "    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \"
+    "        -e '/^$$/ d' -e 's/$$/ :/' < $(DEPF).d >> $(DEPF).P; \"
+    "    rm -f $(DEPF).d"
+    "  @g++ $(CXXFLAGS) -c $< -o $@"
+    ""
+    "%.hpp %.cpp:%.asc"
+    "  @echo ASC $<"
+    "  @$(ASCC) $< -q"
+    ""
+    "%.hpp %.cpp:%.ops"
+    "  @echo WZ4OPS $<"
+    "  @$(WZ4OPSC) $< -q"
+    ""
+    "all: $(TARGET)"
+    ""
+    "-include $(OBJS:$(CONFIG)/%.o=$(DEPDIR)/%.P)"
+  }
+  maketarget
+  {
+    "clean:"
+    "  @echo --- clean $(TARGET)"
+    "  @-rm -rf $(CONFIG)/"
+  }
+  linkexe
+  {
+    "  @g++ -o $@ $(OBJS) $(LDFLAGS) $(LIBS) $(DEPS)"
+  }  
+  linklib
+  {
+    "  @rm -f $@"
+    "  @ar rcs $@ $(OBJS)"
+  }
+
+  faketarget all "clean";
+
+  target exe="%s";
+  target lib="lib%s.a";
+
+  extension src="cpp","s","c","asm";
+  extension obj="o";
+  extension custom="asc";
+
+  define "sCONFIG_SYSTEM_LINUX";
+}
+
+build "debug_linux"
+{
+  makedefine
+  {
+    "CFLAGS     += -g"
+    "CXXFLAGS   += -g"
+  }
+}
+
+build "debugfast_linux"
+{
+  makedefine
+  {
+    "CFLAGS     += -g -O"
+    "CXXFLAGS   += -g -O"
+    "LDFLAGS    += -g"
+  }
+}
+
+build "release_linux"
+{
+  makedefine
+  {
+    "CFLAGS     += -O2 -funroll-loops"
+    "CXXFLAGS   += -O2 -funroll-loops"
+  }
+}
+
+build "profile_linux"
+{
+  makedefine
+  {
+    "CFLAGS     += -O2 -funroll-loops -g"
+    "CXXFLAGS   += -O2 -funroll-loops -g"
+    "LDFLAGS    += -g"
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Configuration Switchboard                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// please don't define new aliases, they are only ment for backwards compatibility
+
+// basic windows configs
+
+config "debug_blank"                                          windows,debug,blank;
+config "debugfast_blank"                                      windows,debugfast,blank;
+config "release_blank"                                        windows,release,blank;
+config "stripped_blank"                                       windows,stripped,blank;
+
+config "debug_dx9"         alias "windowed_debug"             windows,debug,dx9;
+config "debugfast_dx9"     alias "windowed_debugfast"         windows,debugfast,dx9;
+config "release_dx9"       alias "windowed_release"           windows,release,dx9;
+config "stripped_dx9"      alias "windowed_final"             windows,stripped,dx9;
+
+config "debug_ogl2"        alias "windowed_debug_opengl"      windows,debug,ogl2;
+config "debugfast_ogl2"    alias "windowed_debugfast_opengl"  windows,debugfast,ogl2;
+config "release_ogl2"      alias "windowed_release_opengl"    windows,release,ogl2;
+config "stripped_ogl2"     alias "windowed_final_opengl"      windows,stripped,ogl2;
+
+config "debug_dx11"                                           windows,debug,dx11;
+config "debugfast_dx11"                                       windows,debugfast,dx11;
+config "release_dx11"                                         windows,release,dx11;
+config "stripped_dx11"                                        windows,stripped,dx11;
+
+// windows console builds
+
+config "debug_blank_shell"                                    windows,debug,blank,shell;
+config "debugfast_blank_shell"                                windows,debugfast,blank,shell;
+config "release_blank_shell"                                  windows,release,blank,shell;
+config "stripped_blank_shell"                                 windows,stripped,blank,shell;
+
+config "debug_dx9_shell"   alias "console_debug"              windows,debug,dx9,shell;
+config "debugfast_dx9_shell"                                  windows,debugfast,dx9,shell;
+config "release_dx9_shell" alias "console_release"            windows,release,dx9,shell;
+config "stripped_dx9_shell" alias "console_final"             windows,stripped,dx9,shell;
+
+// windows plugin builds 
+
+config "debug_dx9_npplugin"                                   windows,debug,dx9,npp;
+config "debugfast_dx9_npplugin"                               windows,debugfast,dx9,npp;
+config "release_dx9_npplugin"                                 windows,release,dx9,npp;
+config "stripped_dx9_npplugin"                                windows,stripped,dx9,npp;
+
+// linux builds
+
+config "release_linux_blank_shell"                            linux,release_linux,blank,shell;
+config "debugfast_linux_blank_shell"                          linux,debugfast_linux,blank,shell;
+config "debug_linux_blank_shell"                              linux,debug_linux,blank,shell;
+config "release_linux_blank"                                  linux,release_linux,blank,x11;
+config "debugfast_linux_blank"                                linux,debugfast_linux,blank,x11;
+config "debug_linux_blank"                                    linux,debug_linux,blank,x11;
+config "profile_linux_blank"                                  linux,profile_linux,blank,x11;
+config "release_linux_ogl2"                                   linux,release_linux,ogl2_x11,x11;
+config "debugfast_linux_ogl2"                                 linux,debugfast_linux,ogl2_x11,x11;
+config "debug_linux_ogl2"                                     linux,debug_linux,ogl2_x11,x11;
+config "profile_linux_ogl2"                                   linux,profile_linux,ogl2_x11,x11;
+
+// special 49games builds
+
+config "debug_dx9_xsi"     alias "xsi_debug"                  windows,debug,dx9,xsi;
+config "release_dx9_xsi"   alias "xsi_release"                windows,release,dx9,xsi;
+
+config "debug_blank_xsi_shader"                               windows,nosystem,xsi,blank;
+config "release_blank_xsi_shader"                             windows,nosystem,xsi,blank;
+config "debug_ogl2_xsi"                                       windows,nosystem,xsi,ogl2;
+config "release_ogl2_xsi"                                     windows,nosystem,xsi,ogl2;
+
+// special fr builds
+
+config "debug_dx9_player"                                     windows,dx9,player,debug;
+config "debugfast_dx9_player"                                 windows,dx9,player,debugfast;
+config "release_dx9_player"                                   windows,dx9,player,release;
+config "stripped_dx9_player"                                  windows,dx9,player,stripped;
+
+
+/****************************************************************************/
+
+definelicense altona 
+{
+  text1 = "This file is distributed under a BSD license.";
+  text2 = "See LICENSE.txt for details.";
+}
+
+
+defineextension "asm" { tool = "YASM"; }
+defineextension "cpp" { tool = "VCCLCompilerTool"; }
+defineextension "ops" {  }
+
+/****************************************************************************/

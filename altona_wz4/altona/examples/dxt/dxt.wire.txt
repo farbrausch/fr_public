@@ -1,0 +1,28 @@
+window view
+{
+	drag Scroll MMB;
+	key ToggleAlpha 'a';
+	key ZoomIn WHEELUP;
+	key ZoomOut WHEELDOWN;
+	
+	menu { context; } RMB;
+}
+
+window list
+{
+	drag SelectSingle LMB;
+	drag Scroll MMB;
+}
+
+screen "default"
+{
+	horizontal
+	{
+		window view { focusborder; scroll; }
+		vertical
+		{
+			window list { focusborder; scrolly; toolborder { label "Images"; } }
+			window para { focusborder; scrolly; toolborder { label "Settings"; } }
+		}
+	}
+}

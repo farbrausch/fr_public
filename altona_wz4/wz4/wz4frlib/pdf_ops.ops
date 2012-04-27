@@ -1,0 +1,227 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/basic_ops.hpp"
+}
+
+code
+{  
+  #include "wz4frlib/pdf.hpp"
+  #include "wz4frlib/adf_ops.hpp"
+}
+
+
+type Wz4PDF
+{
+  color = 0xff30f080;
+  name = "Wz4 PDF";
+  //flags = render3d;
+  gui = base3d;
+  columnheader[0] = "Generator";
+  columnheader[1] = "Manipulator";
+  
+  header
+  {
+    sImage *img;
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    if(obj && obj->IsType(Wz4PDFType))
+    {
+      static const sInt downsample = 1;
+      sInt tgtSizeX = sMin(pi.Client.SizeX()/downsample,256);
+      sInt tgtSizeY = sMin(pi.Client.SizeY()/downsample,256);
+
+      if(tgtSizeX != img->SizeX || tgtSizeY != img->SizeY)
+      {
+        delete img;
+        img = new sImage(tgtSizeX,tgtSizeY);
+      }
+
+      Wz4PDF *pdf = (Wz4PDF *) obj;
+    
+      img->Fill(pi.BackColor);
+      Wz4PDFObj_Render(img, pdf, pi);
+      
+      sRect srcRect(0,0,img->SizeX,img->SizeY);
+      sStretch2D(img->Data,img->SizeX,srcRect,pi.Client);
+    }
+    
+  }
+  
+  extern void Init()
+  {
+    img = new sImage(1,1);
+  }
+  
+  extern void Exit()
+  {
+    sDelete(img);
+  }
+}
+
+/* Generator: Cube */
+operator Wz4PDF Cube()
+{
+  column = 0;  
+  parameter
+  {    
+  }
+  code
+  {
+    out->SetObj(new Wz4PDFCube());
+  }
+}
+
+/* Generator: Sphere */
+operator Wz4PDF Sphere()
+{
+  column = 0;  
+  parameter
+  {
+  }
+  code
+  {    
+    out->SetObj(new Wz4PDFSphere());
+  }
+}
+
+/* Generator: From ADF */
+operator Wz4PDF FromADF(Wz4ADF)
+{
+  column = 0;
+  parameter
+  {
+  }
+  code
+  {
+    Wz4PDFFromADF *obj = new Wz4PDFFromADF(in0);    
+    out->SetObj(obj);
+  }
+}
+
+
+/* Manipulator: Add */
+operator Wz4PDF Add(*?Wz4PDF)
+{
+  column = 1;  
+  parameter
+  {
+  }
+  
+  code
+  {
+    Wz4PDFAdd *obj = new Wz4PDFAdd();    
+    out->SetObj(obj);
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Wz4PDF *in = cmd->GetInput<Wz4PDF *>(i);
+      if(in)
+      {                
+        obj->AddObj(in->GetObj());
+        in->GetObj()->AddRef();
+      }
+    }
+  }
+}
+
+/* Manipulator: Multiply */
+operator Wz4PDF Multiply(Wz4PDF)
+{
+  column = 1;  
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rot (-16..16 step 0.01) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    int Count(1..1024) = 2;     
+  }   
+  code
+  {
+    sMatrix34 mat,mat0,mat1,matInvT;
+    Wz4PDFAdd *obj = new Wz4PDFAdd();
+    sSRT srt;
+
+    srt.Scale.Init(1.0f,1.0f,1.0f);
+    srt.Rotate.Init(0.0f,0.0f,0.0f);
+    srt.Translate.Init(0.0f,0.0f,0.0f);
+
+    out->SetObj(obj);
+
+    for(sInt i=0;i<para->Count;i++)
+    {      
+      Wz4PDFTransform *t = new Wz4PDFTransform();
+      t->Init(in0->GetObj(), srt.Scale, srt.Rotate, srt.Translate);     
+      obj->AddObj(t);      
+      in0->GetObj()->AddRef();
+      srt.Translate = srt.Translate + (sVector30)para->Trans;
+      srt.Rotate    = srt.Rotate + para->Rot;
+      srt.Scale     = srt.Scale * para->Scale;
+    }
+  }
+}
+
+/* Manipulator: Transform */
+operator Wz4PDF Transform(Wz4PDF)
+{
+  column = 1;  
+  parameter
+  {
+    float31 Scale (0.01..1024 step 0.001) = 1;
+    float30 Rot (-16..16 step 0.001) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.001) = 0;        
+  }    
+  code
+  {
+    Wz4PDFTransform *obj = new Wz4PDFTransform();    
+    obj->Init(in0->GetObj(), para->Scale, para->Rot, para->Trans);
+    in0->GetObj()->AddRef();
+    out->SetObj(obj);
+  }
+}
+
+/* Manipulator: Twirl */
+operator Wz4PDF Twirl(Wz4PDF)
+{
+  column = 1;
+  parameter
+  {
+    float30 Scale (-1024..1024 step 0.001) = 0;
+    float30 Bias (-1024..1024 step 0.001) = 0;        
+  }
+  code
+  {
+    Wz4PDFTwirl *obj = new Wz4PDFTwirl();
+    obj->Init(in0->GetObj(), para->Scale, para->Bias);
+    in0->AddRef();
+    out->SetObj(obj);
+  }
+}
+
+/* Manipulator: Merge */
+operator Wz4PDF Merge(Wz4PDF, Wz4PDF)
+{
+  column = 1;
+  parameter
+  {
+    layout flags MergeType("A|B|C|D|E|F");
+    float Factor(0..1 step 0.0001) = 0;   
+  }
+  code
+  {
+    Wz4PDFMerge *obj = new Wz4PDFMerge();  
+    obj->Init(in0->GetObj(),in1->GetObj(),para->MergeType, para->Factor);
+    in0->GetObj()->AddRef();
+    in1->GetObj()->AddRef();
+    out->SetObj(obj);
+  }
+}
+
+

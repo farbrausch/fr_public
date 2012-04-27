@@ -1,0 +1,45 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+window Rect
+{
+  drag DrawAdd "Draw Add" LMB|SHIFT;
+  drag DrawSub "Draw Sub" LMB|CTRL;
+//  drag Select LMB;
+  drag Move LMB;
+  
+  key Delete DELETE;
+  key Toggle 'm';
+  key Help RMB;
+}
+
+window List
+{
+  drag SelectSingle LMB;
+  drag Edit LMB|DOUBLE; 
+  drag Scroll MMB;
+
+  key SelUp UP|REPEAT|CURSOR;
+  key SelDown DOWN|REPEAT|CURSOR;
+  key SelPageUp PAGEUP|REPEAT|CURSOR;
+  key SelPageDown PAGEDOWN|REPEAT|CURSOR;
+  key MoveUp UP|CTRL|REPEAT|CURSOR;
+  key MoveDown DOWN|CTRL|REPEAT|CURSOR;
+  key MovePageUp PAGEUP|CTRL|REPEAT|CURSOR;
+  key MovePageDown PAGEDOWN|CTRL|REPEAT|CURSOR;
+  
+  key Help RMB;
+}
+
+screen "main"
+{
+  vertical
+  {
+    window List 250;
+    window Rect;
+  }
+}

@@ -1,0 +1,325 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/chaosfx.hpp"
+//#include "wz4frlib/wz4_demo_ops.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+#include "wz4frlib/chaos_font.hpp"
+#include "wz4frlib/chaos_font_ops.hpp"
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Render CubeExample(Wz4Mtrl)
+{
+  column = 1;
+  parameter
+  {
+    anim float31 Scale:1 (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+    int LightEnv(0..15)=0;
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNCubeExample *node = new RNCubeExample();
+    node->ParaBase = node->Para = *para;
+    node->Mtrl = in0; in0->AddRef();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Print(ChaosFont)
+{
+  column = 1;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float31 Scale:1 (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+    anim color Color("rgba")=0xffffffff;
+    group "Text";
+    overbox overlabel lines 5 string Text:1 = "hund."; 
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    RNPrint *node = new RNPrint();
+    node->ParaBase = node->Para = *para;
+    node->Font = in0; in0->AddRef();
+    node->Text = cmd->Strings[1];
+    node->Font->PreparePrint();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Ribbons()
+{
+  column = 1;
+  parameter
+  {
+    anim float31 Trans (-1024..1024);
+    anim float Forward (0..4 step 0.001) = 0.1;
+    anim float Side (0..4 step 0.001) = 0.05;
+    anim int Steps(0..1000) = 50;
+    anim int Around(0..100) = 8;
+    anim float Waber [3](-1024..1024 step 0.1) = { 40,50,60 };
+    anim float Freq  [3](-1024..1024 step 0.001) = { 2,3,4 };
+    anim float Spread[3](-1024..1024 step 0.001) = 0.1;
+    anim float Start [3](-1024..1024 step 0.0001);
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNRibbons *node = new RNRibbons();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Ribbons2()
+{
+  column = 1;
+  parameter
+  {
+    int Renderpass(-127..127);
+    int Count(0..1024);
+    int Length(2..1024)=2;
+    anim float31 Trans (-1024..1024);
+    float30 Spread(-16..16 step 0.1) = 1;
+    anim float Forward (0..4 step 0.001) = 0.1;
+    anim float Side (0..4 step 0.001) = 0.05;
+    group "Sources";
+    float31 Source0(-16..16 step 0.01);
+    nolabel float Power0(-16..16 step 0.001);
+    float31 Source1(-16..16 step 0.01);
+    nolabel float Power1(-16..16 step 0.001);
+    float31 Source2(-16..16 step 0.01);
+    nolabel float Power2(-16..16 step 0.001);
+    float31 Source3(-16..16 step 0.01);
+    nolabel float Power3(-16..16 step 0.001);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNRibbons2 *node = new RNRibbons2();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+  handles
+  {
+    pi.Handle3D(op,1,para->Source0,wHM_PLANE);
+    pi.Handle3D(op,2,para->Source1,wHM_PLANE);
+    pi.Handle3D(op,3,para->Source2,wHM_PLANE);
+    pi.Handle3D(op,4,para->Source3,wHM_PLANE);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render BlowNoise(Wz4Mtrl/* = Wz4Mtrl SimpleMaterial*/)  // warum geht das nicht? der default sollte funktionieren!
+{
+  column = 1;
+  parameter
+  {
+    int Tess[2](4..1024)=64;
+    anim float Scale(0..64 step 0.01) = 16;
+    anim float Scroll(-1024..1024 step 0.01) = 0;
+    int LightEnv(0..15)=0;
+    int Renderpass(-127..127);
+    array
+    {
+      int Octave(0..16);
+      float Depth(-64..64 step 0.01);
+      float Blow(-64..64 step 0.01);
+      float Scroll[2](-64..64 step 0.001);
+      flags Flags "Enable" ("off|on")=1;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNBlowNoise *node = new RNBlowNoise();
+    node->ParaBase = node->Para = *para;
+
+    Wz4RenderArrayBlowNoise *src = (Wz4RenderArrayBlowNoise *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      Wz4RenderArrayBlowNoise *dest = new Wz4RenderArrayBlowNoise;
+      *dest = src[i];
+      node->Layers.AddTail(dest);
+    }
+    node->Mtrl = in0; in0->AddRef();
+
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render DebrisClassic "Debris" (Wz4Mesh,BitmapBase,?BitmapBase,?BitmapBase)
+{
+  column = 1;
+  parameter 
+  {
+    int Renderpass:0(-127..127);
+    anim int LightEnv:1(0..15) = 0;
+    layout flags Mode:38("chunks|instances")=0;
+    group "Projection A";
+    flags Flags:4("*3-|enable:xy|yz|xz:*2plane|circular:*4border|tile|clamp")=10;
+    continue flags Flags("*7-|bias");
+    anim float Trans[2]:5(-1024..1024 step 0.01);
+    anim float Scale[2]:7(-1024..1024 step 0.01)=1;
+    anim float Scroll[2]:9(-1024..1024 step 0.001);
+    anim float Rotate:11(-16..16 step 0.001);
+    anim float Displace:2(-1024..1024 step 0.01)=1;
+    anim float Tumble:3(-16..16 step 0.01);
+    anim float Size:32(-1024..1024 step 0.01)=0;
+    anim float TexBias:35(-1024..1024 step 0.01)=0;
+    if(input[2])
+    {
+      group "Projection B";
+      flags FlagsB:12("*3-|enable:xy|yz|xz:*2plane|circular:*4border|tile|clamp")=10;
+      continue flags FlagsB("*8add|mul|min|max:*7-|bias");
+      anim float TransB[2]:13(-1024..1024 step 0.01);
+      anim float ScaleB[2]:15(-1024..1024 step 0.01)=1;
+      anim float ScrollB[2]:17(-1024..1024 step 0.001);
+      anim float RotateB:19(-16..16 step 0.001);
+      anim float DisplaceB:20(-1024..1024 step 0.01)=1;
+      anim float TumbleB:21(-16..16 step 0.01);
+      anim float SizeB:33(-1024..1024 step 0.01)=0;
+      anim float TexBiasB:36(-1024..1024 step 0.01)=0;
+    }
+    if(input[3])
+    {
+      group "Projection C";
+      flags FlagsC:22("*3-|enable:xy|yz|xz:*2plane|circular:*4border|tile|clamp")=10;
+      continue flags FlagsC("*8add|mul|min|max:*7-|bias");
+      anim float TransC[2]:23(-1024..1024 step 0.01);
+      anim float ScaleC[2]:25(-1024..1024 step 0.01)=1;
+      anim float ScrollC[2]:27(-1024..1024 step 0.001);
+      anim float RotateC:29(-16..16 step 0.001);
+      anim float DisplaceC:30(-1024..1024 step 0.01)=1;
+      anim float TumbleC:31(-16..16 step 0.01);
+      anim float SizeC:34(-1024..1024 step 0.01)=0;
+      anim float TexBiasC:37(-1024..1024 step 0.01)=0;
+    }
+    if(Mode&1)
+    {
+      group "Instance Multiplies";
+
+      continue flags Mode ("*2-|Center:*3-|reverse");
+      anim float30 Normal:39(-1024..1024 step 0.01) = { 0,1,0 };
+//      anim float31 Scale0 (-1024..1024 step 0.01) = 1;
+//      anim float30 Rot0 (-16..16 step 0.01) = 0;
+      anim float31 Trans0 "Pretransform" (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+
+      anim int Count1(1..1024) = 2;
+//      anim float31 Scale1 (-1024..1024 step 0.01) = 1;
+//      anim float30 Rot1 (-16..16 step 0.01) = 0;
+      anim float30 Trans1 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+
+      anim layout int Count2(1..1024) = 1;
+      if(Count2!=1)
+      {
+//        anim float31 Scale2 (-1024..1024 step 0.01) = 1;
+//        anim float30 Rot2 (-16..16 step 0.01) = 0;
+        anim float30 Trans2 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+        anim layout int Count3(1..1024) = 1;
+        if(Count3!=1)
+        {
+//          anim float31 Scale3 (-1024..1024 step 0.01) = 1;
+//          anim float30 Rot3 (-16..16 step 0.01) = 0;
+          anim float30 Trans3 (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+        }
+      }
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNDebrisClassic *node = new RNDebrisClassic();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh   = in0; in0->AddRef();
+    in1->CopyTo(&node->Bitmap[0]);
+    if(in2) in2->CopyTo(&node->Bitmap[1]);
+    if(in3) in3->CopyTo(&node->Bitmap[2]);
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render BoneVibrate(Wz4Mesh)
+{
+  column = 1;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim int LightEnv(0..15) = 0;
+    group "Vibrate";
+    int Seed(0..255);
+    anim float Freq(0..1024 step 0.01) = 1;
+    anim float Trans(-1024..1024 step 0.001) = 1;
+    anim float Rot(-1024..1024 step 0.001) = 0;
+    anim float Phase(-1024..1024 step 0.01) = 0;
+    int FirstBone(0..1024);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNBoneVibrate *node = new RNBoneVibrate();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh = in0; in0->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+
+/****************************************************************************/
+/****************************************************************************/

@@ -1,0 +1,61 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserved                                                ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4frlib/chaosmesh_ops.hpp"
+}
+code
+{
+#include "wz4frlib/wz4_demo.hpp"
+#include "wz4frlib/wz4_demo_ops.hpp"
+#include "wz4frlib/chaosmesh_code.hpp"
+#include "wz4frlib/wz4_demo_ops.hpp"
+#include "wz4frlib/wz4_ssao.hpp"
+}
+/*
+operator Wz4Viewport SSAOCamera(Scene,?Wz4Variable,?Wz4Variable,?Wz4Function)
+{
+  tab = Wz4Demo;
+  column = 1;
+  parameter
+  {
+    float31 Target (-1024..1024 step 0.01) = { 0,0,0 };
+    link Target:1 (anim);
+    float31 Position (-1024..1024 step 0.01) = { 0,0,-5 };
+    link Position:2 (anim);
+    float Tilt (-16 .. 16 step 0.001) = 0;
+    float Zoom (0..64 step 0.001) = 1;
+    float ClipNear (0..65536 step 1) = 0.125;
+    float ClipFar (0..65536 step 16) = 256;
+    float MaxTime (0..16384 step 0.125) = 16;
+    color ClearColor ("rgba") = 0xff000000;
+    link Clip:3;
+    flags Flags("-|FreeFlight");
+  }
+  new = Wz4SsaoCamera;
+  code
+  {
+    out->Target = para->Target;
+    out->Position = para->Position;
+    out->Zoom = para->Zoom;
+    out->ClipNear = para->ClipNear;
+    out->ClipFar = para->ClipFar;
+    out->MaxTime = para->MaxTime;
+    out->ClearColor = para->ClearColor;
+    out->Node = in0;  in0->AddRef();
+    out->AnimTarget = in1; in1->AddRef();
+    out->AnimPosition = in2; in2->AddRef();
+    out->Flags = para->Flags;
+    out->Clip = in3; in3->AddRef();
+  }
+}
+*/

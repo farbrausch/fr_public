@@ -1,0 +1,24 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+text linefeed
+ints 1 2 3 4 5 -1 linefeed
+floats 4.5 0.6 1.2e-3 -1.3 linefeed
+symbols + - ( ) * / = < ! linefeed
+doublecharsymbols == <= != << linefeed
+strings "sahdskjah sda" "dsadh" linefeed
+chars 'a' 'v' '\n' linefeed
+linefeed
+comments  /* xxx */ ok /* xxx */
+ok # xxxx
+ok ; xxxx
+ok // xxx
+linefeed
+include_file include "test_include.txt" linefeed
+include_done linefeed
+scanraw x x { y y y y { z z z } } x x linefeed
+ok linefeed

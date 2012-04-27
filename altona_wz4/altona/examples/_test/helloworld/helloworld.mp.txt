@@ -1,0 +1,20 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{5D54DEC1-0103-48af-A6BB-454D91433F57}";
+
+license altona;
+include "altona/main";
+
+create "debug_blank_shell";
+create "debugfast_blank_shell";
+create "release_blank_shell";
+
+depend "altona/main/base";
+
+file "main.cpp";
+file "helloworld.mp.txt";

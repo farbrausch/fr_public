@@ -1,0 +1,1466 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4frlib/wz4_anim_ops.hpp"
+#include "chaosmesh_code.hpp"
+#include "chaosmesh_xsi.hpp"
+#include "chaosmesh_fx.hpp"
+#include "wz4_mtrl_ops.hpp"
+}
+
+priority = 0x11;
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh Class                                                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type ChaosMesh : MeshBase
+{
+  color = 0xff60a0a0;
+  name = "Chaos Mesh";
+  flags = render3d|uncache;
+  gui = base3d;
+
+  header
+  {
+    sGeometry *WireGeo;
+    sGeometry *FlatGeo;
+    sGeometry *QuadGeo;
+  }
+
+  extern void Init()
+  {
+    WireGeo = new sGeometry;
+    WireGeo->Init(sGF_LINELIST|sGF_INDEX32,sVertexFormatSingle);
+    FlatGeo = new sGeometry;
+    FlatGeo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatBasic);
+    QuadGeo = new sGeometry;
+    QuadGeo->Init(sGF_QUADLIST,sVertexFormatBasic);
+  }
+
+  extern void Exit()
+  {
+    sDelete(WireGeo);
+    sDelete(FlatGeo);
+    sDelete(QuadGeo);
+  }
+
+  extern void BeginEngine(wPaintInfo &pi,sBool clear)
+  {
+    sSetTarget(sTargetPara(clear ? sST_CLEARALL : 0,pi.BackColor,pi.Spec));
+    pi.View->SetTargetCurrent();
+    pi.View->SetZoom(pi.Zoom3D);
+    pi.View->Prepare();
+  }
+
+  extern void Paint(wObject *obj,wPaintInfo &pi,sMatrix34 *mat,sInt matcount)
+  {
+    if(obj && obj->IsType(ChaosMeshType))
+    {
+      SceneInstance si;
+      si.Init();
+      ChaosMesh *mesh = (ChaosMesh *) obj;
+      si.Time = 0;
+      if(mesh->Skeleton && mesh->Skeleton->TotalTime>0)
+        si.Time = sMod(pi.TimeMS / (mesh->Skeleton->TotalTime*1000),1);
+      for(sInt i=0;i<matcount;i++)
+      {
+        pi.View->UpdateModelMatrix(mat[i]);
+        mesh->Paint(pi.View,&si);
+      }
+    }
+  }
+
+  extern void Hit(wObject *obj,const sRay &ray,wHitInfo &info)
+  {
+    sClear(info);
+//    if(obj->IsType(PocMeshType))
+//      ((PocMesh *)obj)->Hit(ray,info);
+  }
+
+  extern void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat)
+  {
+    if(obj && obj->IsType(ChaosMeshType))
+    {
+      ChaosMesh *mesh = (ChaosMesh *) obj;
+
+      pi.View->UpdateModelMatrix(mat);
+      sCBuffer<sSimpleMaterialPara> cb;
+      cb.Modify();
+      cb.Data->Set(*pi.View);
+
+      pi.FlatMtrl->Set(&cb);
+      sF32 time = 0;
+      if(mesh->Skeleton && mesh->Skeleton->TotalTime>0)
+        time = sMod(pi.TimeMS / (mesh->Skeleton->TotalTime*1000),1);
+      mesh->PaintWire(WireGeo,time);
+      mesh->PaintSelection(FlatGeo,QuadGeo,1/pi.View->ZoomX*0.012f,time,pi.View);
+    }
+  }
+  extern void ListExtractions(wObject *obj,void (* cb)(const sChar *name,wType *type),const sChar *storename) 
+  {
+    ChaosMeshModel *model;
+    ChaosMesh *mesh;
+    wDocName buffer;
+    sArray<Texture2D *> tex2da;
+    sArray<TextureCube *> texcubea;
+    Texture2D *tex2d;
+    TextureCube *texcube;
+
+    sVERIFY(obj->Type==ChaosMeshType);
+    mesh = (ChaosMesh *) obj;
+    sFORALL(mesh->Models,model)
+    {
+      sSPrintF(buffer,L"%s:mesh.%s",storename,model->Name);
+      (*cb)(buffer,ChaosMeshType);
+    }
+    if(mesh->Skeleton)
+    {
+      sSPrintF(buffer,L"%s:skeleton",storename);
+      (*cb)(buffer,Wz4SkeletonType);
+    }
+
+    mesh->ListTextures(tex2da);
+    sFORALL(tex2da,tex2d)
+    {
+      sSPrintF(buffer,L"%s:tex.%d",storename,_i);
+      (*cb)(buffer,Texture2DType);
+    }
+    mesh->ListTextures(texcubea);
+    sFORALL(texcubea,texcube)
+    {
+      sSPrintF(buffer,L"%s:cube.%d",storename,_i);
+      (*cb)(buffer,TextureCubeType);
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Plumming                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh Extract_ChaosMesh_ChaosMesh(ChaosMesh)
+{
+  flags = hide|obsolete;
+  extract = "mesh";
+  parameter 
+  { 
+    string Name;
+  }
+  code
+  {
+    ChaosMeshModel *model;
+
+    const sChar *name = cmd->Strings[0];
+    if(sCmpStringLen(name,L"mesh.",5)==0)
+    {
+      name += 5;
+      sFORALL(in0->Models,model)
+      {
+        if(sCmpString(model->Name,name)==0)
+        {
+          out->CopyFrom(model);
+
+          return 1;
+        }
+      }
+    }
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+operator Texture2D Extract_ChaosMesh_Texture2D(ChaosMesh)
+{
+  flags = hide|obsolete;
+  extract = "tex";
+  parameter 
+  {
+    string Name;
+  }
+  code
+  {
+    sArray<Texture2D *> textures;
+    Texture2D *tex;
+
+    const sChar *name = cmd->Strings[0];
+    if(sCmpStringLen(name,L"tex.",4)==0)
+    {
+      name += 4;
+
+      in0->ListTextures(textures);
+      sFORALL(textures,tex)
+      {
+        sString<8> buffer;
+        const sChar *tname = tex->Name;
+        if(tname[0]==0)
+        {
+          sSPrintF(buffer,L"%d",_i);
+          tname = buffer;
+        }
+
+        if(sCmpString(tname,name)==0)
+        {
+          cmd->Output->Release();
+          cmd->Output = tex;
+          cmd->Output->AddRef();
+
+          return 1;
+        }
+      }
+    }
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+operator TextureCube Extract_ChaosMesh_TextureCube(ChaosMesh)
+{
+  flags = hide|obsolete;
+  extract = "cube";
+  parameter 
+  {
+    string Name;
+  }
+  code
+  {
+    sArray<TextureCube *> textures;
+    TextureCube *tex;
+
+    const sChar *name = cmd->Strings[0];
+    if(sCmpStringLen(name,L"cube.",5)==0)
+    {
+      name += 5;
+
+      in0->ListTextures(textures);
+      sFORALL(textures,tex)
+      {
+        sString<8> buffer;
+        const sChar *tname;// = tex->Name;
+//        if(tname[0]==0)
+        {
+          sSPrintF(buffer,L"%d",_i);
+          tname = buffer;
+        }
+
+        if(sCmpString(tname,name)==0)
+        {
+          cmd->Output->Release();
+          cmd->Output = tex;
+          cmd->Output->AddRef();
+
+          return 1;
+        }
+      }
+    }
+    return 0;
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Skeleton Extract_ChaosMesh_Wz4Skeleton(ChaosMesh)
+{
+  flags = hide|obsolete;
+  extract = "skeleton";
+  parameter 
+  {
+    string Name;
+  }
+  code
+  {
+    const sChar *name = cmd->Strings[0];
+    if(sCmpString(name,L"skeleton")==0 && in0->Skeleton)
+    {
+      cmd->Output->Release();
+      cmd->Output = in0->Skeleton;
+      cmd->Output->AddRef();
+    }
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Export                                                             ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh Export(ChaosMesh)
+{
+  column = 3;
+  flags = obsolete;
+  parameter
+  {
+    fileout Filename;
+  }
+
+  code
+  {
+    out->CopyFrom(in0);
+
+    sSaveObject(cmd->Strings[0],out);
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh ExportXSI(ChaosMesh)
+{
+  column = 3;
+  flags = obsolete;
+  parameter
+  {
+    fileout Filename;
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    out->ExportXSI(cmd->Strings[0]);
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Generators                                                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh Import()
+{
+  flags = obsolete;
+  parameter
+  {
+    filein Filename("xsi|cm");
+    flags Flags "XSI Flags" ("*0-|force animated:*1-|force rgb");
+  }
+  code
+  {
+    sBool result = 0;
+    const sChar *name = cmd->Strings[0];
+    const sChar *ext = sFindFileExtension(name);
+    if(sCmpStringI(ext,L"cm")==0)
+    {
+      result = sLoadObject(name,out);
+    }
+    else if(sCmpStringI(ext,L"xsi")==0)
+    {
+      result = LoadXSI(out,name,para->Flags&1,para->Flags&2);
+      if(result) 
+        out->SplitForMatrices();
+    }
+
+    return result;
+  } 
+}
+
+/****************************************************************************/
+
+operator ChaosMesh torus()
+{
+  flags = obsolete;
+  parameter
+  {
+    float Inner (0..1024 step 0.01) = 0.25;
+    float Outer (0..1024 step 0.01) = 1.0;
+    float Phase (-64..64 step 0.01) = 0.0;
+    int Sections (3..64) = 4;
+    int Slices (3..64) = 4;
+    flags Flags "Radius Mode" ("relative|absolute");
+    continue flags Flags "Origin" ("*1center|bottom");
+    float Arc (-64..64 step 0.01) = 1.0;
+  }
+  
+  shortcut = 'o';
+  //flags = obsolete;
+  
+  code
+  {
+    sF32 ro,ri;
+    sInt ty = para->Sections;
+    sInt tx = para->Slices;
+    if(para->Flags & 1)
+    {
+      ri = (para->Outer-para->Inner)/2;
+      ro = (para->Outer+para->Inner)/2;
+    }
+    else
+    {
+      ro = para->Outer;
+      ri = para->Inner;
+    }
+
+    sMatrix34 mat;
+    if(para->Flags & 2)
+      mat.l.y = ri;
+
+    out->AddCluster(0);
+    out->AddTorus(mat,tx,ty,ri,ro,para->Phase,para->Arc);
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh grid()
+{
+  flags = obsolete;
+  parameter
+  {
+    flags Mode ("inverted|doublesided|singlesided") = 2;
+    int Tesselation[2] (1..255) = 1;
+  }
+  code
+  {
+    sMatrix34 mat;
+    mat.i.Init(-1,0,0);
+    mat.j.Init(0,0,1);
+    out->AddCluster(0);
+    out->AddGrid(mat,para->Tesselation[0],para->Tesselation[1],para->Mode&1);
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh cube()
+{
+  flags = obsolete;
+  parameter
+  {
+    int Tess "Tesselate" [3] (1..255) = 1;
+    flags Flags ("-|wrap uv:*1center|bottom:*2-|scale UV");
+    float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
+    float30 Rotate (-64..64 step 0.001) = { 0,0,0 };
+    float31 Trans (-1024..1024 step 0.01) = { 0,0,0 };    
+  }
+  code
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+
+    if(para->Flags & 2)
+      mat.l = mat.l + 0.5f*mat.j;
+
+    out->AddCluster(0);
+    if(para->Flags & 4)
+      out->AddCube(mat,para->Tess[0],para->Tess[1],para->Tess[2],(para->Flags & 1)!=0,para->Scale[0],para->Scale[1],para->Scale[2]);
+    else
+      out->AddCube(mat,para->Tess[0],para->Tess[1],para->Tess[2],(para->Flags & 1)!=0);
+  }
+}
+
+
+/****************************************************************************/
+
+operator ChaosMesh Sphere()
+{
+  flags = obsolete;
+  parameter
+  {
+    int Facets (3..64) = 8;
+    int Slices (1..64) = 4;
+    float Diameter (-1024..1024 step 0.01) = 1.0;
+  }
+  
+  shortcut = 'h';
+  
+  code
+  {
+    sMatrix34 mat;
+    mat.i.x = para->Diameter;
+    mat.j.y = para->Diameter;
+    mat.k.z = para->Diameter;
+
+    out->AddCluster(0);
+    out->AddSphere(mat,para->Facets,para->Slices);
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Selection                                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh SelectCube(ChaosMesh)
+{
+  flags = obsolete;
+  parameter
+  {
+    layout flags Flags "Input" ("*6cube|sphere|vertex select|face select|all")=4;
+    continue flags Flags "Logic" ("-|invert:*2clear|set:*4vertex|touched face|enclosed face");
+    continue flags Flags "Output" ("*4vertex|touched face|enclosed face");
+    if(((Flags&0x1c0)==0x00) || ((Flags&0x1c0)==0x40))
+    {
+      float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
+      float30 Rotate (-64..64 step 0.001) = { 0,0,0 };
+      float31 Trans (-1024..1024 step 0.01) = { 0,0,0 };
+    }
+    float Random (0..1 step 0.02) = 1;
+    int RandomSeed (0..255);
+  }
+  code
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    sMatrix34 inv;
+    ChaosMeshVertexPosition *vp;
+    ChaosMeshFace *face;
+    sVector31 v;
+    sRandom rnd;
+   
+    rnd.Seed(para->RandomSeed);
+
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+    srt.MakeMatrixInv(inv);
+
+    out->CopyFrom(in0);
+    sInt pc = out->Positions.GetCount();
+    sU8 *fsel = sALLOCSTACK(sU8,pc);
+    if(para->Flags & 0x1c0)
+    {
+      for(sInt i=0;i<pc;i++)
+        fsel[i] = 0;
+      sFORALL(out->Faces,face)
+      {
+        if(face->Select)
+        {
+          for(sInt i=0;i<face->Count;i++)
+            fsel[face->Positions[i]] = 1;
+        }
+      }
+    }
+    sFORALL(out->Positions,vp)
+    {
+      v = vp->Position * inv;
+      sBool inside = 0;
+      switch(para->Flags & 0x1c0)
+      {
+      case 0x00:
+        inside = v.x>=-1&&v.x<=1 && v.y>=-1&&v.y<=1 && v.z>=-1&&v.z<=1;
+        break;
+      case 0x40:
+        inside = (v.x*v.x+v.y*v.y+v.z*v.z)<=1;
+        break;
+      case 0x80:
+        inside = vp->Select;
+        break;
+      case 0x0c0:
+        inside = fsel[_i];
+        break;
+      case 0x100:
+        inside = 1;
+        break;
+      }
+      sBool action = inside;
+      if(para->Flags & 1)
+        action = !inside;
+      
+      fsel[_i] = sU8(action);
+
+      if((para->Flags & 48)==0)
+      {
+        if(rnd.Float(1)>para->Random)
+          action = 0;
+        if(action)
+        {
+          if(para->Flags & 4)
+            vp->Select = 1;
+          else
+            vp->Select = 0;
+        }
+      }
+    }
+    if(para->Flags&48)
+    {
+      sFORALL(out->Faces,face)
+      {
+        sInt n = 0;
+        for(sInt i=0;i<face->Count;i++)
+          n += fsel[face->Positions[i]];
+        sBool action = 0;
+        switch(para->Flags&48)
+        {
+        case 16:
+          action = (n>0);
+          break;
+        case 32:
+          action = (n==face->Count);
+          break;
+        }
+        if(rnd.Float(1)>para->Random)
+          action = 0;
+        if(action)
+        {
+          if(para->Flags & 4)
+            face->Select = 1;
+          else
+            face->Select = 0;
+        }
+      }
+    }
+  }
+
+  handles
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    sVector31 v[8],p;
+   
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+
+    sF32 s = 1;
+    p.Init(-s,-s,-s); v[0] = p*mat;
+    p.Init(-s,-s, s); v[1] = p*mat;
+    p.Init(-s, s, s); v[2] = p*mat;
+    p.Init(-s, s,-s); v[3] = p*mat;
+    p.Init( s,-s,-s); v[4] = p*mat;
+    p.Init( s,-s, s); v[5] = p*mat;
+    p.Init( s, s, s); v[6] = p*mat;
+    p.Init( s, s,-s); v[7] = p*mat;
+
+    pi.Line3D(v[0],v[1]);
+    pi.Line3D(v[1],v[2]);
+    pi.Line3D(v[2],v[3]);
+    pi.Line3D(v[3],v[0]);
+    pi.Line3D(v[4],v[5]);
+    pi.Line3D(v[5],v[6]);
+    pi.Line3D(v[6],v[7]);
+    pi.Line3D(v[7],v[4]);
+    pi.Line3D(v[0],v[4]);
+    pi.Line3D(v[1],v[5]);
+    pi.Line3D(v[2],v[6]);
+    pi.Line3D(v[3],v[7]);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Face Filters                                                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh DeleteFaces(ChaosMesh)
+{
+  flags = obsolete;
+  parameter
+  {
+    flags Flags ("unselected|selected")=1;
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    if(para->Flags & 1)
+      sRemTrue(out->Faces,&ChaosMeshFace::Select);
+    else
+      sRemFalse(out->Faces,&ChaosMeshFace::Select);
+    out->Cleanup();
+  }
+}
+
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Filters                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh transform(ChaosMesh)
+{
+  flags = obsolete;
+  shortcut = 't';
+  parameter 
+  {
+    float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
+    float30 Rotate (-64..64 step 0.001) = { 0,0,0 };
+    float31 Trans (-1024..1024 step 0.01) = { 0,0,0 };    
+    flags Selection ("all|selected|unselected");
+  }
+  code
+  {
+    ChaosMeshVertexPosition *vp;
+    ChaosMeshVertexNormal *vn;
+    ChaosMeshVertexTangent *vt;
+    sSRT srt;
+    sMatrix34 matp;
+    sMatrix34 matn;
+    
+    srt.Rotate = para->Rotate;
+    srt.MakeMatrix(matn);
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(matp);
+    
+    out->CopyFrom(in0);
+    if(para->Selection==0)
+    {
+      sFORALL(out->Positions,vp)
+        vp->Position = vp->Position * matp;
+      sFORALL(out->Normals,vn)
+        vn->Normal = vn->Normal * matn;
+      sFORALL(out->Tangents,vt)
+        vt->Tangent = vt->Tangent * matn;
+    }
+    else
+    {
+      sInt sel = (para->Selection == 1);
+      sFORALL(out->Positions,vp)
+      {
+        if(vp->Select == sel)
+          vp->Position = vp->Position * matp;
+      }
+      out->CalcNormals();
+      out->CalcTangents();
+    }
+    
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh randomize(ChaosMesh)
+{
+  flags = obsolete;
+  parameter
+  {
+    float30 Amount (-1024..1024 step 0.01) = { 0,0,0 };
+    int Seed (0..255);
+    flags Flags ("box|sphere");
+  }
+  code
+  {
+    ChaosMeshVertexPosition *vp;
+    sVector30 v;
+    sRandom rnd;
+
+    rnd.Seed(para->Seed);
+
+    out->CopyFrom(in0);
+
+    switch(para->Flags)
+    {
+    case 0:
+      sFORALL(out->Positions,vp)
+      {
+        v.x = rnd.Float(2)-1;
+        v.y = rnd.Float(2)-1;
+        v.z = rnd.Float(2)-1;
+        vp->Position += v * para->Amount;
+      }
+      break;
+
+    case 1:
+      sFORALL(out->Positions,vp)
+      {
+        do
+        {
+          v.x = rnd.Float(2)-1;
+          v.y = rnd.Float(2)-1;
+          v.z = rnd.Float(2)-1;
+        }
+        while((v^v)<1);
+
+        vp->Position += v * para->Amount;
+      }
+      break;
+    }
+
+    out->CalcNormals();
+    out->CalcTangents();
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh add(*ChaosMesh)
+{
+  flags = obsolete;
+  column = 2;
+  shortcut= 'a';
+  code
+  {
+    out->CopyFrom(in0);
+    for(sInt i=1;i<cmd->InputCount;i++)
+      out->Add(cmd->GetInput<ChaosMesh *>(i));
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh SetMtrl(ChaosMesh,Wz4Material)
+{
+  flags = obsolete;
+  column = 2;
+  shortcut = 'm';
+  parameter
+  {
+    link Material:1 (both);
+  }
+  code
+  {
+    ChaosMeshCluster *cl;
+    out->CopyFrom(in0);
+    sFORALL(out->Clusters,cl)
+    {
+      sRelease(cl->Material);
+      cl->Material = in1;
+      in1->AddRef();
+    }
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Editing Filters                                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ChaosMesh ChangeTexture(ChaosMesh,?Texture2D,?Texture2D,?Texture2D,?TextureCube,?TextureCube)
+{
+  flags = obsolete;
+  shortcut = 'm'; 
+  column = 3;
+
+  parameter  
+  {
+    layout flags Exchange ("-|Bump:*1-|Diffuse:*2-|Detail");
+    layout continue flags "" Exchange ("*3-|SpecCube:*4-|LightCube");
+    layout continue flags "" Exchange ("*8-|DetailMode:*9-|BlendMode");
+
+    group "Flags";
+    if(Exchange.DetailMode)
+      flags DetailMode ("off|mul|add|bump|specmul:*4uv0|uv1|model|world|sphere|reflect:*8-|AlphaDepth") = 1; 
+    if(Exchange.BlendMode)
+      flags BlendMode ("opaque|add|mul|mul2|smooth|alpha") = 0; 
+
+    group "Textures";
+    if(Exchange.Bump)
+      link Bump:1;
+    if(Exchange.Diffuse)
+      link Diffuse:2;
+    if(Exchange.Detail)
+      link Detail:3;
+    if(Exchange.SpecCube)
+      link SpecCube:4;
+    if(Exchange.LightCube)
+      link LightCube:5;
+  }
+
+  code
+  {
+    static sU32 blend[8] =
+    {
+      sMB_OFF,sMB_ADD,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_ALPHA
+    };
+
+    ChaosMeshCluster *cl;
+    Wz4Material *cm;
+    out->CopyFrom(in0,SEPARATE_VERTEX|SEPARATE_FACE|SEPARATE_MATERIAL);
+
+
+    // modify all
+
+    sFORALL(out->Clusters,cl)
+    {
+      cm = cl->Material;
+      cm->TempPtr = cm;
+
+      for(sInt i=0;i<3;i++)
+      {
+        if(para->Exchange & (1<<i))
+        {
+          cm->Tex[i]->Release();
+          cm->Tex[i] = 0;
+          cm->Material->Texture[i] = 0;
+          Texture2D *tex = cmd->GetInput<Texture2D *>(i+1);
+          if(tex)
+          {
+            cm->Tex[i] = tex; tex->AddRef();
+            cm->Material->Texture[i] = tex->Texture;
+          }
+        }
+      }
+      for(sInt i=3;i<5;i++)
+      {
+        if(para->Exchange & (1<<i))
+        {
+          cm->Tex[i]->Release();
+          cm->Tex[i] = 0;
+          cm->Material->Texture[i] = 0;
+          TextureCube *tex = cmd->GetInput<TextureCube *>(i+1);
+          if(tex)
+          {
+            cm->Tex[i] = tex; tex->AddRef();
+            cm->Material->Texture[i] = tex->Texture;
+          }
+        }
+      }
+      if(para->Exchange & (1<<8))
+      {
+        cm->Material->DetailMode = para->DetailMode;
+      }
+      if(para->Exchange & (1<<9))
+      {
+        cm->Material->BlendColor = blend[para->BlendMode&7];
+      }
+    }
+
+    // prepare all 
+
+    sFORALL(out->Clusters,cl)
+    {
+      cm = cl->Material;
+      if(cm->TempPtr)
+      {
+        cm->TempPtr = 0;
+        cm->Material->Prepare(cm->Format);
+      }
+    }
+  
+    return 1;
+  }
+}
+
+operator ChaosMesh ChangeMaterial(ChaosMesh,Wz4Material)
+{
+  flags = obsolete;
+  shortcut = 'm'; 
+  column = 3;
+
+  parameter  
+  {
+  }
+
+  code
+  {
+    ChaosMeshCluster *cl;
+    out->CopyFrom(in0);
+
+    // modify all
+
+    sFORALL(out->Clusters,cl)
+    {
+      cl->Material->Release();
+      cl->Material = in1;
+      in1->AddRef();
+    }  
+
+    return 1;
+  }
+}
+
+
+operator ChaosMesh BurnAnim(ChaosMesh)
+{
+  flags = obsolete;
+  column = 3;
+  parameter
+  {
+    float Phase (0..1 step 0.001) = 0;
+  }
+  code
+  {
+    ChaosMeshVertexPosition *pos;
+    ChaosMeshCluster *cl;
+    out->CopyFrom(in0,SEPARATE_VERTEX);
+
+    if(out->Skeleton)
+    {
+      sVector31 v;
+      sMatrix34 *mat,*bmat;
+
+      mat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      bmat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      out->Skeleton->Evaluate(para->Phase,mat,bmat);
+
+      sFORALL(out->Positions,pos)
+      {
+        if(pos->MatrixIndex[0]!=-1)
+        {
+          v.Init(0,0,0);
+          for(sInt i=0;i<4;i++)
+          {
+            if(pos->MatrixIndex[i]==-1)
+              break;
+            v = v + sVector30(pos->Position * bmat[pos->MatrixIndex[i]])*pos->MatrixWeight[i];
+          }
+          pos->Position = v;
+          pos->ClearWeights();
+        }
+      }
+      sRelease(out->Skeleton);
+
+      sFORALL(out->Clusters,cl)
+      {
+        cl->Material->Format = sVertexFormatTSpace4;
+        cl->Material->Material->Prepare(sVertexFormatTSpace4);
+      }
+    }
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh DeleteSkeleton(ChaosMesh)
+{
+  flags = obsolete;
+  column = 3;
+  code
+  {
+    out->CopyFrom(in0);
+    sRelease(out->Skeleton);
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh BakeMorph(ChaosMesh,ChaosMesh)
+{
+  flags = obsolete;
+  column = 3;
+  parameter
+  {
+    float Phase (0..1 step 0.001) = 0;
+    float Anim (0..1 step 0.001) = 0;
+  }
+  code
+  {
+    sF32 fade = para->Phase;
+    ChaosMeshVertexPosition *pos0,*pos1;
+
+    out->CopyFrom(in0);
+    if(out->Positions.GetCount()==in1->Positions.GetCount() &&
+       out->Normals.GetCount()==in1->Normals.GetCount() &&
+       out->Tangents.GetCount()==in1->Tangents.GetCount() && 
+       out->Skeleton && in1->Skeleton)
+    {
+      sVector31 v,v0,v1;
+      sMatrix34 *out_mat,*out_bmat;
+      sMatrix34 *shp_mat,*shp_bmat;
+
+      out_mat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      out_bmat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      out->Skeleton->Evaluate(para->Anim,out_mat,out_bmat);
+
+      shp_mat = sALLOCSTACK(sMatrix34,in1->Skeleton->Joints.GetCount());
+      shp_bmat = sALLOCSTACK(sMatrix34,in1->Skeleton->Joints.GetCount());
+      in1->Skeleton->Evaluate(para->Anim,shp_mat,shp_bmat);
+
+      sFORALL(out->Positions,pos0)
+      {
+        if(pos0->MatrixIndex[0]!=-1)
+        {
+          v.Init(0,0,0);
+          for(sInt i=0;i<4;i++)
+          {
+            if(pos0->MatrixIndex[i]==-1)
+              break;
+            v = v + sVector30(pos0->Position * out_bmat[pos0->MatrixIndex[i]])*pos0->MatrixWeight[i];
+          }
+          v0 = v;
+          pos0->ClearWeights();
+        }
+
+        pos1 = &in1->Positions[_i];
+        if(pos1->MatrixIndex[0]!=-1)
+        {
+          v.Init(0,0,0);
+          for(sInt i=0;i<4;i++)
+          {
+            if(pos1->MatrixIndex[i]==-1)
+              break;
+            v = v + sVector30(pos1->Position * shp_bmat[pos1->MatrixIndex[i]])*pos1->MatrixWeight[i];
+          }
+          v1 = v;
+        }
+
+        pos0->Position.Fade(fade,v0,v1);
+      }
+
+      ChaosMeshCluster *cl;
+      sFORALL(out->Clusters,cl)
+      {
+        cl->Material->Format = sVertexFormatTSpace4;
+        cl->Material->Material->Prepare(sVertexFormatTSpace4);
+      }
+
+    }
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh MergeShape(ChaosMesh,ChaosMesh,ChaosMesh,?ChaosMesh)
+{
+  flags = obsolete;
+  column = 3;
+  parameter
+  {
+    float Phase (0..1 step 0.00001)=0;
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    return out->MergeShape(in1,in2,para->Phase,in3);
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh MergeAnim(*ChaosMesh)
+{
+  flags = obsolete;
+  column = 3;
+  parameter
+  {
+    flags UseAnimMask ("off|detuned");
+  }
+  code 
+  {
+    static sInt AnimMask[128] = 
+    {
+      1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,
+      1,0,0,1,1,0,1,1,0,0,1,1,0,0,1,0,
+      0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,
+      1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    };
+
+
+    Wz4AnimJoint *joint,*joint2;
+    ChaosMeshAnimClip *clip;
+    ChaosMesh *in;
+
+    out->CopyFrom(in0,SEPARATE_SKELETON);
+    
+    out->AnimClips.Clear();
+    for(sInt input=1;input<cmd->InputCount;input++)
+    {
+      in = cmd->GetInput<ChaosMesh *>(input);
+      if(out->Skeleton && in->Skeleton)
+      {
+        sInt time0 = 0;
+        sInt time1 = 0;
+
+        sFORALL(out->Skeleton->Joints,joint)
+        {
+          Wz4ChannelPerFrame *pf = (Wz4ChannelPerFrame *) joint->Channel;
+          if(pf && pf->Keys>0)
+          {
+            if(time0==0)
+              time0 = pf->Keys;
+            else
+              sVERIFY(time0 == pf->Keys);
+          }
+        }
+        sFORALL(in->Skeleton->Joints,joint)
+        {
+          Wz4ChannelPerFrame *pf = (Wz4ChannelPerFrame *) joint->Channel;
+          if(pf && pf->Keys>0)
+          {
+            if(time1==0)
+              time1 = pf->Keys;
+            else
+              sVERIFY(time1 == pf->Keys);
+          }
+        }
+
+        if(para->UseAnimMask)
+          if(AnimMask[input]==0)
+            time1 = 0;
+        
+        sVERIFY(time0+time1>0);
+        
+        if(input==1)
+        {
+          clip = out->AnimClips.AddMany(1);
+          clip->Start = 0;
+          clip->End = sF32(time0);
+          clip->Speed = 0;
+          clip->Id = 0;
+        }
+        sVERIFY(time0==out->AnimClips[input-1].End);
+        clip = out->AnimClips.AddMany(1);
+        clip->Start = sF32(time0);
+        clip->End = sF32(time0+time1);
+        clip->Speed = 0;
+        clip->Id = 0;
+
+        sFORALL(out->Skeleton->Joints,joint)
+        {
+          Wz4ChannelPerFrame *pf0 = (Wz4ChannelPerFrame *) joint->Channel;
+
+          // find add-channel
+
+          Wz4ChannelPerFrame *pf1 = 0;
+          sFORALL(in->Skeleton->Joints,joint2)
+          {
+            if(sCmpStringI(joint->Name,joint2->Name)==0)
+            {
+              pf1 = (Wz4ChannelPerFrame *) joint2->Channel;
+              break;
+            }
+          }
+          if(pf1 && pf1->Keys==0)
+            pf1 = 0;
+
+          // entend backwards
+
+          if((pf0->Scale && pf0->Keys>0) || (pf1 && pf1->Scale))
+          {
+            sVector31 *n = new sVector31[time0+time1];
+            for(sInt i=0;i<time0+time1;i++)
+              n[i] = pf0->Start.Scale;
+            if(pf0->Scale)
+              sCopyMem(n,pf0->Scale,sizeof(*n)*time0);
+            if(pf1 && !pf1->Scale)
+              for(sInt i=time0;i<time0+time1;i++)
+                n[i] = pf1->Start.Scale;
+            if(pf1 && pf1->Scale)
+              sCopyMem(n+time0,pf1->Scale,sizeof(*n)*time1);
+            delete[] pf0->Scale;
+            pf0->Scale = n;
+          }
+          if((pf0->Rot && pf0->Keys>0) || (pf1 && pf1->Rot))
+          {
+            sQuaternion *n = new sQuaternion[time0+time1];
+            for(sInt i=0;i<time0+time1;i++)
+              n[i] = pf0->Start.Rot;
+            if(pf0->Rot)
+              sCopyMem(n,pf0->Rot,sizeof(*n)*time0);
+            if(pf1 && !pf1->Rot)
+              for(sInt i=time0;i<time0+time1;i++)
+                n[i] = pf1->Start.Rot;
+            if(pf1 && pf1->Rot)
+              sCopyMem(n+time0,pf1->Rot,sizeof(*n)*time1);
+            delete[] pf0->Rot;
+            pf0->Rot = n;
+          }
+          if((pf0->Trans && pf0->Keys>0) || (pf1 && pf1->Trans))
+          {
+            sVector31 *n = new sVector31[time0+time1];
+            for(sInt i=0;i<time0+time1;i++)
+              n[i] = pf0->Start.Trans;
+            if(pf0->Trans)
+              sCopyMem(n,pf0->Trans,sizeof(*n)*time0);
+            if(pf1 && !pf1->Trans)
+              for(sInt i=time0;i<time0+time1;i++)
+                n[i] = pf1->Start.Trans;
+            if(pf1 && pf1->Trans)
+              sCopyMem(n+time0,pf1->Trans,sizeof(*n)*time1);
+            delete[] pf0->Trans;
+            pf0->Trans = n;
+          }
+          sVERIFY(pf0->User==0);
+          pf0->Keys = time0+time1;
+        }
+      }
+    }
+    
+    sInt count = out->AnimClips.GetCount();
+    if(count>0)
+    {
+      sF32 max = out->AnimClips[count-1].End;
+      sF32 imax = 1.0f/max;
+      sFORALL(out->AnimClips,clip)
+      {
+        clip->Start *= imax;
+        clip->End *= imax;
+        clip->Speed = 60*imax;
+      }
+    }
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh FakeBone(ChaosMesh)
+{
+  flags = obsolete;
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
+    float30 Rotate (-64..64 step 0.001) = { 0,0,0 };
+    float31 Trans (-1024..1024 step 0.01) = { 0,0,0 };    
+    int BoneIndex (0..255);    
+    flags What ("*0-|s:*1-|r:*2-|t");
+  }
+
+  code
+  {
+    out->CopyFrom(in0);
+    if(in0->Skeleton && para->BoneIndex>=0 && para->BoneIndex<in0->Skeleton->Joints.GetCount() && para->What!=0)
+    {
+      out->Skeleton->Release();
+      out->Skeleton = new Wz4Skeleton;
+      out->Skeleton->CopyFrom(in0->Skeleton);
+
+      Wz4AnimJoint *j = &out->Skeleton->Joints[para->BoneIndex];
+      if(j->Channel->Kind==Wz4ChannelKindPerFrame)
+      {
+        Wz4ChannelPerFrame *ch = (Wz4ChannelPerFrame *) j->Channel;
+        if(para->What&1)
+        {
+          sDeleteArray(ch->Scale);
+          ch->Start.Scale = para->Scale;
+        }
+        if(para->What&2)
+        {
+          sDeleteArray(ch->Rot);
+          sMatrix34 mat;
+          mat.EulerXYZ(para->Rotate.x*sPI2F,para->Rotate.y*sPI2F,para->Rotate.z*sPI2F);
+          ch->Start.Rot.Init(mat);
+        }
+        if(para->What&4)
+        {
+          sDeleteArray(ch->Trans);
+          ch->Start.Trans = para->Trans;
+        }
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator ChaosMesh CompressAnim(ChaosMesh)
+{
+  flags = obsolete;
+  //flags = slow;
+
+  parameter
+  {
+    float LogRelativeAccuracy "Max error (sig. digits)" (-5..2 step 0.001) = -3.0;
+    flags Flags ("*0-|guaranteed precision");
+  }
+  
+  code
+  {
+    out->CopyFrom(in0);
+    if(in0->Skeleton)
+    {
+      out->Skeleton->Release();
+      out->Skeleton = new Wz4Skeleton;
+      out->Skeleton->CopyFrom(in0->Skeleton);
+      
+      sInt total = 0, compressed = 0;
+      sInt totalRotKeys = 0, totalTransKeys = 0;
+      sF32 accuracy = sFPow(10.0f,para->LogRelativeAccuracy);
+      
+      Wz4AnimJoint *j;
+      sFORALL(out->Skeleton->Joints,j)
+      {
+        if(j->Channel->Kind==Wz4ChannelKindPerFrame)
+        {
+          Wz4ChannelPerFrame *oldch = (Wz4ChannelPerFrame *) j->Channel;
+          Wz4ChannelSpline *splinech = new Wz4ChannelSpline;
+          total++;
+          
+          if(splinech->Approximate(*oldch,accuracy) || !(para->Flags & 1))
+          {
+            totalRotKeys += splinech->Rot.GetNumControlPoints();
+            totalTransKeys += splinech->Trans.GetNumControlPoints();
+            compressed++;
+            oldch->Release();
+            j->Channel = splinech;
+          }
+        }
+      }
+      
+      sDPrintF(L"%d/%d curves compresssed successfully.\n",compressed,total);
+      sDPrintF(L"%d rotation keys total, %d translation\n",totalRotKeys,totalTransKeys);
+    }
+  }
+}
+
+operator ChaosMesh SliceAndDice(ChaosMesh)
+{
+  flags = obsolete;
+  code
+  {
+    // burn annimation for base mesh
+    ChaosMeshVertexPosition *pos;
+    ChaosMeshCluster *cl;
+    out->CopyFrom(in0,SEPARATE_VERTEX);
+
+    if(out->Skeleton)
+    {
+      sVector31 v;
+      sMatrix34 *mat,*bmat;
+
+      mat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      bmat = sALLOCSTACK(sMatrix34,out->Skeleton->Joints.GetCount());
+      out->Skeleton->Evaluate(0.0f,mat,bmat);
+
+      sFORALL(out->Positions,pos)
+      {
+        if(pos->MatrixIndex[0]!=-1)
+        {
+          v.Init(0,0,0);
+          for(sInt i=0;i<4;i++)
+          {
+            if(pos->MatrixIndex[i]==-1)
+              break;
+            v = v + sVector30(pos->Position * bmat[pos->MatrixIndex[i]])*pos->MatrixWeight[i];
+          }
+          pos->Position = v;
+          pos->ClearWeights();
+        }
+      }
+      sRelease(out->Skeleton);
+
+      sFORALL(out->Clusters,cl)
+      {
+        cl->Material->Format = sVertexFormatTSpace4;
+        cl->Material->Material->Prepare(sVertexFormatTSpace4);
+      }
+    }
+    
+    // cut 'em up!
+    ChaosMeshFX_SliceAndDice(out);
+  }
+}

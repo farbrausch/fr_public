@@ -1,0 +1,20 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+x plug & unplug joypads
+- multiple mice & keyboard support
+- unify DX and GDI input models
+  - cursor pos != mouse deltas
+  - extrapolate mouse pos when moving out of screen
+- clean up API
+- what to do about analog channel / button mapping ?
+
+small stuff
+
+- better code to get initial value of all analog axes (currently: guess 0x8000)
+- linker connection to XInput -> WindowsXP
+- compatibility: Win2k, WinXP, WinVista

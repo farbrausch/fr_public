@@ -1,0 +1,29 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{B01DF07D-9E30-4daf-9159-5533EB589EF8}";
+
+license altona;
+include "altona/main";
+include "chaos-code/lib";
+
+create "debug_dx9";
+create "debug_dx11";
+create "debug_ogl2";
+create "release_dx9";
+create "release_dx11";
+create "release_ogl2";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+
+file "main.?pp";
+file "shader.asc";
+file nonew "shader.?pp";
+file "volumetexture.mp.txt";
+

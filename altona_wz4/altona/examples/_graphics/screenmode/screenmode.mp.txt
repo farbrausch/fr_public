@@ -1,0 +1,28 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{5E05D004-9AA1-400a-BDB9-136B6C9C18B6}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debug_dx11";
+create "debug_ogl2";
+create "debug_blank";
+create "release_dx9";
+create "release_dx11";
+create "release_ogl2";
+create "release_blank";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+
+file "main.?pp";
+file "screenmode.mp.txt";
+

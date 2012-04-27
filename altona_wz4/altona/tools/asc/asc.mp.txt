@@ -1,0 +1,40 @@
+guid "{A143CFE3-894F-4c7c-9D72-DEB94AA70DDF}";
+
+license altona;
+include "altona/main";
+
+create "debug_blank_shell";
+create "release_blank_shell";
+create "stripped_blank_shell";
+
+depend "altona/main/base";
+depend "altona/main/shadercomp";
+
+include "altona/main";
+
+folder "app"
+{
+  file "main.hpp";
+  file "main.cpp";
+  file "asc.mp.txt";
+  file "parse.cpp";
+  file "output.cpp";
+  file "new.cpp";
+  file "todo.txt";
+}
+
+
+folder "test"
+{
+  file "test.txt";
+  file "longtest.txt";
+  file nonew "test.?pp" { config "*" { exclude; }}
+}
+
+// we really only need the scanner from the util project. by including this
+// source explicitly this one time we get around the cyclic dependency imposed
+// by util/shaders.asc
+folder "util"
+{
+  file "../../main/util/scanner.?pp";
+}

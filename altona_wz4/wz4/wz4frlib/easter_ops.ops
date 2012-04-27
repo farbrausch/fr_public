@@ -1,0 +1,135 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/easter.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Render CubeTrees "Easter_CubeTrees" (Wz4Mtrl, ?Wz4Mtrl) 
+{
+  column = 1;
+
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim int LightEnv(0..15) = 0;
+    group "Materials";
+    link TreeMaterial : 0 (both);
+    link CubeMaterial : 1 (both);
+    group "Tree";
+    anim float StartWidth (0.01..1 step 0.01) = 0.2;
+    anim float GrowSpeed (0.1..10 step 0.01) = 1;
+    anim float SegmentLength (0.01..2 step 0.01) = 0.3;
+    anim float WidthDecay (0.1..1 step 0.01) = 0.5;
+    int Seed = 1;
+    anim float MinWidth (0.01..1 step 0.01) = 0.02;
+    anim float Bend(0.01..5 step 0.01) = 0.1;
+  
+    group "Cubes";
+    anim float CubeSize (0.01..1 step 0.01) = 0.2;
+    anim float CubeGrowTime (0.01 .. 100 step 0.01) = 1;
+    anim float CubeWobbleTime (0.01 .. 10 step 0.01) = 3;
+    anim float30 CubeRot (-1..1 step 0.01) = {-0.09,0.21,0.27};
+
+    group "Multiple";
+    anim float SpawnDelay (0..1000 step 0.1) = 1;
+
+    array
+    {
+      float31 Pos = 0;
+      float   Rot (-0.5..0.5 step 0.01) = 0;
+      int     Seed = 0;
+    }
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNCubeTrees *node = new RNCubeTrees();
+    node->ParaBase = node->Para = *para;
+    node->TreeMtrl = in0; sAddRef(in0);
+    node->CubeMtrl = in1; sAddRef(in1);
+
+    node->Array.Resize(cmd->ArrayCount);
+    Wz4RenderArrayCubeTrees *array= (Wz4RenderArrayCubeTrees *)cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+      node->Array[i] = array[i];
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render TVNoise "Easter_TVNoise" ()
+{
+  column = 1;
+
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float Alpha(0..1 step 0.01) = 1;
+    /*
+    float Scanlines(0..2000 step 1) = 480;
+    float ScanlineDarken(0..1 step 0.01) = 0.5;
+    */
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNTVNoise *node = new RNTVNoise();
+    node->ParaBase = node->Para = *para;
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Julia4D "Easter_Julia4D" ()
+{
+  column = 1;
+
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float4 C(-2..2 step 0.01);
+
+    color Color("rgb") = 0xffffff;
+    nolabel flags Flags ("-|x2") = 0;
+    color Specular("rgb") = 0xffffff;
+    nolabel float Power (1..100 step 0.1) = 8.0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNJulia4D *node = new RNJulia4D;
+    node->ParaBase = node->Para = *para;
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);    
+  }
+}

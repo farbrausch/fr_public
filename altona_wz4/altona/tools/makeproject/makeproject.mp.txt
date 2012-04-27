@@ -1,0 +1,29 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{B405548B-F306-45C9-856B-767BB3F6B6E0}";
+
+license altona;
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+create "debug_blank_shell";
+create "release_blank_shell";
+create "stripped_blank_shell";
+
+create "release_linux_blank_shell";
+
+file "main.?pp";
+file "doc.?pp";
+file "doc_output.cpp";
+file "doc_makefile.cpp";
+file "todo.txt";
+
+file "makeproject.mp.txt";
+file "makeproject.txt";

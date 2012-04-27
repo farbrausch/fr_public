@@ -1,0 +1,70 @@
+/************************************************************************/ /*!
+\defgroup altona Altona 
+
+Altona is a complete run-time system. You should not need to include 
+anything from the c standard library or your operating system in order to
+write programs using Altona.
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_base Base
+\ingroup altona
+
+Altona Base contains the wrapper to the operating system, the runtime system
+and the compiler. It also contains the most important functions and classes
+to efficiently and conveniently implement the wrapper.
+
+Porting Altona to a different platform should be possible by just porting 
+Altona Base.
+
+In practice, you will occasionally call the OS outside Altona Base, but 
+you should consider moving it in here.
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_util Util
+\ingroup altona
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_gui Gui
+\ingroup altona
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools Tools
+\ingroup altona
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools_asc ASC
+\ingroup altona_tools
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools_makeproject MakeProject
+\ingroup altona_tools
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools_planpad PlanPad
+\ingroup altona_tools
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools_wz4ops Wz4Ops
+\ingroup altona_tools
+
+(dummy)
+
+*/ /*********************************************************************/ /*!
+\defgroup altona_tools_wz4 Werkzeug4
+\ingroup altona_tools
+
+(dummy - only for the wz4 without tc3 or farbrausch ops)
+
+*****************************************************************************/

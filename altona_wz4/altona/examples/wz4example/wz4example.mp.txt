@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{9C917075-CB94-4b0f-A0D9-1E39C6B192AF}";
+
+license altona;
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/wz4lib";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+include "altona/main";
+
+file "main.?pp";
+file "wz4example.mp.txt";
+

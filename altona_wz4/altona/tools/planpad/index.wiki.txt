@@ -1,0 +1,34 @@
+
+= [b Small steps to Victory]
+
+!T 3
+ !i 
+  > "xxxx" xx
+ !i 
+  > "xxxx" xx
+ !i 
+  > "xxxx" xx
+
+!T 3
+ !i 
+  "xxxx" xx
+ !i 
+  "xxxx" xx
+ !i 
+  "xxxx" xx
+
+!T 3
+ !i 
+  > "xxxx" xx
+ !i 
+  "xxxx" xx
+ !i 
+  "xxxx" xx
+
+!T 3
+ !i 
+  [> "xxxx" xx]
+ !i 
+  [> "xxxx" xx]
+ !i 
+  [> "xxxx" xx]

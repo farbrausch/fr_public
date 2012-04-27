@@ -1,0 +1,804 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserved                                                ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/basic.hpp"
+#include "wz4lib/basic_ops.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
+#include "wz4frlib/wz4_modmtrl.hpp"
+#include "wz4frlib/wz4_modmtrl_ops.hpp"
+#include "wz4frlib/wz4_modmtrlmod.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+}
+code
+{
+#include "fr033.hpp"
+#include "wz4frlib/wz4_demo2nodes.hpp"
+}
+
+/****************************************************************************/
+
+type Wz3TexPackage
+{
+  color = 0xff4060ff;
+  name = "Wz3 Tex Package";
+  gui = base2d;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    sVERIFY(obj->Type == Wz3TexPackageType);
+    Wz3TexPackage *pkg = (Wz3TexPackage *) obj;
+    
+    //static const sInt Border = 10;
+    //sInt curX = pi.Client.x0 + pi.PosX + Border;
+    //sInt curY = pi.Client.y0 + pi.PosY + Border;
+    //sInt width = 0;
+
+    //Wz3Texture *tex;
+    //sFORALL(pkg->Textures,tex)
+    //{
+    //  // paint info text
+    //  sString<256> info;
+    //  info.PrintF(L"%d. %q (%d x %d pixels)",_i+1,tex->Name,tex->Image.SizeX,tex->Image.SizeY);
+
+    //  sRect r;
+    //  r.Init(curX,curY,curX + sGui->FixedFont->GetWidth(info),curY + sGui->FixedFont->GetHeight());
+    //  sGui->FixedFont->SetColor(sGC_TEXT,sGC_BACK);
+    //  sGui->FixedFont->Print(sF2P_LEFT|sF2P_LIMITED|sF2P_OPAQUE,r,info);
+    //  sClipExclude(r);
+    //  curY += r.SizeY();
+
+    //  // paint image
+    //  r.Init(curX,curY,curX + tex->Image.SizeX,curY + tex->Image.SizeY);
+    //  sBlit2D(tex->Image.Data,tex->Image.SizeX,r);
+    //  sClipExclude(r);
+    //  curY += r.SizeY();
+    //}
+    //
+    //pi.Rect.Init(pi.PosX,pi.PosY,curX - pi.Client.x0 + width + Border,curY - pi.Client.y0 + Border);
+
+    // fill remaining space with background color
+    sRect2D(pi.Client,sGC_BACK);
+  }
+
+  extern void ListExtractions(wObject *obj,void (*cb)(const sChar *name,wType *type),const sChar *storename)
+  {
+    sVERIFY(obj->Type == Wz3TexPackageType);
+    Wz3TexPackage *pkg = (Wz3TexPackage *) obj;
+
+    Wz3Texture *tex;
+    sFORALL(pkg->Textures,tex)
+    {
+      wDocName buffer;
+
+      sSPrintF(buffer,L"%s:tex.%s",storename,tex->Name);
+      cb(buffer,Texture2DType);
+    }
+  }
+}
+
+/**************************************************************************+*/
+
+operator Texture2D Extract_Wz3TexPackage_Texture2D(Wz3TexPackage)
+{
+  flags = hide;
+  extract = "tex";
+  parameter
+  {
+    string Name;
+  }
+  code
+  {
+    const sChar *name = cmd->Strings[0];
+    if(!sCheckPrefix(name,L"tex."))
+      return 0;
+
+    // look up texture name without prefix
+    if(Texture2D *tex = in0->Lookup(name + 4))
+    {
+      cmd->Output->Release();
+      cmd->Output = tex;
+      cmd->Output->AddRef();
+      return 1;
+    }
+
+    return 0;
+  }
+}
+
+/**************************************************************************+*/
+
+operator Wz3TexPackage LoadKTX()
+{
+  parameter
+  {
+    filein Filename("ktx");
+  }
+  code
+  {
+    if(!out->LoadKTX(cmd->Strings[0],(Doc->DocOptions.TextureQuality != 0) ? -1 : 0))
+    {
+      cmd->SetError(L"Error loading .KTX file");
+      return 0;
+    }
+  }
+}
+
+/**************************************************************************+*/
+
+code
+{
+  struct Wz3Material20Para
+  {
+    // general section
+    sU32 Flags;
+    sU32 Diffuse;
+    sU32 Specular;
+    sF32 SpecularPow;
+    sF32 ParalaxStrength;
+    sInt _pad[3];
+
+    // texture section
+    sU32 TexFlags[4];
+    sF32 TexScale[4];
+
+    // bump/lighting section
+    sU32 LgtFlags[4];
+    sF32 LgtScale[4];
+
+    // uv transform
+    sF32 SRT1[9];
+    sF32 SRT2[5];
+
+    // color correct
+    sF32 ColC[4];
+
+    // internals (for codegen)
+    sInt TexUsed[4];
+    sInt LgtUsed[4];
+    sU32 SrcScale[4];
+    sU32 SrcScale2[4];
+    sInt LgtType;
+  };
+
+  static void AddBlinnPhong(ModMtrl *mtrl,sF32 specularity,sBool enableSpecular)
+  {
+    MM_BlinnPhong *mod = new MM_BlinnPhong;
+    mod->Specular = specularity;
+    mod->LightFlags = enableSpecular ? 15 : 1;
+    mtrl->ModulesUser.AddTail(mod);
+  }
+
+  //"*8tile|clamp:*0no filter|filter|mipmap|trilin|aniso:*4uv0|uv1:*12untransformed|scaled|trans1|trans2"
+  static MM_Tex2D *SampleTex2D(ModMtrl *mtrl,Texture2D *tex,sU32 flags,sF32 scale=1.0f,const Wz3Material20Para *para=0)
+  {
+    static const sInt filterTypes[16] = { 2,3,3,0,1 };
+    sInt transMode = (flags >> 12) & 0xf;
+
+    MM_Tex2D *sample = new MM_Tex2D;
+    sample->Flags = filterTypes[flags & 15] | ((flags & 0x100) >> 4);
+    sample->UV = (flags >> 4) & 1;
+    sample->Transform = sMin(transMode,2);
+    sample->Aux = 0;
+    sample->SimpleScale = scale;
+    
+    if(para && transMode == 2) // trans1
+    {
+      sample->Scale.Init(para->SRT1[0],para->SRT1[1],para->SRT1[2]);
+      sample->Rot.Init(para->SRT1[3]*sPI2F,para->SRT1[4]*sPI2F,para->SRT1[5]*sPI2F);
+      sample->Trans.Init(para->SRT1[6],para->SRT1[7],para->SRT1[8]);
+    }
+    else if(para && transMode == 3) // trans2
+    {
+      sample->Scale.Init(para->SRT2[0],para->SRT2[1],1.0f);
+      sample->Rot.Init(0.0f,0.0f,para->SRT2[2]*sPI2F);
+      sample->Trans.Init(para->SRT2[3],para->SRT2[4],0.0f);
+    }
+    else
+    {
+      sample->Scale.Init(1,1,1);
+      sample->Rot.Init(0,0,0);
+      sample->Trans.Init(0,0,0);
+    }
+
+    sample->Texture = tex; tex->AddRef();
+    mtrl->ModulesUser.AddTail(sample);
+    return sample;
+  }
+
+  static MM_Const *ConstantColor(ModMtrl *mtrl,sU32 color)
+  {
+    MM_Const *constant = new MM_Const;
+    constant->Color.InitColor(color);
+    mtrl->ModulesUser.AddTail(constant);
+    return constant;
+  }
+
+  static MM_ApplyTexture *ApplyToColor(ModMtrl *mtrl,MtrlModule *source,const sChar *dest,sInt op,const sChar *swizzle)
+  {
+    MM_ApplyTexture *apply = new MM_ApplyTexture;
+    apply->Tex = source;
+    apply->Dest = dest;
+    apply->Op = op;
+    apply->Aux = 0;
+    apply->Swizzle = swizzle;
+    mtrl->ModulesUser.AddTail(apply);
+    return apply;
+  }
+
+  static void ApplyNormalMap(ModMtrl *mtrl,MtrlModule *source)
+  {
+    MM_NormalMap *nmap = new MM_NormalMap;
+    nmap->Tex = source;
+    mtrl->ModulesUser.AddTail(nmap);
+  }
+
+  static void ApplyDoubleNormalMap(ModMtrl *mtrl,MtrlModule *source1,MtrlModule *source2)
+  {
+    MM_DoubleNormalMap *nmap = new MM_DoubleNormalMap;
+    nmap->Tex0 = source1;
+    nmap->Tex1 = source2;
+    mtrl->ModulesUser.AddTail(nmap);
+  }
+
+  static void ReadString(const sStringDesc &target,const sU8 *&data)
+  {
+    sInt j = 0;
+    while(*data && j < target.Size - 1)
+      target.Buffer[j++] = *data++;
+
+    while(*data)
+      data++;
+
+    target.Buffer[j++] = *data++; // terminating 0
+  }
+
+  static Wz4Mtrl *ReadWz3Material1(const sU8 *&data,Wz3TexPackage *pkg)
+  {
+    // parameters
+    sU32 baseFlags = *(const sU32 *) data; data += 4;
+    sU32 texFlags = *(const sU32 *) data; data += 4;
+    sF32 texScale = *(const sF32 *) data; data += 4;
+
+    // read texture name
+    sString<64> texName;
+    ReadString(texName,data);
+    Texture2D *tex = pkg ? pkg->Lookup(texName) : 0;
+
+    // base flags: "*0|alphatest:*1|doublesided:*2|invertcull:*6|fog"
+    // cont'd:     "*8zoff|zwrite|zread|zon:*12opaque|alpha|add|mul|mul2|smooth|sub|invdestmul2"
+    static const sU32 cullFlags[4] = { sMTRL_CULLON,sMTRL_CULLOFF,sMTRL_CULLINV,sMTRL_CULLOFF };
+    static const sU32 zFlags[4] = { sMTRL_ZOFF,sMTRL_ZWRITE,sMTRL_ZREAD,sMTRL_ZON };
+    static const sU32 blendFlags[16] = {
+      0,sMB_ALPHA,sMB_ADD,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_SUB,sMBS_DCI|sMBO_ADD|sMBD_SCI
+    };
+
+    sInt zMode = (baseFlags >> 8) & 3;
+    sInt blendMode = (baseFlags >> 12) & 15;
+
+    // set up basic material
+    ModMtrl *mtrl = new ModMtrl;
+    mtrl->KillFeatures = ~0u;
+    mtrl->KillLight = 0;
+    mtrl->KillShadow = 0;
+    mtrl->FeatureFlags = 2;// (zMode & 1) ? 0 : 2; // don't cast shadow when zwrite off
+    mtrl->SetMtrl(cullFlags[(baseFlags >> 1) & 3] | zFlags[zMode],blendFlags[blendMode]);
+    if(baseFlags & 1)
+      mtrl->SetAlphaTest(4,128); // alpha test enabled
+    else
+      mtrl->SetAlphaTest(7,255); // no alpha test
+
+    if(tex)
+      ApplyToColor(mtrl,SampleTex2D(mtrl,tex,texFlags,texScale),L"col_emissive",0,L"rgb");
+
+    // compile
+    mtrl->Prepare();
+    if(mtrl->Error)
+      sRelease(mtrl);
+
+    return mtrl;
+  }
+  
+  static Wz4Mtrl *ReadWz3Material2(const sU8 *&data,Wz3TexPackage *pkg)
+  {
+    // read parameters
+    Wz3Material20Para para;
+    sCopyMem(&para,data,sizeof(Wz3Material20Para));
+    data += sizeof(Wz3Material20Para);
+
+    // read texture names and get texture pointers from package
+    sString<64> texName;
+    Texture2D *tex[8];
+
+    for(sInt i=0;i<8;i++)
+    {
+      ReadString(texName,data);
+      tex[i] = pkg ? pkg->Lookup(texName) : 0;
+    }
+
+    // actually build the material
+    ModMtrl *mtrl = new ModMtrl;
+
+    // set up basic material
+    mtrl->KillFeatures = ~0u;
+    mtrl->KillLight = -1;
+    mtrl->KillShadow = -1;
+    mtrl->FeatureFlags = 0;
+    mtrl->SetMtrl(sMTRL_ZON|sMTRL_CULLON,0);
+
+    if(!tex[3]) // no alpha map specified
+      mtrl->SetAlphaTest(7,255); // no alpha test
+    else
+      mtrl->SetAlphaTest(4,128); // alpha test enabled
+
+    // add modules
+    AddBlinnPhong(mtrl,para.SpecularPow,para.Flags & 1);
+
+    ApplyToColor(mtrl,ConstantColor(mtrl,para.Diffuse),L"col_diffuse",1,L"rgb");
+    ApplyToColor(mtrl,ConstantColor(mtrl,para.Specular),L"col_gloss",1,L"rgb");
+
+    if(para.Flags & (1 << 7)) // gloss map enabled?
+    {
+      // apply gloss map
+      ApplyToColor(mtrl,SampleTex2D(mtrl,tex[4],para.LgtFlags[0],para.LgtScale[0],&para),L"col_gloss",1,L"a")->InputRemap = 1;
+    }
+
+    // main and detail
+    for(sInt i=0;i<3;i++)
+    {
+      if(!tex[i])
+        continue;
+
+      //"*16mul|mul2|mul4|add|addsmooth"
+      static const sInt detailOps[16] = { 1,3,4,0,5 };
+
+      sInt op = (i == 0) ? 1 : detailOps[(para.TexFlags[i] >> 16) & 0xf];
+      ApplyToColor(mtrl,SampleTex2D(mtrl,tex[i],para.TexFlags[i],para.TexScale[i],&para),L"col_diffuse",op,L"rgb");
+    }
+
+    // alpha
+    if(tex[3]) ApplyToColor(mtrl,SampleTex2D(mtrl,tex[3],para.TexFlags[3],para.TexScale[3],&para),L"alpha",1,L"a");
+
+    // normal map+detail normal
+    if(tex[4])
+    {
+      MM_Tex2D *sampNormal = SampleTex2D(mtrl,tex[4],para.LgtFlags[0],para.LgtScale[0],&para);
+
+      if(tex[5])
+        ApplyDoubleNormalMap(mtrl,sampNormal,SampleTex2D(mtrl,tex[5],para.LgtFlags[1],para.LgtScale[1],&para));
+      else
+        ApplyNormalMap(mtrl,sampNormal);
+    }
+
+    // envi
+    if(tex[6])
+    {
+      // special envi flags: "*16normal|reflection:*17unbumped|bumped"
+      // ignore "unbumped" flag, always use the normal we have.
+      MM_Tex2D *sampEnvi = SampleTex2D(mtrl,tex[6],para.LgtFlags[2],para.LgtScale[2],&para);
+      sampEnvi->UV = (para.LgtFlags[2] & 0x10000) ? 6 : 5;
+      ApplyToColor(mtrl,sampEnvi,L"col_specular",0,L"rgb");
+    }
+
+    // compile
+    mtrl->Prepare();
+    if(mtrl->Error)
+      sRelease(mtrl);
+
+    return mtrl;
+  }
+}
+
+operator Wz4Mesh ImportMinMesh(?Wz3TexPackage)
+{
+  parameter
+  {
+    filein Filename("wz3minmesh");
+    link TexPackage : 0;
+  }
+  
+  code
+  {
+    sDInt size;
+    sU8 *buffer = sLoadFile(cmd->Strings[0],size);
+    if(!buffer)
+      return 0;
+
+    const sU8 *data = buffer;
+    out->LoadWz3MinMesh(data);
+    sVERIFY(data <= buffer+size);
+
+    // load materials here
+    if(data+4 <= buffer+size
+      && sCmpMem(data,"MTRL",4) == 0)
+    {
+      data += 4; // skip "MTRL" header
+
+      for(sInt i=0;i<out->Clusters.GetCount();i++)
+      {
+        sInt mtrlType = *data++;
+        Wz4Mtrl *mtrl = 0;
+        
+        if(mtrlType == 1)
+          mtrl = ReadWz3Material1(data,in0);
+        else if(mtrlType == 2)
+          mtrl = ReadWz3Material2(data,in0);
+
+        if(mtrl)
+        {
+          out->Clusters[i]->Mtrl->Release();
+          out->Clusters[i]->Mtrl = mtrl;
+        }
+      }
+    }
+
+    sVERIFY(data <= buffer+size);
+
+    // update everything
+    out->CalcNormalAndTangents();
+    out->MergeVertices();
+    out->MergeClusters();
+    out->SortClustersByLocalRenderPass();
+    out->SplitClustersAnim(74);
+
+    // cleanup
+    delete[] buffer;
+  }
+}
+
+/**************************************************************************+*/
+
+operator Wz4Render TrembleMesh "FR033Tremble"(Wz4Mesh)
+{
+  column = 0;
+  parameter
+  {
+    anim int LightEnv (0..15);
+    int Renderpass(-127..127);
+    anim float Anim(-1024..1024 step 0.01);
+    anim float Amount(-1024..1024 step 0.01) = 0;
+    anim float Frequency(-1024..1024 step 0.01) = 1;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNTrembleMesh *node = new RNTrembleMesh();
+    node->ParaBase = node->Para = *para;
+    in0->Charge();
+    node->Mesh = in0; in0->AddRef();
+
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/**************************************************************************+*/
+
+code
+{
+  static void RenderOneView(sImage *destImg,sInt destX,sInt sizeX,sInt sizeY,
+    Wz4RenderNode *scene,sU32 clearColor,
+    const sMatrix34 &cam,
+    sF32 clipNear,sF32 clipFar,sF32 zoomX,sF32 zoomY)
+  {
+    ScriptContext *script = Wz4RenderType->Script;
+    Wz4RenderContext ctx;
+
+    // prepare context
+    sTexture2D *dest = new sTexture2D(sizeX,sizeY,sTEX_2D|sTEX_ARGB8888|sTEX_NOMIPMAPS|sTEX_RENDERTARGET);
+    sEnlargeRTDepthBuffer(sizeX,sizeY);
+
+    sTargetSpec spec(dest,sGetRTDepthBuffer());
+    ctx.Init(script,&spec,0);
+    ctx.IppHelper = Wz4RenderType->IppHelper;
+    ctx.RenderFlags = wRF_RenderMain;
+    sRTMan->ResolutionCheck(dest,ctx.ScreenX,ctx.ScreenY);
+
+    sRender3DBegin();
+
+    // recursion
+    ctx.ClearRecFlags(scene);
+    
+    script->BeginExe();
+    ctx.SetCam = 0;
+    scene->Simulate(&ctx);
+    script->EndExe();
+
+    // render if there's been no rendering yet
+    if(ctx.CameraFlag == 0)
+    {
+      // prepare viewport
+      sViewport vp;
+      vp.SetTarget(spec);
+      vp.Camera = cam;
+      vp.Orthogonal = sVO_ORTHOGONAL;
+      vp.ClipNear = clipNear;
+      vp.ClipFar = clipFar;
+      vp.ZoomX = zoomX;
+      vp.ZoomY = zoomY;
+      vp.Prepare();
+
+      ctx.View = vp;
+
+      // render
+      ctx.RenderControl(scene,sCLEAR_ALL,clearColor,spec);
+    }
+
+    // save results of rendering into output texture
+    const sU8 *data;
+    sS32 pitch;
+    sTextureFlags flags;
+
+//    sSetTarget(sTargetPara(0,0,spec));
+    
+    sBeginReadTexture(data,pitch,flags,dest);
+
+    for(sInt y=0;y<sizeY;y++)
+      sCopyMem(destImg->Data + y*destImg->SizeX + destX,data + y*pitch,sizeX*4);
+
+    sEndReadTexture();
+    sRender3DEnd(sFALSE);
+
+    delete dest;
+  }
+}
+
+operator PocBitmap Render2Bitmap(Wz4Render)
+{
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX:0 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=9;
+    nolabel flags SizeY:1 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=9;
+
+    color ClearColor("rgba") = 0x00000000;
+
+    float31 Position(-1024..1024 step 0.01) = { 0,0,-5 };
+    float31 Target(-1024..1024 step 0.01) = { 0,0,0 };
+
+    float ClipNear(0..65536 step 0.01) = 0.125;
+    float ClipFar(0..65536 step 0.01) = 100;
+
+    float ZoomX(0.001..65536 logstep 0.01) = 1;
+    float ZoomY(0.001..65536 logstep 0.01) = 1;
+  }
+
+  code
+  {
+    sInt sizeX = 1 << para->SizeX;
+    sInt sizeY = 1 << para->SizeY;
+    out->Image->Init(sizeX,sizeY);
+
+    sMatrix34 cam;
+    cam.LookAt(para->Target,para->Position);
+
+    RenderOneView(out->Image,0,sizeX,sizeY,
+      in0->RootNode,para->ClearColor,
+      cam,
+      para->ClipNear,para->ClipFar,para->ZoomX,para->ZoomY);
+  }
+}
+
+operator Wz4Mesh House2Cube(Wz4Mesh)
+{
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=9;
+    nolabel flags SizeY (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=9;
+
+    group "BBox Adjust";
+    float30 Min(-1024..1024 step 0.01) = 0;
+    float30 Max(-1024..1024 step 0.01) = 0;
+
+    flags Format("ARGB|DXT1|DXT5") = 1;
+  }
+
+  code
+  {
+    // create texture image
+    sInt sizeX = 1 << para->SizeX;
+    sInt sizeY = 1 << para->SizeY;
+    sImage texImg(sizeX*5,sizeY);
+
+    // build temporary rendertree
+    RNModLight *light = new RNModLight;
+    sClear(light->ParaBase);
+    light->ParaBase.Ambient = 0xffffff; // white ambient, no other lights
+
+    RNRenderMesh *render = new RNRenderMesh;
+    sClear(render->ParaBase);
+    render->Mesh = in0; in0->AddRef();
+
+    Wz4RenderNode *scene = new Wz4RenderNode;
+    scene->Childs.AddTail(light);
+    scene->Childs.AddTail(render);
+
+    // determine mesh bbox for cam placement
+    sAABBox meshBB;
+    in0->CalcBBox(meshBB);
+
+    sAABBoxC origBox;
+    origBox.Init(meshBB);
+
+    meshBB.Min += para->Min;
+    meshBB.Max += para->Max;
+
+    sAABBoxC cutBox;
+    cutBox.Init(meshBB);
+
+    // render the bitmap and build the mesh
+    // sides: front, back, left, right, top, bottom
+    static const sF32 dirX[6][3] = { { 1,0,0 }, { -1,0, 0 }, { 0,0,-1 }, {  0,0,1 }, { 1, 0,0 }, { 1,0, 0 } };
+    static const sF32 dirY[6][3] = { { 0,1,0 }, {  0,1, 0 }, { 0,1, 0 }, {  0,1,0 }, { 0, 0,1 }, { 0,0,-1 } };
+    static const sF32 dirZ[6][3] = { { 0,0,1 }, {  0,0,-1 }, { 1,0, 0 }, { -1,0,0 }, { 0,-1,0 }, { 0,1, 0 } };
+
+    out->AddDefaultCluster();
+    out->Vertices.HintSize(4*5);
+    out->Faces.HintSize(5);
+
+    for(sInt side=0;side<6;side++)
+    {
+      // build camera matrix
+      sMatrix34 mat;
+      mat.i.Init(dirX[side][0],dirX[side][1],dirX[side][2]);
+      mat.j.Init(dirY[side][0],dirY[side][1],dirY[side][2]);
+      mat.k.Init(dirZ[side][0],dirZ[side][1],dirZ[side][2]);
+
+      // determine radius
+      sF32 rx = cutBox.Radius[mat.i.MaxAxisAbs()];
+      sF32 ry = cutBox.Radius[mat.j.MaxAxisAbs()];
+      sF32 rz = cutBox.Radius[mat.k.MaxAxisAbs()];
+      sF32 orz = cutBox.Radius[mat.k.MaxAxisAbs()] + origBox.Radius[mat.k.MaxAxisAbs()];
+
+      // finish matrix and render
+      mat.l = cutBox.Center + (-rz) * mat.k;
+
+      if(side < 5)
+      {
+        RenderOneView(&texImg,side*sizeX,sizeX,sizeY,
+          scene,0,mat,-orz,orz,1.0f / rx,1.0f / ry);
+      }
+
+      // build vertices
+      sInt vc = out->Vertices.GetCount();
+
+      for(sInt i=0;i<4;i++)
+      {
+        Wz4MeshVertex *mv = out->Vertices.AddMany(1);
+
+        mv->Init();
+        mv->Pos = sVector31((i & 1) ? rx : -rx,(i & 2) ? -ry : ry,0.0f) * mat;
+        mv->Normal = -mat.k;
+        mv->Tangent = mat.i;
+        mv->U0 = (sMin(side,4) + ((i & 1) ? 1.0f : 0.0f)) / 5.0f;
+        mv->V0 = (i & 2) ? 1.0f : 0.0f;
+      }
+
+      // build face
+      Wz4MeshFace *fc = out->Faces.AddMany(1);
+      fc->Init(4);
+      fc->Vertex[0] = vc+0;
+      fc->Vertex[1] = vc+1;
+      fc->Vertex[2] = vc+3;
+      fc->Vertex[3] = vc+2;
+    }
+
+    // turn the image into a texture
+    static const sInt destFormat[] = { sTEX_ARGB8888,sTEX_DXT1|sTEX_FASTDXTC,sTEX_DXT5|sTEX_FASTDXTC };
+
+    Texture2D *tex = new Texture2D;
+    tex->ConvertFrom(&texImg,sTEX_2D|destFormat[para->Format]);
+
+    // now build a material
+    ModMtrl *mtrl = new ModMtrl;
+    mtrl->KillFeatures = ~0u;
+    mtrl->KillLight = -1;
+    mtrl->KillShadow = -1;
+    mtrl->FeatureFlags = 0;
+    mtrl->SetMtrl(sMTRL_ZON|sMTRL_CULLON,0);
+    mtrl->SetAlphaTest(4,128);
+
+    AddBlinnPhong(mtrl,1.0f,0);
+
+    MM_Tex2D *texSampler = SampleTex2D(mtrl,tex,0x104,1.0f); // 0x104: clamp, aniso
+    ApplyToColor(mtrl,texSampler,L"col_diffuse",1,L"rgb");
+    ApplyToColor(mtrl,texSampler,L"alpha",1,L"a");
+
+    // change mesh cluster material to this one
+    out->Clusters[0]->Mtrl->Release();
+    out->Clusters[0]->Mtrl = mtrl;
+
+    // clean up the render tree
+    sRelease(scene);
+    sRelease(tex); // material holds its own copy
+  }
+}
+
+operator Wz4Mesh ReAddTexture(Wz4Mesh,Wz4Mesh)
+{
+  parameter
+  {
+  }
+
+  code
+  {
+    out->CopyFrom(in0);
+
+    // calc bounding box for projection
+    sAABBox aaBox;
+    in1->CalcBBox(aaBox);
+
+    sVector31 center = sAverage(aaBox.Min,aaBox.Max);
+    sVector30 extent = aaBox.Max - aaBox.Min;
+    sVector30 invExtent;
+    invExtent.ReciprocalKeepZero(extent);
+
+    // sides: left, right, bottom, top, front, back
+    static const sF32 dirX[6][3] = { { 0,0,-1 }, {  0,0,1 }, { 1,0, 0 }, { 1, 0,0 }, { 1,0,0 }, { -1,0, 0 } };
+    static const sF32 dirY[6][3] = { { 0,1, 0 }, {  0,1,0 }, { 0,0,-1 }, { 0, 0,1 }, { 0,1,0 }, {  0,1, 0 } };
+    static const sF32 uOffs[6] = { 2,3,5,4,0,1 };
+
+    sVector30 vecX[6],vecY[6];
+    for(sInt i=0;i<6;i++)
+    {
+      vecX[i].Init(dirX[i][0] * invExtent.x,dirX[i][1] * invExtent.y,dirX[i][2] * invExtent.z);
+      vecY[i].Init(dirY[i][0] * invExtent.x,dirY[i][1] * invExtent.y,dirY[i][2] * invExtent.z);
+    }
+
+    // determine texture projection per vertex
+    Wz4MeshVertex *mv;
+    sFORALL(out->Vertices,mv)
+    {
+      sInt axis = mv->Normal.MaxAxisAbs();
+      sInt proj = axis*2 + (mv->Normal[axis] >= 0);
+
+      sVector30 relPos = mv->Pos - center;
+      mv->U0 = ((0.5f + (relPos ^ vecX[proj])) + uOffs[proj]) * 0.2f;
+      mv->V0 = 0.5f - (relPos ^ vecY[proj]);
+    }
+
+
+    // copy materials from first cluster of original mesh
+    Wz4MeshCluster *cl;
+    sFORALL(out->Clusters,cl)
+    {
+      cl->Mtrl->Release();
+      cl->Mtrl = in1->Clusters[0]->Mtrl;
+      cl->Mtrl->AddRef();
+    }
+  }
+}
+
+/**************************************************************************+*/
+
+operator Wz4Render LimitTransform "FR033LimitTransform" (?*Wz4Render)
+{
+  column = 0;
+  parameter
+  {
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNLimitTransform *node = new RNLimitTransform();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+

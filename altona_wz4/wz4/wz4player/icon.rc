@@ -1,0 +1,15 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+100 ICON "resources/icon.ico";
+
+200 ICON "resources/share_twitter.ico";
+201 ICON "resources/share_facebook.ico";
+202 ICON "resources/share_myspace.ico";
+203 ICON "resources/share_digg.ico";
+204 ICON "resources/share_stumbleupon.ico";
+

@@ -1,0 +1,32 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{91E5538A-BDF7-46e7-AB98-34F1BD4F49F8}";
+
+license altona;
+include "altona/main";
+
+create "debug_blank_shell";
+create "release_blank_shell";
+create "stripped_blank_shell";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+include "altona/main";
+
+file "main.?pp";
+file "doc.?pp";
+file "parse.cpp";
+file "output.cpp";
+file "wz4ops.mp.txt";
+file "wikitext.cpp";
+folder "test"
+{
+  file "test.txt" { config "*" { exclude; } }
+  file nonew "test.?pp" { config "*" { exclude; } }
+}

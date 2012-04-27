@@ -1,0 +1,20 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+operator ModShaderSampler Tex2D(Texture2D)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    color Test("rgb");
+  }
+  code
+  {
+  }
+}

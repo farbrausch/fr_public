@@ -1,0 +1,1208 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+priority = 1;
+
+code
+{
+#include "base/graphics.hpp"
+#include "wz4lib/gui.hpp"
+}
+header
+{
+#include "wz4lib/basic.hpp"
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   AnyType and GUI class types                                        ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type virtual AnyType : 0
+{
+  color = 0xffc0c0c0;
+  name = "any";
+  flags = notab;
+}
+
+type GroupType
+{
+  color = 0xffc0c0c0;
+  name = "Group";
+  flags = notab|render3d;
+  gui = base3d;
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    pi.DontPaintHandles++;
+
+    GroupType *me = (GroupType *) obj;
+    wObject *member;
+
+    sFORALL(me->Members,member)
+      Doc->Show(member,pi);
+
+    if(--pi.DontPaintHandles == 0)
+      pi.PaintHandles();
+  }
+}
+
+type TextObject
+{
+  color = 0xffc0c0c0;
+  name = "String";
+  flags = notab;
+  
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    TextObject *str = (TextObject *)obj;
+    if(!pi.Enable3D)
+    {
+      sGui->FixedFont->SetColor(sGC_TEXT,sGC_DOC);
+      sGui->FixedFont->Print(sF2P_MULTILINE|sF2P_LEFT|sF2P_OPAQUE,pi.Client,str->Text.Get());
+    }
+  }
+}
+
+operator TextObject Text()
+{
+  parameter
+  {
+    lines 5 string Text;
+  }
+  code
+  {
+    out->Text = cmd->Strings[0];
+  }
+}
+
+/*
+
+operator TextObject TextTest()
+{
+  parameter
+  {
+    char[20] start;
+    array
+    {
+      int x;
+      char[20] bla;
+    }
+  }
+  code
+  {
+    out->Text.Clear(); 
+    out->Text.PrintF(L"%q\n",para->start);
+    TextObjectArrayTextTest *ar = (TextObjectArrayTextTest *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      out->Text.PrintF(L"%d %q\n",ar->x,ar->bla);
+      ar++;
+    }
+  }
+
+}
+
+*/
+
+operator TextObject TextAdd(*?TextObject)
+{
+  code
+  {
+    for(sInt i=0;i<cmd->InputCount;i++)
+      out->Text.Print(cmd->GetInput<TextObject *>(i)->Text.Get());
+  }
+}
+
+operator TextObject TextExport(TextObject)
+{
+  parameter
+  {
+    fileout "Filename";
+  }
+  code
+  {
+    out->Text = in0->Text;
+    sSaveTextAnsi(cmd->Strings[0],in0->Text.Get());
+  }
+}
+
+/****************************************************************************/
+
+operator AnyType Nop(AnyType)
+{
+  column = 30;
+  flags = verticalresize|typefrominput;
+}
+
+operator AnyType Comment()
+{
+  column = 30;
+  flags = verticalresize|comment;
+  parameter
+  {
+    overbox overlabel lines 5 string Text;   
+    flags Color ("white|red|yellow|green|cyan|blue|pink|gray");
+  }
+  code { return 1; }
+}
+
+operator AnyType BlockHandles(AnyType)
+{
+  column = 30;
+  flags = blockhandles|typefrominput;
+}
+
+operator AnyType Dummy(AnyType)
+{
+  column = 30;
+  code { return 1; }
+  flags = hide;
+}
+
+operator AnyType DummyObj "Dummy" ()
+{
+  column = 30;
+  code { return 1; }
+}
+
+operator AnyType Store(AnyType)
+{
+  shortcut = 's';
+  column = 30;
+  flags = store|typefrominput;
+}
+
+operator AnyType Load(AnyType)
+{
+  shortcut = 'l';
+  flags = load|typefrominput;
+  parameter
+  {
+    link Link:0;
+  }
+  column = 30;
+}
+
+operator AnyType Group(*?AnyType)
+{
+  column = 30;
+  code { return 1; }
+}
+
+operator GroupType Group3D(*?AnyType)
+{
+  column = 30;
+  code
+  {
+    for(sInt i=0;i<cmd->InputCount;i++)
+      out->Add(cmd->GetInput<wObject*>(i));
+  }
+}
+
+operator AnyType Slow(AnyType)
+{
+  column = 30;
+  flags = slow|typefrominput;
+  
+  code 
+  { 
+    cmd->Output->Release();
+    cmd->Output = in0;
+    cmd->Output->AddRef();
+  }
+}
+
+operator AnyType UnknownOp()
+{
+  column = 30;
+  flags = hide;
+  code
+  {
+    return 0;
+  }
+}
+
+operator AnyType BlockChange(AnyType)
+{
+  column = 30;
+  flags = typefrominput|blockchange;
+  code
+  {
+    cmd->Output->Release();
+    cmd->Output = in0;
+    cmd->Output->AddRef();
+  }
+}
+
+operator AnyType Copy(AnyType)
+{
+  column = 30;
+  flags = typefrominput;
+  code
+  {
+    cmd->Output->Release();
+    cmd->Output = in0->Copy();
+    if(cmd->Output==0)
+    {
+      sDPrintF(L"could not create a copy of objecte from type %q\n",in0->Type->Symbol);
+      return 0;
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator AnyType Call(AnyType,*?AnyType)
+{
+  flags = call|typefrominput;
+  column = 30;
+  parameter
+  {
+    link Link:0;
+    flags Flags "Spread Variables" ("on|off");
+  }
+}
+
+operator AnyType CallWithInputLinks(AnyType,?AnyType,?AnyType,?AnyType,?AnyType)
+{
+  flags = call|typefrominput;
+  column = 30;
+  parameter
+  {
+    link Link:0;
+    link Link:1 (choose);
+    link Link:2 (choose);
+    link Link:3 (choose);
+    link Link:4 (choose);
+    flags Flags "Spread Variables" ("on|off");
+  }
+}
+
+operator AnyType Input()
+{
+  flags = input; 
+  column = 30;
+  parameter
+  {
+    int Input (0..255);
+  }
+}
+
+operator AnyType InjectGlobals(AnyType=AnyType Dummy,AnyType)
+{
+  column = 30;
+  flags = typefrominput;
+  parameter
+  {
+    link InjectFrom:1;
+  }
+}
+
+operator AnyType Loop(AnyType)
+{
+  column = 30;
+  flags = loop|typefrominput;
+  parameter
+  {
+    int Max "from 0 to n-1"(1..256)=4;
+    string Variable = "i";
+  }
+}
+
+operator AnyType EndLoop(AnyType)
+{
+  column = 30;
+  flags = endloop|typefrominput;
+}
+
+operator AnyType ShellSwitch(AnyType)
+{
+  column = 30;
+  flags = shellswitch|typefrominput;
+  parameter
+  {
+    flags Condition ("*8-|not");
+    continue flags Condition ("**Doc->ShellSwitchChoice"); 
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Textures and Bitmap                                                ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type virtual BitmapBase                  // virtual baseclass for all 2d texture generators
+{
+  flags = notab;
+  name = "Bitmap (base)";
+  gui = base2d;
+}
+
+type Texture2D                            // intermediate class for converting bitmaps into textures
+{
+  flags = notab|render3d;
+  gui = base2d;
+  name = "Texture2D";
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    sTextureBase *tex = ((Texture2D *) obj)->Texture;
+    if(tex)
+    {
+      pi.SetSizeTex2D(tex->SizeX,tex->SizeY);
+      pi.PaintTex2D(tex->CastTex2D());
+    }
+  }
+}
+
+operator Texture2D MakeTexture(BitmapBase)
+{
+  flags = conversion;
+  parameter
+  {
+    flags Format ("argb8888|a8|i8|DXT1|DXT1A|DXT3|DXT5");
+    flags Flags ("-|no mipmaps");
+  }
+  code
+  {
+    static sInt modes[] = 
+    { 
+      sTEX_ARGB8888,sTEX_A8,sTEX_I8,sTEX_DXT1,sTEX_DXT1A,sTEX_DXT3,sTEX_DXT5 
+    };
+
+    sInt flags = modes[para->Format]|sTEX_2D;
+    if(para->Flags & 1) flags |= sTEX_NOMIPMAPS;
+
+    out->ConvertFrom(in0,flags);
+    out->Atlas=in0->Atlas;
+    return 1;
+  }
+}
+
+
+operator Texture2D Export(Texture2D)
+{
+  column = 3;
+  flags = passinput | passoutput;
+
+  parameter
+  {
+    fileout Filename;
+  }
+
+  code
+  {
+    sSaveObject(cmd->Strings[0],out);
+    return 1;
+  }
+}
+
+operator Texture2D Import()
+{
+  column=3;
+
+  parameter
+  {
+    filein Filename("wz4tex");
+  }
+  code
+  {
+    const sChar *name = cmd->Strings[0];
+    return sLoadObject(name,out);
+  } 
+}
+
+
+
+/****************************************************************************/
+
+type virtual CubemapBase                  // virtual baseclass for all 2d texture generators
+{
+  flags = notab;
+  gui = base2d;
+  name = "Cubemap (base)";
+}
+
+type TextureCube                           // intermediate class for converting bitmaps into textures
+{
+  flags = notab|render3d;
+  gui = base2d;
+  name = "TextureCube";
+}
+
+operator TextureCube MakeCubeTex(CubemapBase)
+{
+  flags = conversion;
+  parameter
+  {
+    flags Format ("argb8888|a8|i8|DXT1|DXT1A|DXT3|DXT5");
+  }
+  code
+  {
+    static sInt modes[] = 
+    { 
+      sTEX_ARGB8888,sTEX_A8,sTEX_I8,sTEX_DXT1,sTEX_DXT1A,sTEX_DXT3,sTEX_DXT5 
+    };
+
+    out->ConvertFrom(in0,modes[para->Format]);
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh: something that can be put in a Scene                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// the interesting functions (Paint, Hit, ...) are implemented in the type class, because:
+// - wObject hirarchy may follow a different tree as wType hirarchy.
+
+
+type virtual MeshBase
+{
+  name = "Mesh (base)";
+  flags = notab|render3d;
+  gui = base3d;
+  extern virtual void BeginEngine(wPaintInfo &pi,sBool clear) {}
+  extern virtual void EndEngine(wPaintInfo &pi) {}
+  extern virtual void Paint(wObject *obj,wPaintInfo &pi,sMatrix34 *mat,sInt matcount) {}
+  extern virtual void Hit(wObject *obj,const sRay &,wHitInfo &info) { sClear(info); }
+  extern virtual void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat) {}
+  extern virtual void Show(wObject *obj,wPaintInfo &pi)
+  {
+    if(pi.Enable3D)
+    {
+      if(pi.Wireframe)
+      {
+        sSetTarget(sTargetPara(sST_CLEARALL,pi.BackColor,pi.Spec));
+        pi.View->SetTargetCurrent();
+        pi.View->SetZoom(pi.Zoom3D);
+        pi.View->Prepare();
+        sMatrix34 mat;
+        mat.Init();
+        Wireframe(obj,pi,mat);
+        pi.PaintHandles();
+      }
+      else
+      {
+        sMatrix34 mat;
+        mat.Init();
+        BeginEngine(pi,pi.ClearFirst);
+        pi.ClearFirst = sFALSE;
+        Paint(obj,pi,&mat,1);
+        EndEngine(pi);
+        pi.PaintHandles();
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Scene: a list of meshes with associated matrices                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type Scene
+{
+  color = 0xffffff40;
+  name = "Scene";
+  flags = render3d;
+  gui = base3d;
+  header
+  {
+  private:
+    MeshBaseType_ *LastEngine;
+  public:
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    if(pi.Wireframe)
+    {
+      sSetTarget(sTargetPara(pi.ClearFirst ? sST_CLEARALL : 0,pi.BackColor,pi.Spec));
+      pi.ClearFirst = sFALSE;
+
+      pi.View->SetTargetCurrent();
+      pi.View->SetZoom(pi.Zoom3D);
+      pi.View->Prepare();
+      sMatrix34 mat;
+      mat.Init();
+      Wireframe(obj,pi,mat);
+    }
+    else
+    {
+      SceneInstances *inst;
+      SceneInstance *mp;
+      LastEngine = 0;
+      SceneMatrices sm; sm.Seed();
+
+      ((Scene*)obj)->Recurse(&sm);
+
+      sInt maxcount = 1;
+      sFORALL(sm.Instances,inst)
+        maxcount = sMax(maxcount,inst->Matrices.GetCount());
+      sMatrix34 *mat = sALLOCSTACK(sMatrix34,maxcount);
+
+      sBool something = 0;
+      sFORALL(sm.Instances,inst)
+      {
+        if(inst->Object)
+        {
+          MeshBaseType_* mt = (MeshBaseType_ *)(inst->Object->Type);
+          SceneType->SetEngine(mt,pi);
+          sFORALL(inst->Matrices,mp)
+            mat[_i] = mp->Matrix;
+          mt->Paint(inst->Object,pi,mat,inst->Matrices.GetCount());
+          something = 1;
+        }
+      }
+      SetEngine(0,pi);
+      if(pi.ClearFirst && !something)
+      {
+        sSetTarget(sTargetPara(sST_CLEARALL,pi.BackColor,pi.Spec));
+        pi.ClearFirst = sFALSE;
+      }
+
+      sSetTarget(sTargetPara(0,0,pi.Spec));
+      pi.PaintHandles();
+    }
+  }
+  extern void SetEngine(MeshBaseType_ *engine,wPaintInfo &pi)
+  {
+    if(LastEngine!=engine)
+    {
+      if(LastEngine)
+      {
+        LastEngine->EndEngine(pi);
+        sMatrix34 mat;
+        mat.Init();
+        pi.View->UpdateModelMatrix(mat);
+      }
+      LastEngine = engine;
+      if(LastEngine)
+      {
+        LastEngine->BeginEngine(pi,pi.ClearFirst);
+        pi.ClearFirst = sFALSE;
+      }
+    }
+  }
+
+  extern void Hit(wObject *obj,const sRay &ray,wHitInfo &info)
+  {
+    if(obj->IsType(SceneType))
+    {
+      SceneInstances *inst;
+      SceneMatrices sm; sm.Seed();
+      wPaintInfo pi;
+      sClear(pi);
+
+      ((Scene*)obj)->Recurse(&sm);
+
+      sClear(info);
+      wHitInfo newinfo;
+      sFORALL(sm.Instances,inst)
+      {
+        if(inst->Object)
+        {
+          MeshBaseType_* mt = (MeshBaseType_ *)(inst->Object->Type);
+          SceneInstance *mp;
+          sFORALL(inst->Matrices,mp)
+          {
+            // should rotate ray by mp->Matrix here!
+            mt->Hit(inst->Object,ray,newinfo);
+            if(newinfo.Hit && (!info.Hit || newinfo.Dist<info.Dist))
+              info = newinfo;
+          }
+        }
+      }
+    }
+  }
+
+  extern void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat)
+  {
+    if(obj->IsType(SceneType))
+    {
+      SceneInstances *inst;
+      SceneMatrices sm; sm.Seed();
+
+      ((Scene*)obj)->Recurse(&sm);
+
+      sFORALL(sm.Instances,inst)
+      {
+        if(inst->Object)
+        {
+          MeshBaseType_* mt = (MeshBaseType_ *)(inst->Object->Type);
+          SceneInstance *mp;
+          sFORALL(inst->Matrices,mp)
+            mt->Wireframe(inst->Object,pi,mp->Matrix);
+        }
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Scene Add (*?Scene)
+{
+  code
+  {
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Scene *scene = cmd->GetInput<Scene *>(i);
+      if(scene)
+      {
+        out->Childs.AddTail(scene);
+        scene->AddRef();
+      }
+    } 
+    return 1;
+  }
+}
+
+operator Scene ConvertSceneNode (MeshBase)
+{
+  flags = conversion;
+  code
+  {
+    if(!in0->IsType(MeshBaseType))
+      return 0;
+
+    out->Node = (MeshBase *)in0;
+    in0->AddRef();
+    return 1;
+  }
+}
+
+operator Scene Node (MeshBase)
+{
+  parameter
+  {
+    flags "static shadows" LFlags ("-|cast:*30-|sky:*29-|cullbackfaces")=1;
+    continue flags "dynamic shadows" LFlags ("*2-|cast:*3-|receive");
+    int "nameid (0=unchanged)" NameId (0..0xffff hex)=0;
+    layout flags Lods ("-|change") = 0;
+    if(Lods)
+    {
+      flags HighLod("-|Low|Medium||High")=4;
+      flags MediumLod("-|Low|Medium||High")=2;
+      flags LowLod("-|Low|Medium||High")=1;
+    }
+  }
+  code
+  {
+    if(!in0->IsType(MeshBaseType))
+    {
+      cmd->SetError(L"Input needs to be a mesh of some kind.");
+      return 0;
+    }
+
+    out->Node = (MeshBase *)in0;
+    out->LightFlags = para->LFlags;
+    in0->AddRef();
+    out->NameId = para->NameId;
+    if(para->Lods)
+    {
+      out->LodMapping = 0;
+      if(!para->HighLod)
+        out->LodMapping &= ~0x00ff0000;
+      else
+        out->LodMapping |= (para->HighLod<<16);
+      if(!para->MediumLod)
+        out->LodMapping &= ~0x0000ff00;
+      else
+        out->LodMapping |= (para->MediumLod<<8);
+      if(!para->LowLod)
+        out->LodMapping &= ~0x000000ff;
+      else
+        out->LodMapping |= para->LowLod;
+    }
+    return 1;
+  }
+}
+
+operator Scene NameId (*?Scene)
+{
+  parameter
+  {
+    int "nameid (0=unchanged)" NameId (0..0xffff hex)=0;
+  }
+  code
+  {
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Scene *scene = cmd->GetInput<Scene *>(i);
+      if(scene)
+      {
+        out->Childs.AddTail(scene);
+        scene->AddRef();
+      }
+    } 
+    out->NameId = para->NameId;
+    return 1;
+  }
+}
+
+code
+{
+  class SceneSelectNameId : public Scene
+  {
+  public:
+    sInt Mode;
+    sInt CompareId;
+    SceneSelectNameId()
+    {
+      Mode = 0;
+      CompareId = 0;
+    }
+    void OpFilter(SceneMatrices *sm,sInt begin,sInt end)
+    {
+      SceneInstances *ss;
+      SceneInstance *si;
+      sFORALL(sm->Instances,ss)
+        ss->Temp = 0;
+      for(sInt i=begin;i<end;i++)
+      {
+        ss = sm->Instances[i];
+        sFORALL(ss->Matrices,si)
+          si->Temp = (si->NameId==CompareId);
+        if(Mode)
+          sRemTrue(ss->Matrices,&SceneInstance::Temp);
+        else
+          sRemFalse(ss->Matrices,&SceneInstance::Temp);
+        ss->Temp = (ss->Matrices.GetCount()==0);
+      }
+      sDeleteTrue(sm->Instances,&SceneInstances::Temp);
+    }
+  };
+}
+
+operator Scene SelectNameId (Scene)
+{
+  parameter
+  {
+    int "nameid (0=unchanged)" NameId (0..0xffff hex)=0;
+    flags Mode ("equal|not equal");
+  }
+  new = SceneSelectNameId;
+  code
+  {
+    out->Childs.AddTail(in0);
+    in0->AddRef();
+    out->DoFilter = 1;
+    out->CompareId = para->NameId;
+    out->Mode = para->Mode;
+  }
+}
+
+operator Scene Transform (*?Scene)
+{
+  shortcut = 't';
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rotate (-16..16 step 0.01) = 0;
+    float31 Translate (-65536..65536 step 0.01) = 0;
+    label "Edit";
+    action "Invert" (1);
+    action "Copy SRT" (2);
+    action "Paste SRT" (3);
+  }
+  code
+  {
+    sSRT srt;
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Translate;
+
+    srt.MakeMatrix(out->Transform);
+    out->DoTransform = 1;
+
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Scene *scene = cmd->GetInput<Scene *>(i);
+      if(scene)
+      {
+        out->Childs.AddTail(scene);
+        scene->AddRef();
+      }
+    } 
+    return 1;
+  }
+  actions
+  {
+    sSRT srt;
+    sString<256> str;
+    const sChar *clipStr;
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Translate;
+
+    switch(code)
+    {
+    case 1: // invert
+      srt.Invert();
+      break;
+
+    case 2: // copy transform
+      srt.ToString(str);
+      sSetClipboard(str);
+      break;
+
+    case 3: // paste transform
+      clipStr = sGetClipboard();
+      srt.FromString(clipStr);
+      delete[] clipStr;
+      break;
+
+    default:
+      return 0;
+    }
+
+    para->Scale = srt.Scale;
+    para->Rotate = srt.Rotate;
+    para->Translate = srt.Translate;
+    return 1;
+  }
+  handles
+  {
+    pi.Handle3D(op,1,para->Translate,wHM_PLANE);
+
+    sSRT srt;
+    sMatrix34 mat;
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Translate;
+    srt.MakeMatrix(mat);
+
+    pi.Transform3D(mat);
+  }
+}
+
+code
+{
+  class SceneMultiply : public Scene
+  {
+  public:
+    sInt Multiply;
+    sMatrix34 GroupTrans;
+    SceneMultiply()
+    {
+      Multiply = 2;
+    }
+    void OpTransform(SceneMatrices *sm)
+    {
+      sMatrix34 mat;
+      mat.Init();
+      for(sInt i=0;i<Multiply;i++)
+      {
+        TransformAdd(sm,mat * GroupTrans);
+        mat = mat * Transform;
+      }
+    }
+  };
+}
+
+operator Scene Multiply (*?Scene)
+{
+  shortcut = 'm';
+  parameter
+  {
+    group "Group Transform";
+    float31 Scale0:10 (-1024..1024 step 0.01) = 1;
+    float30 Rotate0:13 (-16..16 step 0.01) = 0;
+    float31 Translate0:16 (-65536..65536 step 0.01) = 0;
+    group "Multiply Transform";
+    float31 Scale:0 (-1024..1024 step 0.01) = 1;
+    float30 Rotate:3 (-16..16 step 0.001) = 0;
+    float31 Translate:6 (-65536..65536 step 0.01) = 0;
+    int Count:9 (1..1024) = 2;
+  }
+  new = SceneMultiply;
+  code
+  {
+    sSRT srt;
+    srt.Scale = para->Scale0;
+    srt.Rotate = para->Rotate0;
+    srt.Translate = para->Translate0;
+    srt.MakeMatrix(out->GroupTrans);
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rotate;
+    srt.Translate = para->Translate;
+    srt.MakeMatrix(out->Transform);
+
+    out->DoTransform = 1;
+    out->Multiply = para->Count;
+
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Scene *scene = cmd->GetInput<Scene *>(i);
+      if(scene)
+      {
+        out->Childs.AddTail(scene);
+        scene->AddRef();
+      }
+    } 
+    return 1;
+  }
+
+  handles
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    srt.Scale = para->Scale0;
+    srt.Rotate = para->Rotate0;
+    srt.Translate = para->Translate0;
+    srt.MakeMatrix(mat);
+
+    pi.Handle3D(op,1,para->Translate0,wHM_PLANE);
+    pi.Transform3D(mat);
+    pi.Handle3D(op,2,para->Translate,wHM_PLANE);
+//    pi.Line3D(para->Translate,helper->Pos);
+  }
+}
+
+/****************************************************************************/
+
+code
+{
+  extern void ProgressPaint(sInt count,sInt max);
+}
+
+type ScreenshotProxy
+{
+  flags = render3d|notab;
+  gui = base3d;
+//  color = 0xffffff00;
+
+  header
+  {
+    void Show(wObject *obj,wPaintInfo &pi);
+  }
+}
+
+operator ScreenshotProxy Screenshot(AnyType)
+{
+//  tab = Scene;
+//  column = 2;
+  parameter
+  {
+    strobe MakeScreenshot ("-|Cheese");
+    group "Camera";
+    layout flags Mode "Mode" ("rotate|target")=32;
+    action CopyCam (1);
+    float30 Rotate (-16..16 step 0.01);
+    float31 Position (-1024..1024 step 0.01);
+    if((Mode&15)==1)
+      float31 Target (-1024..1024 step 0.01);
+    float Zoom (0..256 step 0.01) = 1.7;
+
+    group "Output";
+    continue layout flags Mode "Size" ("*4window|keep aspect|as specified:*6-|AVI");
+    label Resolution;
+    nolabel int SizeX(16..8192 step 16) = 800;
+    nolabel int SizeY(16..8192 step 16) = 600;
+    nolabel flags Multisample("-|multisample")=0;
+    fileout SaveAs = "c:/temp/shot.bmp";
+
+    if (Mode&0x40)
+    {
+      group "Render AVI";
+      float StartTime "Start time" (0..60000 step 1)=0;
+      nolabel layout flags TimeBase ("seconds|beats");
+      float EndTime "End time" (0..60000 step 1)=60;
+      float FPS "Frames/sec" (0.01 .. 1200 step 1) = 30;
+    }
+  }
+  code
+  {
+    out->Root = in0;
+    in0->AddRef();
+    switch(para->Mode&15)
+    {
+    default:
+      out->View.Camera.EulerXYZ(para->Rotate.x*sPI2F,para->Rotate.y*sPI2F,para->Rotate.z*sPI2F);
+      out->View.Camera.l = para->Position;
+      break;
+    case 1:
+      out->View.Camera.LookAt(para->Target,para->Position);
+      out->View.Camera.l = para->Position;
+      break;
+    }
+    out->Zoom = para->Zoom;
+    out->SizeX = para->SizeX;
+    out->SizeY = para->SizeY;
+    out->Flags = para->Mode;
+    out->Multisample = para->Multisample;
+    if (para->TimeBase&1)
+    {
+      out->StartTime = sF32(Doc->BeatsToMilliseconds(sInt(65536*para->StartTime+0.5f)))/1000.0f;
+      out->EndTime = sF32(Doc->BeatsToMilliseconds(sInt(65536*para->EndTime+0.5f)))/1000.0f;
+    }
+    else
+    {
+      out->StartTime = para->StartTime;
+      out->EndTime = para->EndTime;
+    }
+    out->FPS = para->FPS;
+    if(cmd->Op)
+      out->Strobe = cmd->Op->Strobe;
+    out->SaveName = cmd->Strings[0];
+  }
+
+  actions
+  {
+    if(code==1)
+    {
+      para->Zoom = Doc->LastView.ZoomY;
+
+      sMatrix34 mat = Doc->LastView.Camera;
+      para->Position = mat.l;
+      switch(para->Mode&0x0f)
+      {
+      case 0:
+        mat.FindEulerXYZ2(para->Rotate.x,para->Rotate.y,para->Rotate.z);
+        para->Rotate *= 1.0f/sPI2F;
+        break;
+      case 1:
+        para->Target = mat.l+mat.k*10;
+        break;
+      }
+      Doc->Change(op);
+      App->ChangeDoc();
+      return 1;
+    }
+    else if (code==2)
+    {
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+}
+
+/****************************************************************************/
+
+type UnitTest
+{
+  name = "UnitTest";
+  flags = notab;
+  gui = base2d;
+
+  header
+  {
+    void Show(wObject *obj,wPaintInfo &pi);
+  }
+}
+
+operator UnitTest UnitTestAdd(*?UnitTest)
+{
+  code
+  {
+    out->Errors = 0;
+    out->Total = 0;
+    out->Skipped = 0;
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      UnitTest *ut = cmd->GetInput<UnitTest*>(i);
+      out->Errors += ut->Errors;
+      out->Total += ut->Total;
+      out->Skipped += ut->Skipped;
+    }
+  }
+}
+
+operator UnitTest UnitTestScene(Scene)
+{
+  tab = Scene;
+  parameter
+  {
+    fileout TestName;
+    flags Flags "Always Pass" ("-|compare:*1-|cross compare");
+
+    group "Camera";
+    float30 Rotate (-16..16 step 0.01);
+    float Distance(-100..1024 step 0.01)=5;
+    float Zoom (0..256 step 0.01) = 1.7;
+
+    group "Output";
+    label "Size";
+    nolabel flags SizeX (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    nolabel flags SizeY (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    color ClearColor ("rgba");
+  }
+  code
+  {
+    sInt xs = 1<<para->SizeX;
+    sInt ys = 1<<para->SizeY;
+
+    sInt tflags = sTEX_2D|sTEX_RENDERTARGET|sTEX_NOMIPMAPS;
+    sTexture2D *rt = new sTexture2D(xs,ys,tflags|sTEX_ARGB8888);
+    sTexture2D *db = new sTexture2D(xs,ys,tflags|sTEX_DEPTH24NOREAD);
+
+    sRender3DBegin();
+
+    wPaintInfo pi;
+    sViewport view;
+
+
+
+    pi.Spec.Init(rt,db);
+    pi.Spec.Aspect = sF32(pi.Spec.Window.SizeX())/pi.Spec.Window.SizeY();
+
+    view.Camera.EulerXYZ(para->Rotate.x*sPI2F,para->Rotate.y*sPI2F,para->Rotate.z*sPI2F);
+    view.Camera.l = sVector31(view.Camera.k*-para->Distance);
+    view.SetTarget(pi.Spec);
+    view.SetZoom(para->Zoom);
+    view.Prepare();
+    pi.View = &view;
+    sMaterialEnv env;
+    pi.Env = &env;
+
+
+    pi.BackColor = para->ClearColor;
+
+    sSetTarget(sTargetPara(sST_CLEARALL,pi.BackColor,pi.Spec)); // clear the actual rendertarget
+
+
+    Doc->Show(in0,pi);
+    sResolveTarget();
+
+    sImage img(xs,ys);
+    const sU8 *data;
+    sS32 pitch;
+    sTextureFlags flags;
+    sBeginReadTexture(data,pitch,flags,rt);
+    sU32 *dest = img.Data;
+    for(sInt y=0;y<ys;y++)
+    {
+      sCopyMem(dest,data,xs*sizeof(sU32));
+      dest += xs;
+      data += pitch;
+    }
+    sEndReadTexture();
+    sRender3DEnd(0);
+
+    delete rt;
+    delete db;
+
+    return out->Test(img,cmd->Strings[0],para->Flags);
+  }
+}
+
+
+/****************************************************************************/

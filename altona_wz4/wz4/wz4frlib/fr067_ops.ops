@@ -1,0 +1,80 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/fr067.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+
+operator Wz4Render FR067_IsoSplash(Wz4Mtrl,?Wz4Mtrl,?Wz4Mtrl,?Wz4Mtrl)
+{
+  column = 1;
+  parameter
+  {
+    group "Render";
+    int LightEnv(0..15)=0;
+    int Renderpass(-127..127);
+    flags Multithreading("-|limited");
+    group "para";
+    anim float IsoValue(0..16 step 0.01) = 0.5;
+    flags OctreeDivisions(" 0| 1| 2| 3| 4| 5| 6| 7")=2;
+    float GridSize(0..16 step 0.125) = 4;
+
+    group "shape";
+    anim float SphereAmp(-256..256 step 0.02) = 0.0;
+    anim float30 SphereDirections(0.125..8 step 0.02) = 1.0;
+    anim float CubeAmp(-256..256 step 0.02) = 0.0;
+    anim float30 CubeDirections(0.125..8 step 0.02) = 1.0;
+    anim float NoiseAmp1(-1024..1024 step 0.02) = 0.0;
+    anim float30 NoiseFreq1(0..1024 step 0.02) = 1.0;
+    anim float30 NoisePhase1(-1024..1024 step 0.02) = 0.0;
+    anim int NoiseSeed1(0..255) = 0;
+
+    group "rubber";
+    anim float30 Rot(-16..16 step 0.01);
+    anim float30 Rubber(-16..16 step 0.001);
+    if(0) flags RubberToNoise("off|on")=1;
+    anim float QuickOutSaveGuard(0..16 step 0.01) = 0.0;
+
+    group "misc";
+
+    anim float PolarAmp(-256..256 step 0.02);
+    anim float PolarCenter(-256..256 step 0.02);
+    anim float PolarY(-256..256 step 0.02);
+    anim float PolarXZ(-256..256 step 0.02);
+    anim float PolarCenterAmount(-256..256 step 0.02);
+    anim int Shells "Shells (per material)" [4](1..256) = 1;
+
+    anim float NoiseAmp2(-1024..1024 step 0.02) = 0.0;
+    anim float30 NoiseFreq2(0..1024 step 0.02) = 1.0;
+    anim float30 NoisePhase2(-1024..1024 step 0.02) = 0.0;
+    anim int NoiseSeed2(0..255) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNFR067_IsoSplash *node = new RNFR067_IsoSplash();
+    node->ParaBase = node->Para = *para;
+    node->Mtrl[0] = in0; in0->AddRef();
+    node->Mtrl[1] = in1; if(in1) in1->AddRef();
+    node->Mtrl[2] = in2; if(in2) in2->AddRef();
+    node->Mtrl[3] = in3; if(in3) in3->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}

@@ -1,0 +1,30 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{A36D3ED2-7C93-4eb8-98C3-77DBA9ADDAEB}";
+
+license altona;
+include "altona/main";
+library;
+
+depend "altona/main/base";
+
+folder "modules"
+{
+  if(sSDK_DX9 | sSDK_DX11) file "compile_dx.cpp";
+  if(!sSDK_CG) file "compile_cg.cpp";
+  if(sSDK_CG) file "compile_cg.cpp" { config "*_linux*" { link "Cg"; }}
+}
+folder "asc"
+{
+  file "asc_doc.?pp";
+  file "asc_parser.cpp";
+  file "asc_output.cpp";
+}
+file "shaderdis.?pp";
+file "shadercomp.hpp";
+file "shadercomp.mp.txt";

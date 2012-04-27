@@ -1,0 +1,34 @@
+guid "{32F4A637-1097-40b1-8D78-C4D8917E64B7}";
+
+license altona;
+include "altona/main";
+library;
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+folder "system"
+{
+  file "gui.mp.txt";
+  file "gui.?pp";
+  file "manager.?pp";
+  file "window.?pp";
+  file "wire.?pp";
+}
+folder "general"
+{
+  file "borders.?pp";
+  file "controls.?pp";
+  file "dialog.?pp";
+  file "frames.?pp";
+}
+folder "special"
+{
+  file "3dwindow.?pp";
+  file "listwindow.?pp";
+  file "overlapped.?pp";
+  file "textwindow.?pp";
+  file "timeline.?pp";
+  file "color.?pp";
+  file "tabs.?pp";
+}

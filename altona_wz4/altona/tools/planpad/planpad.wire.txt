@@ -1,0 +1,235 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+window View
+{
+//  drag Scroll MMB;
+  drag Click LMB;
+  drag Click RMB;
+  drag Click MMB;
+}
+
+menu Hidden
+{
+  item main.Exit ESCAPE|SHIFT|GLOBAL;
+}
+
+menu File
+{
+  item main.Clear;
+  item main.Open "Open...";
+  item main.Save "Save" 's'|CTRL|GLOBAL;
+  item main.SaveAs "Save as...";
+  item main.OpenInclude "Open Reference..." 'r'|CTRL|GLOBAL;
+  item main.OpenDict "Open User Dictionary..." 'u'|CTRL|GLOBAL;
+  item main.RemWriteProtect "Remove Write Protection";
+  check main.SaveAsUTF8;
+  spacer;
+  item main.Switch0 "Edit" F1|GLOBAL;
+  item main.Switch1 "View" F2|GLOBAL;
+  item main.Switch2 "VSplit" F4|GLOBAL;
+  item main.Switch3 "HSplit" F5|GLOBAL;
+  item main.Switch4 "VSplit Reverse" F6|GLOBAL;
+  spacer;
+  item main.Undo "Undo all changes";
+  item main.NewTab "New Tab" 't'|CTRL|GLOBAL;
+  item main.StartIndex "Original Index";
+  item main.LoadDict "Reload Dictionaries";
+  spacer;
+  item main.HTML "HTML";
+  item main.PDF "PDF";
+  spacer;
+  item main.ExitDiscard "Exit and Discard all changes";
+  item main.Exit "Exit and Save" F4|ALT|GLOBAL;
+}
+menu View
+{
+  check main.FontSize;
+  spacer;
+  check main.EditFontSize;
+  spacer;
+  check main.PageMode;
+  check main.RightBorder;
+  check main.ChapterFormfeeds;
+  spacer;
+  check View.DebugBoxes;
+  check main.DebugUndo;
+  check main.DebugTimer;
+  spacer;
+  item main.Find "Incremental Seach" 'f'|CTRL|GLOBAL;
+  item main.FindNext "Find Next" F3|GLOBAL;
+  item main.FindPrev "Find Prev" F3|SHIFT|GLOBAL;
+}
+
+
+screen "Edit"
+{
+  horizontal
+  {
+    border Tabs;
+    toolborder 
+    { 
+      menu File; 
+      menu View; 
+      label "  "; 
+      window Back;
+      button main.Index "Index"; 
+      button main.HTML;
+      button main.PDF;
+      label "  Find:"; 
+      window FindString;
+      window FindDir;
+      label "  "; 
+      button main.MarkI "I";
+      button main.MarkB "B";
+      button main.MarkU "U";
+      button main.MarkS "S";
+      button main.MarkR "R";
+      button main.RemoveMark "-";
+      label "  "; 
+      screenswitch; 
+    }
+    window Text;
+  }
+}
+
+screen "View"
+{
+  horizontal
+  {
+    border Tabs;
+    toolborder 
+    { 
+      menu File; 
+      menu View; 
+      label "  "; 
+      window Back;
+      button main.Index "Index"; 
+      button main.HTML;
+      button main.PDF;
+      label "  Find:"; 
+      window FindString;
+      window FindDir;
+      label "  "; 
+      button main.MarkI "I";
+      button main.MarkB "B";
+      button main.MarkU "U";
+      button main.MarkS "S";
+      button main.MarkR "R";
+      button main.RemoveMark "-";
+      label "  "; 
+      screenswitch; 
+    }
+    window View;
+  }
+}
+
+screen "VSplit"
+{
+  horizontal
+  {
+    border Tabs;
+    toolborder 
+    { 
+      menu File; 
+      menu View; 
+      label "  "; 
+      window Back;
+      button main.Index "Index"; 
+      button main.HTML;
+      button main.PDF;
+      label "  Find:"; 
+      window FindString;
+      window FindDir;
+      label "  "; 
+      button main.MarkI "I";
+      button main.MarkB "B";
+      button main.MarkU "U";
+      button main.MarkS "S";
+      button main.MarkR "R";
+      button main.RemoveMark "-";
+      label "  "; 
+      screenswitch; 
+    }
+    vertical prop
+    {
+      window View;
+      window Text -500 right;
+    }
+  }
+}
+
+screen "HSplit"
+{
+  horizontal
+  {
+    border Tabs;
+    toolborder 
+    { 
+      menu File; 
+      menu View; 
+      label "  "; 
+      window Back;
+      button main.Index "Index"; 
+      button main.HTML;
+      button main.PDF;
+      label "  Find:"; 
+      window FindString;
+      window FindDir;
+      label "  "; 
+      button main.MarkI "I";
+      button main.MarkB "B";
+      button main.MarkU "U";
+      button main.MarkS "S";
+      button main.MarkR "R";
+      button main.RemoveMark "-";
+      label "  "; 
+      screenswitch; 
+    }
+    horizontal prop
+    {
+      window View;
+      window Text -500 right;
+    }
+  }
+}
+
+screen "VSplit Reverse"
+{
+  horizontal
+  {
+    border Tabs;
+    toolborder 
+    { 
+      menu File; 
+      menu View; 
+      label "  "; 
+      window Back;
+      button main.Index "Index"; 
+      button main.HTML;
+      button main.PDF;
+      label "  Find:"; 
+      window FindString;
+      window FindDir;
+      label "  "; 
+      button main.MarkI "I";
+      button main.MarkB "B";
+      button main.MarkU "U";
+      button main.MarkS "S";
+      button main.MarkR "R";
+      button main.RemoveMark "-";
+      label "  "; 
+      screenswitch; 
+    }
+    vertical prop
+    {
+      window Text;
+      window View -500 right;
+    }
+  }
+}
+

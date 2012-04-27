@@ -1,0 +1,116 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/basic_ops.hpp"
+#include "wz4_anim.hpp"
+}
+
+type Wz4Channel 
+{
+  name = "Channel";
+  flags = notab;
+}
+
+type Wz4Skeleton : MeshBase
+{
+  name = "Skeleton";
+  flags = notab|render3d;
+  gui = base3d;
+
+  extern void BeginEngine(wPaintInfo &pi,sBool clear)
+  {
+    sSetTarget(sTargetPara(clear ? sST_CLEARALL : 0,pi.BackColor,pi.Spec));
+    pi.View->SetTargetCurrent();
+    pi.View->SetZoom(pi.Zoom3D);
+    pi.View->Prepare();
+  }
+
+  extern void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat_)
+  {
+    sVertexBasic *vp;
+    sVector30 a,b,c;
+    Wz4Skeleton *skel = (Wz4Skeleton *)obj;
+
+    sInt count = skel->Joints.GetCount();
+    if(count>0)
+    {
+      sF32 time = (sGetTime()%10000)/10000.0f;
+      sMatrix34 *mat = sALLOCSTACK(sMatrix34,count);
+      skel->Evaluate(time,mat);
+
+      sCBuffer<sSimpleMaterialPara> cb;
+      cb.Data->Set(*pi.View);
+      pi.FlatMtrl->Set(&cb);
+      pi.LineGeo->BeginLoadVB(count*8,sGD_STREAM,(void **)&vp);
+      for(sInt i=0;i<count;i++)
+      {
+        sInt j=skel->Joints[i].Parent;
+        if(j==-1) j=i;
+
+        a = mat[i].i * 0.125f;
+        b = mat[i].j * 0.125f;
+        c = mat[i].k * 0.125f;
+
+        vp[0].Init(mat[i].l+a,~0);
+        vp[1].Init(mat[i].l-a,~0);
+        vp[2].Init(mat[i].l+b,~0);
+        vp[3].Init(mat[i].l-b,~0);
+        vp[4].Init(mat[i].l+c,~0);
+        vp[5].Init(mat[i].l-c,~0);
+        vp[6].Init(mat[i].l,0xffffff00);
+        vp[7].Init(mat[j].l,0xffffff00);
+        vp+=8;
+      }
+      pi.LineGeo->EndLoadVB();
+      pi.LineGeo->Draw();
+    }
+  }
+}
+
+operator Wz4Skeleton BoneChain()
+{
+  parameter
+  {
+    float31 Start(-1024..1024 step 0.01);
+    float31 End(-1024..1024 step 0.01);
+    int Count(2..16)=5;
+  }
+
+  code
+  {
+    Wz4AnimJoint *j;
+    Wz4ChannelConstant *ch;
+    out->Joints.AddMany(para->Count);
+    sFORALL(out->Joints,j)
+    {
+      sF32 f = sF32(_i)/(para->Count-1);
+      ch = new Wz4ChannelConstant;
+      ch->Start.Trans.Fade(f,para->Start,para->End);
+
+      j->Init();
+      j->Channel = ch;
+    }
+    return 1;
+  }
+}
+/*
+operator Wz4Skeleton ImportSkeleton()
+{
+  flags = hide;
+
+  code
+  {
+    cmd->Output->Release();
+    cmd->Output = (Wz4Skeleton *) cmd->ImportPtr;
+    cmd->Output->AddRef();
+    return 1;
+  }
+
+}
+*/

@@ -1,0 +1,20 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{E0F7785C-DA64-4422-B9D1-B6C780C802A9}";
+
+license altona;
+
+include "altona/main";
+
+depend "altona/main/base";
+
+create "debug_dx9";
+create "release_dx9";
+
+file "main.cpp";
+file "intersect_perf.mp.txt";

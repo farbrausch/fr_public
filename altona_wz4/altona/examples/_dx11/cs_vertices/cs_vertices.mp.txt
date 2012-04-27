@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{0D3367C7-E1CE-462d-A5CA-6D86A3304B37}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "shader.asc";
+file nonew "shader.?pp";
+file "cs_vertices.mp.txt";

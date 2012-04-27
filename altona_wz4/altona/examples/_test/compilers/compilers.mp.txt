@@ -1,0 +1,21 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{8A7641AB-3755-4b39-99E9-34604A9C16AC}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9_shell";
+create "debugfast_dx9_shell";
+create "release_dx9_shell";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "compilers.mp.txt";

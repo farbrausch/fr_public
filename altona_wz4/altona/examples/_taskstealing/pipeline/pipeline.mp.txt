@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{942317E3-B1BB-4a48-8B6C-09416B456836}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/extra";
+
+file "main.?pp";
+file "shaders.asc";
+file nonew "shaders.?pp";
+file "pipeline.mp.txt";
+

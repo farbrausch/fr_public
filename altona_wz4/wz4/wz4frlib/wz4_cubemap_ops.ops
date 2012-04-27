@@ -1,0 +1,347 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4_cubemap.hpp"
+#include "util/image.hpp"
+#include "wz4lib/basic_ops.hpp"
+}
+
+code
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4_bitmap_ops.hpp"
+}
+
+
+priority = 0x11;
+
+type Wz4Cubemap : CubemapBase
+{
+  color = 0xffa06060;
+  name = "wz4 Cubemap";
+  gui = base2d|mode;
+  flags = uncache;
+
+  header
+  {
+    void Init();
+    void Exit();
+    void Show(wObject *obj,wPaintInfo &pi);
+    sImage *Buffer[6];
+  }
+  code
+  {
+    void Wz4CubemapType_::Init()
+    {
+      for(sInt i=0;i<6;i++)
+        Buffer[i] = new sImage;
+    }
+    void Wz4CubemapType_::Exit()
+    {
+      for(sInt i=0;i<6;i++)
+        delete Buffer[i];
+    }
+    void Wz4CubemapType_::Show(wObject *obj,wPaintInfo &pi)
+    {
+      sRect r;
+      sInt s,x0,y0;
+      const static sInt pos[] = { 0x12,0x10,0x01,0x21,0x11,0x13 };
+
+      if(obj && obj->Type==Wz4CubemapType)
+      {
+        ((Wz4Cubemap *)obj)->CopyTo(Buffer);
+        s = Buffer[0]->SizeX;
+        x0 = pi.Client.x0+10;
+        y0 = pi.Client.y0+10;
+
+        sClipPush();
+        for(sInt i=0;i<6;i++)
+        {
+          r.x0 = x0 + (pos[i]&15) * s;
+          r.y0 = y0 + (pos[i]>>4) * s;
+          r.x1 = r.x0 + s;
+          r.y1 = r.y0 + s;
+          sBlit2D(Buffer[i]->Data,Buffer[i]->SizeX,r);
+          sClipExclude(r);
+        }
+        sRect2D(pi.Client,sGC_BACK);
+        sClipPop();
+      }
+      else
+      {
+        sRect2D(pi.Client,sGC_BACK);
+      }
+    }  
+  }
+}
+
+operator Wz4Cubemap Flat ()
+{
+  parameter
+  {
+    flags Size (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    color Color ("rgba") = 0xff000000;
+  }
+
+  code
+  {
+    Pixel col; col.Init(para->Color);
+    out->Init(1<<para->Size);
+    out->Flat(col);
+    return 1;
+  }
+}
+
+operator Wz4Cubemap Combine(*Wz4Cubemap)
+{
+  shortcut = 'a';
+  column = 2;
+  parameter
+  {
+    flags Mode ("add|sub|mul c|min|max|set alpha|pre-alpha|over|multiply|screen|darken|lighten");
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    for(sInt i=1;i<cmd->InputCount;i++)
+    {
+      Wz4Cubemap *in = cmd->GetInput<Wz4Cubemap *>(i);
+      if(out->Size!=in->Size)
+        return 0;
+      out->Binary(out,in,(Wz4Cubemap::CombineOp)para->Mode);
+    }
+    return 1;
+  }
+}
+
+
+operator Wz4Cubemap Noise(Wz4Bitmap = Wz4Bitmap Gradient2)
+{
+  shortcut = 'n';
+  parameter
+  {
+    flags Size (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    int Frequency (0..16);
+    int Octaves (1..16) = 1;
+    float Fadeoff (-16..16 step 0.01) = 1;
+    int Seed (0..255);
+    flags Mode("-|abs:*1-|normalize"/*":*2-|bandlimit"*/);
+  }
+  code
+  {
+    out->Init(1<<para->Size);
+    out->Noise(&in0->Image,para->Frequency,para->Octaves,para->Fadeoff,para->Seed,para->Mode);
+
+    return 1;
+  }
+}
+
+
+operator Wz4Cubemap HSCB(Wz4Cubemap)
+{
+  shortcut = 'h';
+  parameter
+  {
+    float Hue (-4..4 step 0.001) = 0;
+    float Saturation (-4..4 step 0.001) = 1;
+    float Contrast (-16..16 step 0.001) = 1;
+    float Brightness (-16..16 step 0.001) = 0;
+  }
+  code
+  {
+    // ---- determine matrix
+    sMatrix34 m,m2;
+
+    // hue shift (rotation around gray axis)
+    m.RotateAxis(sVector30(1,1,1),para->Hue * sPI2F);
+
+    // saturation (contract towards gray)
+    static const sF32 r_weight = 0.3086f;
+    static const sF32 g_weight = 0.6094f;
+    static const sF32 b_weight = 0.0820f;
+
+    m2.Init();
+    m2.i = (1.0f - para->Saturation) * sVector30(r_weight,r_weight,r_weight); 
+    m2.j = (1.0f - para->Saturation) * sVector30(g_weight,g_weight,g_weight);
+    m2.k = (1.0f - para->Saturation) * sVector30(b_weight,b_weight,b_weight);
+    m2.i.x += para->Saturation;
+    m2.j.y += para->Saturation;
+    m2.k.z += para->Saturation;
+    m *= m2;
+
+    // contrast+brightness
+    m2.Init();
+    m2.Scale(para->Contrast,para->Contrast,para->Contrast);
+    sF32 shift = 0.5f * (1.0f - para->Contrast) + para->Brightness;
+    m2.l = sVector31(shift,shift,shift);
+    m *= m2;
+
+    // apply
+    Matrix45 m45;
+
+    m45[0][0] = m.i.x;
+    m45[0][1] = m.j.x;
+    m45[0][2] = m.k.x;
+    m45[0][3] = m.l.x;
+    m45[0][4] = 0;
+    m45[1][0] = m.i.y;
+    m45[1][1] = m.j.y;
+    m45[1][2] = m.k.y;
+    m45[1][3] = m.l.y;
+    m45[1][4] = 0;
+    m45[2][0] = m.i.z;
+    m45[2][1] = m.j.z;
+    m45[2][2] = m.k.z;
+    m45[2][3] = m.l.z;
+    m45[2][4] = 0;
+    m45[3][0] = 0;
+    m45[3][1] = 0;
+    m45[3][2] = 0;
+    m45[3][3] = 1;
+    m45[3][4] = 0;
+
+    out->Init(in0->Size);
+    out->ColorMatrixTransform(in0,m45,1);
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Cubemap Color(Wz4Cubemap)
+{
+  shortcut = 'h';
+  parameter
+  {
+    color Color0 ("rgba") = 0xff000000;
+    color Color1 ("rgba") = 0xffffffff;
+    flags Flags ("range|gray|contrast");
+  }
+  code
+  {
+    Matrix45 m;
+    sVector4 c0,c1;
+
+    sClear(m);
+    c0.InitColor(para->Color0);
+    c1.InitColor(para->Color1);
+
+    switch(para->Flags & 3)
+    {
+    case 0:
+      m[0][0] = c1.x-c0.x;
+      m[1][1] = c1.y-c0.y;
+      m[2][2] = c1.z-c0.z;
+      m[3][3] = c1.w-c0.w;
+      m[0][4] = c0.x;
+      m[1][4] = c0.y;
+      m[2][4] = c0.z;
+      m[3][4] = c0.w;
+      break;
+    case 1:
+      m[0][0] = m[0][1] = m[0][2] = (c1.x-c0.x)/3;
+      m[1][0] = m[1][1] = m[1][2] = (c1.y-c0.y)/3;
+      m[2][0] = m[2][1] = m[2][2] = (c1.z-c0.z)/3;
+      m[3][3] = c1.w-c0.w;
+      m[0][4] = c0.x;
+      m[1][4] = c0.y;
+      m[2][4] = c0.z;
+      m[3][4] = c0.w;
+      break;
+    case 2:
+      m[0][0] = 1/sClamp<sF32>((c1.x-c0.x),1/127.0f,127);
+      m[1][1] = 1/sClamp<sF32>((c1.y-c0.y),1/127.0f,127);
+      m[2][2] = 1/sClamp<sF32>((c1.z-c0.z),1/127.0f,127);
+      m[3][3] = 1;
+      m[0][4] = -(c0.x*m[0][0]);
+      m[1][4] = -(c0.y*m[1][1]);
+      m[2][4] = -(c0.z*m[2][2]);
+      m[3][4] = 0;
+      break;
+    }
+
+    // apply
+
+    out->Init(in0->Size);
+    out->ColorMatrixTransform(in0,m,1);
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Cubemap Glow(Wz4Cubemap = Wz4Cubemap Flat,Wz4Bitmap = Wz4Bitmap GradientP)
+{
+  shortcut = 'g';
+  parameter
+  {
+    float Dir[2] (-4..4 step 0.01);
+    float Radius (0..1 step 0.01) = 1;
+  }
+  code
+  {
+    sMatrix34 mat;
+    mat.EulerXYZ(para->Dir[0]*sPI2,para->Dir[1]*sPI2,0);
+    out->Glow(in0,&in1->Image,mat.k,para->Radius);
+    return 1;
+  }
+}
+
+/**************************************************************************+*/
+
+code
+{
+  void MakePower(GenTexture &img,sInt max,sU32 col0,sU32 col1,sF32 pow);
+}
+
+operator Wz4Cubemap Gamma (Wz4Cubemap)
+{
+  parameter
+  {
+    float Gamma (0..256 step 0.01) = 1;
+  }
+
+  code
+  {
+    GenTexture ir,ig,ib;
+
+    MakePower(ir,1024,0xff000000,0xffff0000,para->Gamma);
+    MakePower(ig,1024,0xff000000,0xff00ff00,para->Gamma);
+    MakePower(ib,1024,0xff000000,0xff0000ff,para->Gamma);
+    out->Init(in0->Size);
+    out->ColorRemap(in0,&ir,&ig,&ib);
+    return 1;
+  }
+}
+
+/**************************************************************************+*/
+
+
+operator Wz4Cubemap Rotate(Wz4Cubemap)
+{
+  parameter 
+  {
+    float31 Rotate(-64..64 step 0.01);
+    float31 Translate(-64..64 step 0.01);
+  }
+
+  code
+  {
+    sMatrix34 mat;
+    mat.EulerXYZ(para->Rotate.x*sPI2F,para->Rotate.y*sPI2F,para->Rotate.z*sPI2F);
+    mat.l = para->Translate;
+    out->Init(in0->Size);
+    out->CoordMatrixTransform(in0,mat);
+    return 1;
+  }
+}

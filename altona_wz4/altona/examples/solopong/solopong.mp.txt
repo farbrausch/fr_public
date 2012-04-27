@@ -1,0 +1,24 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{4580BA02-5470-4de1-BC65-200D1DCA211E}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "pong.?pp";
+file "pong_template.?pp" {config "*" { exclude; }}
+file "solopong.mp.txt";
+

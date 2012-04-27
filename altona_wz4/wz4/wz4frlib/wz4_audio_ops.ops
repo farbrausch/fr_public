@@ -1,0 +1,63 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4lib/basic_ops.hpp"
+#include "wz4frlib/wz4_audio.hpp"
+#include "wz4frlib/wz3_bitmap_ops.hpp"
+}
+
+/****************************************************************************/
+
+operator PocBitmap AudioRMS()
+{
+  tab = GenBitmap;
+
+  parameter
+  {
+    flags Width(" 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=7;
+    flags Height(" 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=1;
+    flags ChunkSize(" 64| 128| 256| 512| 1024| 2048| 4096| 8192| 16384| 32768")=4;
+  }
+
+  code
+  {
+    if(!Wz4Audiolyzer::AudioAvailable())
+    {
+      cmd->SetError(L"No audio input signal available");
+      return 0;
+    }
+
+    Wz4Audiolyzer::RMSImage(out->Image,1<<(para->Width+3),1<<(para->Height+3),1<<(para->ChunkSize+6));
+  }
+}
+
+operator PocBitmap AudioSpectogram()
+{
+  tab = GenBitmap;
+
+  parameter
+  {
+    flags Width(" 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=7;
+    flags FFTSize(" 64| 128| 256| 512| 1024| 2048| 4096| 8192| 16384| 32768")=4;
+  }
+
+  code
+  {
+    if(!Wz4Audiolyzer::AudioAvailable())
+    {
+      cmd->SetError(L"No audio input signal available");
+      return 0;
+    }
+
+    Wz4Audiolyzer::Spectogram(out->Image,1<<(para->Width+3),1<<(para->FFTSize+6));
+  }
+}
+
+/****************************************************************************/

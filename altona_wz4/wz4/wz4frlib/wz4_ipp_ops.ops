@@ -1,0 +1,434 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_demo2.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+}
+code
+{
+#include "wz4frlib/wz4_ipp.hpp"
+}
+
+/****************************************************************************/
+
+operator Wz4Render ColorCorrect(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim color Color0 ("rgba") = 0xffffffff;
+    anim color Color1 ("rgba") = 0xff000000;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNColorCorrect *node = new RNColorCorrect();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render DebugZ "DebugChannel"(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    flags Channel("z|normal|alpha") = 0;
+    int Renderpass(-127..127);
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNDebugZ *node = new RNDebugZ();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render Blur(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float Radius(0..4096 step 0.01) = 1.0;
+    anim float Amp(0..256 step 0.01) = 1;
+    flags Unit("pixel|hd-pixel")=1;
+    int MaxPasses(1..16) = 3;
+    layout flags SharpenFlag "* Sharpen" ("-|on|control");
+    if(SharpenFlag==1)
+    {
+      anim float Sharpen(0..4 step 0.01)=0.25;
+    }
+    if(SharpenFlag==2)
+    {
+      anim color Sharpen0("rgba") = 0xffffffff;
+      anim nolabel float Sharpen0Amp(-64..64 step 0.01)=0.5;
+      anim color Sharpen1("rgba") = 0xffffffff;
+      anim nolabel float Sharpen1Amp(-64..64 step 0.01)=2.0;
+    }
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNBlur *node = new RNBlur();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render DepthOfField(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float Depth[3](-65536..65536) = { 8,16,256 };
+    anim float Blur[3](0..1 step 0.001) = {1,0,1};
+    anim float CenterSize(0..65536) = 4;
+    group "blur";
+    anim float BlurRadius[2](0..16 step 0.01)=0.01;
+    flags Debug ("normal operation|bypass|blur0|blur1|z|fade");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNDof *node = new RNDof();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render DepthOfField2(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float FocalDepth(-65536..65536) = 16;
+    anim float FocusRange(0..0x10000 step 0.125) = 1.5;
+    anim float UnfocusRange(0..0x10000 step 0.125) = 3.5;
+    anim float MediumBlur(1..256 step 0.01) = 5;
+    anim float LargeBlur(1..256 step 0.01) = 10;
+    flags Debug("None|Focus|Small blur|Med blur|Large blur") = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNDof2 *node = new RNDof2();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render SSAO(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim float MinOcclude(0..65536 step 0.001) = 0.01;
+    anim float MaxOcclude(0..65536 step 0.001) = 24.0;
+    anim float SampleRadius(0..65536 step 0.001) = 1.0;
+    anim float NormalThreshold(-1..1 step 0.001) = 0.5;
+    flags Output("Result|Normals|SSAO") = 0;
+    anim color Color("rgb")=0;
+    flags Quality(" 4 Samples| 8 Samples| 16 Samples") = 2;
+    anim float Intensity(-16..16 step 0.002) = 1;
+    layout flags Fog("-|Fog|Centered");
+    if(Fog!=0)
+    {
+      anim float FogNear(0..65536 step 0.01) = 16;
+      anim float FogFar(0..65536 step 16) = 4096;
+    }
+    if(Fog==2)
+    {
+      float31 FogCenter(-65536..65536 step 0.125) = 0;
+    }
+    if(Fog!=0)
+    {
+      anim float FogDensity(0..1 step 0.002) = 1;
+    }
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNSSAO *node = new RNSSAO();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+
+  handles
+  {
+    if(para->Fog==2)
+      pi.Handle3D(op,1,para->FogCenter,wHM_PLANE);  
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render ColorBalance(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+
+    float30 Shadows(-1..1 step 0.001) = 0;
+    float30 Midtones(-1..1 step 0.001) = 0;
+    float30 Highlights(-1..1 step 0.001) = 0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNColorBalance *node = new RNColorBalance();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render ColorSaw(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+
+    int Repeat[3](1..64)=1;
+    float30 Threshold(0..1 step 0.001) = 0.5;
+    float30 Softness(0..1 step 0.001) = 1.0;
+    float Gamma[3](0..64 step 0.001) = 1;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNColorSaw *node = new RNColorSaw();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render ColorGrade(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+
+    layout flags Flags ("-|ShadowMidHigh")=1;
+
+    if (Flags & 1)
+    {
+      group "Shadows";
+      float "Width" ShadWidth (0..1 step 0.01)=0.5;
+      float "Contr/Bright/Sat/Hue" ShadContrast (-10..10 step 0.01)=1;
+      nolabel float ShadBrightness (-10..10 step 0.01)=0;
+      nolabel float ShadSaturation (-10..10 step 0.01)=1;
+      nolabel float ShadHue        (-1..1 step 0.01)=0;
+      float "Balance" ShadBalHue (0..1 step 0.01)=0;
+      nolabel float ShadBalStrength (0..1 step 0.01)=0;
+      float30 "Gain" ShadGain      (-10..10 step 0.01)=1;
+      color   "Colourize" ShadColor ("rgba")=0x00ff007f;
+      group "Midtones";
+    }
+
+    float "Contr/Bright/Sat/Hue" MidContrast (-10..10 step 0.01)=1;
+    nolabel float MidBrightness (-10..10 step 0.01)=0;
+    nolabel float MidSaturation (-10..10 step 0.01)=1;
+    nolabel float MidHue        (-1..1 step 0.01)=0;
+    float "Balance" MidBalHue (0..1 step 0.01)=0;
+    nolabel float MidBalStrength (0..1 step 0.01)=0;
+    float30 "Gain" MidGain      (-10..10 step 0.01)=1;
+    color   "Colourize" MidColor ("rgba")=0x00ff007f;
+
+    if (Flags & 1)
+    {
+      group "Highlights";
+      float "Width" HighWidth (0..1 step 0.01)=0.5;
+      float "Contr/Bright/Sat/Hue" HighContrast (-10..10 step 0.01)=1;
+      nolabel float HighBrightness (-10..10 step 0.01)=0;
+      nolabel float HighSaturation (-10..10 step 0.01)=1;
+      nolabel float HighHue        (-1..1 step 0.01)=0;
+      float "Balance" HighBalHue (0..1 step 0.01)=0;
+      nolabel float HighBalStrength (0..1 step 0.01)=0;
+      float30 "Gain" HighGain      (-10..10 step 0.01)=1;
+      color   "Colourize" HighColor ("rgba")=0x00ff007f;
+    }
+
+    group "General";
+    float4 "Gamma" Gamma (0.1 .. 10 step 0.01)=1;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNColorGrade *node = new RNColorGrade();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Render CrashZoom(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    layout flags Flags ("*4center2d|center3d")=1;
+    continue flags Flags "Steps"("|| 2| 3| 4");
+    if(Flags & 16)
+      anim float31 Center3D (-1024..1024 step 0.125);
+    if(!(Flags & 16))
+      anim float Center2D[2] (-1024..1024 step 0.01) = 0.5; 
+    anim float Amplify(0..1024 step 0.01) = 1.0;
+    anim float Amount[4](0..1 step 0.001)=0.01;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code 
+  {
+    RNCrashZoom *node = new RNCrashZoom();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render GrabScreen (Rendertarget2D,Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim flags Enable("-|Enable");
+    link Rendertarget:0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code 
+  {
+    RNGrabScreen *node = new RNGrabScreen();
+    node->ParaBase = node->Para = *para;
+    node->Target = in0;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,1);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render CrackFixer(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    float AlphaDistance(-1..1 step 0.001) = 0.1;
+    int OffCounts(1..12) = 6;
+
+    int Renderpass(-127..127);
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNCrackFixer *node = new RNCrackFixer();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render FXAA3(Wz4Render)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+  }
+
+  code
+  {
+    RNFXAA3 *node = new RNFXAA3();
+    node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Render ColorMath(Wz4Render)
+{
+  column = 4;
+  
+  parameter
+  {
+    int Renderpass(-127..127);
+	color Add("rgba") = 0x00000000;
+	float AddFactor(-1000..1000)=1;
+	color Mul("rgba") = 0xffffffff;	
+	float MulFactor(-1000..1000)=1;
+  }
+  
+  code
+  {
+	RNColorMath *node = new RNColorMath();
+	node->Para = *para;
+	out->RootNode = node;
+	out->AddChilds(cmd,para->Renderpass);
+  }
+}

@@ -1,0 +1,35 @@
+guid "{DE742074-74B7-4636-92BC-76816EF3AEF0}";
+
+file "miniftp.mp.txt";
+
+project "client"
+{
+  guid "{2C1879B8-F7E3-415F-8F5A-BEB977C19935}";
+
+  license altona;
+  include "altona/main";
+
+  create "debug_blank_shell";
+  create "release_blank_shell";
+
+  depend "altona/main/base";
+  depend "altona/main/network";
+
+  file "client.?pp";
+}
+
+project "server"
+{
+  guid "{0446A505-08CF-41AB-A587-693481BEDF56}";
+
+  license altona;
+  include "altona/main";
+
+  create "debug_blank_shell";
+  create "release_blank_shell";
+
+  depend "altona/main/base";
+  depend "altona/main/network";
+
+  file "server.?pp";
+}

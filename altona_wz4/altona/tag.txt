@@ -1,0 +1,7 @@
+This is just a file to attach tags to. 
+
+Subversion does tags the same way as branching which we don't want here. 
+(Why should we create a bunch of files on the client just to show we have a tagged version?)
+
+So if you want to tag a version change this file and commit it with an appropriate tagcomment.
+

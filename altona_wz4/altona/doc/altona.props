@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup
+    Condition="'$(ascBeforeTargets)' == '' and '$(ascAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+    <ascBeforeTargets>Midl</ascBeforeTargets>
+    <ascAfterTargets>CustomBuild</ascAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ascDependsOn
+      Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(ascDependsOn)</ascDependsOn>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <asc>
+      <Quiet>true</Quiet>
+      <Debug>False</Debug>
+      <NoOpt>False</NoOpt>
+      <NoAuto>False</NoAuto>
+      <OldEngine>False</OldEngine>
+      <OldD3DCompiler>False</OldD3DCompiler>
+      <OldEngineXBox>False</OldEngineXBox>
+      <GenCg>False</GenCg>
+      <CommandLineTemplate>asc [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [OldD3DCompiler][OldEngineXBox][GenCg]</CommandLineTemplate>
+      <Outputs>%(RootDir)%(Directory)%(Filename).cpp; %(RootDir)%(Directory)%(Filename).hpp</Outputs>
+      <ExecutionDescription>%(Filename)%(Extension)</ExecutionDescription>
+    </asc>
+  </ItemDefinitionGroup>
+  <PropertyGroup
+    Condition="'$(opsBeforeTargets)' == '' and '$(opsAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+    <opsBeforeTargets>Midl</opsBeforeTargets>
+    <opsAfterTargets>CustomBuild</opsAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <opsDependsOn
+      Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(opsDependsOn)</opsDependsOn>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ops>
+      <CommandLineTemplate>wz4ops [inputs]</CommandLineTemplate>
+      <Outputs>$(ProjectDir)\%(Filename).cpp; $(ProjectDir)\%(Filename).hpp</Outputs>
+      <ExecutionDescription>%(Filename)%(Extension)</ExecutionDescription>
+    </ops>
+  </ItemDefinitionGroup>
+</Project>

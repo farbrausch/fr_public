@@ -1,0 +1,36 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{9575FAD3-F5A4-4909-B20E-145A5024C578}";
+
+depend "altona/main/base";
+
+license altona;
+include "altona/main";
+library;
+
+file "camera.?pp";
+file "effect.?pp";
+file "image.?pp";
+file "musicplayer.?pp";
+file "painter.?pp";
+file "scanner.?pp";
+file "scanconfig.?pp";
+file "util.mp.txt";
+file "shaders.asc";
+file "animation.?pp";
+file nonew "shaders.?pp";
+file "movieplayer.?pp";
+file "perfmon.?pp";
+file "stb_image.c" license default { config "*_3ds*" { exclude; }}
+file "stb_image_write.h" license default { config "*_3ds*" { exclude; }}
+file "taskscheduler.?pp";
+file "algorithms.hpp";
+file "ipp.?pp";
+file "rasterizer.?pp";
+file "simd_float.hpp";
+

@@ -1,0 +1,25 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{84285236-45F4-4005-A111-167B2B91B9FF}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debug_blank";
+create "release_dx9";
+create "release_blank";
+create "stripped_dx9";
+create "stripped_blank";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/network";
+
+file "main.?pp";
+file "netdebugging.mp.txt";

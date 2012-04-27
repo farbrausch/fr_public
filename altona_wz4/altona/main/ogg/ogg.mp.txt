@@ -1,0 +1,21 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{364E7899-3744-4402-BA5B-E4586F318FC5}";
+
+license altona;
+include "altona/main";
+library;
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "ogg.mp.txt";
+file "ogg.hpp";
+file "ogg.cpp";
+file "stb_vorbis.h";
+

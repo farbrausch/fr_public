@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{493E01CD-9C8A-4965-BE3F-7DF93F13623F}";
+
+license altona;
+include "altona/main";
+
+create "debug_blank_shell";
+create "debugfast_blank_shell";
+create "release_blank_shell";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.cpp";
+file "scanner.mp.txt";
+file "source.txt";

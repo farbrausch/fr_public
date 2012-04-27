@@ -1,0 +1,44 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{74F17E89-915F-4264-B67A-2A655B65325A}";
+
+license altona;
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/shadercomp";
+depend "altona/main/wz4lib";
+depend "altona/main/extra";
+depend "wz4/wz4frlib";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+
+create "debug_ogl2";
+create "debugfast_ogl2";
+create "release_ogl2";
+
+include "altona/main";
+include "wz4";
+
+//if(sSDK_TC3) depend "tc3/main/engine";
+//if(sSDK_TC3) depend "tc3/main/toolmesh";
+//if(sSDK_TC3) depend "tc3/main/wz4tc3lib";
+//if(sSDK_TC3) include "tc3/main";
+
+
+file "werkkzeug4.mp.txt";
+file "main.?pp";
+file "icon.rc";
+file "icon.ico" license default;

@@ -1,0 +1,24 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{83DACCFD-BCC0-4451-9CCF-A822E349F660}";
+
+license altona;
+include "altona/main";
+library;
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "sockets.?pp";
+file "sockets_bsd.cpp";
+file "sockets_dummy.cpp";
+file "http.?pp";
+file "miniftp.?pp";
+file "netdebug.?pp";
+file "netdebug_plugins.hpp";
+file "network.mp.txt";

@@ -1,0 +1,13 @@
+guid "{AC77A0ED-6AD7-4D9E-BC4A-EEE7461E97D1}";
+
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+create "debug_blank_shell";
+create "debugfast_blank_shell";
+create "release_blank_shell";
+
+file "main.cpp";
+file "containertest.mp.txt";

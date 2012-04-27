@@ -1,0 +1,11 @@
+make a resource file called "resource.rc" with just one line:
+
+
+100 ICON "filename.ico"
+
+
+add the resource file and the icon to the project.
+to edit the resource file, use 
+"open with -> text editor" in the solution explorer.
+
+that's all.

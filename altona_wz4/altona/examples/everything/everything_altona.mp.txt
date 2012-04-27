@@ -1,0 +1,5 @@
+guid "{38F7D3D0-023C-470c-ADAF-B21DD052D748}";
+
+license altona;
+
+everything "altona";

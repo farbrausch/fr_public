@@ -1,0 +1,13 @@
+guid "{9406C63E-F0B7-4E3c-8086-47D469380066}";
+
+create "debug_blank_shell";
+create "debugfast_blank_shell";
+create "release_blank_shell";
+
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "bitiotest.mp.txt";

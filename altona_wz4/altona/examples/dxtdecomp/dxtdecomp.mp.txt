@@ -1,0 +1,12 @@
+guid "{59179F14-E0A7-4660-90EE-61A9E6164639}";
+
+include "altona/main";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+create "debug_dx9";
+create "release_dx9";
+
+file "main.?pp";
+file "dxtdecomp.mp.txt";

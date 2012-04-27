@@ -1,0 +1,61 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{74F17E89-915F-4264-B67A-31337B65325A}";
+
+license altona;
+ 
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/shadercomp";
+depend "altona/main/wz4lib";
+depend "altona/main/extra";
+depend "wz4/wz4frlib";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+create "stripped_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+create "stripped_dx11";
+
+create "debug_ogl2";
+create "debugfast_ogl2";
+create "release_ogl2";
+
+
+include "altona/main";
+include "wz4";
+
+folder "resources"
+{
+  file "resources/icon.ico"  license default;
+  file "resources/share_twitter.ico" license default;
+  file "resources/share_facebook.ico" license default;
+  file "resources/share_myspace.ico" license default;
+  file "resources/share_digg.ico" license default;
+  file "resources/share_stumbleupon.ico" license default;
+}
+
+folder "libv2"
+{
+  file "libv2/libv2.lib" license default;
+  file "libv2/libv2.h" license default;
+  file "libv2/v2mplayer.cpp" license default;
+  file "libv2/v2mplayer.h" license default;
+}
+
+file "wz4player.mp.txt";
+file "main.cpp";
+file "selector_win.?pp";
+file "vorbisplayer.?pp";
+file "icon.rc";
+file "wz4player.manifest";

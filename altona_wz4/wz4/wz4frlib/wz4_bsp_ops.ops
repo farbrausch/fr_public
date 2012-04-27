@@ -1,0 +1,185 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4frlib/wz4_bsp.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+}
+
+/****************************************************************************/
+
+type Wz4BSP
+{
+  color = 0xff7070f0;
+  name = "Wz4 BSP";
+  //flags = render2d;
+  gui = base3d;
+  
+  header
+  {
+    sImage *img;
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    if(obj && obj->IsType(Wz4BSPType))
+    {
+      static const sInt downsample = 1;
+      sInt tgtSizeX = sMin(pi.Client.SizeX()/downsample,512);
+      sInt tgtSizeY = sMin(pi.Client.SizeY()/downsample,384);
+
+      if(tgtSizeX != img->SizeX || tgtSizeY != img->SizeY)
+      {
+        delete img;
+        img = new sImage(tgtSizeX,tgtSizeY);
+      }
+
+      Wz4BSP *bsp = (Wz4BSP *) obj;
+      img->Fill(pi.BackColor);
+
+      sU32 *ptr = img->Data;
+      sRay ray;
+      sVector30 normal, dir;
+
+      dir = pi.View->Camera.k;
+
+      for(sInt y=0;y<img->SizeY;y++)
+      {
+        for(sInt x=0;x<img->SizeX;x++)
+        {
+          pi.View->MakeRay(2.0f*x/img->SizeX-1.0f,1.0f-2.0f*y/img->SizeY,ray);
+
+          /*ray.Start.Init(0.0f,0.0f,-5.0f);
+          ray.Dir.Init(4.0f/3.0f*(2.0f*x/img->SizeX-1.0f),1.0f-2.0f*y/img->SizeY,1.0f);
+          ray.Dir.Unit();*/
+          
+          sF32 t;
+          if(bsp->TraceRay(ray,0.0f,1e+20f,t,normal))
+          {
+            //sVector31 hit = ray.Start + t * ray.Dir;
+
+            //hit = sVector31(hit * 1.5f);
+            //sInt colR = sClamp<sInt>(hit.x * 127.5f + 127.5f,0,255);
+            //sInt colG = sClamp<sInt>(hit.y * 127.5f + 127.5f,0,255);
+            //sInt colB = sClamp<sInt>(hit.z * 127.5f + 127.5f,0,255);
+            //*ptr = (colR<<16) + (colG<<8) + (colB<<0) + 0xff000000;
+
+            sInt col = sClamp<sInt>(sInt(-(normal^dir)*255),0,255);
+            *ptr = col*0x010101 | 0xff000000;
+          }
+
+          ptr++;
+        }
+      }
+
+      sRect srcRect(0,0,img->SizeX,img->SizeY);
+      sStretch2D(img->Data,img->SizeX,srcRect,pi.Client);
+    }
+  }
+  
+  extern void Init()
+  {
+    img = new sImage(1,1);
+  }
+  
+  extern void Exit()
+  {
+    sDelete(img);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4BSP Polyhedron()
+{
+  parameter
+  {
+    int Faces(4..256 step 0.125) = 4;
+    int nIter(1..200 step 0.125) = 32;
+    float Power(0..10 step 0.001) = 0.5;
+    flags Flags("-|dualize");
+    int RandomSeed(0..255 step 0.125) = 0;
+  }
+
+  code
+  {
+    out->MakePolyhedron(para->Faces,para->nIter,para->Power,para->Flags&1,para->RandomSeed);
+  }
+}
+
+operator Wz4BSP FromMesh(Wz4Mesh)
+{
+  parameter
+  {
+    flags "Plane thickness (epsilon)" PlaneThickness("Molecular|Tiny|Small|Normal|Large|Huge|San Andreas Gap|Ridiculous")=3;
+  }
+
+  code
+  {
+    static const sF32 thick[9] =
+    {
+      1e-10f,
+      3e-7f,
+      1e-6f,
+      2e-5f,
+      1e-4f,
+      1e-2f,
+      2.0f,
+      100.0f,
+    };
+
+    Wz4BSPError err = out->FromMesh(in0,thick[sClamp<sInt>(para->PlaneThickness,0,6)]);
+    if(err != WZ4BSP_OK)
+    {
+      cmd->SetError(Wz4BSPGetErrorString(err));
+      return 0;
+    }
+  }
+}
+
+operator Wz4BSP SliceAndDice(Wz4BSP)
+{
+  parameter
+  {
+    float MinSize(0..256 step 0.001) = 0;
+    float MaxSize(0.01..256 step 0.001) = 0.1;
+    float RandomPlanesAtMin(0..1 step 0.001) = 0.1;
+    int RandomSeed(0..255 step 0.125) = 1;
+    int MaxSplits(1..1000000 step 1) = 10000;
+  }
+
+  code
+  {
+    out->CopyFrom(in0);
+    out->MakeRandomSplits(para->RandomPlanesAtMin,sMin(para->MinSize,para->MaxSize),
+      para->MaxSize,para->RandomSeed,para->MaxSplits);
+  }
+}
+
+operator Wz4Mesh BSPToMesh(Wz4BSP)
+{
+  parameter
+  {
+    float Explode(0..16 step 0.001) = 0;
+  }
+
+  code
+  {
+    Wz4BSPError err = in0->GeneratePolyhedrons(out,para->Explode);
+    out->DontClearVertices = 1;
+    if(err != WZ4BSP_OK)
+    {
+      cmd->SetError(Wz4BSPGetErrorString(err));
+      return 0;
+    }
+  }
+}
+
+/****************************************************************************/

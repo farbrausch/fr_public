@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{8CCAB11E-434E-4816-899E-68385C477888}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "input.mp.txt";
+file "todo.txt";

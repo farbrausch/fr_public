@@ -1,0 +1,26 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{5F5B29C7-36D2-4700-873C-D0577590E6D8}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+
+file "forms.mp.txt";
+file "main.?pp";
+file "forms.wire.txt";
+
+
+

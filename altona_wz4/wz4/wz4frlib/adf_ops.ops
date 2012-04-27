@@ -1,0 +1,142 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/basic_ops.hpp"
+}
+
+code
+{
+#include "wz4frlib/adf.hpp"
+#include "wz4frlib/adf_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+}
+
+type Wz4ADF
+{
+  color = 0xff3080f0;
+  name = "Wz4 ADF";
+//  flags = render3d;
+  gui = base3d;
+  columnheader[0] = "Generator";
+  columnheader[1] = "Filter";
+  
+  header
+  {
+    sImage *img;
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    if(obj && obj->IsType(Wz4ADFType))
+    {     
+    
+      static const sInt downsample = 1;
+      sInt tgtSizeX = sMin(pi.Client.SizeX()/downsample,512);
+      sInt tgtSizeY = sMin(pi.Client.SizeY()/downsample,512);
+
+      if(tgtSizeX != img->SizeX || tgtSizeY != img->SizeY)
+      {
+        delete img;
+        img = new sImage(tgtSizeX,tgtSizeY);      
+        Wz4ADF_Init(tgtSizeX,tgtSizeY);        
+      }
+
+      Wz4ADF *adf = (Wz4ADF *) obj;
+      //img->Fill(pi.BackColor);
+      
+      Wz4ADF_Render(img, adf, pi);
+
+      sRect srcRect(0,0,img->SizeX,img->SizeY);
+      sStretch2D(img->Data,img->SizeX,srcRect,pi.Client);                       
+    }    
+  }
+  
+  extern void Init()
+  {
+    img = new sImage(128,128);
+    Wz4ADF_Init(128,128);
+  }
+  
+  extern void Exit()
+  {
+    sDelete(img);
+    Wz4ADF_Exit();
+  }
+}
+
+
+operator Wz4ADF Import()
+{
+  column = 0;
+  shortcut = 'i';
+
+  parameter
+  {
+    filein Filename("sdf");
+  }
+  code
+  {   
+    const sChar *name = cmd->Strings[0];
+    const sChar *ext = sFindFileExtension(name);
+//    if(sCmpStringI(ext,L"sdf")==0)
+    if (sCmpStringI(name,L"")!=0)
+    {
+       out->FromFile((sChar *)name);
+    }   
+  } 
+}
+
+operator Wz4ADF FromMesh(Wz4Mesh,?Wz4Mesh)
+{
+  column = 0;
+  shortcut = 'm';
+
+  parameter
+  {
+//    int Depth (4..11 step 1) = 4;
+    flags Depth ("|||| 4| 5| 6| 7| 8| 9| 10| 11") = 4;
+    float GuardBand(-64..64 step 0.001) = 0.0;
+    layout flags ForceCubeSampling("Off|On");
+    layout flags UserBox("Off|On");
+    float31 BoxPos(-1024..1024 step 0.0001) = 0;
+    float30 BoxDimH(0.0001..1024 step 0.0001) = 0;
+    layout flags BruteForce("Off|On");
+    flags "Plane thickness (epsilon)" PlaneThickness("Molecular|Tiny|Small|Normal|Large|Huge|San Andreas Gap|Ridiculous")=3;
+  }
+  code
+  {     
+    static const sF32 thick[9] =
+    {
+      1e-10f,
+      3e-7f,
+      1e-6f,
+      2e-5f,
+      1e-4f,
+      1e-2f,
+      2.0f,
+      100.0f,
+    };    
+
+    sVector31 bp=para->BoxPos; 
+    sVector30 bdh=para->BoxDimH;        
+    if(para->UserBox && in1)
+    {
+      sAABBox box;
+      in1->CalcBBox(box);           
+      bdh=(box.Max-box.Min)*0.5f;
+      bp=box.Min+bdh;
+    }
+    Wz4BSPError err = out->FromMesh(in0, thick[sClamp<sInt>(para->PlaneThickness,0,6)], para->Depth, para->GuardBand, para->ForceCubeSampling, para->UserBox,bp,bdh,para->BruteForce);    
+    if(err != WZ4BSP_OK)
+    {
+      cmd->SetError(Wz4BSPGetErrorString(err));
+      return 0;
+    }    
+  } 
+}

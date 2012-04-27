@@ -1,0 +1,61 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+
+
+menu menu_file "File"
+{
+  item main.New "New";
+  item main.Open "Open";
+  item main.Save "Save";
+  item main.SaveAs "SaveAs";
+  item main.Exit "Exit";
+}
+
+window Cube1,Cube2
+{
+  drag Orbit LMB|ALT;
+  drag Move MMB|ALT;
+  drag Dolly RMB|ALT;
+  drag Rotate LMB;
+  drag Rotate LMB|SHIFT;
+  drag Rotate LMB|CTRL;
+  
+  drag Zoom RMB|SHIFT;
+  key Reset 'r';
+  key Grid 'g';
+  
+  key QuakeForwToggle "Move Forward" 'w'|ONOFF|ALLSHIFT;
+  key QuakeBackToggle "Move Backward" 's'|ONOFF|ALLSHIFT;
+  key QuakeLeftToggle "Move Left" 'a'|ONOFF|ALLSHIFT;
+  key QuakeRightToggle "Move Right" 'd'|ONOFF|ALLSHIFT;  
+
+  key Help RMB;
+}
+
+screen "main"
+{
+  horizontal
+  {
+    toolborder { menu menu_file; screenswitch; }
+    vertical
+    {
+      window Bla { focusborder; }
+      horizontal
+      {
+        window Cube1 { focusborder; }
+        window Cube2 { focusborder; }
+      }
+    }
+  }
+}

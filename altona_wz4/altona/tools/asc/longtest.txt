@@ -1,0 +1,5408 @@
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader CubemapMtrl
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mvp : c0;         // parameter from set-code to shader
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_norm : NORMAL,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uv : TEXCOORD0,
+        uniform float4x4 mvp : register(c0)     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uv = in_norm;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        result = texCUBE(s0,normalize(uv));
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp                    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+    gl
+    {
+      !!ARBvp1.0
+      ATTRIB iPos        = vertex.attrib[0];
+      ATTRIB iCol        = vertex.attrib[3];
+      ATTRIB iUV0        = vertex.attrib[8];
+      PARAM  mvp[4]      = { program.local[0..3] };
+      OUTPUT oPos        = result.position;
+      OUTPUT oUV0        = result.texcoord[0];
+      OUTPUT oCol        = result.color;
+      DP4    oPos.x,mvp[0],iPos;
+      DP4    oPos.y,mvp[1],iPos;
+      DP4    oPos.z,mvp[2],iPos;
+      DP4    oPos.w,mvp[3],iPos;
+      MOV    oCol.xyzw , iCol;
+      MOV    oUV0 , iUV0;
+      END
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 col
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+    gl
+    {
+      !!ARBfp1.0
+      TEMP    r0;
+      TEX     r0,fragment.texcoord[0],texture[0],2D;
+      MUL     result.color,r0,fragment.color;
+      END
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    col.InitColor(Color);                   // another parameter
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialZOffset
+{
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+    sF32 RZFar;
+    sF32 DepthScale;
+  }
+  vs
+  {
+    sMatrix44 modelscreen : c0;
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+      
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        mov		oD0,v1
+        mov		r0.xy,v2
+        mov		oT0,r0
+    }    
+  }
+  ps
+  {
+    sF32 RZFar_ : c0.x;
+    sF32 DepthScale_ : c1.x;
+   /*
+    asc ps_2_0
+    {
+      float RZFar : register(c0);
+      float DepthScale : register(c1);
+      sampler2D s[1];
+
+      struct output
+      {
+        half4 color : COLOR0;
+        float depth : DEPTH;
+      };
+
+      
+      output main(float3 uvz : TEXCOORD0)
+      {
+        output o;
+
+        half4 col = tex2D(s[0],uvz.xy);
+        clip(col.w-1/256.0h);
+
+        o.color.xyz = col;
+
+        o.depth = o.color.w = uvz.z*RZFar + DepthScale - col.w*DepthScale;
+
+        return o;
+      }
+
+    }
+    */
+    asm
+    {
+        ps_2_0
+        dcl_2d	s0.xyzw
+        dcl		t0.xyz
+        
+        def		c2,0.0001f,0,0.5f,0
+      
+        texld	r0,t0,s0
+        sub		r1,r0.w,c2.x
+        texkill	r1
+        
+        mad		r1,-r0.w,c1.x,c1.x
+        mad		r1,t0.z,c0.x,r1
+ ;       mov		oDepth,r1.z
+        
+;        mov		r0.w,r1.z
+        mov		oC0,r0
+    }
+
+  }
+  set
+  {  
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4(); 
+    RZFar_ = RZFar;
+    DepthScale_ = DepthScale;
+  }
+};
+
+/****************************************************************************/
+
+shader MaterialEnvi
+{
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *EnviTex : s1;
+  }
+  vs
+  {
+    sMatrix44 modelscreen : c0;
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+      
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        mov		oD0,v1
+        mov		r0.xy,v2
+        mov		oT0,r0
+    }    
+  }
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s[2];
+      float4 main(half2 uv:TEXCOORD0,half4 color:COLOR0) : COLOR0
+      {
+        half4 normal = tex2D(s[0],uv)-0.5h;
+        half4 col;
+        if(normal.w>=0.49h)
+          col.xyzw = 0;
+        else
+          col = tex2D(s[1],normalize(normal).xy*0.5h+0.5h);
+        return col;
+      }
+    }
+  }
+  set
+  {  
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4(); 
+  }
+};
+
+/****************************************************************************/
+/****************************************************************************/
+
+include "util/effect.hpp";			// not really required
+
+/****************************************************************************/
+ 
+shader MaterialIppSub
+{
+    
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+  }
+  
+  vs
+  {
+    sMatrix44 modelscreen : c0;
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+        
+        def		c4,1,1,1,1
+        
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        
+        sub		r1,c4,v1
+        rcp		r1.x,r1.x
+        rcp		r1.y,r1.y
+        rcp		r1.z,r1.z
+        rcp		r1.w,r1.w
+        mov		oD0,v1
+        mov		oT0,v2
+        mov		oT1,r1
+    }
+  }
+   
+  ps
+  {
+    asm
+    {   
+        ps_2_0
+        dcl_2d	s0
+        dcl		v0
+        dcl		t0.xy
+        dcl		t1.xyzw
+        
+        texld	r0,t0,s0
+        sub		r0,r0,v0
+        mul		r0.xyz,r0,t1
+        mov		oC0,r0
+    }
+  }
+  
+  set
+  { 
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4(); 
+  }
+};
+
+   
+/****************************************************************************/
+
+shader MaterialIppFilter
+{
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+    sF32 DistX;
+    sF32 DistY;
+  }
+  vs
+  {
+    sMatrix44 modelscreen : c0;
+    
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+        
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        mov		oD0,v1
+        mov		oT0,v2
+    }
+  }
+  ps
+  {
+    sVector4 shift[8] : c0;
+    
+    asc ps_2_0
+    {
+      sampler2D s0;
+
+      half4 main(
+        half4 color:COLOR0,
+        half4 uv:TEXCOORD0,
+        uniform half4 offset[8] : register(c0)
+        ) : COLOR0
+      {
+        half4 col;
+        half4 ref = tex2D(s0,uv.xy);
+        col.xyz = ref.xyz-0.5h;
+
+        for(int i=1;i<6;i++)
+        {
+          half4 pix = tex2D(s0,offset[i].xy/ref.w+uv.xy);
+          if(abs(pix.w-ref.w)<0.02f)
+          {
+            col.xyz += pix.xyz-0.5h;
+          }
+        }
+  
+        col.xyz = normalize(col.xyz)*0.5h+0.5h;
+//        col = col/9+0.5;
+        col.w = ref.w;
+        return col;
+      }
+
+      /*
+      {
+        float4 col = { 0,0,0,0 };
+
+        for(int i=0;i<8;i++)
+          col += tex2D(s0,offset[i].xy+uv);
+
+        return color * col;
+      }
+      */
+    }
+  }
+  set
+  {
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4();
+    
+    shift[0].Init(DistX*-4,DistY*-4,0,0);
+    shift[1].Init(DistX*-3,DistY*-3,0,0);
+    shift[2].Init(DistX*-2,DistY*-2,0,0);
+    shift[3].Init(DistX*-1,DistY*-1,0,0);
+    shift[4].Init(DistX* 1,DistY* 1,0,0);
+    shift[5].Init(DistX* 2,DistY* 2,0,0);
+    shift[6].Init(DistX* 3,DistY* 3,0,0);
+    shift[7].Init(DistX* 4,DistY* 4,0,0);
+  }
+};
+
+/****************************************************************************/
+ /*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+
+
+vs ChaosShader_VSL
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,
+      in float3 in_norm : NORMAL,           // float 3! if you use float4, it gets extendet to (x,y,z,1)!
+      in float2 in_uv : TEXCOORD0,
+      out float4 out_pos : POSITION,
+      out float4 out_col : COLOR0,
+      out float2 out_uv : TEXCOORD0,
+      uniform row_major float4x4 mvp: register(c0),   // rotation for light vector (not really needed)
+      uniform float4 ld[3] : register(c4),   // light direction
+      uniform float4 la    : register(c7),   // ambient
+      uniform float4 lc[4] : register(c8),    // light color
+      uniform float4 uvm[2] : register(c12)
+    )
+    {
+      float4 i = ld[0]*in_norm.x + ld[1]*in_norm.y + ld[2]*in_norm.z;
+      i = max(i,0);
+      float4 c = la + lc[0]*i.x + lc[1]*i.y + lc[2]*i.z + lc[3]*i.w;
+      out_uv.x = dot(float4(in_uv.x,in_uv.y,0,1),uvm[0]);
+      out_uv.y = dot(float4(in_uv.x,in_uv.y,0,1),uvm[1]);
+      out_col = c;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+
+ps ChaosShader_PS_C
+{
+  asc ps_1_3
+  {
+    void main
+    (
+      in float2 uv : TEXCOORD0,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = color;
+    }
+  }
+}
+
+ps ChaosShader_PS_CT
+{
+  asc ps_1_3
+  {
+    sampler2D s0 : register(s0);
+
+    void main
+    (
+      in float2 uv : TEXCOORD0,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = tex2D(s0,uv)*color;
+    }
+  }
+}
+
+ps ChaosShader_PS_CTT_ADD
+{
+  asc ps_1_3
+  {
+    sampler2D s0 : register(s0);
+    sampler2D s1 : register(s1);
+
+    void main
+    (
+      in float2 uv0 : TEXCOORD0,
+      in float2 uv1 : TEXCOORD1,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = tex2D(s0,uv0)*color+tex2D(s1,uv1);
+    }
+  }
+}
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mvp : c0;         // parameter from set-code to shader
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp : register(c0)     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    col.InitColor(Color);                   // another parameter
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// Perona-Malik diffusion shader
+shader DiffusionShader
+{
+  parameter 
+  {
+    sTexture2D *Tex0 : s0;
+    sTexture2D *Tex1 : s1;
+    sTexture2D *Tex2 : s2;
+    sF32 TimeStep;
+    sF32 Lambda;
+  }
+
+  vs
+  {
+    asc vs_1_1                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp                    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+
+      static const float4 lumaDir = float4(0.299,0.587,0.114,0.0);
+        
+      float diffusivity(float4 sym1,float4 sym2,float4 asym1,float4 asym2,float invLambdaSq)
+      {
+        // gradient
+        float2 grad;
+        grad.x = dot(0.5f * (sym2-sym1),lumaDir);
+        grad.y = dot(asym2-asym1,lumaDir);
+        return rsqrt(1.0f + dot(grad,grad) * invLambdaSq);
+      }
+      
+      float diffusivitySym(float4 x1,float4 x2,float4 y1,float4 y2,float invLambdaSq)
+      {
+        // gradient
+        float2 grad;
+        grad.x = dot(0.5f * (x2-x1),lumaDir);
+        grad.y = dot(0.5f * (y2-y1),lumaDir);
+        return rsqrt(1.0f + dot(grad,grad) * invLambdaSq);
+      }
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float dt,
+        uniform float invLambdaSq
+      )
+      {
+        static const float offs=1.0f/512.0f;
+      
+        // sample pixels
+        float4 pnw = tex2D(s0,uv+float2(-offs,-offs));
+        float4 p_n = tex2D(s1,uv+float2(    0,-offs));
+        float4 pne = tex2D(s2,uv+float2( offs,-offs));
+        float4 p_w = tex2D(s0,uv+float2(-offs,    0));
+        float4 mid = tex2D(s1,uv+float2(    0,    0));
+        float4 p_e = tex2D(s2,uv+float2( offs,    0));
+        float4 psw = tex2D(s0,uv+float2(-offs, offs));
+        float4 p_s = tex2D(s1,uv+float2(    0, offs));
+        float4 pse = tex2D(s2,uv+float2( offs, offs));
+        
+        // calc diffusivities
+        float g_n = diffusivity(pnw,pne,p_n,mid,invLambdaSq);
+        float g_s = diffusivity(psw,pse,mid,p_s,invLambdaSq);
+        float g_w = diffusivity(pnw,psw,p_w,mid,invLambdaSq);
+        float g_e = diffusivity(pne,pse,mid,p_e,invLambdaSq);
+        
+        // perform diffusion
+        result = mid + dt*
+          (g_n*(p_n-mid) + g_s*(p_s-mid) + g_w*(p_w-mid) + g_e*(p_e-mid));
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    dt = TimeStep;
+    invLambdaSq = 1.0f / (Lambda * Lambda);
+  }
+};
+
+/****************************************************************************/
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *MergeTex : s0;
+    sTexture2D *TexA : s1;
+    sTexture2D *TexB : s2;
+    sTexture2D *TexC : s3;
+    sTexture2D *TexD : s4;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mvp : c0;              // parameter from set-code to shader
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp                    // shader constants
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0;
+      sampler2D s1;
+      sampler2D s2;
+      sampler2D s3;
+      sampler2D s4;
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0
+      )
+      {
+        float4 merge = tex2D(s0,uv);
+        result = tex2D(s1,uv)*merge.x
+               + tex2D(s2,uv)*merge.y
+               + tex2D(s3,uv)*merge.z
+               + tex2D(s4,uv)*merge.w;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *MergeTex : s0;
+    sTexture2D *TexA : s1;
+    sTexture2D *TexB : s2;
+    sTexture2D *TexC : s3;
+    sTexture2D *TexD : s4;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mvp : c0;              // parameter from set-code to shader
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp                    // shader constants
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0;
+      sampler2D s1;
+      sampler2D s2;
+      sampler2D s3;
+      sampler2D s4;
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0
+      )
+      {
+        float4 merge = tex2D(s0,uv);
+        result = tex2D(s1,uv)*merge.x
+               + tex2D(s2,uv)*merge.y
+               + tex2D(s3,uv)*merge.z
+               + tex2D(s4,uv)*merge.w;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *MergeTex : s0;
+    sTexture2D *TexA : s1;
+    sTexture2D *TexB : s2;
+    sTexture2D *TexC : s3;
+    sTexture2D *TexD : s4;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mvp : c0;              // parameter from set-code to shader
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp                    // shader constants
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0;
+      sampler2D s1;
+      sampler2D s2;
+      sampler2D s3;
+      sampler2D s4;
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0
+      )
+      {
+        float4 merge = tex2D(s0,uv);
+        result = tex2D(s1,uv)*merge.x
+               + tex2D(s2,uv)*merge.y
+               + tex2D(s3,uv)*merge.z
+               + tex2D(s4,uv)*merge.w;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+
+include "util/effect.hpp";			// not really required
+
+/****************************************************************************/
+ 
+shader MaterialIppSub
+{
+    
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+  }
+  
+  vs
+  {
+	sMatrix44 modelscreen : c0;
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+        
+        def		c4,1,1,1,1
+        
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        
+        sub		r1,c4,v1
+        rcp		r1.x,r1.x
+        rcp		r1.y,r1.y
+        rcp		r1.z,r1.z
+        rcp		r1.w,r1.w
+        mov		oD0,v1
+        mov		oT0,v2
+        mov		oT1,r1
+    }
+  }
+   
+  ps
+  {
+    asm
+    {   
+        ps_2_0
+        dcl_2d	s0
+        dcl		v0
+        dcl		t0.xy
+        dcl		t1.xyzw
+        
+        texld	r0,t0,s0
+        sub		r0,r0,v0
+        mul		r0.xyz,r0,t1
+        mov		oC0,r0
+    }
+  }
+  
+  set
+  { 
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4(); 
+  }
+};
+
+   
+/****************************************************************************/
+
+shader MaterialIppFilter
+{
+  parameter
+  {
+    sTexture2D *BaseTex : s0;
+    sF32 DistX;
+    sF32 DistY;
+  }
+  vs
+  {
+    sMatrix44 modelscreen : c0;
+    
+    asm
+    {
+        vs_2_0
+        dcl_position	v0
+        dcl_color0		v1
+        dcl_texcoord0	v2
+        
+        m4x4	r0,v0,c0
+        mov		oPos,r0
+        mov		oD0,v1
+        mov		oT0,v2
+    }
+  }
+  ps
+  {
+    sVector4 shift[8] : c0;
+    
+    asm
+    {
+        ps_2_0
+        dcl_2d	s0
+        dcl		v0
+        dcl		t0.xy
+
+        add		r1.xy,c0,t0
+        add		r2.xy,c1,t0
+        add		r3.xy,c2,t0
+        add		r4.xy,c3,t0
+        texld	r0,r1,s0
+        texld	r2,r2,s0
+        texld	r3,r3,s0
+        texld	r4,r4,s0
+        add		r0,r2,r0
+        add		r0,r3,r0
+        add		r0,r4,r0
+        
+        add		r1.xy,c4,t0
+        add		r2.xy,c5,t0
+        add		r3.xy,c6,t0
+        add		r4.xy,c7,t0
+        texld	r1,r1,s0
+        texld	r2,r2,s0
+        texld	r3,r3,s0
+        texld	r4,r4,s0
+        add		r0,r1,r0
+        add		r0,r2,r0
+        add		r0,r3,r0
+        add		r0,r4,r0
+        
+        mul		r0,v0,r0
+        mov		oC0,r0
+    }
+  }
+  set
+  {
+    sGetMatrix(modelscreen,sGM_MODELSCREEN);
+    modelscreen.Trans4();
+    
+    for(sInt i=0;i<8;i++)
+    {
+      sF32 f = (i*(2.0f/7.0f))-1.0f;
+      shift[i].Init(DistX*f,DistY*f,0,0);
+    }
+  }
+};
+
+/****************************************************************************/
+ /****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform row_major float4x4 mvp : register(c0)
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    col.InitColor(Color);                   // another parameter
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialCube
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 Color = 0xffffffff;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform row_major float4x4 mvp : register(c0)    // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 color : register(c0)
+      )
+      {
+        result = texCUBE(s0,uvw)*color;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    color.InitColor(Color);
+    color *= 2;
+  }
+};
+
+/****************************************************************************/
+
+
+shader MaterialCubeBlur
+{
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 MulColor = 0xffffffff;
+    sU32 SubColor = 0x00000000;
+    sU32 GrayColor = 0x00808080;
+  }
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform row_major float4x4 mvp : register(c0)     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 sub : register(c0),
+        uniform float4 mul : register(c1),
+        uniform float4 gray : register(c2)
+      )
+      {
+        float4 col = texCUBE(s0,uvw);
+        result.xyz = dot(saturate(col.xyz*(/*col.w-*/0.5f)-sub.xyz),gray.xyz)*mul.xyz;
+        result.w = 1;
+      }
+    }
+  }
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    sub.InitColor(SubColor);
+    mul.InitColor(MulColor);
+    gray.InitColor(GrayColor);
+  }
+};
+
+shader MaterialCubeBlurAlpha
+{
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 MulColor = 0xffffffff;
+    sU32 SubColor = 0x00000000;
+    sU32 GrayColor = 0x00808080;
+  }
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform row_major float4x4 mvp : register(c0)     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 sub : register(c0),
+        uniform float4 mul : register(c1),
+        uniform float4 gray : register(c2)
+      )
+      {
+        float4 col = texCUBE(s0,uvw);
+        result.xyz = dot(saturate(col.xyz*(col.w-0.5f)-sub.xyz),gray.xyz)*mul.xyz;
+        result.w = 1;
+      }
+    }
+  }
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    sub.InitColor(SubColor);
+    mul.InitColor(MulColor);
+    gray.InitColor(GrayColor);
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/*
+shader MaterialBump2 // Object Space
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *BumpTex : s1;
+    sTexture2D *SpecTex : s2;
+    sTextureCube *EnvCube : s3;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv0 : TEXCOORD0,
+        in float2 in_uv1 : TEXCOORD1,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv0 : TEXCOORD0,
+        out float2 out_uv1 : TEXCOORD1,
+        out float3 out_eye : TEXCOORD2,
+        uniform float4 dir,
+        uniform float4x4 mvp  
+      )
+      {
+        out_uv0 = in_uv0;
+        out_uv1 = in_uv1;
+        out_eye = normalize(float3(dir.x,dir.y,dir.z)-float3(in_pos.x,in_pos.y,in_pos.z));
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+      samplerCUBE s3 : register(s3);
+
+      void main
+      (
+        in float2 uv0 : TEXCOORD0,
+        in float2 uv1 : TEXCOORD1,
+        in float3 eye : TEXCOORD2,
+        out float4 result : COLOR0,
+        uniform float4 col,
+        uniform float4 bumplight
+      )
+      {
+        float3 normal = tex2D(s1,uv0);
+        float4 diffuse = tex2D(s0,uv0);
+        float4 specular = tex2D(s2,uv0);
+        float4 envi = texCUBE(s3,reflect(eye,normal));
+        result.xyz = diffuse*col.x
+                   + specular*envi*col.y
+                   + saturate(dot((float3)bumplight,normal))*col.z;
+//        result.xyz = normal;
+        result.w = (specular.w + diffuse.w)*0.5f;
+//        result.xyz = result.w;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    extern sVector4 BumpDir;
+    sMatrix34 mat;
+
+    sGetMatrix(mat,sGM_MODELVIEW);
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    col = BumpDir;         // another parameter
+    bumplight = mat.k;
+    mat.TransR();
+    dir = mat.l;
+  }
+};
+*/
+/****************************************************************************/
+
+shader MaterialBump  // Tangent Space
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *BumpTex : s1;
+    sTexture2D *SpecTex : s2;
+    sTextureCube *EnvCube : s3;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv0 : TEXCOORD0,
+        in float2 in_uv1 : TEXCOORD1,
+        in float3 in_norm : NORMAL,
+        in float3 in_tang : TANGENT,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv0 : TEXCOORD0,
+        out float2 out_uv1 : TEXCOORD1,
+        out float3 out_eye : TEXCOORD2,
+        out float3 out_norm : TEXCOORD3,
+        out float3 out_tang : TEXCOORD4,
+        out float3 out_bita : TEXCOORD5,
+        uniform float4 dir : register(c4),
+        uniform row_major float4x4 mvp : register(c0) 
+      )
+      {
+        out_uv0 = in_uv0;
+        out_uv1 = in_uv1;
+
+        out_norm = normalize(in_norm);
+        out_tang = normalize(in_tang);
+        out_bita = normalize(cross(out_norm,out_tang));
+
+        out_eye = normalize(float3(dir.x,dir.y,dir.z)-float3(in_pos.x,in_pos.y,in_pos.z));
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 color : c0;
+    sVector4 bumplight : c1;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+      samplerCUBE s3 : register(s3);
+
+      void main
+      (
+        in float2 uv0 : TEXCOORD0,
+        in float2 uv1 : TEXCOORD1,
+        in float3 eye : TEXCOORD2,
+        in float3 norm : TEXCOORD3,
+        in float3 tang : TEXCOORD4,
+        in float3 bita : TEXCOORD5,
+        out float4 result : COLOR0,
+        uniform float4 bumplight : register(c1),
+        uniform float4 color : register(c0)
+      )
+      {
+        float3 tnormal = normalize(tex2D(s1,uv0).xyz-0.5);
+        float3 normal = tnormal.z*norm + tnormal.x*tang + tnormal.y*bita;
+
+        float4 diffuse = tex2D(s0,uv0);
+        float4 specular = tex2D(s2,uv0);
+        float4 envi = texCUBE(s3,reflect(eye,normal));
+        result.xyz = diffuse*color.x
+                   + specular*envi*color.y
+                   + saturate(dot(bumplight.xyz,normal))*diffuse*color.z;
+//        result.xyz = texCUBE(s3,normal).xyz+float3(0.5,0.5,0.5);
+//        result.xyz = reflect(eye,normal)*0.5+float3(0.5,0.5,0.5);
+        result.w = (specular.w + diffuse.w)*0.5f;        
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    extern sVector4 FadeColors;
+    extern sVector30 HeadlightDir;
+    sMatrix34 mat;
+
+    sGetMatrix(mat,sGM_MODELVIEW);
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    color = FadeColors;         // another parameter
+    mat.TransR();
+    bumplight.x = -mat.k.x;
+    bumplight.y = -mat.k.y;
+    bumplight.z = -mat.k.z;
+    bumplight.w = 0;
+    bumplight = HeadlightDir;
+//    sDPrintF(L"%f\n",bumplight);
+//    bumplight.Init(0,1,0);
+    dir = mat.l;
+  }
+};
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+
+shader MaterialCube
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTextureCube *CubeTex : s1;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_norm : NORMAL,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float3 out_norm : TEXCOORD1,
+        uniform float4x4 mvp,
+        uniform float4x4 nm
+      )
+      {
+        out_uv = in_uv;
+        out_norm = mul(in_norm,nm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      samplerCUBE s1 : register(s1);
+ 
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 normal : TEXCOORD1,
+        out float4 result : COLOR0,
+        uniform float4 col
+      )
+      {
+        result = texCUBE(s1,normal)*tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    sGetMatrix(nm,sGM_MODELVIEW);        // model-view-projection matrix
+    nm.l.Init(0,0,0,0);
+    nm.i.w = 0;
+    nm.j.w = 0;
+    nm.k.w = 0;
+    nm.Trans4();                           // must be transposed!
+    //nm.Init();
+    col.InitColor(Color);                   // another parameter
+  }
+};
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialMul
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sVector31 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_1_1                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        in float4 in_color : COLOR0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+        uniform row_major float4x4 mvp : register(c0)    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_color = in_color;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 vc : COLOR0,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        result = tex2D(s0,uv)*col*vc;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    col = Color;                            // another parameter
+  }
+};
+
+/****************************************************************************/
+
+shader MaterialCycle
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sVector30 MatI;
+    sVector30 MatJ;
+    sVector30 MatK;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_1_1                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        in float4 in_color : COLOR0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+        uniform row_major float4x4 mvp : register(c0)                    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_color = in_color;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 vc : COLOR0,
+        out float4 result : COLOR0,
+        uniform float4x4 cycle : register(c0)
+      )
+      {
+        result = mul(cycle,tex2D(s0,uv)*vc);
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    cycle.i = MatI;
+    cycle.j = MatJ;
+    cycle.k = MatK;
+    cycle.l.Init(0,0,0,1);
+  }
+};
+
+
+
+shader MaterialCube
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTextureCube *CubeTex : s1;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_norm : NORMAL,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float3 out_norm : TEXCOORD1,
+        uniform row_major float4x4 mvp : register(c0),
+        uniform float4x4 nm : register(c4)
+      )
+      {
+        out_uv = in_uv;
+        out_norm = mul(in_norm,nm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      samplerCUBE s1 : register(s1);
+ 
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 normal : TEXCOORD1,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        result = texCUBE(s1,normal)*tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    sGetMatrix(nm,sGM_MODELVIEW);        // model-view-projection matrix
+    nm.l.Init(0,0,0,0);
+    nm.i.w = 0;
+    nm.j.w = 0;
+    nm.k.w = 0;
+    nm.Trans4();                           // must be transposed!
+    //nm.Init();
+    col.InitColor(Color);                   // another parameter
+  }
+};
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_col : COLOR0,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_col : COLOR0,
+        uniform row_major float4x4 mvp : register(c0)                    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+        out_col = in_col;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        in float4 col : COLOR0
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+  }
+};/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        uniform float4x4 mvp
+      )
+      {
+        out_uv = in_uv;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 col
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    col.InitColor(Color);                   // another parameter
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialCube
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 Color = 0xffffffff;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform float4x4 mvp     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 color
+      )
+      {
+        result = texCUBE(s0,uvw)*color+float4(0.1,0.1,0.1,0.1);
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    color.InitColor(Color);
+    color *= 2;
+  }
+};
+
+/****************************************************************************/
+
+
+shader MaterialCubeBlur
+{
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 MulColor = 0xffffffff;
+    sU32 SubColor = 0x00000000;
+    sU32 GrayColor = 0x00808080;
+  }
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform float4x4 mvp     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 sub,
+        uniform float4 mul,
+        uniform float4 gray
+      )
+      {
+        float4 col = texCUBE(s0,uvw);
+        result.xyz = dot(saturate(col.xyz*(/*col.w-*/0.5f)-sub.xyz),gray.xyz)*mul.xyz;
+        result.w = 1;
+      }
+    }
+  }
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    sub.InitColor(SubColor);
+    mul.InitColor(MulColor);
+    gray.InitColor(GrayColor);
+  }
+};
+
+shader MaterialCubeBlurAlpha
+{
+  parameter 
+  {
+    sTextureCube *CubeTex : s0;
+    sU32 MulColor = 0xffffffff;
+    sU32 SubColor = 0x00000000;
+    sU32 GrayColor = 0x00808080;
+  }
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float3 in_norm : NORMAL,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float3 out_uvw : TEXCOORD0,
+        uniform float4x4 mvp     // shader constants: always bind to the same register as above!
+      )
+      {
+        out_uvw = normalize(in_norm);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+  ps
+  {
+    asc ps_2_0
+    {
+      samplerCUBE s0 : register(s0);
+
+      void main
+      (
+        in float3 uvw : TEXCOORD0,
+        out float4 result : COLOR0,
+        uniform float4 sub,
+        uniform float4 mul,
+        uniform float4 gray
+      )
+      {
+        float4 col = texCUBE(s0,uvw);
+        result.xyz = dot(saturate(col.xyz*(col.w-0.5f)-sub.xyz),gray.xyz)*mul.xyz;
+        result.w = 1;
+      }
+    }
+  }
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    sub.InitColor(SubColor);
+    mul.InitColor(MulColor);
+    gray.InitColor(GrayColor);
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/*
+shader MaterialBump2 // Object Space
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *BumpTex : s1;
+    sTexture2D *SpecTex : s2;
+    sTextureCube *EnvCube : s3;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv0 : TEXCOORD0,
+        in float2 in_uv1 : TEXCOORD1,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv0 : TEXCOORD0,
+        out float2 out_uv1 : TEXCOORD1,
+        out float3 out_eye : TEXCOORD2,
+        uniform float4 dir,
+        uniform float4x4 mvp  
+      )
+      {
+        out_uv0 = in_uv0;
+        out_uv1 = in_uv1;
+        out_eye = normalize(float3(dir.x,dir.y,dir.z)-float3(in_pos.x,in_pos.y,in_pos.z));
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+      samplerCUBE s3 : register(s3);
+
+      void main
+      (
+        in float2 uv0 : TEXCOORD0,
+        in float2 uv1 : TEXCOORD1,
+        in float3 eye : TEXCOORD2,
+        out float4 result : COLOR0,
+        uniform float4 col,
+        uniform float4 bumplight
+      )
+      {
+        float3 normal = tex2D(s1,uv0);
+        float4 diffuse = tex2D(s0,uv0);
+        float4 specular = tex2D(s2,uv0);
+        float4 envi = texCUBE(s3,reflect(eye,normal));
+        result.xyz = diffuse*col.x
+                   + specular*envi*col.y
+                   + saturate(dot((float3)bumplight,normal))*col.z;
+//        result.xyz = normal;
+        result.w = (specular.w + diffuse.w)*0.5f;
+//        result.xyz = result.w;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    extern sVector4 BumpDir;
+    sMatrix34 mat;
+
+    sGetMatrix(mat,sGM_MODELVIEW);
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    col = BumpDir;         // another parameter
+    bumplight = mat.k;
+    mat.TransR();
+    dir = mat.l;
+  }
+};
+*/
+/****************************************************************************/
+
+shader MaterialBump  // Tangent Space
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *BumpTex : s1;
+    sTexture2D *SpecTex : s2;
+    sTextureCube *EnvCube : s3;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv0 : TEXCOORD0,
+        in float2 in_uv1 : TEXCOORD1,
+        in float3 in_norm : NORMAL,
+        in float4 in_tang : TANGENT,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv0 : TEXCOORD0,
+        out float2 out_uv1 : TEXCOORD1,
+        out float3 out_eye : TEXCOORD2,
+        out float3 out_norm : TEXCOORD3,
+        out float4 out_tang : TEXCOORD4,
+//        out float3 out_bita : TEXCOORD5,
+        uniform float4 dir,
+        uniform float4x4 mvp  
+      )
+      {
+        out_uv0 = in_uv0;
+        out_uv1 = in_uv1;
+
+        out_norm = normalize(in_norm);
+        out_tang.xyz = normalize(in_tang.xyz);
+        out_tang.w = in_tang.w;
+//        out_bita = normalize(cross(out_tang,out_norm)*in_tang.w);
+
+        out_eye = normalize(dir.xyz-in_pos.xyz);
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 color : c0;
+    sVector4 color2 : c2;
+    sVector4 bumplight : c1;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+      samplerCUBE s3 : register(s3);
+
+      void main
+      (
+        in float2 uv0 : TEXCOORD0,
+        in float2 uv1 : TEXCOORD1,
+        in float3 eye : TEXCOORD2,
+        in float3 norm : TEXCOORD3,
+        in float4 tangs : TEXCOORD4,
+  //      in float3 bita : TEXCOORD5,
+        out float4 result : COLOR0,
+        uniform float4 bumplight : register(c1),
+        uniform float4 color : register(c0),
+        uniform float4 color2 : register(c2)
+      )
+      {
+        float3 tang = normalize(tangs.xyz);
+        norm = normalize(norm);
+        float3 bita = normalize(cross(tang,norm)*tangs.w);
+        float3 tnormal = tex2D(s1,uv0).xyz*2-1;
+        float3 normal = tnormal.x*tang + tnormal.y*bita + tnormal.z*norm;
+
+        float4 diffuse = tex2D(s0,uv0);
+        float4 specular = tex2D(s2,uv0);
+        float4 envi = texCUBE(s3,reflect(eye,normal));
+        result.xyz = diffuse * color.x                   
+                   + specular*envi*color.y
+                   + saturate(dot(bumplight.xyz,normal))*diffuse*color.z
+                   + saturate(dot(bumplight.xyz,normal))*color.w
+              //     + (normal.xyz*0.5+0.5)*color2.x
+              ;
+
+//        result.xyz = tnormal.xyz*0.5+0.5;
+
+        result.w = 1; //(specular.w + diffuse.w)*0.5f;        
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    extern sVector4 FadeColors;
+    extern sVector4 FadeColors2;
+    extern sVector30 HeadlightDir;
+    sMatrix34 mat;
+
+    sGetMatrix(mat,sGM_MODELVIEW);
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    color = FadeColors;         // another parameter
+    color2 = FadeColors2;
+    mat.TransR();
+    bumplight.x = -mat.k.x;
+    bumplight.y = -mat.k.y;
+    bumplight.z = -mat.k.z;
+    bumplight.w = 0;
+    bumplight = HeadlightDir;
+//    sDPrintF(L"%f\n",bumplight);
+//    bumplight.Init(0,1,0);
+    dir = mat.l;
+  }
+};
+
+
+/*
+shader MaterialBump  // Tangent Space
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *BumpTex : s1;
+    sTexture2D *SpecTex : s2;
+    sTextureCube *EnvCube : s3;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv0 : TEXCOORD0,
+        in float2 in_uv1 : TEXCOORD1,
+        in float3 in_norm : NORMAL,
+        in float4 in_tang : TANGENT,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv0 : TEXCOORD0,
+        out float2 out_uv1 : TEXCOORD1,
+        out float3 out_eye : TEXCOORD2,
+        out float3 out_norm : TEXCOORD3,
+        out float3 out_tang : TEXCOORD4,
+        out float3 out_bita : TEXCOORD5,
+        uniform float4 bumplight,
+        uniform float4x4 mvp  
+      )
+      {
+        out_uv0 = in_uv0;
+        out_uv1 = in_uv1;
+
+        out_norm = normalize(in_norm);
+        out_tang = normalize(in_tang.xyz);
+        out_bita = normalize(cross(out_tang,out_norm)*in_tang.w);
+        out_eye = normalize(float3(dot(bumplight,out_tang),dot(bumplight,out_bita),dot(bumplight,out_norm)));
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 color : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      sampler2D s2 : register(s2);
+      samplerCUBE s3 : register(s3);
+
+      void main
+      (
+        in float2 uv0 : TEXCOORD0,
+        in float2 uv1 : TEXCOORD1,
+        in float3 eye : TEXCOORD2,
+        in float3 norm : TEXCOORD3,
+        in float3 tang : TEXCOORD4,
+        in float3 bita : TEXCOORD5,
+        out float4 result : COLOR0,
+        uniform float4 color : register(c0)
+      )
+      {
+        float3 tnormal = tex2D(s1,uv0).xyz*2-1;
+
+        result.xyz = dot(tnormal,eye)*0.5+0.5;
+
+        result.w = 1;    
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    extern sVector4 FadeColors;
+    extern sVector30 HeadlightDir;
+    sMatrix34 mat;
+
+    sGetMatrix(mat,sGM_MODELVIEW);
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+    color = FadeColors;         // another parameter
+    mat.TransR();
+    bumplight.x = -mat.k.x;
+    bumplight.y = -mat.k.y;
+    bumplight.z = -mat.k.z; 
+    bumplight.w = 0;
+    bumplight = HeadlightDir;
+//    sDPrintF(L"%f\n",bumplight);
+//    bumplight.Init(0,1,0);
+//    dir = mat.l;
+  }
+};
+
+*/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader MaterialFlat
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_1_1                 // asc code
+    {
+      void main
+      (
+        float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        float4 in_col : COLOR0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_col : COLOR0,
+        uniform row_major float4x4 mvp : register(c0)    // constants: float4x4 is mapped to sMatrix4
+      )
+      {
+        out_uv = in_uv;
+        out_col = in_col;
+        out_pos = mul(in_pos,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+
+    asc ps_1_3
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 col : COLOR0,
+        out float4 result : COLOR0
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+//    mvp.Trans4();                           // must be transposed!
+  }
+};
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+shader TorusShader
+{
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_uv : TEXCOORD0,
+        in float4 in_color : COLOR0,
+
+        in float4 in_mat0 : TEXCOORD1,
+        in float4 in_mat1 : TEXCOORD2,
+        in float4 in_mat2 : TEXCOORD3,
+
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+
+        uniform float4x4 mvp                    // shader constants
+      )
+      {
+        out_uv = in_uv;
+        out_color = in_color;
+        float4 temp;
+        temp.x = dot(in_pos,in_mat0);
+        temp.y = dot(in_pos,in_mat1);
+        temp.z = dot(in_pos,in_mat2);
+        temp.w = 1;
+        out_pos = mul(temp,mvp);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 col : COLOR0,
+        out float4 result : COLOR0
+      )
+      {
+        result = tex2D(s0,uv)*col;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);        // model-view-projection matrix
+    mvp.Trans4();                           // must be transposed!
+  }
+};
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// this is a lame way to deal with shader permutations, but there was the
+// request that this should work with vs_1_0
+
+vs sSimpleMaterial_VS
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,            // input, from vertex array
+      out float4 out_pos : POSITION,          // output, to pixel shader
+      out float4 out_col : COLOR0,
+      uniform row_major float4x4 mvp : register(c0)     // constants: float4x4 is mapped to sMatrix4
+    )
+    {
+      out_col = 1;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+vs sSimpleMaterial_VSU
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,            // input, from vertex array
+      in float2 in_uv : TEXCOORD0,
+      out float4 out_pos : POSITION,          // output, to pixel shader
+      out float4 out_col : COLOR0,
+      out float2 out_uv : TEXCOORD0,
+      uniform row_major float4x4 mvp : register(c0)     // constants: float4x4 is mapped to sMatrix4
+    )
+    {
+      out_uv = in_uv;
+      out_col = 1;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+
+vs sSimpleMaterial_VSC
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,            // input, from vertex array
+      in float4 in_col : COLOR0,
+      out float4 out_pos : POSITION,          // output, to pixel shader
+      out float4 out_col : COLOR0,
+      uniform row_major float4x4 mvp : register(c0)     // constants: float4x4 is mapped to sMatrix4
+    )
+    {
+      out_col = in_col;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+vs sSimpleMaterial_VSCU
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,            // input, from vertex array
+      in float4 in_col : COLOR0,
+      in float2 in_uv : TEXCOORD0,
+      out float4 out_pos : POSITION,          // output, to pixel shader
+      out float4 out_col : COLOR0,
+      out float2 out_uv : TEXCOORD0,
+      uniform row_major float4x4 mvp : register(c0)     // constants: float4x4 is mapped to sMatrix4
+    )
+    {
+      out_uv = in_uv;
+      out_col = in_col;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+vs sSimpleMaterial_VSL
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,
+      in float3 in_norm : NORMAL,           // float 3! if you use float4, it gets extendet to (x,y,z,1)!
+      in float2 in_uv : TEXCOORD0,
+      out float4 out_pos : POSITION,
+      out float4 out_col : COLOR0,
+      out float2 out_uv : TEXCOORD0,
+      uniform row_major float4x4 mvp: register(c0),   // rotation for light vector (not really needed)
+      uniform float4 ld[3] : register(c4),   // light direction
+      uniform float4 la    : register(c7),   // ambient
+      uniform float4 lc[4] : register(c8)    // light color
+    )
+    {
+      float4 i = ld[0]*in_norm.x + ld[1]*in_norm.y + ld[2]*in_norm.z;
+      i = max(i,0);
+      float4 c = la + lc[0]*i.x + lc[1]*i.y + lc[2]*i.z + lc[3]*i.w;
+      out_uv = in_uv;
+      out_col = c;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+vs sSimpleMaterial_VSCL
+{
+  asc vs_1_1                 // asc code
+  {
+    void main
+    (
+      in float4 in_pos : POSITION,
+      in float3 in_norm : NORMAL,           // float 3! if you use float4, it gets extendet to (x,y,z,1)!
+      in float4 in_col : COLOR0,
+      in float2 in_uv : TEXCOORD0,
+      out float4 out_pos : POSITION,
+      out float4 out_col : COLOR0,
+      out float2 out_uv : TEXCOORD0,
+      uniform row_major float4x4 mvp: register(c0),   // rotation for light vector (not really needed)
+      uniform float4 ld[3] : register(c4),   // light direction
+      uniform float4 la    : register(c7),   // ambient
+      uniform float4 lc[4] : register(c8)    // light color
+    )
+    {
+      float4 i = ld[0]*in_norm.x + ld[1]*in_norm.y + ld[2]*in_norm.z;
+      i = max(i,0);
+      float4 c = la + lc[0]*i.x + lc[1]*i.y + lc[2]*i.z + lc[3]*i.w;
+      out_uv = in_uv;
+      out_col = c*in_col;
+      out_pos = mul(in_pos,mvp);
+    }
+  }
+}
+
+ps sSimpleMaterial_PS_C
+{
+  asc ps_1_3
+  {
+    void main
+    (
+      in float2 uv : TEXCOORD0,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = color;
+    }
+  }
+  gl
+  {
+    !!ARBfp1.0
+    MOV     result.color,fragment.color;
+    END
+  }
+}
+
+ps sSimpleMaterial_PS_CT
+{
+  asc ps_1_3
+  {
+    sampler2D s0 : register(s0);
+
+    void main
+    (
+      in float2 uv : TEXCOORD0,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = tex2D(s0,uv)*color;
+    }
+  }
+  gl
+  {
+    !!ARBfp1.0
+    TEMP    r0;
+    TEX     r0,fragment.texcoord[0],texture[0],2D;
+    MUL     result.color,r0,fragment.color;
+    END
+  }
+}
+
+ps sSimpleMaterial_PS_CTT_ADD
+{
+  asc ps_1_3
+  {
+    sampler2D s0 : register(s0);
+    sampler2D s1 : register(s1);
+
+    void main
+    (
+      in float2 uv0 : TEXCOORD0,
+      in float2 uv1 : TEXCOORD1,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = tex2D(s0,uv0)*color+tex2D(s1,uv1);
+    }
+  }
+  gl
+  {
+    !!ARBfp1.0
+    TEMP    r0;
+    TEMP    r1;
+    TEX     r0,fragment.texcoord[0],texture[0],2D;
+    TEX     r1,fragment.texcoord[1],texture[1],2D;
+    MUL     r0,r0,fragment.color;
+    ADD     result.color,r0,r1;
+    END
+  }
+}
+
+ps sSimpleMaterial_PS_CTT_MUL
+{
+  asc ps_1_3
+  {
+    sampler2D s0 : register(s0);
+    sampler2D s1 : register(s1);
+
+    void main
+    (
+      in float2 uv0 : TEXCOORD0,
+      in float2 uv1 : TEXCOORD1,
+      in float4 color : COLOR0,
+      out float4 result : COLOR0
+    )
+    {
+      result = tex2D(s0,uv0)*tex2D(s1,uv1)*color;
+    }
+  }
+  gl
+  {
+    !!ARBfp1.0
+    TEMP    r0;
+    TEMP    r1;
+    TEX     r0,fragment.texcoord[0],texture[0],2D;
+    TEX     r1,fragment.texcoord[1],texture[1],2D;
+    MUL     r0,r0,fragment.color;
+    MUL     result.color,r0,r1;
+    END
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+
+/****************************************************************************/
+
+// you may define multiple shaders in one file...
+
+/****************************************************************************/
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: MaterialLandscape1 test landscape shader
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialLandscape1
+{
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sU32 Color;
+    sVector31 CamPos;
+	sTexture2D *LightMapTex : s0;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mm : c0;         // parameter from set-code to shader
+	sMatrix44 vm : c4;
+	sMatrix44 vpm : c8;
+	sMatrix44 mv : c12;
+	sVector31 camPos : c16;
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_normal : COLOR0,
+        in float4 in_lmUV : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+		out float4 out_col : COLOR0,
+		out float2 out_uv : TEXCOORD0,
+		out float2 out_lmUV : TEXCOORD1,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 vpm : register(c8),
+        uniform float4x4 mv : register(c12),
+		uniform float3 camPos : register(c16)
+      )
+      {
+		out_pos = mul(mul(in_pos,mm), vpm);
+		out_uv = 0;
+		out_lmUV = in_lmUV;
+		out_col = normalize(in_normal.xyz).xxxx;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+  
+      void main
+      (
+		in	float4 in_col : COLOR0,
+		in  float2 in_uv : TEXCOORD0,
+		in  float2 in_lmUV : TEXCOORD1,
+        out float4 result : COLOR0
+      )
+      {
+		result = in_col ;
+//		result.xyz *= tex2D(s0,in_lmUV) * 2;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(vpm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    vpm.Trans4();								// must be transposed!
+	vpm *= vm;
+	camPos = CamPos;
+  }
+};
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: MaterialLandscapeTex blits one texture level
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+shader MaterialLandscapeTex
+{
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sU32 Color;
+    sVector31 CamPos;
+	sF32 BlendFactors[8];
+	sTexture2D *BaseTex : s0;
+	sTexture2D *LightMapTex : s1;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mm : c0;         // parameter from set-code to shader
+	sMatrix44 vm : c4;
+	sMatrix44 vpm : c8;
+	sMatrix44 mv : c12;
+	sVector31 camPos : c16;
+	sF32 hack : c16;
+	sVector4  BlendFactors1 : c17;
+	sVector4  BlendFactors2 : c18;
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float2 in_lmUV : TEXCOORD0,
+        in float4 in_normal : COLOR0,
+        in float4 in_blendFactors1 : COLOR1,
+        in float4 in_blendFactors2 : COLOR2,
+        
+        out float4 out_pos : POSITION,          // output, to pixel shader
+		out float4 out_col : COLOR0,
+		out float2 out_uv : TEXCOORD0,
+		out float2 out_lmUV : TEXCOORD1,
+        
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 vpm : register(c8),
+        uniform float4x4 mv : register(c12),
+		uniform float3 camPos : register(c16),
+		uniform float4	blendFactors1 : register(c17),
+		uniform float4	blendFactors2 : register(c18)
+      )
+      {
+		out_pos = mul(mul(in_pos,mm), vpm);
+		out_uv	= in_pos.xz * 0.01f;
+		out_lmUV = in_lmUV;
+		out_col.xyz = normalize(in_normal.xyz).xxxx;
+		out_col.a = dot(blendFactors1, in_blendFactors1) + dot(blendFactors2, in_blendFactors2);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+	  sampler2D s1 : register(s1);
+      
+      void main
+      (
+		in	float4 in_col : COLOR0,
+		in  float2 in_uv : TEXCOORD0,
+        in  float2 in_lmUV : TEXCOORD1,
+        out float4 result : COLOR0
+      )
+      {
+		result.xyz = tex2D(s0,in_uv) * in_col.xyz;
+//		result.xyz *= tex2D(s1,in_lmUV) * 2;
+		result.a = in_col.a;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(vpm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    vpm.Trans4();								// must be transposed!
+	vpm *= vm;
+	camPos = CamPos;
+	BlendFactors1.x = BlendFactors[0];
+	BlendFactors1.y = BlendFactors[1];
+	BlendFactors1.z = BlendFactors[2];
+	BlendFactors1.w = BlendFactors[3];
+	BlendFactors2.x = BlendFactors[4];
+	BlendFactors2.y = BlendFactors[5];
+	BlendFactors2.z = BlendFactors[6];
+	BlendFactors2.w = BlendFactors[7];
+	hack = 0;
+  }
+};
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: MaterialParticle test particle shader
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialParticle
+{
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+//    sMatrix44 mm : c0;         // parameter from set-code to shader 
+//    sMatrix44 vm : c4;
+//    sMatrix44 vpm : c8;
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_color : COLOR0,
+        in float4 in_color2 : COLOR1,
+        in float4 in_color3 : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 vpm : register(c8)
+      )
+      {
+        float4 pos = mul(in_pos,mm);
+        
+        // z and x are exchanged at input time
+        const float rotation = in_color2.z * 2 * 3.1416;  
+        const float size = in_color2.y * 4 ;
+        const float2 dxy = in_color2.xw * 2 - 1;
+        
+        
+        // vectorize this
+        float2 uvrot;
+        uvrot.x = dxy.x * sin(rotation) + dxy.y * cos(rotation);
+        uvrot.y = dxy.x * cos(rotation) + dxy.y * -sin(rotation);
+
+        pos.xyz += mul((float3x3)vm, float3(uvrot,0) ) * size; 
+
+        // the position
+        out_pos = mul(pos, vpm) ; // faxenquatsch
+        out_uv = (dxy * 0.5 + 0.5) * in_color3.xw + in_color3.zy; // calculate uv
+        out_color = in_color;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+  
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 color : COLOR0,
+        out float4 result : COLOR0
+      )
+      {
+        result = tex2D( s0, uv ) * color;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mm,sGM_MODEL);
+    sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(vpm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    vpm.Trans4();								// must be transposed!
+    vpm *= vm;
+  }
+};
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+/***                                                                      ***/
+/***   example to use "altona shader compiler" ASC                        ***/
+/***                                                                      ***/
+/***   this file contains a vertex and a pixel shader.                    ***/
+/***   both are compiled with the microsoft shader compiler, and the      ***/
+/***   resulting bytecode is packed into a nice class ready for use       ***/
+/***   with altona.                                                       ***/
+/***                                                                      ***/
+/***   shader.cpp and shader.hpp are the output of ASC->                   ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: Material Water - is used for the ocean waves
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialWater
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+	sTexture2D *ReflTex : s3;
+	sTexture2D *EnvBumpTex : s2;
+    sTextureCube *CubeTex : s1;
+    sU32 Color;
+	sVector31 CamPos;
+	sVector31 GridOffsetW;
+	sF32 Phase;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+		in float3 in_normal : NORMAL0,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+		out float3 out_lvec : TEXCOORD1,
+		out float3 out_refl : TEXCOORD2,
+        out float2 out_bgcoords : TEXCOORD3,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 pm : register(c8),
+		uniform float4 cp	: register(c12),
+		uniform float  phase : register(c13),
+		uniform float4 gridOffsetW : register(c14)
+      )
+      {
+		const float BIGWAVEFREQ = 1.f / 10.f;
+		const float BIGWAVEAMPLITUDE = 3.f;
+
+		float4 pos = mul(in_pos,mm);
+pos.y += sin( (pos.x - phase - gridOffsetW.x) * BIGWAVEFREQ) * BIGWAVEAMPLITUDE * (cos ( (pos.z - gridOffsetW.z) * BIGWAVEFREQ ) + 0.5f);
+		
+		// for bumpmap lookup
+        out_uv = in_uv;
+        
+        // the position
+        out_pos = mul(mul(pos, vm),pm) ; // faxenquatsch
+		
+		// for lighting of the waves
+		out_lvec = mul ( in_normal, mm ) ;
+
+		// reflection vector
+		float3 viewPos = cp;
+		float3 normal = mul(in_normal, (float3x3)mm) ;
+
+		// recalc the normal for the bigwaves
+		//normal.x += cos( (pos.x - phase - gridOffsetW.x) / 10.f);
+		//normal.z += sin( (pos.z - gridOffsetW.z) / 10.f );
+		//normal = normalize(normal);
+
+		float3 viewVec = viewPos - pos;
+		out_refl = reflect ( normalize ( viewVec ) , normal );
+//		out_refl2 = reflect ( -normalize ( viewVec ) , float3(0,1,0) );
+		
+		// depth shading
+		out_lvec.y = 1 - length(viewVec) / 250.f;
+		out_lvec.y = out_lvec.y < 0 ? 0 : out_lvec.y ;
+		// fresnel
+		out_lvec.z = 1 - pow(dot ( normal , normalize ( viewVec ) ), 0.2); 
+		
+		// transparency adjust so its more opaq
+		out_lvec.z = out_lvec.z * 0.95 + 0.05;
+
+		// background lookup coords
+		out_bgcoords = (out_pos / out_pos.w) * 0.5f + 0.5f;
+		out_bgcoords.y = 1 - out_bgcoords.y;
+//		out_bgcoords.x += sin(in_pos.y * 2) * 0.01f ; // this is for wobelling of the water disable it if problems
+//		out_bgcoords.y += cos(in_pos.y * 2) * 0.01f ; 
+		out_bgcoords.x += in_pos.y * out_lvec.y / 50.f ; // this is for wobelling of the water disable it if problems
+		out_bgcoords.y += in_pos.y * out_lvec.y / 50.f ;	// out_lvec.y = depth 0 if on the farplane and 1 if on the nearplane
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s2 : register(s2);
+	  sampler2D s3 : register(s3);
+	  samplerCUBE s1 : register(s1);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 lvec : TEXCOORD1,
+        in float3 rvec : TEXCOORD2,
+        in float2 bgcoords : TEXCOORD3,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+		float3 dist = tex2D(s2, uv) ;											// bumpmap lookup
+		float4 reflections = tex2D(s3, bgcoords);
+
+		dist = (dist * 0.5 - 0.5);												// scale bumpmap
+		float4 waveColor = texCUBE(s1,rvec + dist) * 0.7 + 0.3 - lvec.x / 4;	// get wave color and do x lighting
+
+		waveColor.xyz = lerp( waveColor.xyz, reflections, reflections.a);
+
+		float4 bgColor = tex2D(s0,bgcoords) ;									// get underseamountain color
+		float a = lvec.y * 2 * lvec.z;											// lvec z is fresnel , lvec y is depth "fog"
+		result.xyz = lerp(bgColor, waveColor, a) * col.xyz;						// get the final wave color
+		result.a = 1.f;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(pm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    pm.Trans4();								// must be transposed!
+    
+    col.InitColor(Color);                   // another parameter
+    cp = CamPos;
+	phase = Phase;
+	gridOffsetW = GridOffsetW;
+  }
+};
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: Material Water Ship - is used for the ocean waves behind a ship
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialWaterShip
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+	sTexture2D *ReflTex : s3;
+	sTexture2D *EnvBumpTex : s2;
+    sTextureCube *CubeTex : s1;
+	sTexture2D *WaveTex: s4;
+	sU32 Color;
+	sVector31 CamPos;
+	sVector31 GridOffsetW;
+	sF32 Phase;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    sMatrix44 mm : c0;         // parameter from set-code to shader
+	sMatrix44 vm : c4;
+	sMatrix44 pm : c8;
+	sVector31 campos : c12;
+	sF32	  phase : c13;
+	sVector31 gridOffsetW : c14;
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+		in float3 in_normal : NORMAL0,
+        in float2 in_uv : TEXCOORD0,
+        in float4 in_color : COLOR0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+		out float3 out_lvec : TEXCOORD1,
+		out float3 out_refl : TEXCOORD2,
+        out float2 out_bgcoords : TEXCOORD3,
+        out float4 out_color : COLOR0,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 pm : register(c8),
+		uniform float4 cp	: register(c12),
+		uniform float  phase : register(c13),
+		uniform float4 gridOffsetW : register(c14)
+      )
+      {
+		const float BIGWAVEFREQ = 1.f / 10.f;
+		const float BIGWAVEAMPLITUDE = 3.f;
+
+		float4 pos = mul(in_pos,mm);
+pos.y += sin( (pos.x - phase - gridOffsetW.x) * BIGWAVEFREQ) * BIGWAVEAMPLITUDE * (cos ( (pos.z - gridOffsetW.z) * BIGWAVEFREQ ) + 0.5f);
+		
+		// for bumpmap lookup
+        out_uv = in_uv;
+        
+        // the position
+        out_pos = mul(mul(pos, vm),pm) ; // faxenquatsch
+		
+		// for lighting of the waves
+		out_lvec = mul ( in_normal, mm ) ;
+
+		// reflection vector
+		float3 viewPos = cp;
+		float3 normal = mul(in_normal, (float3x3)mm) ;
+
+		// recalc the normal for the bigwaves
+		//normal.x += cos( (pos.x - phase - gridOffsetW.x) / 10.f);
+		//normal.z += sin( (pos.z - gridOffsetW.z) / 10.f );
+		//normal = normalize(normal);
+
+		float3 viewVec = viewPos - pos;
+		out_refl = reflect ( normalize ( viewVec ) , normal );
+		
+		// depth shading
+		out_lvec.y = 1 - length(viewVec) / 250.f;
+		out_lvec.y = out_lvec.y < 0 ? 0 : out_lvec.y ;
+		// fresnel
+		out_lvec.z = 1 - pow(dot ( normal , normalize ( viewVec ) ), 0.2); 
+		
+		// transparency adjust so its more opaq
+		out_lvec.z = out_lvec.z * 0.95 + 0.05;
+		
+		// background lookup coords
+		out_bgcoords = (out_pos / out_pos.w) * 0.5f + 0.5f;
+		out_bgcoords.y = 1 - out_bgcoords.y;
+//		out_bgcoords.x += sin(in_pos.y * 2) * 0.01f ; // this is for wobelling of the water disable it if problems
+//		out_bgcoords.y += cos(in_pos.y * 2) * 0.01f ; 
+//		out_bgcoords.x += in_pos.y * out_lvec.y / 50.f ; // this is for wobelling of the water disable it if problems
+//		out_bgcoords.y += in_pos.y * out_lvec.y / 50.f;	// out_lvec.y = depth 0 if on the farplane and 1 if on the nearplane
+		out_color = in_color;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s2 : register(s2);
+	  sampler2D s3 : register(s3);
+	  sampler2D s4 : register(s4);
+	  samplerCUBE s1 : register(s1);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 lvec : TEXCOORD1,
+        in float3 rvec : TEXCOORD2,
+        in float2 bgcoords : TEXCOORD3,
+        in float4 color : COLOR0,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+		float3 dist = tex2D(s2, uv) ;											// bumpmap lookup
+		float4 reflections = tex2D(s3, bgcoords);
+
+		dist = (dist * 0.5 - 0.5);												// scale bumpmap
+		float4 waveColor = texCUBE(s1,rvec + dist) * 0.7 + 0.3 - lvec.x / 4;	// get wave color and do x lighting
+
+		waveColor.xyz = lerp( waveColor.xyz, reflections, reflections.a);
+
+		float4 bgColor = tex2D(s0,bgcoords) ;									// get underseamountain color
+		float a = lvec.y * 2 * lvec.z;											// lvec z is fresnel , lvec y is depth "fog"
+		result.xyz = lerp(bgColor, waveColor, a) * col.xyz;						// get the final wave color
+		
+		float4 waves = tex2D(s4, uv);
+		waves.a *= color.a;
+		result.xyz = lerp(result.xyz, waves.xyz, waves.a );
+		result.a = color.a;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(pm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    pm.Trans4();								// must be transposed!
+    
+    col.InitColor(Color);                   // another parameter
+    campos = CamPos;
+	phase = Phase;
+	gridOffsetW = GridOffsetW;
+  }
+};
+
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: Material Ground - is used for the ocean floor
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialGround
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *CausticsTex : s1;
+    sU32 Color;
+	sVector31 CamPos;
+	sVector31 GridOffsetG;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+		in float3 in_normal : NORMAL0,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+		out float3 out_lvec : TEXCOORD1,
+		out float3 out_refl : TEXCOORD2,
+        out float2 out_bgcoords : TEXCOORD3,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 pm : register(c8),
+		uniform float4 cp	: register(c12),
+		uniform float4 groundTileDisplace : register( c13 )
+      )
+      {
+        float4 posModel = mul(in_pos,mm);
+        out_uv = in_uv;
+        out_pos = mul(mul(posModel, vm),pm) ; // faxenquatsch
+		out_lvec = (posModel.xzy + posModel.y - groundTileDisplace.xzy) / 40.f; // if we do a frac it will not wrap propper
+		out_refl = 0;
+		out_bgcoords = 0;
+		
+		// optimize: calculation of water depth in view direction
+		float3 viewdist = (float3)cp - (float3)posModel ;
+		float3 viewnorm = normalize(viewdist); // isnt required
+		float  nullmul = (0 - posModel.y) / viewnorm.y;
+		float3 nullpoint = posModel + viewnorm * nullmul;
+		float3 waterdist = nullpoint - posModel;
+		
+		float depth = waterdist.y > 0 ? length(waterdist) / 50.f : 0;
+		depth = cp.y > 0 ? depth : 0; // isnt required if we are only up the watersurface
+		
+		out_lvec.z = clamp(depth ,0,1);
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+	  sampler2D s1 : register(s1);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 lvec : TEXCOORD1,
+        in float3 rvec : TEXCOORD2,
+        in float2 bgcoords : TEXCOORD3,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        const float4 waterColor = float4(0.0,0.3,0.34,0);
+        result = tex2D(s0,uv) * col + float4(0.5,0.4,0.3,0.0)	; // texture lookup
+		result *= tex2D(s1, lvec) + tex2D(s1, lvec / 2)			; // caustics
+		result = lerp(result, waterColor, lvec.z)				; // depthfog
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(pm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    pm.Trans4();								// must be transposed!
+    
+    col.InitColor(Color);                   // another parameter
+    cp = CamPos;
+	groundTileDisplace = GridOffsetG;
+  }
+};
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: Material Mountains - is used for the mountains over the sea
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialMountains
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *CausticsTex : s1;
+    sU32 Color;
+	sVector31 CamPos;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+		in float3 in_normal : NORMAL0,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to p3ixel shader
+        out float2 out_uv : TEXCOORD0,
+		out float3 out_lvec : TEXCOORD1,
+		out float3 out_refl : TEXCOORD2,
+        out float2 out_bgcoords : TEXCOORD3,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 pm : register(c8),
+		uniform float4 cp	: register(c12)
+      )
+      {
+        float4 posModel = mul(in_pos,mm);
+        out_uv = in_uv;
+        out_pos = mul(mul(posModel, vm),pm) ; // faxenquatsch
+		out_lvec = (posModel.xzy + posModel.y) / 40.f; // if we do a frac it will not wrap propper
+		out_refl = 0;
+		out_bgcoords = 0;
+		
+		// optimize: calculation of water depth in view direction
+		float3 viewdist = (float3)cp - (float3)posModel ;
+		float3 viewnorm = normalize(viewdist);
+		float  nullmul = (0 - posModel.y) / viewnorm.y;
+		float3 nullpoint = posModel + viewnorm * nullmul;
+		float depth = length(nullpoint - posModel) / 70.f;
+		
+		out_lvec.z = clamp(-posModel.y / 100.f*0 + depth ,0,1);
+		out_lvec.x = posModel.y < 0 ? 0 : posModel.y / 30.f;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+	  sampler2D s1 : register(s1);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 lvec : TEXCOORD1,
+        in float3 rvec : TEXCOORD2,
+        in float2 bgcoords : TEXCOORD3,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+        const float4 waterColor = float4(0.0,0.4,0.5,0);
+        result = tex2D(s0,uv) * col + float4(0.5,0.4,0.3,0.0)* 0.9	; // texture lookup
+//		result.g += lvec.x;
+//		result *= tex2D(s1, lvec) + tex2D(s1, lvec / 2)			; // caustics
+//		result = lerp(result, waterColor, lvec.z)				; // depthfog
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(pm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    pm.Trans4();								// must be transposed!
+    
+    col.InitColor(Color);                   // another parameter
+    cp = CamPos;
+  }
+};
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+// SHADER: Material Reflections - is used for the reflections on the waves
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+shader MaterialReflections
+{
+
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sTexture2D *CausticsTex : s1;
+    sU32 Color;
+	sVector31 CamPos;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+		in float3 in_normal : NORMAL0,
+        in float2 in_uv : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+		out float3 out_lvec : TEXCOORD1,
+		out float3 out_refl : TEXCOORD2,
+        out float2 out_bgcoords : TEXCOORD3,
+        uniform float4x4 mm : register(c0),
+        uniform float4x4 vm : register(c4),
+        uniform float4x4 pm : register(c8)
+      )
+      {
+        float4 posModel = mul(in_pos,mm);
+        out_uv = in_uv;
+        out_pos = mul(mul(posModel, vm),pm) ; // faxenquatsch
+		out_lvec = (posModel.xzy + posModel.y) / 40.f; // if we do a frac it will not wrap propper
+		out_refl = 0;
+		out_bgcoords = 0;
+		out_lvec.y = -posModel.y + 0.2;
+		out_lvec.x = -posModel.y < 0 ? 0 : -posModel.y / 30.f;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    sVector4 col : c0;
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+	  sampler2D s1 : register(s1);
+
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float3 lvec : TEXCOORD1,
+        in float3 rvec : TEXCOORD2,
+        in float2 bgcoords : TEXCOORD3,
+        out float4 result : COLOR0,
+        uniform float4 col : register(c0)
+      )
+      {
+		clip(lvec.y);
+        result = tex2D(s0,uv)* col + float4(0.5,0.4,0.3,0.0)* 0.9; // texture lookup
+//		result.g += lvec.x * 0.3;
+		result *= float4(0.7,0.8,0.9,0);
+		result.a = 0.7;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+	sGetMatrix(mm,sGM_MODEL);
+	sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(pm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    pm.Trans4();								// must be transposed!
+    
+    col.InitColor(Color);                   // another parameter
+  }
+};
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+include "engine/engine.hpp";
+include "engine/enginemtrl.hpp";
+
+shader MaterialParticle : sEngBaseMtrl
+{
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_color : COLOR0,
+        in float4 in_color2 : COLOR1,
+        in float4 in_color3 : TEXCOORD0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+        uniform float4x4 mm,
+        uniform float4x4 vm,
+        uniform float4x4 vpm
+      )
+      {
+        float4 pos = mul(in_pos,mm);
+        
+        // z and x are exchanged at input time
+        const float rotation = in_color2.z * 2 * 3.1416;  
+        const float size = in_color2.y * 4 ;
+        const float2 dxy = in_color2.xw * 2 - 1;
+        
+        
+        // vectorize this
+        float2 uvrot;
+        uvrot.x = dxy.x * sin(rotation) + dxy.y * cos(rotation);
+        uvrot.y = dxy.x * cos(rotation) + dxy.y * -sin(rotation);
+
+        pos.xyz += mul((float3x3)vm, float3(uvrot,0) ) * size; 
+
+        // the position
+        out_pos = mul(pos, vpm) ; // faxenquatsch
+        out_uv = (dxy * 0.5 + 0.5) * in_color3.xw + in_color3.zy; // calculate uv
+        out_color = in_color;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+  
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 color : COLOR0,
+        out float4 result : COLOR0
+      )
+      {
+        result = tex2D( s0, uv ) * color;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+    sGetMatrix(mm,sGM_MODEL);
+    sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(vpm,sGM_PROJ);
+    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    vpm.Trans4();								// must be transposed!
+    vpm *= vm;
+  }
+};
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2005 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+include "engine/engine.hpp";
+include "engine/enginemtrl.hpp";
+
+shader MaterialBillboards : sEngBaseMtrl
+{
+  // these are the parameters of the shader
+  // as they are visible from the outside
+
+  parameter 
+  {
+    sTexture2D *BaseTex : s0;
+    sU32 Color;
+    sF32 SizeX = 1;
+    sF32 SizeY = 1;
+    sInt Mode = 0;
+  }
+
+  // the vertex sahder
+
+  vs
+  {
+
+    asc vs_2_0                 // asc code
+    {
+      void main
+      (
+        in float4 in_pos : POSITION,            // input, from vertex array
+        in float4 in_uv : TEXCOORD0,
+        in float4 in_color : COLOR0,
+        out float4 out_pos : POSITION,          // output, to pixel shader
+        out float2 out_uv : TEXCOORD0,
+        out float4 out_color : COLOR0,
+//        uniform float4x4 mm,
+        uniform float4x4 vm,
+        uniform float4x4 vpm
+      )
+      {
+//        float4 pos = mul(in_pos,mm);
+        float3 pos = in_pos;
+          
+        // vectorize this
+        float2 span;
+        const float size = 0.75f;
+        span.x = in_uv.x * size;
+        span.y = -in_uv.y * size;
+
+        pos.xyz += mul((float3x2)vm,span); 
+
+        // the position
+        out_pos = mul(float4(pos,1), vpm) ; // faxenquatsch
+        out_uv = in_uv.xy;
+        out_color = in_color;
+      }
+    }
+  }
+
+  // the pixel shader. same as vertex shader...
+
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+  
+      void main
+      (
+        in float2 uv : TEXCOORD0,
+        in float4 color : COLOR0,
+        out float4 result : COLOR0
+      )
+      {
+        result = tex2D( s0, uv ) * color;
+      }
+    }
+  }
+
+  // the set code:
+  // takes parameters and sets them to the shaders.
+
+  set
+  {
+//    sGetMatrix(mm,sGM_MODEL);
+    sGetMatrix(vm,sGM_VIEW);
+    sGetMatrix(vpm,sGM_MODELSCREEN);
+
+
+//    mm.Trans4();								// must be transposed!
+    vm.Trans4();								// must be transposed!
+    vm.i *= SizeX;
+    switch(Mode)
+    {
+    case 0:
+      vm.j *= SizeY;
+      break;
+    case 1:
+      vm.j.Init(0,SizeY,0,0);
+      break;
+    }
+
+    vpm.Trans4();								// must be transposed!
+  }
+};
+
+include "engine/engine.hpp";
+include "engine/enginemtrl.hpp";
+
+/****************************************************************************/
+
+shader sMtrlFakeShadow : sEngBaseMtrl
+{
+  parameter
+  {
+    sMatrix44 Projection = sMatrix44();
+    sVector4 BlendParam = sVector4(0.0f, 0.0f, 0.0f, 0.0f);
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  out float4 uv : TEXCOORD0,
+                  uniform float4x4 mvp,
+                  uniform float4x4 lproj
+                )
+      {
+        uv = mul(pos, lproj);
+        pos = mul(pos, mvp);
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      float4 main(  float4 uv : TEXCOORD0,
+                    uniform float4 fparam
+                 ) : COLOR0
+      {
+        float shadow = tex2Dproj(s0, uv).y;
+        shadow = fparam.x - fparam.y*shadow;
+        return float4(shadow, shadow, shadow, shadow);
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    lproj = Projection;
+    fparam = BlendParam;
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlBoxFilter : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  inout float4 color : COLOR0,
+                  uniform float4x4 mvp 
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+        color = color;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD,
+                    float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return tex2D(filtertex, uv)*color;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlFilter4 : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[4]
+                 ) : COLOR0
+      {
+        float4 result = tex2D(filtertex, uv+offset[0].xy)*offset[0].w;
+        for (int i=1; i<4; i++)
+          result += tex2D(filtertex, uv+offset[i].xy)*offset[i].w;
+        return result;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<4; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlFilter8 : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp 
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[8]
+                 ) : COLOR0
+      {
+        float4 result = tex2D(filtertex, uv+offset[0].xy)*offset[0].w;
+        for (int i=1; i<8; i++)
+          result += tex2D(filtertex, uv+offset[i].xy)*offset[i].w;
+        return result;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<8; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlFilter16 : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[16]
+                 ) : COLOR0
+      {
+        float4 result = tex2D(filtertex, uv)*offset[0].w;
+        for (int i=1; i<16; i++)
+          result += tex2D(filtertex, uv+offset[i].xy)*offset[i].w;
+        return result;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<16; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlFilterMax8 : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[8]
+                 ) : COLOR0
+      {
+        float4 result;
+        float2 tmp = tex2D(filtertex, uv+offset[0].xy).xy;
+        result.x = tmp.x*offset[0].w;
+        result.y = tmp.y;
+        result.z = 1.0f;
+        result.w = 1.0f;
+        
+        for (int i=1; i<8; i++)
+        {
+          tmp = tex2D(filtertex, uv+offset[i].xy).xy;
+          result.x += tmp.x*offset[i].w;
+          result.y = max(result.y, tmp.y);
+        }
+        return result;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<8; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlFilterMax16 : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[16]
+                 ) : COLOR0
+      {
+        float4 result;
+        float2 tmp = tex2D(filtertex, uv+offset[0].xy).xy;
+        result.x = tmp.x*offset[0].w;
+        result.y = tmp.y;
+        result.z = 1.0f;
+        result.w = 1.0f;
+        
+        for (int i=1; i<16; i++)
+        {
+          tmp = tex2D(filtertex, uv+offset[i].xy).xy;
+          result.x += tmp.x*offset[i].w;
+          result.y = max(result.y, tmp.y);
+        }
+        return result;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<16; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlSub : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  inout float4 color : COLOR0,
+                  out float4 colinv : TEXCOORD1,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+        color = color;
+        colinv = float4(1,1,1,1)-color;
+        colinv.x = 1/colinv.x;
+        colinv.y = 1/colinv.y;
+        colinv.z = 1/colinv.z;
+        colinv.w = 1/colinv.w;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D filtertex : register(s0);
+      float4 main(  float2 uv : TEXCOORD0,
+                    float4 color : COLOR0,
+                    float4 colinv : TEXCOORD1
+                 ) : COLOR0
+      {
+        return (tex2D(filtertex, uv)-color)*colinv;        
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlShowHDR : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+    
+      sampler2D filtertex : register(s0);
+      
+      float4 main(  float2 uv : TEXCOORD0 ) : COLOR0
+      {
+      
+        static const float3 LUMINANCE_VECTOR  = float3(0.2125f, 0.7154f, 0.0721f);
+        float3 incolor = tex2D(filtertex,uv);
+        float lum = dot(incolor,LUMINANCE_VECTOR);
+        float4 outcolor = float4(0,0,0,1);
+        static const float3 steps = float3(1,10,100);
+        
+        if (lum > steps.x)
+          outcolor.x = 0;
+        else
+          outcolor.x = lum/steps.x;
+        if (lum > steps.y)
+          outcolor.y = 0;
+        else
+          outcolor.y = lum/steps.y;
+        if (lum > steps.z)
+        {
+          outcolor = float4(1,1,1,1);
+        }
+        else
+          outcolor.z = lum/steps.z;
+        
+        return outcolor;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+
+/****************************************************************************/
+
+shader sMtrlLumAvgInit : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp 
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      static const float3 LUMINANCE_VECTOR  = float3(0.333333f, 0.333333f, 0.333333f);
+//      static const float3 LUMINANCE_VECTOR  = float3(0.2125f, 0.7154f, 0.0721f);
+// which convertion to choose?      
+//      static const float3 LUMINANCE_VECTOR  = float3(0.30f, 0.59, 0.11);
+      static const float LUMINANCE_OFFSET = 0.0001f;
+      
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[8]
+                 ) : COLOR0
+      {
+        float result=0;
+        float maxlum = 0;
+        for (int i=0; i<8; i++)
+        {
+          float lum = dot(tex2D(filtertex, uv+offset[i].xy).xyz, LUMINANCE_VECTOR);
+          result += log(lum+LUMINANCE_OFFSET);
+          maxlum = max(maxlum, lum);
+        }
+        
+        result *= 1.0f/8.0f;
+        return float4(result, maxlum, result, 1.0f);
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<8; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlLumAvgFinish : sEngBaseMtrl
+{
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+    
+      sampler2D filtertex : register(s0);
+      float4 main( float2 uv : TEXCOORD0,
+                   uniform float4 offset[4]
+                 ) : COLOR0
+      {
+        float LumSum = 0.0f;
+        float maxlum = 0.0f;
+        for (int i=0; i<4; i++)
+        {
+          float2 tmp = tex2D(filtertex, uv+offset[i].xy).xy;
+          LumSum += tmp.x;
+          maxlum = max(maxlum, tmp.y);
+        }
+        
+        LumSum = exp(LumSum*(1.0/4.0));
+        return float4(LumSum,maxlum*maxlum,LumSum,1.0f);    
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    for (sInt i=0; i<4; i++)
+      offset[i] = ipp->FilterKernel[i];
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlAdaptLum : sEngBaseMtrl
+{
+  parameter
+  {
+    sF32 AdaptParam = 0;
+  }
+
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+    
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      
+      float4 main(  float2 uv : TEXCOORD0,
+                    uniform float adaptparam    // x = pow(percentage, time)
+                 ) : COLOR0
+      {
+      
+        float2 currentlum = tex2D(s0, uv).xy;
+        float2 adaptlum = tex2D(s1, uv).xy;
+        float2 newadapt = adaptlum + (currentlum - adaptlum) * (1 - adaptparam);
+        return float4(newadapt.x, newadapt.y, 1.0f, 1.0f);        
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    adaptparam = AdaptParam;
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlToneMap : sEngBaseMtrl
+{
+  parameter
+  {
+    sVector4 ToneMapParam = sVector4(0.36f, 2.00f, 1.0f, 0.0f);
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  out float2 uvlum : TEXCOORD1,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        uv = uv;
+        uvlum = float2(0,0);
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+    
+      sampler2D filtertex : register(s0);
+      sampler2D avgluminance : register(s1);
+      
+      float4 main(  float2 uv : TEXCOORD0,
+                    float2 uvlum : TEXCOORD1,
+                    uniform float4 tmparam
+                 ) : COLOR0
+      {
+      
+        float4 incolor = tex2D(filtertex,uv);
+        float2 adaptlum = tex2D(avgluminance, uvlum).xy;
+
+        float4 lumscaled = incolor*tmparam.x/adaptlum.x;
+        // map maximal scene luminance to 1
+        //float4 lumfinal = lumscaled / (1 + lumscaled);
+        
+        // tmparam = (smallest luminance mapped to 1)^2
+        //float4 lumfinal = lumscaled * (1 + lumscaled / tmparam.y) / (1 + lumscaled);
+        float4 lumfinal = lumscaled * (1 + lumscaled / max(adaptlum.y+tmparam.z, tmparam.y)) / (1 + lumscaled);
+        
+        return lumfinal;
+      }
+    }
+  }
+  
+  set (struct sEngIPPJob* ipp)
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    tmparam = ToneMapParam;
+  }
+};
+
+
+/****************************************************************************/
+
+shader sMtrlGouraud : sEngBaseMtrl
+{
+  parameter
+  {
+    sVector4 Color = sVector4(1.0f, 1.0f, 1.0f, 1.0f);
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float4 color : COLOR0,
+                  uniform float4 mtrlcol,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);
+        color = color*mtrlcol;
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      float4 main(  in float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return color;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+    mtrlcol = Color;
+  }
+};
+
+
+/****************************************************************************/
+
+shader sMtrlPlainTex : sEngBaseMtrl
+{
+  parameter
+  {
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);        
+        uv = uv;        
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      
+      float4 main(  float2 uv : TEXCOORD0
+                 ) : COLOR0
+      {
+        return tex2D(s0, uv).xyzw;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlPlainTexMulColor : sEngBaseMtrl
+{
+  parameter
+  {
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  inout float4 color : COLOR0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);        
+        uv = uv;        
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      
+      float4 main(  float2 uv : TEXCOORD0,
+                    float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return tex2D(s0, uv).xyzw * color;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlPlainTexMulTexMulColorMul2 : sEngBaseMtrl
+{
+  parameter
+  {
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv1 : TEXCOORD0,
+                  inout float2 uv2 : TEXCOORD1,
+                  inout float4 color : COLOR0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);        
+        uv1 = uv1;        
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      
+      float4 main(  float2 uv1 : TEXCOORD0,
+                    float2 uv2 : TEXCOORD1,
+                    float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return tex2D(s0, uv1).xyzw * tex2D(s1, uv2).xyzw * color * 2;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+/****************************************************************************/
+
+shader sMtrlPlainTexAddTex : sEngBaseMtrl
+{
+  parameter
+  {
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv : TEXCOORD0,
+                  inout float2 uv2 : TEXCOORD1,
+                  inout float4 color : COLOR0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);        
+        uv = uv;        
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      
+      float4 main(  float2 uv : TEXCOORD0,
+                    float2 uv2 : TEXCOORD1,
+                    float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return tex2D(s0, uv).xyzw + tex2D(s1, uv2).xyzw;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};
+
+
+shader sMtrlPlainTexAddTexMulColor : sEngBaseMtrl
+{
+  parameter
+  {
+  }
+  
+  vs
+  {
+    asc vs_2_0
+    {
+      void main(  inout float4 pos : POSITION,
+                  inout float2 uv1 : TEXCOORD0,
+                  inout float2 uv2 : TEXCOORD1,
+                  inout float4 color : COLOR0,
+                  uniform float4x4 mvp
+                )
+      {
+        pos = mul(pos, mvp);        
+        uv1 = uv1;        
+      }
+    }
+  }
+  
+  ps
+  {
+    asc ps_2_0
+    {
+      sampler2D s0 : register(s0);
+      sampler2D s1 : register(s1);
+      
+      float4 main(  float2 uv1 : TEXCOORD0,
+                    float2 uv2 : TEXCOORD1,
+                    float4 color : COLOR0
+                 ) : COLOR0
+      {
+        return tex2D(s0, uv1).xyzw + tex2D(s1, uv2).xyzw * color;
+      }
+    }
+  }
+  
+  set
+  {
+    sGetMatrix(mvp,sGM_MODELSCREEN);
+    mvp.Trans4();
+  }
+};

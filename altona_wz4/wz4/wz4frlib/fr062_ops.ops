@@ -1,0 +1,217 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_modmtrl.hpp"
+#include "wz4frlib/wz4_modmtrl_ops.hpp"
+#include "wz4frlib/fr062_ops.hpp"
+}
+code
+{
+}
+
+/**************************************************************************+*/
+
+code
+{
+  class MM62_SphereSlicer : public MtrlModule
+  {
+  public:
+    ModShaderParaSphereSlicer Para;
+    MtrlModule *Tex;
+
+    MM62_SphereSlicer()
+    {
+      Phase = MMP_Post;
+      Name = L"sphereslicer";
+      Shaders = 3;
+      Tex = 0;
+    }
+
+    void PS(ShaderCreator *sc)
+    {
+      const sChar *texname = 0;
+      if(Tex)
+        texname = Tex->Get(sc);
+
+      sc->FragBegin(Name);
+      sc->FragModify(L"col_diffuse");
+      sc->FragModify(L"alpha");
+      sc->InputPS(L"ws_pos",SCT_FLOAT3);
+      if(texname)
+        sc->FragRead(texname);
+
+      // gather parameters
+
+      sVector30 col;
+      col.InitColor(Para.Color);
+      sc->TB.PrintF(L"  {\n");
+      if(Para.Flags & 4)
+      {
+        sc->Para(L"Vector0");
+        sc->Para(L"Vector1");
+        sc->Para(L"Vector2");
+        sc->Para(L"Vector3");
+        sc->Para(L"Vector4");
+        sc->Para(L"Vector5");
+        sc->Para(L"Color0");
+        sc->TB.PrintF(L"    float3 c0 = Vector0.xyz; float r0 = Vector0.w;\n");
+        sc->TB.PrintF(L"    float3 c1 = Vector1.xyz; float r1 = Vector1.w;\n");
+        sc->TB.PrintF(L"    float3 c2 = Vector2.xyz; float r2 = Vector2.w;\n");
+        sc->TB.PrintF(L"    float3 c3 = Vector3.xyz; float r3 = Vector3.w;\n");
+        sc->TB.PrintF(L"    float clipmin=Vector4.x,clipmax=Vector4.x+Vector4.y,colmin=Vector4.z,colmax=Vector4.z+Vector4.w;\n");
+        sc->TB.PrintF(L"    float3 col=Color0;\n");
+        sc->TB.PrintF(L"    float amp=Vector5.x,bias=Vector5.y,tamp=Vector5.z;\n");
+      }
+      else
+      {
+        sc->TB.PrintF(L"    float3 c0 = float3(%f,%f,%f); float r0 = %f;\n",Para.Sphere0.x,Para.Sphere0.y,Para.Sphere0.z,Para.Sphere0.w);
+        sc->TB.PrintF(L"    float3 c1 = float3(%f,%f,%f); float r1 = %f;\n",Para.Sphere1.x,Para.Sphere1.y,Para.Sphere1.z,Para.Sphere1.w);
+        sc->TB.PrintF(L"    float3 c2 = float3(%f,%f,%f); float r2 = %f;\n",Para.Sphere2.x,Para.Sphere2.y,Para.Sphere2.z,Para.Sphere2.w);
+        sc->TB.PrintF(L"    float3 c3 = float3(%f,%f,%f); float r3 = %f;\n",Para.Sphere3.x,Para.Sphere3.y,Para.Sphere3.z,Para.Sphere3.w);
+        sc->TB.PrintF(L"    float clipmin=%f,clipmax=%f,colmin=%f,colmax=%f;\n",Para.ClipMin,Para.ClipMax,Para.ColMin,Para.ColMax);
+        sc->TB.PrintF(L"    float3 col=float3(%f,%f,%f);\n",col.x,col.y,col.z);
+        sc->TB.PrintF(L"    float amp=%f; bias=%f; tamp=%f;\n",Para.Amp,Para.Bias,Para.TexAmp);
+      }
+
+      // slice
+
+      sc->TB.PrintF(L"    float pot = r0/length(c0-ws_pos) +  r1/length(c1-ws_pos) +  r2/length(c2-ws_pos) +  r3/length(c3-ws_pos);\n");
+      if(Para.Flags & 8)
+        sc->TB.PrintF(L"    pot = 1/pot;\n");
+      sc->TB.PrintF(L"    pot = pot*amp+bias;\n");
+      if(texname)
+        sc->TB.PrintF(L"    pot += %s.x*tamp;\n",texname);
+      switch(Para.Flags & 3)
+      {
+      case 0:
+        break;
+      case 1:
+        sc->TB.PrintF(L"    pot = sin(pot*%f);\n",sPI2F);
+        break;
+      case 2:
+        sc->TB.PrintF(L"    pot = frac(pot);\n");
+        break;
+      case 3:
+        sc->TB.PrintF(L"    pot = saturate(sin(pot*%f));\n",sPI2F);
+        break;
+      }
+      if(Para.Flags & 32)
+        sc->TB.PrintF(L"    pot = 1-pot;\n",sPI2F);
+
+      if(Para.Flags & 16)
+        sc->TB.PrintF(L"    if(!((pot>colmin) && (pot<colmax)))\n");
+      else
+        sc->TB.PrintF(L"    if((pot>colmin) && (pot<colmax))\n");
+      sc->TB.PrintF(L"    {\n");
+      sc->TB.PrintF(L"      col_diffuse.xyz = col;\n");
+      sc->TB.PrintF(L"      alpha = 1;\n");
+      sc->TB.PrintF(L"    }\n");
+      sc->TB.PrintF(L"    if((pot<clipmin) || (pot>clipmax))\n");
+      sc->TB.PrintF(L"      discard;\n");
+      //sc->TB.PrintF(L"    float clipflag = (pot>clipmin) && (pot<clipmax);\n");
+      //sc->TB.PrintF(L"    clip(clipflag-0.5);\n");
+      sc->TB.PrintF(L"  }\n");
+
+      sc->FragEnd();
+    }
+  };
+}
+
+operator ModShader SphereSlicer(?ModShaderSampler)
+{
+  tab = Wz4Mtrl;
+  column = 7;
+  parameter
+  {
+    float4 Sphere0(-1024..1024 step 0.01) = { 0,0,0,1 };
+    float4 Sphere1(-1024..1024 step 0.01) = { 0,0,0,0 };
+    float4 Sphere2(-1024..1024 step 0.01) = { 0,0,0,0 };
+    float4 Sphere3(-1024..1024 step 0.01) = { 0,0,0,0 };
+
+    float Amp(-1024..1024 step 0.001) = 1.0;
+    flags Flags("-|sin|mod|halfsin:*2-|from env:*3 reciproce|linear:*4-|inv color:*5-|inv pot");
+    float ClipMin(-16..16 step 0.001);
+    float ClipMax(-16..16 step 0.001);
+    float ColMin(-16..16 step 0.001);
+    float ColMax(-16..16 step 0.001);
+    color Color("rgb");
+    float Bias(-1024..1024 step 0.001) = 1.0;
+    float TexAmp(-1024..1024 step 0.001) = 1.0;
+  }
+
+  code
+  {
+    MM62_SphereSlicer *mod = new MM62_SphereSlicer;
+    mod->Para = *para;
+    if(in0)
+      mod->Tex = in0->Modules[0];
+    out->Add(in0);
+    out->Add(mod)
+  }
+}
+
+/****************************************************************************/
+
+header_end
+{
+  class RNModSlice : public Wz4RenderNode
+  {
+  public:
+    Wz4RenderParaModSlice Para,ParaBase;
+    Wz4RenderAnimModSlice Anim;
+
+    RNModSlice();
+    ~RNModSlice();
+
+    void Simulate(Wz4RenderContext *);
+    void Render(Wz4RenderContext *);
+  };
+}
+
+operator Wz4Render ModSlice(?Wz4Render)
+{
+  tab = Wz4Mtrl;
+  column = 1;
+  parameter
+  {
+    int Index "LightEnv" (0..15);
+    int Renderpass (-127..127);
+    anim float30 Pos0(-1000000..1000000 step 0.01);
+    nolabel anim float Size0(-1000..1000 step 0.01) = 0;
+    anim float30 Pos1(-1000000..1000000 step 0.01);
+    nolabel anim float Size1(-1000..1000 step 0.01) = 0;
+    anim float30 Pos2(-1000000..1000000 step 0.01);
+    nolabel anim float Size2(-1000..1000 step 0.01) = 0;
+    anim float30 Pos3(-1000000..1000000 step 0.01);
+    nolabel anim float Size3(-1000..1000 step 0.01) = 0;
+
+    anim float Amp(-16..16 step 0.01);
+
+    anim float ClipPhase(-16..16 step 0.01);
+    anim float ClipSize(-16..16 step 0.01);
+    anim float ColPhase(-16..16 step 0.01);
+    anim float ColSize(-16..16 step 0.01);
+
+    anim color Color("rgb");
+
+    anim float Bias(-16..16 step 0.01);
+    anim float TexAmp(-1024..1024 step 0.001) = 1.0;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNModSlice *node = new RNModSlice;
+    node->ParaBase = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/

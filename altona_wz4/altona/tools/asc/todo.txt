@@ -1,0 +1,30 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) 2005-2006 by Dierk Ohlerich                          ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+
+
+[immediatly]
+- bootstrap projekt
+
+- XBOX360
+- CG: row/column major correct?
+- port util/shaders to NewMaterial
+- port all altona/tc3 examples 
+
+
+[clean up]
+- move sShaderCompilerXX routines to shadercomp project
+- move console compilers to tc3 codebase
+- remove all unused shader compiler call codes
+- remove old code generator
+
+[long term goals]
+- output GLSL, change whole gl port vrom fertexprogram to glsl
+- check whole syntax
+- row major arrays -> type needs notion of majority!

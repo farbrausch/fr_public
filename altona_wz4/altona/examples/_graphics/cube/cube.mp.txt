@@ -1,0 +1,27 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{AE74C0FA-985C-40d1-B3A1-1176576F36A9}";
+
+license altona;
+include "altona/main";
+if (sSDK_CHAOS) include "chaos-code/lib";
+
+create "debug_dx9";
+create "debug_dx11";
+create "debug_ogl2";
+create "debug_blank";
+create "release_dx9";
+create "release_dx11";
+create "release_ogl2";
+create "release_blank";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "cube.mp.txt";

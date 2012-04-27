@@ -1,0 +1,36 @@
+guid "{091900DB-59DD-4ff0-B9B7-3D029044E7FD}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+
+folder "app"
+{
+  file "main.?pp";
+  file "dxt.mp.txt";
+  file "dxt.wire.txt";
+  file "todo.txt";
+  file "config.hpp";
+
+  file "doc.?pp";
+  file "gui.?pp";
+}
+
+folder "codecs"
+{
+  file "codec_old.?pp";
+  file "codec_test.?pp";
+  file "codec_ms.?pp" { config "!*dx9*" { exclude; }}
+  file "codec_altona.?pp";
+  file "codec_nvidia.?pp";
+  file "codec_ati.?pp";
+  file "codec_ryg.?pp";
+}
+

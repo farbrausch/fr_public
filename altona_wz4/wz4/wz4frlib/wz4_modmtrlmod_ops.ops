@@ -1,0 +1,1107 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_modmtrl.hpp"
+#include "wz4frlib/wz4_modmtrl_ops.hpp"
+}
+
+code
+{
+#include "wz4frlib/wz4_modmtrlmod.hpp"
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Shadow (Point, Dir, Spot, ...)                                     ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Shading Model (Phong, etc)                                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ModShader Flat()
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    color Color("rgb")=0x00ffffff;
+  }
+  code
+  {
+    MM_Flat *mod = new MM_Flat;
+    mod->Color.InitColor(para->Color);
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Lambert()
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    flags Light ("-|Front:*1-|Middle:*2-|Back")=7;
+  }
+  code
+  {
+    MM_Lambert *mod = new MM_Lambert;
+    mod->LightFlags = para->Light;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Phong(?ModShaderSampler)
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    float Specular:0(0..128 step 0.01) = 32;
+    float Transparency:5(0..1 step 0.005) = 1;
+    flags Light:1 ("-|Front:*1-|Middle:*2-|Back:*3-|Specular")=15;
+    if(input[0])
+    {
+      layout flags UseTexture:3("*0-|Specularity:*1-|Transparency:*2-|Color (rgb)")=1;
+      if(UseTexture & 1)
+        flags SpecularityMap:2("r|g|b|a") = 3;
+      if(UseTexture & 2)
+        flags TransparencyMap:4("r|g|b|a") = 3;
+    }
+  }
+  code
+  {
+    MM_Phong *mod = new MM_Phong;
+    mod->Specular = para->Specular;
+    mod->Transpar = para->Transparency;
+    mod->LightFlags = para->Light;
+    mod->TextureFlags = para->UseTexture;
+    mod->SpecularityMap = para->SpecularityMap;
+    mod->TransparencyMap = para->TransparencyMap;
+    if(in0)
+      mod->Tex = in0->Modules[0];
+    out->Add(in0);
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Rim()
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    flags Flags ("linear|smoothstep:*1emissive|diffuse")=1;
+    float Width (0..1 step 0.01) = 0.5;
+    color Color("rgb")=0xffffff;
+    narrow flags Shadow "React to Shadow" ("*0 -| 0:*1 -| 1:*2 -| 2:*3 -| 3:*4 -| 4:*5 -| 5:*6 -| 6:*7 -| 7")=0;
+  }
+  code
+  {
+    MM_Rim *mod = new MM_Rim;
+    mod->Flags = para->Flags;
+    mod->Width = para->Width;
+    mod->Color.InitColor(para->Color);
+    mod->Shadow = para->Shadow;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Comic(Texture2D)
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    flags Mode ("-|Phong")=1;
+  }
+  code
+  {
+    MM_Comic *mod = new MM_Comic;
+    mod->Mode = para->Mode;
+    mod->Tex = in0;  in0->AddRef();
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader BlinnPhong(?ModShaderSampler)
+{
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    float Specular(0..128 step 0.01) = 32;
+    flags Light ("-|Front:*1-|Middle:*2-|Back:*3-|Specular")=15;
+    if(input[0])
+      flags SpecularityMap("r|g|b|a") = 3;
+  }
+  code
+  {
+    MM_BlinnPhong *mod = new MM_BlinnPhong;
+    mod->Specular = para->Specular;
+    mod->LightFlags = para->Light;
+    mod->SpecularityMap = para->SpecularityMap;
+    if(in0)
+      mod->Tex = in0->Modules[0];
+    out->Add(in0);
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Textures                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator ModShaderSampler Tex2D(Texture2D)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    layout flags Flags("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white:*30old buggy rotation|-")=0x40000000;
+    layout flags UV("uv0|uv1|model|world|camera|envi-sphere|envi-reflect|envi-sphere (per pixel)|envi-reflect (per pixel)");
+    layout flags Transform("-|Scale|Matrix| 0 LightEnv Matrix 0| 1 LightEnv Matrix 1| 2 LightEnv Matrix 2| 3 LightEnv Matrix 3");
+    layout flags Aux("-|aux| 1-aux|upper half|lower half");
+    if(Transform == 1)
+      float SimpleScale(-1024..1024 step 0.01)=1;
+    if(Transform == 2)
+    {
+      float31 Scale(-1024..1024 step 0.01) = 1;
+      float30 Rot(-16..16 step 0.001);
+      float31 Trans(-1024..1024 step 0.01);    
+    }
+  }
+  code
+  {
+    MM_Tex2D *mod = new MM_Tex2D;
+    mod->Flags = sConvertOldUvFlags(para->Flags&~0x40000000);
+    mod->UV = para->UV;
+    mod->Transform = para->Transform;
+    mod->Aux = para->Aux;
+    mod->SimpleScale = para->SimpleScale;
+    mod->Scale = para->Scale;
+    mod->Rot = para->Rot;
+    mod->Trans = para->Trans;    
+    mod->Texture = in0; in0->AddRef();    
+    if(para->Flags & 0x40000000)
+      mod->Rot *= 1.0f/sPI2F;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShaderSampler Tex2DAnim(Texture2D)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    layout flags Flags("*0trilinear|aniso|point|bilinear")=0x00000000;
+    layout flags UV("uv0|uv1|model|world|camera|envi-sphere|envi-reflect|envi-sphere (per pixel)|envi-reflect (per pixel)");
+    layout flags Transform("-|Scale|Matrix| 0 LightEnv Matrix 0| 1 LightEnv Matrix 1| 2 LightEnv Matrix 2| 3 LightEnv Matrix 3");
+    layout flags Aux("-|aux| 1-aux|upper half|lower half");
+    flags AtlasAnim("Vector0|Vector1|Vector2|Vector3|Vector4|Vector5|Vector6|Vector7")=0;
+
+    if(Transform == 1)
+      float SimpleScale(-1024..1024 step 0.01)=1;
+    if(Transform == 2)
+    {
+      float31 Scale(-1024..1024 step 0.01) = 1;
+      float30 Rot(-16..16 step 0.001);
+      float31 Trans(-1024..1024 step 0.01);    
+    }
+  }
+  code
+  {
+    MM_Tex2DAnim *mod = new MM_Tex2DAnim;
+    mod->Flags = para->Flags;
+    mod->UV = para->UV;
+    mod->Transform = para->Transform;
+    mod->Aux = para->Aux;
+    mod->SimpleScale = para->SimpleScale;
+    mod->Scale = para->Scale;
+    mod->Rot = para->Rot;
+    mod->Trans = para->Trans;
+    mod->AtlasAnim = para->AtlasAnim;
+    mod->Texture = in0; in0->AddRef();
+    out->Add(mod);
+  }
+}
+
+
+/****************************************************************************/
+
+operator ModShaderSampler Tex2DSurround(Texture2D)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    layout flags Flags:12("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white") = 0;
+    layout flags CoordinateSystem:13("world|model post skin|model pre skin")=2;
+    layout continue flags CoordinateSystem "Flags" ("*4-|Major Axis");
+    layout flags Aux:0("-|aux| 1-aux|upper half|lower half");
+    layout flags Transform:1("-|Scale|Matrix| 0 LightEnv Matrix 0| 1 LightEnv Matrix 1| 2 LightEnv Matrix 2| 3 LightEnv Matrix 3");
+    if(Transform==1)
+      float SimpleScale:2(-1024..1024 step 0.01)=1;
+    if(Transform==2)
+    {
+      float31 Scale:3(-1024..1024 step 0.01) = 1;
+      float30 Rot:6(-16..16 step 0.001);
+      float31 Trans:9(-1024..1024 step 0.01);    
+    }
+    if(CoordinateSystem&16)
+    {
+      float30 MajorAxis:14(-1024..1024)= 1;
+    }
+  }
+  code
+  {
+    MM_Tex2DSurround *mod = new MM_Tex2DSurround;
+    mod->Flags = sConvertOldUvFlags(para->Flags);
+    mod->Aux = para->Aux;
+    mod->Space = para->CoordinateSystem;
+    mod->SimpleScale = para->SimpleScale;
+    mod->Scale = para->Scale;
+    mod->Rot = para->Rot;
+    mod->Trans = para->Trans;
+    mod->Transform = para->Transform;
+    mod->MajorAxis = para->MajorAxis;
+    mod->Texture = in0; in0->AddRef();
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Tex2DSurroundNormal(Texture2D)
+{ 
+  tab = Wz4Mtrl;
+  flags = hide;
+  column = 6;
+
+  parameter
+  {
+    layout flags Flags:12("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white") = 0;
+    layout flags CoordinateSystem:13("world|model post skin|model pre skin")=2;
+    layout continue flags CoordinateSystem "Flags" ("*4-|Major Axis");
+    layout flags Aux:0("-|aux| 1-aux|upper half|lower half");
+    layout flags Transform:1("-|Scale|Matrix")=1;//| 0 LightEnv Matrix 0| 1 LightEnv Matrix 1| 2 LightEnv Matrix 2| 3 LightEnv Matrix 3");
+    if(Transform==1)
+      float SimpleScale:2(-1024..1024 step 0.01)=1;
+    if(Transform==2)
+    {
+      float31 Scale:3(-1024..1024 step 0.01) = 1;
+      float30 Rot:6(-16..16 step 0.001);
+      float31 Trans:9(-1024..1024 step 0.01);    
+    }
+    if(CoordinateSystem&16)
+    {
+      float30 MajorAxis:14(-1024..1024)= 1;
+    }
+  }
+  code
+  {
+    MM_Tex2DSurroundNormal *mod = new MM_Tex2DSurroundNormal;
+    mod->Flags = sConvertOldUvFlags(para->Flags);
+    mod->Space = para->CoordinateSystem;
+    mod->SimpleScale = para->SimpleScale;
+    mod->Scale = para->Scale;
+    mod->Rot = para->Rot;
+    mod->Trans = para->Trans;
+    mod->Transform = para->Transform;
+    mod->MajorAxis = para->MajorAxis;
+    mod->Texture = in0; in0->AddRef();
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShaderSampler Const()
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    layout flags Source("here|env 0|env 1|env 2|env 3|env 4|env 5|env 6|env 7|vertex0|vertex1|instance|depth|shellextrude")=0;
+    if(Source==0)
+    {
+      color Color("rgba")=0;
+      nolabel float Amp(-1024..1024 step 0.01)=1;
+    }
+  }
+  code
+  {
+    MM_Const *mod = new MM_Const;
+    mod->Source = para->Source;
+    mod->Color.InitColor(para->Color,para->Amp);
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShaderSampler TrickLight()
+{
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    flags Light ("-|Front:*1-|Middle:*2-|Back")=7;
+    narrow flags Enable ("-| 0:*1-| 1:*2-| 2:*3-| 3:*4-| 4:*5-| 5:*6-| 6:*7-| 7")=0;
+  }
+  code
+  {
+    MM_TrickLight *mod = new MM_TrickLight;
+    mod->LightFlags = para->Light;
+    mod->LightEnable = para->Enable;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShaderSampler Mul(*ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  code
+  {
+    MM_Math *mod = new MM_Math;
+    mod->Mode = 0;
+    out->Add(mod);
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      ModShaderSampler *in = cmd->GetInput<ModShaderSampler*>(i);
+      mod->Inputs.AddTail(in->Modules[0]);
+      out->Add(in);
+    }
+  }
+}
+
+operator ModShaderSampler Add(*ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  code
+  {
+    MM_Math *mod = new MM_Math;
+    mod->Mode = 1;
+    out->Add(mod);
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      ModShaderSampler *in = cmd->GetInput<ModShaderSampler*>(i);
+      mod->Inputs.AddTail(in->Modules[0]);
+      out->Add(in);
+    }
+  }
+}
+
+operator ModShaderSampler Sub(*ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  code
+  {
+    MM_Math *mod = new MM_Math;
+    mod->Mode = 2;
+    out->Add(mod);
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      ModShaderSampler *in = cmd->GetInput<ModShaderSampler*>(i);
+      mod->Inputs.AddTail(in->Modules[0]);
+      out->Add(in);
+    }
+  }
+}
+
+
+/****************************************************************************/
+
+operator ModShader Diffuse(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set:*4rgb|alpha")=1;
+    flags Aux("-|aux| 1-aux|upper half|lower half");
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"col_diffuse";
+    mod->Op = (para->Op&15);
+    mod->Aux = para->Aux;
+    mod->Swizzle = (para->Op&16)?L"w":L"xyz";
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+operator ModShader Gloss(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set:*4rgb|alpha")=1;
+    flags Aux("-|aux| 1-aux|upper half|lower half");
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"col_gloss";
+    mod->Op = (para->Op&15);
+    mod->Aux = para->Aux;
+    mod->Swizzle = (para->Op&16)?L"w":L"xyz";
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+operator ModShader Emissive(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set:*4rgb|alpha")=0;
+    flags Aux("-|aux| 1-aux|upper half|lower half");
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"col_emissive";
+    mod->Op = (para->Op&15);
+    mod->Aux = para->Aux;
+    mod->Swizzle = (para->Op&16)?L"w":L"xyz";
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+operator ModShader Specular(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set:*4rgb|alpha")=1;
+    flags Aux("-|aux| 1-aux|upper half|lower half");
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"col_specular";
+    mod->Op = (para->Op&15);
+    mod->Aux = para->Aux;
+    mod->Swizzle = (para->Op&16)?L"w":L"xyz";
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+operator ModShader Aux(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set:*4rgb|alpha")=17;
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"col_aux";
+    mod->Op = (para->Op&15);
+    mod->Swizzle = (para->Op&16)?L"w":L"xyz";
+    mod->Phase = MMP_Pre;
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+operator ModShader Alpha(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Op("add|mul|sub|mul2|mul4|screen|set")=1;
+    flags Channel("r|g|b|a")=3;
+  }
+  code
+  {
+    MM_ApplyTexture *mod = new MM_ApplyTexture;
+    mod->Tex = in0->Modules[0];
+    mod->Dest = L"alpha";
+    mod->Op = (para->Op&15);
+    switch(para->Channel)
+    {
+    default:
+    case 0: mod->Swizzle = L"r"; break;
+    case 1: mod->Swizzle = L"g"; break;
+    case 2: mod->Swizzle = L"b"; break;
+    case 3: mod->Swizzle = L"a"; break;
+    }
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+operator ModShader Kill(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    float Thresh "Low / High" [2] (-16..16 step 0.01) = { 0.25,0.75 };
+    flags Invert ("-|Invert");
+    flags Channel("r|g|b|a")=3;
+  }
+  code
+  {
+    MM_Kill *mod = new MM_Kill;
+    mod->Tex = in0->Modules[0];
+    mod->ThreshLo = para->Thresh[0];
+    mod->ThreshHi = para->Thresh[1];
+    mod->Invert = para->Invert;
+    mod->Channel = para->Channel;
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader Displace(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Channel("r|g|b|a")=16;
+    continue flags Channel "Bias"("*4-|bias");
+    continue flags Channel "Source"("*8here|Vector0|Vector1|Vector2|Vector3|Vector4|Vector5|Vector6|Vector7");
+    float Scale(-1024..1024 step 0.01) = 1.0;
+  }
+  code
+  {
+    MM_Displace *mod = new MM_Displace;
+    mod->Tex = in0->Modules[0];
+    switch(para->Channel&15)
+    {
+    default:
+    case 0: mod->Swizzle = L"r"; break;
+    case 1: mod->Swizzle = L"g"; break;
+    case 2: mod->Swizzle = L"b"; break;
+    case 3: mod->Swizzle = L"a"; break;
+    }
+    mod->Bias = (para->Channel&16) ? -0.5f : 0;
+    mod->Source = (para->Channel&0xf00)>>8;
+    mod->Scale = para->Scale;
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader ExtrudeNormal()
+{ 
+  tab = Wz4Mtrl;
+  column = 4;
+
+  parameter
+  {
+    layout flags Source("const|shell|Vector0|Vector1|Vector2|Vector3|Vector4|Vector5|Vector6|Vector7");
+    float Value(-1024..1024 step 0.001) = 0.0;
+  }
+  code
+  {
+    MM_ExtrudeNormal *mod = new MM_ExtrudeNormal;
+    mod->Source = para->Source;
+    mod->Value = para->Value;
+    out->Add(mod);
+  }
+}
+
+
+/****************************************************************************/
+
+operator ModShader NormalMap(ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  code
+  {
+    MM_NormalMap *mod = new MM_NormalMap;
+    mod->Tex = in0->Modules[0];
+    out->Add(mod);
+    out->Add(in0);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShader DoubleNormalMap(ModShaderSampler,ModShaderSampler)
+{ 
+  tab = Wz4Mtrl;
+  column = 5;
+
+  parameter
+  {
+    flags Mode("mix|blend by aux");
+  }
+  code
+  {
+    MM_DoubleNormalMap *mod = new MM_DoubleNormalMap;
+    mod->Tex0 = in0->Modules[0];
+    mod->Tex1 = in1->Modules[0];
+    mod->Flags = para->Mode;
+    out->Add(mod);
+    out->Add(in0);
+    out->Add(in1);
+  }
+}
+
+/****************************************************************************/
+
+operator ModShaderSampler BakedShadow(Wz4Mesh)
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+    anim float30 Dir(-10000000..10000000 step 0.01) = { 0,0,0 };
+    anim flags ShadowSize(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192") = 10;
+    continue flags ShadowSize "ShadowFilter0" ("*16point|ordered|random:*20-|PCF");
+    anim float ShadowBaseBias(0..1024 step 0.001) = 0.500;
+    anim float ShadowFilter(0..1024 step 0.001) = 0.500;
+    anim float ShadowSlopeBias(-1024..1024 step 0.001) = 0.5000;
+    color Color("rgba") = 0x00808080;
+    layout continue flags ShadowSize "Limit Shadows" ("*21-|limit");
+    if(ShadowSize & 0x00200000)
+    {
+      anim float31 LimitCenter(-1024..1024);
+      anim float30 LimitRadius(0..1024) = 64;
+    }
+  }
+  code
+  {
+    MM_BakedShadow *mod = new MM_BakedShadow;
+    mod->Dir = -para->Dir;
+    mod->Dir.Unit();
+    mod->ShadowSize = para->ShadowSize;
+    mod->ShadowBaseBias = para->ShadowBaseBias;
+    mod->ShadowFilter = para->ShadowFilter/(1<<(para->ShadowSize&15));
+    mod->ShadowSlopeBias = para->ShadowSlopeBias;
+    mod->LimitCenter = para->LimitCenter;
+    mod->LimitRadius = para->LimitRadius;
+    mod->Color.InitColor(para->Color);
+    mod->Render(in0);
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+
+
+code
+{
+  class MM_ShadowGrab : public MtrlModule
+  {
+  public:
+    sInt Light;
+	const sChar *VarName;
+  
+    MM_ShadowGrab()
+    {
+      Phase = MMP_TexLD;
+      Name = L"ShadowGrab";
+      Light = 0;
+      VarName = 0;
+    }
+
+	void Start(ShaderCreator *sc)
+	{
+	  VarName = 0;
+	}
+
+	sPoolString Get(ShaderCreator *sc)
+	{
+	  if(VarName==0)
+	  {
+		VarName = sc->GetTemp();
+		sc->FragBegin(Name);
+		sc->FragFirst(VarName);
+		sc->FragRead(L"lightshadow");
+		sc->TB.PrintF(L"  float4 %s = lightshadow[%d];\n",VarName,Light);
+		sc->FragEnd();
+	  }
+	  return sPoolString(VarName);
+	}
+  };
+}
+
+
+operator ModShaderSampler ShadowGrab()
+{ 
+  tab = Wz4Mtrl;
+  column = 6;
+
+  parameter
+  {
+	int Lightsource(0..7) = 0;
+  }
+  code
+  {
+    MM_ShadowGrab *mod = new MM_ShadowGrab;
+    mod->Light = para->Lightsource;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Misc                                                               ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+code
+{
+  class MM_Tint : public MtrlModule
+  {
+  public:
+    sInt Select;
+    sVector30 Color;
+
+    MM_Tint()
+    {
+      Phase = MMP_Post;
+      Name = L"tint";
+      Select = 0;
+      Shaders = 2;
+    }
+
+    void PS(ShaderCreator *sc)
+    {
+      sc->FragBegin(Name);
+      if(Select==0)
+      {
+        sc->TB.PrintF(L"o_color.xyz *= float3(%f,%f,%f);\n",Color.x,Color.y,Color.z);
+      }
+      else
+      {
+        sc->Para(sPoolF(L"Color%d",Select-1));
+        sc->TB.PrintF(L"o_color.xyz *= Color%d;\n",Select-1);
+      }
+      sc->FragModify(L"o_color");
+      sc->FragEnd();
+    }
+  };
+}
+
+operator ModShader Tint()
+{
+  tab = Wz4Mtrl;
+  column = 7;
+  parameter
+  {
+    layout flags Select ("here| 0| 1| 2| 3| 4| 5| 6| 7");
+    if(Select==0)
+    {
+      color Color("rgb")=0xffffffff;
+      float Amp(0..1024 step 0.01) = 1;
+    }
+  }
+
+  code
+  {
+    MM_Tint *mod = new MM_Tint;
+    mod->Select = para->Select;
+    mod->Color.InitColor(para->Color,para->Amp);
+    out->Add(mod)
+  }
+}
+
+/****************************************************************************/
+
+code
+{
+  class MM_Debug : public MtrlModule
+  {
+  public:
+    sInt Debug;
+    sInt Light;
+    sF32 Bright;
+    MM_Debug()
+    {
+      Phase = MMP_Shader;
+      Name = L"debug";
+      Debug = 0;
+      Bright = 1;
+      Shaders = 2;
+    }
+
+    void PS(ShaderCreator *sc)
+    {
+      if(Debug)
+      {
+        sc->FragBegin(Name);
+        const sChar *bias = L"";
+        if(Debug & 16)
+          bias = L"*0.5+0.5";
+
+        switch(Debug&15)
+        {
+        case 0:
+          break;
+        case 1: 
+          sc->TB.PrintF(L"  o_color.xyz = ws_normal%s;\n",bias);
+          sc->InputPS(L"ws_normal",SCT_FLOAT3);
+          sc->FragModify(L"o_color");
+          break;
+        case 2: 
+          sc->TB.PrintF(L"  o_color.xyz = ms_tangent%s;\n",bias);
+          sc->InputPS(L"ms_tangent",SCT_FLOAT3);
+          sc->FragModify(L"o_color");
+          break;
+        case 3: 
+          sc->TB.PrintF(L"  o_color.xyz = ws_bitangent%s;\n",bias);
+          sc->InputPS(L"ws_bitangent",SCT_FLOAT3);
+          sc->FragModify(L"o_color");
+          break;
+        case 4:
+          {
+            sInt slot = sc->Texture(ModMtrlType->DummyTex2D,sMTF_LEVEL0|sMTF_TILE);
+            sc->UpdateTex[slot].Enable = 1;
+            sc->UpdateTex[slot].Light = Light;
+            sc->UpdateTex[slot].Mode = MMRTM_DirShadow;
+            sc->InputPS(L"uv0",SCT_FLOAT2);
+//            sc->TB.PrintF(L"  o_color.xyz = %f*tex2D(tex%d,uv0).x;\n",Bright,slot);
+            sc->TB.PrintF(L"  o_color.xyz = %f*%s;\n",Bright,Tex2D(slot,L"uv0",L"x",0));
+
+            sc->FragModify(L"o_color");
+          }
+          break;        
+        case 5:
+          {
+            sInt slot = sc->Texture(ModMtrlType->DummyTexCube,sMTF_LEVEL0|sMTF_TILE);
+            sc->UpdateTex[slot].Enable = 1;
+            sc->UpdateTex[slot].Light = Light;
+            sc->UpdateTex[slot].Mode = MMRTM_PointShadow;
+            sc->InputPS(L"ms_pos",SCT_FLOAT3);
+            sc->TB.PrintF(L"  o_color.xyz = 1-(%f*(1/texCUBE(tex%d,ms_pos).x));\n",Bright,slot);
+
+            sc->FragModify(L"o_color");
+          }
+          break;
+        case 6: 
+          sc->TB.PrintF(L"  o_color.xyz = ms_pos%s;\n",bias);
+          sc->InputPS(L"ms_pos",SCT_FLOAT3);
+          sc->FragModify(L"o_color");
+          break;          
+        case 7:
+          sc->TB.PrintF(L"  o_color.xyz = float4(1,1,1,1,1);  // error on purpose\n");
+          sc->FragModify(L"o_color");
+          break;
+        }
+        sc->FragEnd();
+      }
+    }
+  };
+}
+
+operator ModShader Debug()
+{
+  tab = Wz4Mtrl;
+  column = 7;
+
+  parameter
+  {
+    layout flags Debug("-|normal|tangent|bitangent|shadow2d|shadowCube|ms_pos|error:*4-|bias");
+    if((Debug&15==4)||(Debug&15==5))
+    {
+      flags Light(" 0| 1| 2| 3| 4| 5| 6| 7");
+      float Bright(0..256 step 0.01) = 1;
+    }
+  } 
+  code
+  {
+    MM_Debug *mod = new MM_Debug;
+    mod->Debug = para->Debug;
+    mod->Light = para->Light;
+    mod->Bright = para->Bright;
+    out->Add(mod);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Effects                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+code
+{
+  class MM_SphereFog : public MtrlModule
+  {
+  public:
+    sVector31 Center;
+    sF32 Radius;
+    sInt Flags;
+    sInt VectorId;
+
+    MM_SphereFog()
+    {
+      Phase = MMP_Post;
+      Name = L"tint";
+      Shaders = 2;
+
+      Center.Init(0,0,0);
+      Radius = 10;
+      Flags = 0;
+      VectorId = 0;
+    }
+
+    void PS(ShaderCreator *sc)
+    {
+      sc->FragBegin(Name);
+      sc->FragModify(L"col_fog");
+      sc->FragModify(L"fogfactor");
+//            sc->FragModify(L"o_color");
+      sc->InputPS(L"ws_pos",SCT_FLOAT3);
+      sc->InputPS(L"ws_campos",SCT_FLOAT3);
+      sc->Para(L"GroundFogAdd");        // FogAdd = -mindist
+      sc->Para(L"GroundFogMul");        // FogMul = 1/maxdist
+      sc->Para(L"GroundFogDensity");
+      sc->Para(L"GroundFogColor");
+
+      sc->TB.PrintF(L"  {\n");
+      if((Flags&15)>=1)
+      {
+        sc->Para(sPoolF(L"Vector%d",VectorId&7));
+        sc->TB.PrintF(L"    float radius = Vector%d.x;\n",VectorId&7);
+      }
+      else
+      {
+        sc->TB.PrintF(L"    float radius = %f;\n",Radius);
+      }
+      if((Flags&15)>=2)
+      {
+        sc->Para(sPoolF(L"Vector%d",(VectorId>>4)&7));
+        sc->TB.PrintF(L"    float3 center = Vector%d.xyz;\n",(VectorId>>4)&7);
+      }
+      else
+      {
+        sc->TB.PrintF(L"    float3 center = float3(%f,%f,%f);\n",Center.x,Center.y,Center.z);
+      }
+
+      sc->TB.PrintF(L"    float3 d = ws_pos-ws_campos;\n");
+      sc->TB.PrintF(L"    float a = dot(d,d);\n");
+      sc->TB.PrintF(L"    float b = 2*dot(d,ws_campos-center);\n");
+      sc->TB.PrintF(L"    float c = dot(center,center)+dot(ws_campos,ws_campos)\n");
+      sc->TB.PrintF(L"            - 2*dot(center,ws_campos)-radius*radius;\n");
+      sc->TB.PrintF(L"    float dis = b*b-4*a*c;\n");
+
+      sc->TB.PrintF(L"    if(dis>0)\n");
+      sc->TB.PrintF(L"    {\n");
+
+      sc->TB.PrintF(L"      float fog1 = saturate((-b+sqrt(dis))/(2*a));\n");
+      sc->TB.PrintF(L"      float fog0 = saturate((-b-sqrt(dis))/(2*a));\n");
+      sc->TB.PrintF(L"      float fog = (fog1-fog0)*length(d);\n");
+      sc->TB.PrintF(L"      \n");
+
+      sc->TB.PrintF(L"      fog = saturate((fog+GroundFogAdd)*GroundFogMul);\n");
+      sc->TB.PrintF(L"      fog = 3*fog*fog-2*fog*fog*fog;\n");
+      sc->TB.PrintF(L"      fog = fog*GroundFogDensity;\n");
+      sc->TB.PrintF(L"      fogfactor += fog;\n");
+      sc->TB.PrintF(L"      col_fog += fog*GroundFogColor;\n");
+
+      sc->TB.PrintF(L"    }\n");
+      sc->TB.PrintF(L"  }\n");
+      sc->FragEnd();
+    }
+  };
+}
+
+operator ModShader SphereFog()
+{
+  tab = Wz4Mtrl;
+  column = 7;
+  parameter
+  {
+    float31 Center(-1000000..1000000 step 0.01);
+    float Radius(0..1000000 step 0.01)= 1;
+    flags Animate("all static|radius from lightenv|all from lightenv");
+    if(Animate >= 1) 
+      flags LightEnvVector "RadiusVector"(" 0| 1| 2| 3| 4| 5| 6| 7");
+    if(Animate >= 2) 
+      continue flags LightEnvVector "CenterVector"("*4 0| 1| 2| 3| 4| 5| 6| 7");
+  }
+
+  code
+  {
+    MM_SphereFog *mod = new MM_SphereFog;
+    mod->Center = para->Center;
+    mod->Radius = para->Radius;
+    mod->Flags = para->Animate;
+    mod->VectorId = para->LightEnvVector;
+    out->Add(mod)
+  }
+}
+
+/****************************************************************************/
+
+/****************************************************************************/

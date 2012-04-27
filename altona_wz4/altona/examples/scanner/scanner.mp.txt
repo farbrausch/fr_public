@@ -1,0 +1,23 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{9F597D8F-1BC7-48f8-9350-393F340C1C25}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9_shell";
+create "debugfast_dx9_shell";
+create "release_dx9_shell";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "scanner.mp.txt";
+file "test_source.txt";
+file "test_include.txt";

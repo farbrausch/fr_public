@@ -1,0 +1,106 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+window Frame "Frame"
+{
+  drag Scroll MMB;
+  key Reset 'r';
+  menu { context; } RMB;
+}
+
+window Text "Text"
+{
+  key Frame.Reset F1;
+  key Update F5;
+  menu { context; } RMB;
+}
+
+menu File
+{
+  item Frame.Reset; 
+  item main.Dialog;
+  item main.Complicated "Something complicated";
+  check main.Toggle;
+  check main.Value;
+}
+
+window List
+{
+  drag SelectMulti LMB;
+  drag SelectAddMulti LMB|SHIFT;
+  drag SelectToggleMulti LMB|CTRL;
+  drag Edit LMB|DOUBLE;
+  key main.AddListItem "Add" INSERT;
+  key Delete DELETE;
+  key SelUp UP;
+  key SelDown DOWN;
+  key MoveUp UP|CTRL;
+  key MoveDown DOWN|CTRL;
+  
+  menu { context; } RMB;
+}
+
+
+window Tree
+{
+  drag SelectMulti LMB;
+  drag SelectAddMulti LMB|SHIFT;
+  drag SelectToggleMulti LMB|CTRL;
+  drag Edit LMB|DOUBLE;
+//  key main.AddListItem "Add" INSERT;
+//  key Delete DELETE;
+  key SelUp UP;
+  key SelDown DOWN;
+  key MoveUp UP|CTRL;
+  key MoveDown DOWN|CTRL;
+  key MoveLeft LEFT|CTRL;
+  key MoveRight RIGHT|CTRL;
+  key TreeOpen '+';
+  key TreeClose '-';
+  
+  menu { context; } RMB;
+}
+screen "top"
+{
+  horizontal
+  {
+    vertical
+    {
+      window Frame { focusborder; scrolly; 
+        toolborder 
+        { 
+          menu File; 
+          spacer; 
+          button main.Value; 
+          button main.Toggle;
+          spacer; 
+          screenswitch; 
+        }  
+      }
+      horizontal
+      {
+        window Text { focusborder; scrolly; toolborder { label "Values"; }  }
+        window Item { focusborder; scrolly; toolborder { label "Item"; } }
+      }
+    }
+    vertical
+    {
+      window List { focusborder;  }
+      window Tree { focusborder;  }
+    }
+  }
+}
+
+screen "down"
+{
+  horizontal
+  {
+    toolborder { screenswitch; }
+    window Text { focusborder; scrolly; toolborder { label "Values"; }  }
+    window Frame { focusborder; scrolly; toolborder { label "Frame"; }  }
+  }
+}

@@ -1,0 +1,1303 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+priority = 2;
+
+header
+{
+  #include "wz4lib/basic_ops.hpp"
+  #include "wz4lib/poc.hpp"
+  #include "util/image.hpp"
+  #include "base/graphics.hpp"
+  #include "util/shaders.hpp"
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap                                                             ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type PocBitmap : BitmapBase
+{
+  color = 0xffff40ff;
+  name = "PoC Bitmap";
+  gui = base2d;
+  flags = uncache;
+  
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    sImage *img = 0;
+    img = ((PocBitmap *) obj)->Image;
+    pi.SetSizeTex2D(img->SizeX,img->SizeY);
+    pi.PaintTex2D(img);
+    pi.PaintHandles();
+  }
+}
+
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator PocBitmap Flat()
+{
+  flags = passoutput;
+
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX:0 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    nolabel flags SizeY:1 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    color Color:2 ("rgba")=0xff000000;
+  }
+  
+  code
+  {
+    out->Image->Init(1<<para->SizeX,1<<para->SizeY);
+    out->Image->Fill(para->Color);
+    return 1;
+  }
+
+  shortcut = 'f';
+}
+
+/****************************************************************************/
+
+operator PocBitmap Glow(PocBitmap = PocBitmap Flat)
+{
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    float "Center" Pos[2] (-16..16 step 0.01) = { 0.5,0.5 };
+    float Radius[2] (-16..16 step 0.01) = { 0.5,0.5 };
+    color Color ("rgba")=0xffffffff;
+    float Alpha (0..1 step 0.01)=1;
+    float Power (0..64 step 0.02)=2;
+  }
+  
+  code
+  {
+    out->Image->Glow(para->Pos[0],para->Pos[1],para->Radius[0],para->Radius[1],para->Color,para->Alpha,para->Power);
+  }
+
+  helper
+  {
+    sF32 x1;
+    sF32 y1;
+    sF32 cx;
+    sF32 cy;
+  }
+  
+  handles
+  {
+    sInt id = pi.FirstSelectedId(op);
+    switch(id)
+    {
+    default:
+      helper->x1 = para->Radius[0]+para->Pos[0];
+      helper->y1 = para->Radius[1]+para->Pos[1];
+      break;
+    case 2:
+      para->Radius[0] = sAbs(helper->x1-para->Pos[0]);
+      para->Radius[1] = sAbs(helper->y1-para->Pos[1]);
+      break;
+    case 3:
+      para->Radius[0] = para->Radius[1] = sAbs(helper->x1-para->Pos[0]);
+      helper->y1 = para->Radius[1]+para->Pos[1];
+      break;
+    case 4:
+      para->Radius[0] = para->Radius[1] = sAbs(helper->y1-para->Pos[1]);
+      helper->x1 = para->Radius[0]+para->Pos[0];
+      break;
+    }
+    helper->cx = para->Pos[0];
+    helper->cy = para->Pos[1];
+    pi.HandleTex2D(op,1,para->Pos[0],para->Pos[1]);
+    pi.HandleTex2D(op,2,helper->x1,helper->y1);
+    pi.HandleTex2D(op,3,helper->x1,helper->cy);
+    pi.HandleTex2D(op,4,helper->cx,helper->y1);
+    pi.LineTex2D(para->Pos[0],para->Pos[1],helper->x1,helper->y1);
+    pi.LineTex2D(para->Pos[0],helper->y1,helper->x1,helper->y1);
+    pi.LineTex2D(helper->x1,para->Pos[1],helper->x1,helper->y1);
+  }  
+  shortcut = 'g';
+}
+
+/****************************************************************************/
+
+operator PocBitmap Add(PocBitmap,?*PocBitmap)
+{
+  flags = passoutput;
+
+  parameter
+  {
+    flags Mode ("add|mul|lum2alpha|blend pmalpha|blend alpha");
+    color ResultMul ("rgba") = 0xffffffff;
+  }
+  code
+  {
+    if(out!=in0)
+      out->CopyFrom(in0);
+      
+    for(sInt i=1;i<cmd->InputCount;i++)
+    {
+      PocBitmap *in = cmd->GetInput<PocBitmap *>(i);
+      if(in)
+      {
+        if(in->Image->SizeX!=in0->Image->SizeX || in->Image->SizeY!=in0->Image->SizeY)
+        {
+          cmd->SetError(L"Input sizes don't match - all input images must have the same resolution.");
+          return 0;      
+        }
+
+        switch(para->Mode)
+        {
+        case 0:
+          out->Image->Add(in->Image);
+          break;
+        case 1:
+          out->Image->Mul(in->Image);
+          break;
+        case 2:
+          out->Image->AlphaFromLuminance(in->Image);
+          break;
+        case 3:
+          out->Image->Blend(in->Image,sTRUE);
+          break;
+        case 4:
+          out->Image->Blend(in->Image,sFALSE);
+          break;
+        }
+      }
+    }
+    if(para->ResultMul != 0xffffffff)
+      out->Image->Mul(para->ResultMul);
+    return 1;
+  }
+  
+  shortcut = 'a';
+}
+
+/****************************************************************************/
+
+operator PocBitmap Mandelbrot()
+{
+  flags = passoutput;
+
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX:0 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    nolabel flags SizeY:1 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    int Depth(1..512)=16;
+    float Center[2](-16..16 step 0.0001)={-1,0};
+    float Size[2](0..16 step 0.0001)={0.5,0.5};
+    color Range0 ("rgba")=0xffffffff;
+    color Range1 ("rgba")=0xff000000;
+  }
+
+  code
+  {
+    out->Image->Init(1<<para->SizeX,1<<para->SizeY);
+    sU32 *data = out->Image->Data;
+    for(sInt y=0;y<out->Image->SizeY;y++)
+    {
+      for(sInt x=0;x<out->Image->SizeX;x++)
+      {
+        sF32 fx = (x*2.0f/out->Image->SizeX-1.0f)*para->Size[0]+para->Center[0];
+        sF32 fy = (y*2.0f/out->Image->SizeY-1.0f)*para->Size[1]+para->Center[1];
+        
+        sInt r = 0;
+        sF32 ix,iy,tx,ty;
+        ix = iy = 0;
+        while(r<para->Depth && ix*ix+iy*iy<4)
+        {
+          tx = ix*ix-iy*iy+fx;
+          ty = 2*ix*iy+fy;
+          ix = tx;
+          iy = ty;
+          r++;
+        }
+        
+        *data++ = sFadeColor(r*0x10000/para->Depth,para->Range0,para->Range1);
+      }
+    }
+    return 1;
+  }
+
+  helper
+  {
+    sF32 cx;
+    sF32 cy;
+    sF32 sx;
+    sF32 sy;
+    sF32 ex;
+    sF32 ey;
+    sF32 fx;
+    sF32 fy;
+    sF32 CenterX;
+    sF32 CenterY;
+    sF32 SizeX;
+    sF32 SizeY;
+  }
+
+  handles
+  {
+    sInt id = pi.FirstSelectedId(op);
+
+    if(!pi.Dragging)
+    {
+      helper->cx = 0.5f;
+      helper->cy = 0.5f;
+      helper->sx = 0.125f;
+      helper->sy = 0.125f;
+      helper->ex = helper->cx + helper->sx;
+      helper->ey = helper->cy + helper->sy;
+      helper->CenterX = para->Center[0];
+      helper->CenterY = para->Center[1];
+      helper->SizeX = para->Size[0];
+      helper->SizeY = para->Size[1];
+    }
+
+    switch(id)
+    {
+    default:
+      helper->ex = helper->cx + helper->sx;
+      helper->ey = helper->cy + helper->sy;
+      break;
+    case 1:
+      helper->ex = helper->cx + helper->sx;
+      helper->ey = helper->cy + helper->sy;
+      para->Center[0] = helper->CenterX + (0.5f-helper->cx)*para->Size[0]*2;
+      para->Center[1] = helper->CenterY + (0.5f-helper->cy)*para->Size[1]*2;
+      break;
+    case 2:
+      helper->sx = sAbs(helper->ex - helper->cx);
+      helper->sy = sAbs(helper->ey - helper->cy);
+      break;
+    case 3:
+      helper->sx = helper->sy = sAbs(helper->ey - helper->cy);
+      break;
+    case 4:
+      helper->sx = helper->sy = sAbs(helper->ex - helper->cx);
+      break;
+    }
+    if(id==2 || id==3 || id==4)
+    {
+      if(helper->sx>0.01f && helper->sy>0.01f)
+      {
+        para->Size[0] = helper->SizeX * (0.125f/helper->sx);
+        para->Size[1] = helper->SizeY * (0.125f/helper->sy);
+      }
+    }
+    helper->fx = helper->cx;
+    helper->fy = helper->cy;
+
+    sF32 x0 = helper->cx - helper->sx;
+    sF32 x1 = helper->cx + helper->sx;
+    sF32 y0 = helper->cy - helper->sy;
+    sF32 y1 = helper->cy + helper->sy;
+
+    pi.HandleTex2D(op,1,helper->cx,helper->cy);
+    pi.HandleTex2D(op,2,helper->ex,helper->ey);
+    pi.HandleTex2D(op,3,helper->fx,helper->ey);
+    pi.HandleTex2D(op,4,helper->ex,helper->fy);
+    pi.LineTex2D(x0,y0,x0,y1);
+    pi.LineTex2D(x0,y1,x1,y1);
+    pi.LineTex2D(x1,y1,x1,y0);
+    pi.LineTex2D(x1,y0,x0,y0);
+  }
+}
+
+/****************************************************************************/
+
+operator PocBitmap Perlin()
+{
+  flags = passoutput;
+  shortcut = 'p';
+
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX:0 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    nolabel flags SizeY:1 (" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=8;
+    int Frequency  (0..15)=2;
+    int Octaves  (1..15)=2;
+    float Falloff (-4..4 step 0.01) = 1;
+    float Amplify (0..4 step 0.01) = 1;
+    flags Mode ("direct|abs|sin");
+    int Seed (0..255);
+    color Color0 ("rgba") = 0xff000000;
+    color Color1 ("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Image->Init(1<<para->SizeX,1<<para->SizeY);
+    sU32 *data = out->Image->Data;
+    for(sInt y=0;y<out->Image->SizeY;y++)
+    {
+      for(sInt x=0;x<out->Image->SizeX;x++)
+      {
+        sF32 fx = x*1.0f/out->Image->SizeX;
+        sF32 fy = y*1.0f/out->Image->SizeY;
+        sF32 f = 0;
+        sF32 e = 1;
+        for(sInt i=para->Frequency;i<para->Frequency+para->Octaves;i++)
+        {
+          sF32 r = sPerlin2D(sInt(fx*(0x10000<<i)),sInt(fy*(0x10000<<i)),(1<<i)-1,para->Seed+i);
+          if(para->Mode&2)
+            r = sFSin(r*sPI2F);
+          if(para->Mode&1)
+            r = sFAbs(r)*2-1;
+          f+=r*e;
+          e*=para->Falloff;
+        }
+        f = f*0.5f+0.5f;
+        
+        *data++ = sFadeColor(sClamp(sInt(f*0x10000*para->Amplify),0,0x10000),para->Color0,para->Color1);
+      }
+    }
+    return 1;
+  }
+}
+
+operator PocBitmap Normals(PocBitmap)
+{
+  flags = passoutput;
+
+  parameter 
+  {
+    float Strength (0..16 step 0.001) = 1;
+  }
+
+  code
+  {
+    sInt xs = in0->Image->SizeX;
+    sInt ys = in0->Image->SizeY;
+    out->Image->Init(xs,ys);
+    sU32 *d = out->Image->Data;
+    sU32 *s = in0->Image->Data;
+
+    sVector30 n;
+    sInt dx,dy;
+    sF32 strength = para->Strength*255*6;
+    for(sInt y=0;y<out->Image->SizeY;y++)
+    {
+      for(sInt x=0;x<out->Image->SizeX;x++)
+      {
+        dx = 1*(s[((x+2)&(xs-1))+y*xs]&0xff)
+           + 3*(s[((x+1)&(xs-1))+y*xs]&0xff)
+           - 3*(s[((x-1)&(xs-1))+y*xs]&0xff)
+           - 1*(s[((x-2)&(xs-1))+y*xs]&0xff);
+        dy = 1*(s[((y+2)&(ys-1))*xs+x]&0xff)
+           + 3*(s[((y+1)&(ys-1))*xs+x]&0xff)
+           - 3*(s[((y-1)&(ys-1))*xs+x]&0xff)
+           - 1*(s[((y-2)&(ys-1))*xs+x]&0xff);
+
+        n.x = sF32(dx);
+        n.y = sF32(dy);
+        n.z = strength;
+        n.Unit();
+
+        *d++ = 0xff000000 
+             | (sClamp(sInt(n.x*0x80+0x80),0,0xff)<<16)
+             | (sClamp(sInt(n.y*0x80+0x80),0,0xff)<<8)
+             | (sClamp(sInt(n.z*0x80+0x80),0,0xff));
+      }
+    }
+    return 1;
+  }
+
+}
+
+operator PocBitmap Import()
+{
+  flags = passoutput;
+
+  parameter
+  {
+    filein Filename;
+    flags Flags ("-|Allow NPOT")=0;
+  }
+  code
+  {
+    if(out->Image->Load(cmd->Strings[0]))
+    {
+      if((sIsPower2(out->Image->SizeX) && sIsPower2(out->Image->SizeY)) || (para->Flags&1))
+        return 1;
+      else
+        cmd->SetError(L"Image dimensions not power of two");
+    }
+    else
+      cmd->SetError(L"Couldn't load image!");
+
+    return 0;
+  }
+}
+
+operator PocBitmap RotZoom(PocBitmap)
+{
+  flags = passoutput;
+
+  parameter
+  {
+    label "Size";
+    nolabel flags SizeX:0 ("same| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=0;
+    nolabel flags SizeY:1 ("same| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048")=0;
+
+    float Center[2] (-16..16 step 0.001) = 0.5;
+    float Zoom[2] (-1024..1024 step 0.01) = 1;
+    float Angle (-16..16 step 0.01) = 0;
+    float Scroll[2] (-16..16 step 0.001) = 0.5;
+  }
+
+  code
+  {
+    sU32 *d;
+    sInt xs,ys;
+
+    xs = para->SizeX ? 1<<(para->SizeX-1) : in0->Image->SizeX;
+    ys = para->SizeY ? 1<<(para->SizeY-1) : in0->Image->SizeY;
+    out->Image->Init(xs,ys);
+
+    // das hier war ryg.
+    // ryg sez: hardgecodete matrix-mathematik, und dann auch noch
+    // ohne danebenzuschreiben, was genau da eigentlich in welchem
+    // koordinatensystem ausgerechnet werden soll? wtf?
+    sMatrix34 pretrans,rot,scale,posttrans;
+    pretrans.l.Init(-para->Center[0],-para->Center[1],0.0f);
+    posttrans.l.Init(para->Center[0]+para->Scroll[0]-0.5f,para->Center[1]+para->Scroll[1]-0.5f,0.0f);
+    rot.EulerXYZ(0.0f,0.0f,para->Angle*sPI2F);
+    scale.Scale(para->Zoom[0],para->Zoom[1],1.0f);
+
+    sMatrix34 trafo = pretrans*rot*scale*posttrans;
+
+    d = out->Image->Data;
+    for(sInt y=0;y<out->Image->SizeY;y++)
+    {
+      sF32 v = (y + 0.5f) / out->Image->SizeY; // pixel center
+
+      for(sInt x=0;x<out->Image->SizeX;x++)
+      {
+        sF32 u = (x + 0.5f) / out->Image->SizeX; // pixel center
+
+        sInt su = sInt((u*trafo.i.x + v*trafo.j.x + trafo.l.x) * 256 * xs - 128); // -128: pixel center
+        sInt sv = sInt((u*trafo.i.y + v*trafo.j.y + trafo.l.y) * 256 * ys - 128); // -128: pixel center
+        *d++ = in0->Image->Filter(su,sv);
+      }
+    }
+
+    //sInt x0,x1,x2,y0,y1,y2;
+    //sF32 s,c;
+    //s = sFSin(para->Angle*sPI2F);
+    //c = sFCos(para->Angle*sPI2F);
+
+    //sF32 cx = para->Center[0];
+    //sF32 cy = para->Center[1];
+    //sF32 sx = para->Scroll[0];
+    //sF32 sy = para->Scroll[1];
+
+    //x0 = sInt( c*para->Zoom[0]*256*in0->Image->SizeX/xs);
+    //x1 = sInt( s*para->Zoom[0]*256*in0->Image->SizeX/ys);
+    //y0 = sInt(-s*para->Zoom[1]*256*in0->Image->SizeY/xs);
+    //y1 = sInt( c*para->Zoom[1]*256*in0->Image->SizeY/ys);
+
+    //x2 = sInt(-xs*cx*x0 + ys*cy*x1);
+    //y2 = sInt(-xs*cx*y0 + ys*cy*y1);
+    //x2 += sInt(256*in0->Image->SizeX*sx);
+    //y2 += sInt(256*in0->Image->SizeY*sy);
+
+    //d = out->Image->Data;
+    //for(sInt y=0;y<out->Image->SizeY;y++)
+    //  for(sInt x=0;x<out->Image->SizeX;x++)
+    //    *d++ = in0->Image->Filter(x*x0+y*x1+x2,x*y0+y*y1+y2);
+  }
+}
+
+operator PocBitmap Atlas(*PocBitmap)
+{
+  flags = passoutput;
+
+  parameter
+  {
+    color EmptyColor ("rgba") = 0x00000000;
+    flags Mode("Auto|Horizontal|Vertical") = 0;
+  }
+  code
+  {
+    sStaticArray<PocBitmapAtlas> a;
+    a.HintSize(cmd->InputCount);
+    a.AddMany(cmd->InputCount);
+
+    for(sInt i=0;i<cmd->InputCount;i++)
+      a[i].Image = cmd->GetInput<PocBitmap *>(i)->Image;
+
+    PocBitmapMakeAtlas(a,out->Image,para->EmptyColor, para->Mode);
+    
+    out->Atlas.Entries.Clear();
+    out->Atlas.Entries.HintSize(a.GetCount());
+    PocBitmapAtlas *pba;
+    sFORALL(a, pba)
+    {
+      BitmapAtlasEntry e;
+
+      e.Pixels.Init(pba->PosX,pba->PosY,pba->PosX+pba->SizeX,pba->PosY+pba->SizeY);
+      e.UVs.x0 = sF32(e.Pixels.x0)/out->Image->SizeX;
+      e.UVs.y0 = sF32(e.Pixels.y0)/out->Image->SizeY;
+      e.UVs.x1 = sF32(e.Pixels.x1)/out->Image->SizeX;
+      e.UVs.y1 = sF32(e.Pixels.y1)/out->Image->SizeY;
+      out->Atlas.Entries.AddTail(e);
+    }
+  }
+}
+
+operator PocBitmap PreMulAlpha(PocBitmap)
+{
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    flags Flags("-|White input BG") = 0;
+  }
+
+  code
+  {
+    sU8 *data = (sU8 *)out->Image->Data;
+
+    if((para->Flags & 1) == 0) // normal mode
+    {
+      for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+      {
+        data[0] = data[0] * data[3] / 255;
+        data[1] = data[1] * data[3] / 255;
+        data[2] = data[2] * data[3] / 255;
+        data += 4;
+      }
+    }
+    else // white input background mode: assume image was composited onto white.
+    {
+      for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+      {
+        sInt alpha = data[3];
+        sInt invAlpha = 255 - alpha;
+
+        data[0] = sU8(sMax(data[0] - invAlpha,0));
+        data[1] = sU8(sMax(data[1] - invAlpha,0));
+        data[2] = sU8(sMax(data[2] - invAlpha,0));
+        data += 4;
+      }
+    }
+  }
+}
+
+operator PocBitmap BlueToAlpha(PocBitmap)
+{
+  flags = passinput|passoutput;
+
+  code
+  {
+    sU8 *data = (sU8 *)out->Image->Data;
+    for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+    {
+      sInt alpha = data[0];
+      data[0] = 255;
+      data[1] = 255;
+      data[2] = 255;
+      data[3] = sU8(alpha);
+      data += 4;
+    }
+  }
+}
+
+
+operator PocBitmap Color(PocBitmap)
+{
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    flags Mode("ramp|range");
+    color Color0("rgba")=0xff000000;
+    color Color1("rgba")=0xffffffff;
+  }
+  code
+  {
+    sU8 *data = (sU8 *)out->Image->Data;
+    
+    sInt c0[4];
+    sInt c1[4];
+
+    c0[0] = (para->Color0>> 0)&0xff;
+    c0[1] = (para->Color0>> 8)&0xff;
+    c0[2] = (para->Color0>>16)&0xff;
+    c0[3] = (para->Color0>>24)&0xff;
+    c1[0] = (para->Color1>> 0)&0xff;
+    c1[1] = (para->Color1>> 8)&0xff;
+    c1[2] = (para->Color1>>16)&0xff;
+    c1[3] = (para->Color1>>24)&0xff;
+
+    if(para->Mode==0)
+    {
+      for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+      {
+        sInt v = (data[0]+data[1]*2+data[2])/4;
+        data[0] = sU8(v * (c1[0]-c0[0])/255 + c0[0]);
+        data[1] = sU8(v * (c1[1]-c0[1])/255 + c0[1]);
+        data[2] = sU8(v * (c1[2]-c0[2])/255 + c0[2]);
+        data[3] = sU8(v * (c1[3]-c0[3])/255 + c0[3]);
+        data += 4;
+      }
+    }
+    else
+    {
+      for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+      {
+        data[0] = sU8(data[0] * (c1[0]-c0[0])/255 + c0[0]);
+        data[1] = sU8(data[1] * (c1[1]-c0[1])/255 + c0[1]);
+        data[2] = sU8(data[2] * (c1[2]-c0[2])/255 + c0[2]);
+        data[3] = sU8(data[3] * (c1[3]-c0[3])/255 + c0[3]);
+        data += 4;
+      }
+    }
+  }
+}
+
+
+operator PocBitmap SCB(PocBitmap)
+{
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    float Saturation(-16..16 step 0.01) = 1;
+    float Contrast  (-16..16 step 0.01) = 1;
+    float Brightness(-16..16 step 0.01) = 0;
+  }
+  code
+  {
+    sU8 *data = (sU8 *)out->Image->Data;
+   
+    sVector30 ooo;
+    sVector31 col;
+    sMatrix34 mat,mat1;
+    ooo.Init(1,1,1);
+
+    mat.Init();
+    mat.i = (1.0f-para->Saturation)*ooo*0.3086f;
+    mat.j = (1.0f-para->Saturation)*ooo*0.6094f;
+    mat.k = (1.0f-para->Saturation)*ooo*0.0820f;
+    mat.i.x += para->Saturation;
+    mat.j.y += para->Saturation;
+    mat.k.z += para->Saturation;
+    mat.Scale(para->Contrast);
+    mat.l = sVector31((0.5f*(1.0f-para->Contrast)+para->Brightness)*ooo);
+
+    for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+    {
+      col.x = sF32(data[0])/255.0f;
+      col.y = sF32(data[1])/255.0f;
+      col.z = sF32(data[2])/255.0f;
+
+      col = col*mat;
+
+      data[0] = sU8(sClamp(sInt(col.x*255),0,255));
+      data[1] = sU8(sClamp(sInt(col.y*255),0,255));
+      data[2] = sU8(sClamp(sInt(col.z*255),0,255));
+      data[3] = data[3];
+      data += 4;
+    }
+  }
+}
+
+
+operator PocBitmap ColorBalance(PocBitmap)
+{
+  flags = passinput|passoutput;
+  parameter
+  {
+    float30 Shadows(-1..1 step 0.001) = 0;
+    float30 Midtones(-1..1 step 0.001) = 0;
+    float30 Highlights(-1..0.999 step 0.001) = 0;  
+  }
+  code
+  {
+    sVector30 col,min,max,msc,pow;
+    sVector30 c0,c1,c2;
+
+    sU8 *data = (sU8 *)out->Image->Data;
+
+    c0 = para->Shadows;
+    c1 = para->Midtones;
+    c2 = para->Highlights;
+
+    pow = c0*0.5f + c1 + c2*0.5f;
+    pow.x = sFPow(0.5f,pow.x);
+    pow.y = sFPow(0.5f,pow.y);
+    pow.z = sFPow(0.5f,pow.z);
+    min.x = -sMin(c0.x,0.0f);
+    min.y = -sMin(c0.y,0.0f);
+    min.z = -sMin(c0.z,0.0f);
+    max.x = 1-sMax(c2.x,0.0f);
+    max.y = 1-sMax(c2.y,0.0f);
+    max.z = 1-sMax(c2.z,0.0f);
+    msc.x = 1.0f / (max.x-min.x);
+    msc.y = 1.0f / (max.y-min.y);
+    msc.z = 1.0f / (max.z-min.z);
+
+    for(sInt i=0;i<out->Image->SizeX*out->Image->SizeY;i++)
+    {
+      col.x = sF32(data[0])/255.0f;
+      col.y = sF32(data[1])/255.0f;
+      col.z = sF32(data[2])/255.0f;
+
+      col.x = sFPow((sClamp(col.x,min.x,max.x)-min.x)*msc.x,pow.x);
+      col.y = sFPow((sClamp(col.y,min.y,max.y)-min.y)*msc.y,pow.y);
+      col.z = sFPow((sClamp(col.z,min.z,max.z)-min.z)*msc.z,pow.z);
+
+      data[0] = sU8(sClamp(sInt(col.x*255),0,255));
+      data[1] = sU8(sClamp(sInt(col.y*255),0,255));
+      data[2] = sU8(sClamp(sInt(col.z*255),0,255));
+      data[3] = data[3];
+      data += 4;
+    }
+  }
+}
+
+operator PocBitmap Blur(PocBitmap)
+{
+  flags = passoutput;
+  shortcut = 'b';
+  parameter
+  {
+    float Radius[2](0..1 step 0.001) = { 0.002,0.002 };
+    flags Filter("Box|Triangle|Gauss");
+  }
+
+  code
+  {
+    sInt passes = para->Filter + 1;
+
+    sInt radX = sInt(para->Radius[0] * in0->Image->SizeX);
+    sInt radY = sInt(para->Radius[1] * in0->Image->SizeY);
+    out->Image->Copy(in0->Image);
+
+    for(sInt i=0;i<passes;i++)
+    {
+      if(radX) out->Image->BlurX(radX);
+      if(radY) out->Image->BlurY(radY);
+    }
+  }
+}
+
+
+operator PocBitmap DistanceField(PocBitmap)
+{
+  flags = passoutput;
+
+  parameter 
+  {
+    int Threshold (0..255)=128;
+    int Width (1..255)=16;
+    flags Scale ("none|/2|/4|/8|/16|/32|/64") = 2;
+  }
+
+  code
+  {
+    sInt thres=para->Threshold*100;
+    sInt scale=para->Scale;
+    sInt width=para->Width;
+
+    sInt sx,sy,dx,dy;
+    sx = dx = in0->Image->SizeX;
+    sy = dy = in0->Image->SizeY;
+    dx>>=scale;
+    dy>>=scale;
+    out->Image->Init(dx,dy);
+
+    // yes, this is slow. sorry.
+    for (sInt y=0; y<dy; y++)
+    {
+      sU32 *d = out->Image->Data+y*dx;
+      
+      sInt ysmid=(y<<scale);
+      sInt ysmin=sMax(0,ysmid-width);
+      sInt ysmax=sMin(sy,ysmid+width+1);
+
+      for (sInt x=0; x<dx; x++)
+      {
+        sInt xsmid=x<<scale;
+        sInt xsmin=sMax(0,xsmid-width);
+        sInt xsmax=sMin(sx,xsmid+width+1);
+
+        sF32 mind1=sSquare(sF32(width+1));
+        sF32 mind0=sSquare(sF32(width+1));
+        for (sInt yy=ysmin; yy<ysmax; yy++)
+        {
+          sU32 *s = in0->Image->Data+yy*sx;
+          for (sInt xx=xsmin; xx<xsmax; xx++)
+          {
+            sU32 p=s[xx];
+            sInt lum=((p>>16)&0xff)*30+((p>>8)&0xff)*59+(p&0xff)*11;
+            sF32 d=sF32(sSquare(xx-xsmid)+sSquare(yy-ysmid));
+            if (lum>=thres)
+              mind1=sMin(mind1,d);
+            else
+              mind0=sMin(mind0,d);
+          }
+        }
+
+        sF32 out;
+        if (mind0>0)
+          out=0.5f*(sFSqrt(mind0)-1)/width+0.5f;
+        else
+          out=-0.5f*sFSqrt(mind1)/width+0.5f;
+
+        d[x]=0x01010101*sClamp<sInt>(sInt(256.0f*out),0,255);
+      }
+    }
+    return 1;
+  }
+}
+
+operator PocBitmap Half(PocBitmap)
+{
+  code
+  {
+    delete out->Image;
+    out->Image = in0->Image->Half();
+  }
+}
+
+
+operator PocBitmap Export(PocBitmap)
+{
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    fileout Filename "Output Filename (pic/bmp/tga)";
+  }
+
+  code
+  {
+    out->Image->Save(cmd->Strings[0]);
+  }
+}
+
+operator UnitTest UnitTestPocBitmap(PocBitmap)
+{
+  tab = PocBitmap;
+  parameter
+  {
+    fileout TestName;
+    flags Flags "Always Pass" ("-|compare:*1-|cross compare");
+  }
+  code
+  {
+    sImage img;
+    in0->CopyTo(&img);
+    return out->Test(img,cmd->Strings[0],para->Flags);
+  }
+}
+
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Material                                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type PocMaterial
+{
+  color = 0xff40ff40;
+  name = "PoC Material";
+  flags = render3d|notab;
+  
+  header
+  {
+  private:
+    PocMaterial *Default;
+  public:
+    PocMaterial *GetDefault() { return Default; }
+  }
+
+  extern void Init() 
+  { 
+    Default=new PocMaterial;
+    Default->Material = new sSimpleMaterial;
+    Default->Material->Flags |= sMTRL_LIGHTING;
+    Default->Material->Prepare(sVertexFormatStandard);
+  }
+  
+  extern void Exit() 
+  { 
+    Default->Release(); 
+  }
+
+  extern void Show(wObject *obj,wPaintInfo &pi)
+  {
+    PocMaterial *mtrl;
+  
+    sSetTarget(sTargetPara(sST_CLEARALL,pi.BackColor,pi.Spec));
+
+    if(obj && obj->Type==PocMaterialType)
+    {
+      mtrl = (PocMaterial *) obj;
+
+      sCBuffer<sSimpleMaterialEnvPara> cb;
+      cb.Data->Set(*pi.View,*pi.Env);
+      mtrl->Material->Set(&cb);
+
+      pi.PaintMtrl();
+    }
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator PocMaterial Material(?Texture2D)
+{
+  shortcut = 'm';
+
+  parameter
+  {
+    flags Flags ("zoff|zread|zwrite|zon:*4culloff|cullon|cullinv:*7-|light")=0x93;
+    flags Blend ("opaque|add|mul|mul2|smooth");
+    link Texture:0 (both);
+    flags TFlags0 ("point|linear|mipmaps|aniso:*4tile|clamp|mirror")=0x02;
+  }
+
+  code
+  {
+    static sU32 blend[8] =
+    {
+      sMB_OFF,sMB_ADD,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH
+    };
+    out->Material = new sSimpleMaterial;
+    out->Material->Flags = para->Flags;
+    out->Material->BlendColor = blend[para->Blend&7];
+    if(in0)
+    {
+      out->Tex[0] = in0; in0->AddRef();
+      out->Material->Texture[0] = in0->Texture;
+      out->Material->TFlags[0] = sConvertOldUvFlags(para->TFlags0);
+    }
+    out->Material->Prepare(sVertexFormatStandard);
+
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh                                                               ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+type PocMesh : MeshBase
+{
+  color = 0xff40ffff;
+  name = "PoC Mesh";
+  gui = base3d;
+  flags = render3d;
+  
+  header
+  {
+    sGeometry *WireGeo;
+  }
+
+  extern void Init()
+  {
+    WireGeo = new sGeometry;
+    WireGeo->Init(sGF_LINELIST|sGF_INDEX32,sVertexFormatSingle);
+  }
+
+  extern void Exit()
+  {
+    sDelete(WireGeo);
+  }
+
+  extern void BeginEngine(wPaintInfo &pi,sBool clear)
+  {
+    sSetTarget(sTargetPara(clear ? sST_CLEARALL : 0,pi.BackColor,pi.Spec));
+    pi.View->SetTargetCurrent();
+    pi.View->SetZoom(pi.Zoom3D);
+    pi.View->Prepare();
+  } 
+
+  extern void EndEngine(wPaintInfo &pi)
+  {
+  }
+
+  extern void Paint(wObject *obj,wPaintInfo &pi,sMatrix34 *mat,sInt matcount)
+  {
+    PocMeshCluster *cl;
+    PocMesh *mesh;
+    sCBuffer<sSimpleMaterialEnvPara> cb; 
+    if(obj && obj->Type==PocMeshType)
+    {
+      mesh = (PocMesh *) obj;
+      mesh->CacheSolid();
+      sFORALL(mesh->Clusters,cl)
+      {
+        for(sInt i=0;i<matcount;i++)
+        {
+          pi.View->UpdateModelMatrix(mat[i]);
+          cb.Data->Set(*pi.View,*pi.Env);
+          if(cl->Mtrl && cl->Mtrl->Material)
+            cl->Mtrl->Material->Set(&cb);
+          else
+            pi.ShadedMtrl->Set(&cb);
+
+          sDrawRange ir;
+          ir.Start = cl->StartIndex;
+          ir.End = cl->EndIndex;
+          mesh->SolidGeo->Draw(sGeometryDrawInfo(&ir,1));
+        }
+      }
+    }
+  }
+
+  extern void Hit(wObject *obj,const sRay &ray,wHitInfo &info)
+  {
+    sClear(info);
+    if(obj->IsType(PocMeshType))
+      ((PocMesh *)obj)->Hit(ray,info);
+  }
+
+  extern void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat)
+  {
+    if(obj->IsType(PocMeshType))
+      ((PocMesh *)obj)->Wireframe(obj,pi,WireGeo,mat);
+  }
+}
+
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator PocMesh torus()
+{
+  parameter
+  {
+    float Inner (0..1024 step 0.01) = 0.25;
+    float Outer (0..1024 step 0.01) = 1.0;
+    float Phase (0..1 step 0.01) = 0.0;
+    int Segments (3..64) = 4;
+    int Roundness (3..64) = 4;
+  }
+  
+  shortcut = 'o';
+  
+  code
+  {
+    sInt ty = para->Segments;
+    sInt tx = para->Roundness;
+    sF32 ro = para->Outer;
+    sF32 ri = para->Inner;
+    sF32 u,v,fx,fy;
+    
+    out->Init(tx*ty,tx*ty*6);
+    PocMeshVertex *vp = &out->Vertices[0];
+
+    for(sInt y=0;y<ty;y++)
+    {
+      for(sInt x=0;x<tx;x++)
+      {
+        u = sF32(x)/tx; fx = (u-para->Phase)*sPI2F;
+        v = sF32(y)/ty; fy =  v       *sPI2F;
+        vp->Pos.x = -sFCos(fy)*(ro+sFSin(fx)*ri);
+        vp->Pos.y = -sFCos(fx)*ri;
+        vp->Pos.z = sFSin(fy)*(ro+sFSin(fx)*ri);
+        vp->Normal.x = -sFCos(fy)*sFSin(fx);
+        vp->Normal.y = -sFCos(fx);
+        vp->Normal.z = sFSin(fy)*sFSin(fx);
+        vp->u = u;
+        vp->v = v;
+        vp++;
+      }
+    }
+    
+    sU32 *ip = &out->Indices[0];
+    for(sInt y=0;y<ty;y++)
+    {
+      for(sInt x=0;x<tx;x++)
+      {
+        sQuad(ip,0,
+          (y+0)%ty*tx+(x+0)%tx,
+          (y+1)%ty*tx+(x+0)%tx,
+          (y+1)%ty*tx+(x+1)%tx,
+          (y+0)%ty*tx+(x+1)%tx);
+      }
+    }
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator PocMesh Cube()
+{
+  shortcut = 'q';
+  code
+  {
+    sVector31 pos[8];
+    const static sInt ci[6][4] =
+    {
+      { 3,2,1,0 },
+      { 4,5,6,7 },
+      { 0,1,5,4 },
+      { 1,2,6,5 },
+      { 2,3,7,6 },
+      { 3,0,4,7 },
+    };
+    
+    pos[0].Init(-1,-1,-1);
+    pos[1].Init( 1,-1,-1);
+    pos[2].Init( 1, 1,-1);
+    pos[3].Init(-1, 1,-1);
+    pos[4].Init(-1,-1, 1);
+    pos[5].Init( 1,-1, 1);
+    pos[6].Init( 1, 1, 1);
+    pos[7].Init(-1, 1, 1);
+
+    out->Init(24,36);
+    sVector30 n;
+    PocMeshVertex *vp = &out->Vertices[0];
+    sU32 *ip = &out->Indices[0];
+    
+    for(sInt i=0;i<6;i++)
+    {      
+      vp[0].Pos = pos[ci[i][0]];
+      vp[1].Pos = pos[ci[i][1]];
+      vp[2].Pos = pos[ci[i][2]];
+      vp[3].Pos = pos[ci[i][3]];
+      vp[0].u = 0; vp[0].v = 0;
+      vp[1].u = 1; vp[1].v = 0;
+      vp[2].u = 1; vp[2].v = 1;
+      vp[3].u = 0; vp[3].v = 1;
+      n.Cross(vp[0].Pos-vp[1].Pos,vp[1].Pos-vp[2].Pos);
+      n.Unit();
+      vp[0].Normal = n;
+      vp[1].Normal = n;
+      vp[2].Normal = n;
+      vp[3].Normal = n;
+      
+      vp+=4;
+      sQuad(ip,i*4,0,1,2,3);
+    }    
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator PocMesh Add(*PocMesh)
+{
+  shortcut = 'a';
+  code
+  {
+    sInt incount = cmd->InputCount;
+    sInt vc,ic,cc;
+    
+    vc = ic = cc = 0;
+    for(sInt i=0;i<incount;i++)
+    {
+      PocMesh *in = cmd->GetInput<PocMesh *>(i);
+      vc += in->Vertices.GetCount();
+      ic += in->Indices.GetCount();
+      cc += in->Clusters.GetCount();
+    }
+    out->Init(vc,ic,cc);
+
+    vc = ic = cc = 0;
+    for(sInt i=0;i<incount;i++)
+    {
+      PocMesh *in = cmd->GetInput<PocMesh *>(i);
+      sCopyMem(&out->Vertices[vc],&in->Vertices[0],in->Vertices.GetCount()*sizeof(PocMeshVertex));
+      for(sInt j=0;j<in->Indices.GetCount();j++)
+        out->Indices[ic+j] = in->Indices[j]+vc;
+      for(sInt j=0;j<in->Clusters.GetCount();j++)
+      {
+        out->Clusters[cc+j].Mtrl = 0;
+        out->Clusters[cc+j].StartIndex = in->Clusters[j].StartIndex + ic;
+        out->Clusters[cc+j].EndIndex = in->Clusters[j].EndIndex + ic;
+      }
+      vc += in->Vertices.GetCount();
+      ic += in->Indices.GetCount();
+      cc += in->Clusters.GetCount();
+    }
+    
+    return 1;
+  }      
+}
+
+/****************************************************************************/
+
+operator PocMesh Translate(PocMesh)
+{
+  shortcut = 't';
+  parameter 
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rotate (-64..64 step 0.001) = 0;
+    float31 Trans (-1024..1024 step 0.01) = 0;    
+  }
+  code
+  {
+    PocMeshVertex *vp;
+    sSRT srt;
+    sMatrix34 matp;
+    sMatrix34 matn;
+    
+    srt.Rotate = para->Rotate;
+    srt.MakeMatrix(matn);
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(matp);
+    
+    out->Copy(in0);
+    sFORALL(out->Vertices,vp)
+    {
+      vp->Pos = vp->Pos * matp;
+      vp->Normal = vp->Normal * matn;
+    }
+    
+    return 1;
+  }
+}
+
+/****************************************************************************/
+
+operator PocMesh SetMtrl(PocMesh,PocMaterial)
+{
+  shortcut = 'm';
+
+  parameter
+  {
+    link Material (both);
+  }
+
+  code
+  {
+    PocMeshCluster *cl;
+    out->Copy(in0);
+    sFORALL(out->Clusters,cl)
+    {
+      cl->Mtrl = in1;
+      in1->AddRef();
+    }
+    return 1;
+  }
+}
+
+
+/****************************************************************************/

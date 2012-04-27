@@ -1,0 +1,1957 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+#include "wz4frlib/chaosmesh_ops.hpp"
+#include "wz4frlib/wz4_anim_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4frlib/wz4_mtrl2.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
+#include "wz4frlib/wz3_bitmap_ops.hpp"
+#include "wz4frlib/wz3_bitmap_code.hpp"
+}
+
+/****************************************************************************/
+
+type Wz4Mesh : MeshBase
+{
+  color = 0xff608080;
+  name = "wz4 Mesh";
+  flags = render3d|uncache;
+  gui = base3d;
+  columnheader[0] = "Primitives";
+  columnheader[1] = "Vertex";
+  columnheader[2] = "Topology";
+  columnheader[3] = "Special";
+
+  header
+  {
+    SimpleMtrl *DefaultMtrl;
+  }
+
+  extern void Init()
+  {
+    DefaultMtrl = new SimpleMtrl;
+    DefaultMtrl->SetMtrl();
+    DefaultMtrl->Prepare();
+  }
+
+  extern void Exit()
+  {
+    delete DefaultMtrl;
+  }
+
+  extern void BeginEngine(wPaintInfo &pi,sBool clear)
+  {
+    sSetTarget(sTargetPara((clear ? sST_CLEARALL : 0)|sST_SCISSOR,pi.BackColor,pi.Spec));
+    pi.View->SetTargetCurrent();
+    pi.View->SetZoom(pi.Zoom3D);
+    pi.View->Prepare();
+  }
+
+  extern void Paint(wObject *obj,wPaintInfo &pi,sMatrix34 *mat,sInt matcount)
+  {
+    if(obj && obj->IsType(Wz4MeshType))
+    {
+      Wz4MtrlType->PrepareView(*pi.View);
+      sFrustum fr; fr.Init(pi.View->ModelScreen);
+      Wz4Mesh *mesh = (Wz4Mesh *) obj;
+      for(sInt i=0;i<matcount;i++)
+      {
+        mesh->Render(sRF_TARGET_MAIN,0,&sMatrix34CM(mat[i]),0,fr);
+      }
+    }
+  }
+
+  extern void Hit(wObject *obj,const sRay &ray,wHitInfo &info)
+  {
+    sClear(info);
+  }
+
+  extern void Wireframe(wObject *obj,wPaintInfo &pi,sMatrix34 &mat)
+  {
+    if(obj && obj->IsType(Wz4MeshType))
+    {
+      Wz4MtrlType->PrepareView(*pi.View);
+      sFrustum fr; fr.Init(pi.View->ModelScreen);
+      Wz4Mesh *mesh = (Wz4Mesh *) obj;
+      mesh->Render(sRF_TARGET_WIRE,0,&sMatrix34CM(mat),0,fr);
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Converter                                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh ConvertFromChaosMesh(ChaosMesh)
+{
+  flags = conversion | hide;
+  code
+  {
+    out->ConvertFrom(in0);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Export                                                             ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Export(Wz4Mesh)
+{
+  column = 3;
+
+  parameter
+  {
+    fileout Filename;
+    flags Flags ("*0materials|-");
+    continue flags Flags "Vertex" ("*8tangents|-:*9uv0|-:*10uv1|-:*11vertex colors|-:*12bones|-");
+    flags FormatType "Format" ("wz4|obj");
+  }
+
+  code
+  {
+    out->CopyFrom(in0);
+    out->SaveFlags = para->Flags;    
+    if (para->FormatType==0)
+      sSaveObject(cmd->Strings[0],out);
+    else
+      out->SaveOBJ(cmd->Strings[0]);
+    
+    return 1;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Generators                                                         ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Import()
+{
+  column=0;
+
+  parameter
+  {
+    filein Filename("xsi|wz4mesh|wz3minmesh|lwo|obj");
+    flags Flags "XSI Flags" ("*0-|force animated:*1-|force rgb");
+  }
+  code
+  {
+    sBool result = 0;
+    const sChar *name = cmd->Strings[0];
+    const sChar *ext = sFindFileExtension(name);
+    if(sCmpStringI(ext,L"wz4mesh")==0)
+    {
+      result = sLoadObject(name,out);
+    }
+    else if(sCmpStringI(ext,L"xsi")==0)
+    {
+      result = out->LoadXSI(name,para->Flags&1,para->Flags&2);
+    }
+    else if(sCmpStringI(ext,L"lwo")==0)
+    {
+      result = out->LoadLWO(name);
+    }
+    else if(sCmpStringI(ext,L"obj")==0)
+    {
+      result = out->LoadOBJ(name);
+    }
+    else if(sCmpStringI(ext,L"wz3minmesh")==0)
+    {
+      result = out->LoadWz3MinMesh(name);
+    }
+    else
+    {
+      cmd->SetError(L"unrecognized file extension");
+      result = sFALSE;
+    }
+
+    return result;
+  } 
+}
+
+
+operator Wz4Mesh Torus()
+{
+  column = 0;
+  shortcut = 'o';
+  parameter
+  {
+    int Slices(3..4096)=12;
+    int Segments(3..4096)=8;  
+    float InnerRadius(0..1024 logstep 0.01)=0.25;
+    float OuterRadius(0..1024 logstep 0.01)=1;
+    float Phase(-4..4 step 0.001);
+    float Arc(0..1 step 0.001)=1;
+  }
+  code
+  {
+    out->MakeTorus(para->Slices,para->Segments,para->InnerRadius,para->OuterRadius,para->Phase,para->Arc);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Grid()
+{
+  column = 0;
+  shortcut = 'g';
+  parameter
+  {
+    int Tesselate[2] (1..4096)=1;
+    flags Sides ("-|invert|double");
+    float Size(0..1024 step 0.01) = 1;
+  }
+  code
+  {
+    // create one grid
+
+    out->MakeGrid(para->Tesselate[0],para->Tesselate[1]);
+
+    // double grid
+
+    if(para->Sides==2)
+    {
+      Wz4Mesh *m2 = new Wz4Mesh;
+      m2->CopyFrom(out);
+      sMatrix34 mat;
+      mat.i.x = -1;
+      mat.j.y = -1;
+      mat.l.x = sF32(para->Tesselate[0]);
+      m2->Transform(mat);
+      out->Add(m2);
+      delete m2;
+    }
+
+    // scale and position grid
+
+    sMatrix34 mat;
+    sF32 sx = para->Size/(para->Tesselate[0]);
+    sF32 sz = para->Size/(para->Tesselate[1]);
+    sF32 sy = 1;
+    sF32 tx = -para->Size*0.5f;
+    sF32 tz = -para->Size*0.5f;
+    if(para->Sides==1) 
+    {
+      sy = -sy;
+      sz = -sz;
+      tz = -tz;
+    }
+    mat.i.Init(sx,0,0);
+    mat.j.Init(0,sy,0);
+    mat.k.Init(0,0,sz);
+    mat.l.Init(tx,0,tz);
+    out->Transform(mat);
+
+    // flip uv
+
+    Wz4MeshVertex *mv;
+    sFORALL(out->Vertices,mv)
+      mv->V0 = 1-mv->V0;
+
+  //  out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Disc()
+{
+  column = 0;
+  parameter
+  {
+    int Slices(3..4096)=8;  
+    float Radius(0..1024 logstep 0.01)=0.25;
+    float Phase(-4..4 step 0.001);
+    flags Flags("-|doublesided")=0;
+  }
+  code
+  {
+    out->MakeDisc(para->Slices,para->Radius,para->Phase,para->Flags);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Sphere()
+{
+  column = 0;
+  shortcut = 'h';
+  parameter
+  {
+    int Slices(3..256)=12;
+    int Segments(2..256)=8;  
+    float30 Diameter(0..1024 logstep 0.01)=1.0;
+  }
+  code
+  {
+    out->MakeSphere(para->Slices,para->Segments);
+    sMatrix34 mat;
+    mat.i.x = para->Diameter.x;
+    mat.j.y = para->Diameter.y;
+    mat.k.z = para->Diameter.z;
+    out->Transform(mat);
+    out->CalcNormalAndTangents();
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Mesh Cube()
+{
+  column = 0;
+  shortcut = 'q';
+  parameter
+  {
+    int Tesselate[3] (1..4096)=1;
+    float30 Scale (-1024..1024) = 1;
+  }
+  code
+  {
+    out->MakeCube(para->Tesselate[0],para->Tesselate[1],para->Tesselate[2]);
+    sMatrix34 mat;
+    sF32 sx = para->Scale.x;
+    sF32 sy = para->Scale.y;
+    sF32 sz = para->Scale.z;
+    mat.i.Init(sx/para->Tesselate[0],0,0);
+    mat.j.Init(0,sy/para->Tesselate[1],0);
+    mat.k.Init(0,0,sz/para->Tesselate[2]);
+    mat.l.Init(-sx*0.5f,-sy*0.5f,-sz*0.5f);
+    out->Transform(mat);
+
+    Wz4MeshVertex *vp;
+    sFORALL(out->Vertices,vp)
+    {
+      vp->Normal.Unit();
+      vp->Tangent.Unit();
+    }
+    out->CalcNormalAndTangents();
+  }
+}
+
+
+
+/****************************************************************************/
+
+operator Wz4Mesh Cylinder()
+{
+  column = 0;
+  shortcut = 'c';
+  parameter
+  {
+    int Slices(3..4096)=12;
+    int Segments(1..4096)=1;  
+    int Top(0..256)=0;  
+    float Radius(0..1024 step 0.01) = 0.5;
+    float Height(0..1024 step 0.01) = 1;
+    flags Flags("centered|upright:*1top|-:*2bottom|-");
+  }
+  code
+  {
+    out->MakeCylinder(para->Slices,para->Segments,para->Top,para->Flags);
+    sMatrix34 mat;
+    mat.i.Init(para->Radius,0,0);
+    mat.j.Init(0,para->Height,0);
+    mat.k.Init(0,0,para->Radius);
+    mat.l.Init(0,(para->Flags & 1)?0:-para->Height*0.5f,0);
+    out->Transform(mat);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Text3D()
+{
+  column = 0;
+  parameter
+  {
+    lines 5 string Text = "hund.";
+    string Font = "Arial";
+    float Height(0..65536 step 0.001) = 0.5;
+    float Extrude(0..65536 step 0.001) = 0.1;
+    float MaxError(0..1 step 0.001) = 0.05;
+    flags Flags("-|sharp edges:*1-|make chunks:*4X|Z");
+    continue flags Flags "Style" ("*2-|bold:*3-|italics");
+  }
+  code
+  {
+    out->MakeText(cmd->Strings[0],cmd->Strings[1],para->Height,para->Extrude,para->MaxError,para->Flags);
+    out->CalcNormalAndTangents();
+  }
+}
+
+operator Wz4Mesh Path3D()
+{
+  column = 0;
+  parameter
+  {
+    lines 5 string Path = "";
+    float Extrude(-65536..65536 step 0.001) = 0.1;
+    float MaxError(0..1 step 0.0001) = 0.005;
+    float WeldThreshold(0..1 step 0.000001) = 0.00001;
+    flags Flags("-|sharp edges");
+  }
+  code
+  {
+    out->MakePath(cmd->Strings[0],para->Extrude,para->MaxError,para->WeldThreshold,para->Flags);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Filters                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+code
+{
+  static sBool logic(sInt selflag,sF32 select)
+  {
+    switch(selflag)
+    {
+    default:
+      return 1;
+    case 1:
+      return 0;
+    case 2:
+      return select>=0.5f;
+    case 3:
+      return select<=0.5f;
+    }
+  }
+
+  static sF32 logicF(sInt selflag,sF32 select)
+  {
+    if (!(selflag&0x04)) return logic(selflag, select)?1.0f:0.0f;
+
+    switch(selflag&0x03)
+    {
+    default:
+      return 1;
+    case 1:
+      return 0;
+    case 2:
+      return select;
+    case 3:
+      return 1.0f-select;
+    }
+  }
+
+}
+
+operator Wz4Mesh Normalize(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    flags Flags("-|normals:*1-|tangents:*2-|smooth:*3-|by selection")=3;
+  }
+  code
+  {
+    if(para->Flags)
+    {
+			sInt *map = (para->Flags & 4) ? out->BasePos():out->BaseNormal();
+      sBool byselection = (para->Flags&8);
+			if(para->Flags & 1) out->CalcNormals(map,byselection);
+			if(para->Flags & 2) out->CalcTangents(map,byselection);
+			delete[] map; 
+      if(para->Flags & 5) out->MergeVertices();
+    }
+  }
+}
+
+operator Wz4Mesh Randomize(Wz4Mesh)
+{
+  column = 1;
+  shortcut = 'r';
+  flags = passinput|passoutput;
+  parameter
+  {
+    int Seed(0..255);
+    float Amount(0..1024 logstep 0.01)=0.125;
+    flags Selection("all|none|selected|unselected");
+    flags Mode(" 3d|by normal");
+  }
+  code
+  {
+    Wz4MeshVertex *vp;
+    sRandom rnd;
+
+    rnd.Seed(para->Seed);
+    sF32 a2 = para->Amount*2;
+    sF32 a = para->Amount;
+    sInt *map = out->BasePos();
+
+    sFORALL(out->Vertices,vp)
+    {
+      if(map[_i]==-1)
+      {
+        if(logic(para->Selection,vp->Select))
+        {
+          if(para->Mode==1)
+          {
+            sF32 f = rnd.Float(a2)-a;
+            vp->Pos += vp->Normal * f;
+          }
+          else
+          {
+            vp->Pos.x += rnd.Float(a2)-a;
+            vp->Pos.y += rnd.Float(a2)-a;
+            vp->Pos.z += rnd.Float(a2)-a;
+          }
+        }
+      }
+      else
+      {
+        vp->Pos = out->Vertices[map[_i]].Pos;
+      }
+    }
+    out->Flush();
+    out->CalcNormalAndTangents();
+    delete[] map;
+  }
+}
+
+operator Wz4Mesh Noise(Wz4Mesh)
+{
+  column = 1;
+  shortcut = 'p';
+  flags = passinput|passoutput;
+  parameter
+  {
+    int Seed(0..255);
+    float Freq[3](0..1024 logstep 0.01) = 1;
+    float Amplify[3](0..1024 logstep 0.01)=0.125;
+    flags Selection("all|none|selected|unselected");
+    int Octaves(1..16) = 1;
+    float Falloff(0..16 step 0.01) = 1.0;
+    continue flags Selection "Flags" ("*2-|abs y");
+  }
+  code
+  {
+    Wz4MeshVertex *vp;
+
+    sInt *map = out->BasePos();
+    sVector30 p;
+    sVector30 a;
+
+    sFORALL(out->Vertices,vp)
+    {
+      if(map[_i]==-1)
+      {
+        if(logic(para->Selection&3,vp->Select))
+        {
+          sInt x = sInt(vp->Pos.x*para->Freq[0]*0x10000);
+          sInt y = sInt(vp->Pos.y*para->Freq[1]*0x10000);
+          sInt z = sInt(vp->Pos.z*para->Freq[2]*0x10000);
+          a.x = para->Amplify[0];
+          a.y = para->Amplify[1];
+          a.z = para->Amplify[2];
+          p.Init(0,0,0);
+          for(sInt i=0;i<para->Octaves;i++)
+          {
+            p.x += a.x * sPerlin3D(x,y,z,255,para->Seed+0);
+            p.y += a.y * sPerlin3D(x,y,z,255,para->Seed+1);
+            p.z += a.z * sPerlin3D(x,y,z,255,para->Seed+2);
+            x *= 2;
+            y *= 2;
+            z *= 2; 
+            a *= para->Falloff;
+          }
+          if(para->Selection & 4)
+          {
+            p.y = sFAbs(p.y);
+          }
+          vp->Pos += p;
+        }
+      }
+      else
+      {
+        vp->Pos = out->Vertices[map[_i]].Pos;
+      }
+    }
+    out->Flush();
+    out->CalcNormalAndTangents();
+    delete[] map;
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Invert(Wz4Mesh)
+{
+  column = 2;
+  shortcut = 'i';
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    Wz4MeshFace *fp;    
+    sFORALL(out->Faces,fp)
+    {
+      if(logic(para->Selection,fp->Select))
+        fp->Invert();
+    }
+    Wz4MeshVertex *mv;
+    sFORALL(out->Vertices,mv)
+      if(logic(para->Selection,mv->Select))
+        mv->Normal.Neg();
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Triangulate(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    Wz4MeshFace *fp;
+    Wz4MeshFace *nfp;
+    sArray<Wz4MeshFace> newfaces;
+
+    sInt fc = 0;
+    sFORALL(out->Faces,fp)
+    {
+      if(!logic(para->Selection,fp->Select) || fp->Count==3)
+        fc += 1;
+      else
+        fc += 2;
+    }
+    nfp = newfaces.AddMany(fc);
+    sFORALL(out->Faces,fp)
+    {
+      if(!logic(para->Selection,fp->Select) || fp->Count==3)
+      {
+        *nfp++ = *fp;
+      }
+      else
+      {
+        nfp->Init(3);
+        nfp->Select = fp->Select;
+        nfp->Cluster = fp->Cluster;
+        nfp->Vertex[0] = fp->Vertex[0];
+        nfp->Vertex[1] = fp->Vertex[1];
+        nfp->Vertex[2] = fp->Vertex[2];
+        nfp++;
+        nfp->Init(3);
+        nfp->Select = fp->Select;
+        nfp->Cluster = fp->Cluster;
+        nfp->Vertex[0] = fp->Vertex[0];
+        nfp->Vertex[1] = fp->Vertex[2];
+        nfp->Vertex[2] = fp->Vertex[3];
+        nfp++;
+      }
+    }
+
+    out->Faces = newfaces;
+    out->Flush();
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Mesh DeleteFace(Wz4Mesh)
+{
+  column = 2;
+  shortcut = 'd';
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected")=2;
+  }
+  code
+  {
+    Wz4MeshFace *fp;
+    Wz4MeshFace *nfp;
+    sArray<Wz4MeshFace> newfaces;
+
+    sInt fc = 0;
+    sFORALL(out->Faces,fp)
+    {
+      if(!logic(para->Selection,fp->Select))
+        fc += 1;
+    }
+    nfp = newfaces.AddMany(fc);
+    sFORALL(out->Faces,fp)
+    {
+      if(!logic(para->Selection,fp->Select))
+      {
+        *nfp++ = *fp;
+      }
+    }
+
+    out->Faces = newfaces;
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh SetMaterial(Wz4Mesh,Wz4Mtrl)
+{
+  column = 3;
+  shortcut = 'M';
+  flags = passinput|passoutput;
+  parameter
+  {
+    link Material:1 (both);
+    layout flags Selection("all|none|selected|unselected|cluster");
+    if(Selection==4)
+      int Cluster(0..0x10000);
+  }
+  code
+  {
+    if(para->Selection==4)
+    {
+      sInt cli = para->Cluster;
+      if(cli>=0 && cli<out->Clusters.GetCount())
+      {
+        out->Clusters[cli]->Mtrl->Release();
+        out->Clusters[cli]->Mtrl = in1;
+        in1->AddRef();
+      }
+    }
+    else
+    {
+      if(para->Selection==0)
+        sDeleteAll(out->Clusters);
+     
+      Wz4MeshCluster *cl;
+      sInt cli = -1;
+      sFORALL(out->Clusters,cl)
+        if(cl->Mtrl==in1)
+          cli = _i;
+      if(cli==-1)
+      {
+        cl = new Wz4MeshCluster;
+        cl->Mtrl = in1; in1->AddRef();
+        cli = out->Clusters.GetCount();
+        out->Clusters.AddTail(cl);
+      }
+
+      Wz4MeshFace *mf;
+      sFORALL(out->Faces,mf)
+        if(logic(para->Selection,mf->Select))
+          mf->Cluster = cli;
+
+      if(out->Skeleton) out->SplitClustersAnim(74);
+      if(out->Chunks.GetCount()) out->SplitClustersChunked(74);
+
+    }
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Transform(Wz4Mesh)
+{
+  column = 1;
+  shortcut = 't';
+  flags = passinput|passoutput;
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rot (-16..16 step 0.01) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    sMatrix34 mat,matInvT;
+    sSRT srt;
+    Wz4MeshVertex *mv;
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(mat);
+
+    matInvT = mat;
+    matInvT.Invert3();
+    matInvT.Trans3();
+
+    sFORALL(out->Vertices,mv)
+      if(logic(para->Selection,mv->Select))
+        mv->Transform(mat,matInvT);
+
+    Wz4ChunkPhysics *phys;
+    sFORALL(out->Chunks,phys)
+      phys->Transform(mat);
+
+    if(para->Scale.x * para->Scale.y * para->Scale.z < 0.0f)
+    {
+      Wz4MeshFace *f;
+      sFORALL(out->Faces,f)
+        f->Invert();
+
+      // normals just change sign, but tangents may or may not be affected.
+      out->CalcNormalAndTangents();
+    }
+
+    out->Flush();
+  }
+}
+
+
+/****************************************************************************/
+
+operator Wz4Mesh Mirror(Wz4Mesh)
+{
+  column = 1;
+  //shortcut = 't';
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags MirrorX("off|on");
+    flags MirrorY("off|on");
+    flags MirrorZ("off|on");    
+    flags Selection("all|none|selected|unselected");
+    flags Mode("*0-|recalc normal:*2-|recalc tangents");
+  }
+  code
+  {
+    out->Mirror(para->MirrorX, para->MirrorY, para->MirrorZ, para->Selection, para->Mode);    
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Center(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  code
+  {
+    Wz4MeshVertex *mv;
+
+    sAABBox bounds;
+    sFORALL(out->Vertices,mv)
+      bounds.Add(mv->Pos);
+
+    sVector30 d = (sVector30(bounds.Max)+sVector30(bounds.Min))*-0.5f;
+    sFORALL(out->Vertices,mv)
+      mv->Pos += d;
+
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Multiply "Multiply (old)" (Wz4Mesh)
+{
+  column = 3;
+  flags = hide;
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rot (-16..16 step 0.01) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    int Count(1..1024) = 2;
+    flags Flags ("-|Center");
+  }
+  code
+  {
+    sMatrix34 mat,mat0,mat1,matInvT;
+    sSRT srt;
+    Wz4MeshVertex *mv;
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(mat1);
+
+
+    for(sInt i=0;i<para->Count;i++)
+      out->Add(in0);
+
+    sInt vc = in0->Vertices.GetCount();
+    mv = out->Vertices.GetData();
+    mat.Init();
+    mv += vc;
+    for(sInt i=1;i<para->Count;i++)
+    {
+//      mat = mat * mat1;
+      mat = mat1 * mat;         // seems to be the same... strange...
+      matInvT = mat;
+      matInvT.Invert3();
+      matInvT.Trans3();
+      for(sInt j=0;j<vc;j++)
+      {
+        mv->Transform(mat,matInvT);
+        mv++;
+      }
+
+    }
+
+    if(para->Flags & 1)
+    {
+      mat.Init();
+      mat.l = sVector31(sVector30(para->Trans) * (-sF32(para->Count-1)*0.5f));
+      out->Transform(mat);
+    }
+
+    out->Flush();
+  }
+}
+
+
+
+operator Wz4Mesh MultiplyNew "Multiply" (Wz4Mesh)
+{
+  column = 3;
+  shortcut = 'm';
+  parameter
+  {
+    if(0) int Renderpass(-127..127);      // for exchange mesh<->scene
+    flags Flags ("-|Center");
+    group "Pre-Transform"; 
+    anim float31 PreScale (-1024..1024 step 0.01) = 1;
+    anim float30 PreRot (-16..16 step 0.01) = 0;
+    anim float31 PreTrans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+    group "Multiply Transform";
+    anim int Count(1..1024) = 2;
+    anim float31 Scale (-1024..1024 step 0.01) = 1;
+    anim float30 Rot (-16..16 step 0.01) = 0;
+    anim float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 } ;
+  }
+  code
+  {
+    sMatrix34 PreMat;
+    sMatrix34 MulMat;
+    sMatrix34 accu;
+    sMatrix34 mat0,mati;
+    sSRT srt;
+    Wz4MeshVertex *mv;
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(MulMat);
+
+    srt.Scale = para->PreScale;
+    srt.Rotate = para->PreRot;
+    srt.Translate = para->PreTrans;
+    srt.MakeMatrix(PreMat);
+
+    if((para->Flags & 1) && para->Count>1)
+      accu.l = sVector31(sVector30(para->Trans) * (-sF32(para->Count-1)*0.5f));
+
+    for(sInt i=0;i<para->Count;i++)
+      out->Add(in0);
+
+    sInt vc = in0->Vertices.GetCount();
+    mv = out->Vertices.GetData();
+    for(sInt i=0;i<para->Count;i++)
+    {
+      mat0 = PreMat*accu;
+      mati = mat0;
+      mati.Invert3();
+      mati.Trans3();
+      for(sInt j=0;j<vc;j++)
+      {
+        mv->Transform(mat0,mati);
+        mv++;
+      }
+      accu = accu * MulMat;
+    }
+
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh TransformEx(Wz4Mesh)
+{
+  column = 1;
+  shortcut = 'T';
+  flags = passinput|passoutput;
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rot (-16..16 step 0.01) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    flags Flags "Input" ("pos|normal|tangent|uv0|uv1|color0|color1")=0x33;
+    continue flags Flags "Output"  ("*4pos|normal|tangent|uv0|uv1|color0|color1");
+    layout flags Selection("all|none|selected|unselected")=0;
+    if (Selection & 2)
+    {
+      nolabel continue flags Selection("*2-|soft");
+    }
+    
+  }
+  code
+  {
+    sMatrix34 mat;
+    sSRT srt;
+    Wz4MeshVertex *mv;
+
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.MakeMatrix(mat);
+
+    sVector4 v;
+    sFORALL(out->Vertices,mv)
+    {
+      sF32 sel = logicF(para->Selection,mv->Select);
+      if(sel>0)
+      {
+        switch(para->Flags & 15)
+        {
+          case 0:  v = mv->Pos; break;
+          case 1:  v = mv->Normal; break;
+          case 2:  v = mv->Tangent; break;
+          case 3:  v.Init(mv->U0,mv->V0,0,1); break;
+          case 4:  v.Init(mv->U1,mv->V1,0,1); break;
+#if !WZ4MESH_LOWMEM
+          case 5:  v.InitColor(mv->Color0);
+          case 6:  v.InitColor(mv->Color1);
+#endif
+        }
+
+        v = sFade(sel,v,v*mat);
+
+        switch((para->Flags>>4) & 15)
+        {
+          case 0:  mv->Pos = sVector31(v); break;
+          case 1:  mv->Normal = sVector30(v); break;
+          case 2:  mv->Tangent = sVector30(v); break;
+          case 3:  mv->U0 = v.x; mv->V0 = v.y; break;
+          case 4:  mv->U1 = v.x; mv->V1 = v.y; break;
+#if !WZ4MESH_LOWMEM
+          case 5:  mv->Color0 = v.GetColor(); break;
+          case 6:  mv->Color1 = v.GetColor(); break;
+#endif
+        }
+      }
+    }
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh TransformMatrix(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float x "x =" [4](-1024..1024 step 0.01) = { 1,0,0,0 };
+    float y "y =" [4](-1024..1024 step 0.01) = { 0,1,0,0 };
+    float z "z =" [4](-1024..1024 step 0.01) = { 0,0,1,0 };
+    flags Flags "Input" ("pos|normal|tangent|uv0|uv1|color0|color1")=0;
+    continue flags Flags "Output"  ("*4pos|normal|tangent|uv0|uv1|color0|color1");
+    layout flags Selection("all|none|selected|unselected")=0;
+    if (Selection & 2)
+    {
+      nolabel continue flags Selection("*2-|soft");
+    }
+    
+  }
+  code
+  {
+    sMatrix34 mat;
+    Wz4MeshVertex *mv;
+
+    mat.i.Init(para->x[0],para->y[0],para->z[0]);
+    mat.j.Init(para->x[1],para->y[1],para->z[1]);
+    mat.k.Init(para->x[2],para->y[2],para->z[2]);
+    mat.l.Init(para->x[3],para->y[3],para->z[3]);
+
+    sVector4 v;
+    sFORALL(out->Vertices,mv)
+    {
+      sF32 sel = logicF(para->Selection,mv->Select);
+      if(sel>0)
+      {
+        switch(para->Flags & 15)
+        {
+          case 0:  v = mv->Pos; break;
+          case 1:  v = mv->Normal; break;
+          case 2:  v = mv->Tangent; break;
+          case 3:  v.Init(mv->U0,mv->V0,0,1); break;
+          case 4:  v.Init(mv->U1,mv->V1,0,1); break;
+#if !WZ4MESH_LOWMEM
+          case 5:  v.InitColor(mv->Color0);
+          case 6:  v.InitColor(mv->Color1);
+#endif
+        }
+
+        v = sFade(sel,v,v*mat);
+
+        switch((para->Flags>>4) & 15)
+        {
+          case 0:  mv->Pos = sVector31(v); break;
+          case 1:  mv->Normal = sVector30(v); break;
+          case 2:  mv->Tangent = sVector30(v); break;
+          case 3:  mv->U0 = v.x; mv->V0 = v.y; break;
+          case 4:  mv->U1 = v.x; mv->V1 = v.y; break;
+#if !WZ4MESH_LOWMEM
+          case 5:  mv->Color0 = v.GetColor(); break;
+          case 6:  mv->Color1 = v.GetColor(); break;
+#endif
+        }
+      }
+    }
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh TransformNonLinear(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Flags "Input" ("pos|normal|tangent|uv0|uv1|color0|color1")=0;
+    continue flags Flags "Output"  ("*4pos|normal|tangent|uv0|uv1|color0|color1");
+    layout flags Selection("all|none|selected|unselected")=0;
+    if (Selection & 2)
+    {
+      nolabel continue flags Selection("*2-|soft");
+    }
+
+    group "X^1";
+    float4 x1 "x" (-1024..1024 step 0.01) = { 1,0,0,0 };
+    float4 y1 "y" (-1024..1024 step 0.01) = { 0,1,0,0 };
+    float4 z1 "z" (-1024..1024 step 0.01) = { 0,0,1,0 };
+    group "X^2";
+    float4 x2 "x" (-1024..1024 step 0.01) = { 0,0,0,1 };
+    float4 y2 "y" (-1024..1024 step 0.01) = { 0,0,0,1 };
+    float4 z2 "z" (-1024..1024 step 0.01) = { 0,0,0,1 };
+    group "X^-1";
+    float4 xr "x" (-1024..1024 step 0.01) = { 0,0,0,1 };
+    float4 yr "y" (-1024..1024 step 0.01) = { 0,0,0,1 };
+    float4 zr "z" (-1024..1024 step 0.01) = { 0,0,0,1 };
+  }
+  code
+  {
+    sMatrix34 mat;
+    Wz4MeshVertex *mv;
+
+    sVector4 v,vv;
+    sFORALL(out->Vertices,mv)
+    {
+      sF32 sel = logicF(para->Selection,mv->Select);
+      if(sel>0)
+      {
+        switch(para->Flags & 15)
+        {
+          case 0:  v = mv->Pos; break;
+          case 1:  v = mv->Normal; break;
+          case 2:  v = mv->Tangent; break;
+          case 3:  v.Init(mv->U0,mv->V0,0,1); break;
+          case 4:  v.Init(mv->U1,mv->V1,0,1); break;
+#if !WZ4MESH_LOWMEM
+          case 5:  v.InitColor(mv->Color0);
+          case 6:  v.InitColor(mv->Color1);
+#endif
+        }
+
+        vv.x = (para->x1^v) * (para->x2^(v*v)) / (para->xr^v);
+        vv.y = (para->y1^v) * (para->y2^(v*v)) / (para->yr^v);
+        vv.z = (para->z1^v) * (para->z2^(v*v)) / (para->zr^v);
+        v = sFade(sel,v,vv);
+
+        switch((para->Flags>>4) & 15)
+        {
+          case 0:  mv->Pos = sVector31(v); break;
+          case 1:  mv->Normal = sVector30(v); break;
+          case 2:  mv->Tangent = sVector30(v); break;
+          case 3:  mv->U0 = v.x; mv->V0 = v.y; break;
+          case 4:  mv->U1 = v.x; mv->V1 = v.y; break;
+#if !WZ4MESH_LOWMEM
+          case 5:  mv->Color0 = v.GetColor(); break;
+          case 6:  mv->Color1 = v.GetColor(); break;
+#endif
+        }
+      }
+    }
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh ExtrudeNormal(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Amount(-1024..1024 step 0.001) = 0.25;
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    out->ExtrudeNormal(para->Selection,para->Amount);
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Bend(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput | passoutput;
+  parameter
+  {
+    float31 Start(-1024..1024 step 0.001);
+    float30 Up(-1024..1024 step 0.001) = { 0,1,0 };
+    float30 Axis(-1024..1024 step 0.001) = { 0,0,-1 };
+    float Angle(-4..4 step 0.001) = 0.25;
+    float Radius(-1024..1024 step 0.001) = 1;
+    flags Flags("-|pi=3");
+  }
+  code
+  {
+    sVector4 plane; 
+    Wz4MeshVertex *mv;
+    sMatrix34 mat;
+    sVector30 d0;
+
+    sVector30 dir = para->Up;
+    sVector30 axis = para->Axis;
+    dir.Unit();
+    axis.Unit();
+    d0.Cross(dir,axis);
+    d0 *= para->Radius;
+
+    plane.InitPlane(para->Start,dir);
+
+    sFORALL(out->Vertices,mv)
+    {
+      sF32 d = plane ^ mv->Pos;
+      sF32 angle,move;
+      if(para->Flags)
+      {
+        angle = sClamp<sF32>(d/para->Radius,0,para->Angle*6);
+        move = angle*para->Radius;
+        angle = angle * (sPI2F/6);
+      }
+      else
+      {
+        angle = sClamp<sF32>(d/para->Radius,0,para->Angle*sPI2F);
+        move = angle*para->Radius;
+      }
+
+      if(angle>=0)
+      {
+        mat.RotateAxis(axis,-angle);
+        mat.l = para->Start-d0 - sVector30(para->Start+move*dir-d0)*mat;
+        mv->Transform(mat,mat);
+      }
+    }
+    out->Flush();
+  }
+  helper
+  {
+    sVector31 hup;
+    sVector31 haxis;
+  }
+  handles
+  {
+    if(pi.IsSelected(op,2))
+      para->Up = helper->hup-para->Start;
+
+    if(pi.IsSelected(op,3))
+      para->Axis = helper->haxis-para->Start;
+
+    helper->hup = para->Start + para->Up;
+    helper->haxis = para->Start + para->Axis;
+    pi.Handle3D(op,1,para->Start,wHM_PLANE);
+    pi.Handle3D(op,2,helper->hup,wHM_PLANE);
+    pi.Handle3D(op,3,helper->haxis,wHM_PLANE);
+    pi.Line3D(para->Start,helper->hup);
+    pi.Line3D(para->Start,helper->haxis);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Subdivide(Wz4Mesh)
+{
+  column = 2;
+  shortcut = 'u';
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected");
+    flags Levels("| 1| 2| 3| 4| 5| 6")=1;
+    float Smooth(-16..16 step 0.01) = 1;
+  }
+  code
+  {
+    Wz4MeshFace *f;
+    sFORALL(out->Faces,f)
+      f->Select = logic(para->Selection,f->Select)?1.0f:0.0f;
+
+    out->Flush();
+    for(sInt i=0;i<para->Levels;i++)
+      out->Subdivide(para->Smooth);
+
+    out->CalcNormalAndTangents();
+  }
+}
+
+operator Wz4Mesh Extrude(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    int Steps(1..1024) = 1;
+    float Amount(-1024..1024 step 0.01) = 1;
+    flags Flags "Faces"("group|single");
+    layout continue flags Flags "Direction"("*1group|normal|center");
+    if((Flags & 6)==4)
+      float31 Center(-1024..1024);
+    float LocalScale(0..16.0 step 0.01) = 1.0;
+  }
+  code
+  {
+    out->Extrude(para->Steps,para->Amount,para->Flags,para->Center,para->LocalScale);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Special                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Add(*?Wz4Mesh)
+{
+  column = 3;
+  shortcut = 'a';
+  code
+  {
+    // first pass: count how many faces and vertices to allocate
+    sInt fcount = 0;
+    sInt vcount = 0;
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Wz4Mesh *in = cmd->GetInput<Wz4Mesh *>(i);
+      if(in)
+      {
+        fcount += in->Faces.GetCount();
+        vcount += in->Vertices.GetCount();
+      }
+    }
+
+    out->Faces.HintSize(fcount);
+    out->Vertices.HintSize(vcount);
+
+    // second pass: actual add
+    for(sInt i=0;i<cmd->InputCount;i++)
+    {
+      Wz4Mesh *in = cmd->GetInput<Wz4Mesh *>(i);
+      if(in)
+        out->Add(in);
+    }
+  }
+}
+
+operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
+{
+  column = 3;
+  shortcut = 'S';
+  flags = passinput|passoutput;
+  parameter
+  {
+    layout flags Flags "Input" ("*6cube|sphere|vertex select|face select|all|by texture|cluster")=8;
+    continue flags Flags "Logic" ("-|invert:*2clear|set|assign");
+    continue flags Flags "Output" ("*4vertex|touched face|enclosed face");
+    if(((Flags&0x1c0)==0x00) || ((Flags&0x1c0)==0x40))
+    {
+      float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
+      float30 Rot (-64..64 step 0.001) = { 0,0,0 };
+      float31 Trans (-0x10000..0x10000 step 0.01) = { 0,0,0 };
+    }
+    float Random (0..1 step 0.02) = 1;
+    int RandomSeed (0..255);
+    if(((Flags&0x1c0)==0x140))
+    {
+      color RefColor "Reference" ("rgb") = 0xffffff;
+      int RefColorErr "Radius" (0..255) = 2;
+      int RefColorSpread "Spread" (0..255) = 253;
+      flags TextureUV "UV Set" ("UV0|UV1");
+      continue flags TextureUV "UV Mode" ("*1clamp|wrap");
+    }
+    if(((Flags&0x1c0)==0x180))
+      int Cluster(0..1024);
+  }
+  code
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    sMatrix34 inv;
+    Wz4MeshVertex *vp;
+    Wz4MeshFace *face;
+    sVector31 v;
+    sRandom rnd;
+   
+    rnd.Seed(para->RandomSeed);
+
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+    srt.MakeMatrixInv(inv);
+
+    sInt pc = out->Vertices.GetCount();
+    
+    sInt refR = 0x80*((para->RefColor>>16)&0xff);
+    sInt refG = 0x80*((para->RefColor>>8)&0xff);
+    sInt refB = 0x80*((para->RefColor>>0)&0xff);
+    sInt refInner = 0x80*para->RefColorErr;
+    sInt refOuter = 0x80*(para->RefColorErr+para->RefColorSpread);
+    sF32 refScale = 1.0f/(0x80*para->RefColorSpread);
+
+    sF32 *fsel = new sF32[pc];
+    if((para->Flags & 0x1c0)==0x0c0)
+    {
+      for(sInt i=0;i<pc;i++)
+        fsel[i] = 0.0f;
+      sFORALL(out->Faces,face)
+      {
+        if(face->Select>0.0f)
+        {
+          for(sInt i=0;i<face->Count;i++)
+            fsel[face->Vertex[i]]=face->Select;
+        }
+      }
+    }
+    if((para->Flags & 0x1c0)==0x180)
+    {
+      for(sInt i=0;i<pc;i++)
+        fsel[i] = 0.0f;
+      sFORALL(out->Faces,face)
+      {
+        if(face->Cluster==para->Cluster)
+          for(sInt i=0;i<face->Count;i++)
+            fsel[face->Vertex[i]]= 1;
+      }
+    }
+    sFORALL(out->Vertices,vp)
+    {
+      v = vp->Pos * inv;
+      sF32 inside = 0.0f;
+      switch(para->Flags & 0x1c0)
+      {
+      case 0x00:
+        inside = (v.x>=-1&&v.x<=1 && v.y>=-1&&v.y<=1 && v.z>=-1&&v.z<=1)?1.0f:0.0f;
+        break;
+      case 0x40:
+        inside = ((v.x*v.x+v.y*v.y+v.z*v.z)<=1)?1.0f:0.0f;
+        break;
+      case 0x80:
+        inside = vp->Select;
+        break;
+      case 0x0c0:
+      case 0x180:
+        inside = fsel[_i];
+        break;
+      case 0x100:
+        inside = 1.0f;
+        break;
+      case 0x140:
+        {
+          GenBitmap *bmp = cmd->GetInput<GenBitmap *>(1);
+          if (!bmp) break;
+
+          sF32 baseu, basev;
+          if (para->TextureUV&1)
+          {
+            baseu=vp->U1;
+            basev=vp->V1;
+          }
+          else
+          {
+            baseu=vp->U0;
+            basev=vp->V0;
+          }
+
+          if (para->TextureUV&2)
+          {
+            baseu=sFMod(baseu,1); if (baseu<0) baseu+=1;
+            basev=sFMod(basev,1); if (basev<0) basev+=1;
+          }
+          else
+          {
+            baseu=sClamp(baseu,0.0f,0.9999f);
+            basev=sClamp(basev,0.0f,0.9999f);
+          }
+
+          sInt u=(sInt)(bmp->XSize*baseu);
+          sInt v=(sInt)(bmp->YSize*basev);
+          sU64 pixel=bmp->Data[bmp->XSize*v+u];
+          sInt b=(pixel&0xffff);
+          sInt g=((pixel>>16)&0xffff);
+          sInt r=((pixel>>32)&0xffff);
+          sInt err=sMax(sMax(sAbs(r-refR),sAbs(g-refG)),sAbs(b-refB));
+          if (err<refInner)
+            inside = 1.0f;
+          else if (err<refOuter)
+            inside = (refOuter-err)*refScale;
+          else
+            inside= 0.0f;
+        }
+        break;
+      }
+
+      if(para->Flags & 1)
+        inside=1.0f-inside;
+      
+      fsel[_i] = inside;
+
+      if((para->Flags & 48)==0)
+      {
+        if(rnd.Float(1)>para->Random)
+          inside = 0;
+
+        switch(para->Flags & 12)
+        {
+        case 0:
+          vp->Select=sMax(vp->Select-inside,0.0f);
+          break;
+        case 4:
+          vp->Select=sMin(vp->Select+inside,1.0f);
+          break;
+        case 8:
+          vp->Select = inside;
+          break;
+        }
+      }
+    }
+    if(para->Flags&48)
+    {
+      sFORALL(out->Faces,face)
+      {
+        sInt n = 0;
+        for(sInt i=0;i<face->Count;i++)
+          n += (fsel[face->Vertex[i]]>=0.5f)?1:0;
+        sBool action = 0;
+        switch(para->Flags&48)
+        {
+        case 16:
+          action = (n>0);
+          break;
+        case 32:
+          action = (n==face->Count);
+          break;
+        }
+        if(rnd.Float(1)>para->Random)
+          action = 0;
+        switch(para->Flags & 12)
+        {
+        case 0:
+          if(action)
+            face->Select = 0.0f;
+          break;
+        case 4:
+          if(action)
+            face->Select = 1.0f;
+          break;
+        case 8:
+          face->Select = action?1.0f:0.0f;
+          break;
+        }
+      }
+    }
+    delete[] fsel;
+  }
+
+  handles
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    sVector31 v[8],p;
+   
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+
+    sF32 s = 1;
+    p.Init(-s,-s,-s); v[0] = p*mat;
+    p.Init(-s,-s, s); v[1] = p*mat;
+    p.Init(-s, s, s); v[2] = p*mat;
+    p.Init(-s, s,-s); v[3] = p*mat;
+    p.Init( s,-s,-s); v[4] = p*mat;
+    p.Init( s,-s, s); v[5] = p*mat;
+    p.Init( s, s, s); v[6] = p*mat;
+    p.Init( s, s,-s); v[7] = p*mat;
+
+    pi.Line3D(v[0],v[1]);
+    pi.Line3D(v[1],v[2]);
+    pi.Line3D(v[2],v[3]);
+    pi.Line3D(v[3],v[0]);
+    pi.Line3D(v[4],v[5]);
+    pi.Line3D(v[5],v[6]);
+    pi.Line3D(v[6],v[7]);
+    pi.Line3D(v[7],v[4]);
+    pi.Line3D(v[0],v[4]);
+    pi.Line3D(v[1],v[5]);
+    pi.Line3D(v[2],v[6]);
+    pi.Line3D(v[3],v[7]);
+  }
+}
+
+operator Wz4Mesh SplitAlongPlane(Wz4Mesh)
+{
+  column = 2;
+  parameter
+  {
+    float4 Plane(-256..256 step 0.001) = { 0,1,0,0.5 };
+  }
+  
+  code
+  {
+    out->CopyFrom(in0);
+    out->SplitAlongPlane(para->Plane);
+  }
+}
+
+operator Wz4Mesh BakeAnim(Wz4Mesh)
+{
+  column = 1;
+  parameter
+  {
+    float Time(0..1024 step 0.01);
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    out->BakeAnim(para->Time);
+  }
+}
+
+operator Wz4Mesh Facette(Wz4Mesh)
+{
+  flags = passinput|passoutput;
+  column = 2;
+  parameter
+  {
+    float Smoothness(0..1 step 0.01) = 0;
+  }
+  code
+  {
+    out->Facette(para->Smoothness);
+  }
+}
+
+operator Wz4Mesh Crease(Wz4Mesh)
+{
+  flags = passinput|passoutput;
+  column = 2;
+  code
+  {
+    out->Crease();
+  }
+}
+
+operator Wz4Mesh UnCrease(Wz4Mesh)
+{
+  flags = passinput|passoutput;
+  column = 2;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    out->Uncrease(para->Selection);
+  }
+}
+
+operator Wz4Mesh Displace(Wz4Mesh,BitmapBase)
+{
+  column = 1;
+  parameter
+  {
+    float31 Scale (-1024..1024 step 0.01) = 1;
+    float30 Rot (-16..16 step 0.01) = 0;
+    float31 Trans (-0x10000..0x10000 step 0.01) = 0;
+    float Amount(-1024..1024 step 0.01) = 1;
+    float Bias(0..1 step 0.01) = 0.5;
+    flags Flags("-|Center:*1-|uv:*2-|by normal");
+    flags Selection("all|none|selected|unselected");
+  }
+  code
+  {
+    sSRT srt;
+    sMatrix34 mat;
+    sImageI16 img;
+   
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    srt.Scale = para->Scale;
+    srt.MakeMatrix(mat);
+
+    in1->CopyTo(&img);
+
+    out->CopyFrom(in0);
+    out->Displace(mat,&img,para->Amount,para->Bias,para->Flags,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+operator Wz4Mesh Splitter(Wz4Mesh)
+{
+  column = 2;
+  parameter
+  {
+    float Depth(-16..16 step 0.001) = -0.125;
+    float Scale(-16..16 step 0.001) = 0.875;
+  }
+  code
+  {
+    out->Splitter(in0,para->Depth,para->Scale);
+  }
+}
+
+operator Wz4Mesh Dual(Wz4Mesh)
+{
+  column = 2; 
+  parameter
+  {
+    float Random(0..2 step 0.001) = 0;
+  }
+  code
+  {
+    out->Dual(in0,para->Random);
+  }
+}
+
+
+operator Wz4Mesh Heal(Wz4Mesh,Wz4Mesh)
+{
+  column = 3;
+  flags = passinput|passoutput;
+
+  parameter
+  {
+    flags Flags ("-|Normals:*1-|Tangents:*2-|UVs")=7;
+    link  Reference:1 (both);
+    float PosThreshold(0..100 step 0.001) = 0.001;
+    float NormThreshold(-1..1 step 0.001) = 0.9;
+  }
+
+  code
+  {
+    out->Heal(in1,para->Flags,para->PosThreshold,para->NormThreshold);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Deform(Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {
+    int Count(4..256)=4;
+    float31 Start(-1024..1024 step 0.01);
+    float31 End(-1024..1024 step 0.01);
+    flags Flags("-|disable:*1-|keep bones");
+    flags Selection("all|none|selected|unselected");
+    flags UpVectorUse("free|fixed|shear:*4-|straight out:*8-|old mode");
+    float30 UpVector(-4..4 step 0.001) = {0,1,0};
+    action ResetKeys(1);
+    array
+    {
+      float31 Pos(-1024..1024 step 0.01);
+      float Twist(-16..16 step 0.002);
+      float Scale(-1024..1024 step 0.01) = 1;
+    }
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    if(!(para->Flags & 1))
+    {
+      out->Deform(para->Count,para->Start,para->End,
+        cmd->ArrayCount,(const Wz4MeshArrayDeform *)cmd->Array,
+        para->Selection,para->UpVectorUse,para->UpVector);
+      if(!(para->Flags & 2))
+        out->BakeAnim(0);
+      out->CalcNormalAndTangents();
+    }
+  }
+
+  actions
+  {
+    if(code==1)
+    {
+      op->ArrayData.Clear();
+      for(sInt i=0;i<para->Count;i++)
+      {
+        sVector31 *p = (sVector31 *)op->AddArray(-1);
+        p->Fade(sF32(i)/(para->Count-1),para->Start,para->End);
+      }
+      Doc->Change(op);
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  handles
+  {
+    void *ap;
+    sVector31 *key;
+    sInt n=1;
+    if(para->Flags & 1)
+    {
+      pi.Handle3D(op,n++,para->Start,wHM_PLANE);
+      pi.Handle3D(op,n++,para->End,wHM_PLANE);
+    }
+    else
+    {
+      sFORALL(op->ArrayData,ap)
+      {
+        key = (sVector31 *)ap;
+        pi.Handle3D(op,n++,*key,wHM_PLANE,_i);
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Chunks(Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {
+    float30 Normal(-16..16 step 0.01) = { 0,1,0 };
+    layout flags Flags("fixed|random")=1;
+    if(Flags & 1)
+      float30 Rotation(-16..16 step 0.01) = { 1,0,0 };
+
+  }
+  code
+  {
+    out->CopyFrom(in0);  
+    return out->DivideInChunks(para->Flags,para->Normal,para->Rotation);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh RandomizeChunks(Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {
+    float30 Random(-1024..1024 step 0.01) = 0;
+    flags Flags ("box|sphere|bouble");
+    int Seed(0..255);
+  }
+  code
+  {
+    out->CopyFrom(in0);
+    sInt n = out->Chunks.GetCount();
+    if(n>=0)
+    {
+      sVector30 *dis = new sVector30[n];
+      sRandom rnd;
+      rnd.Seed(para->Seed);
+
+      for(sInt i=0;i<n;i++)
+      {
+        switch(para->Flags)
+        {
+        case 0:
+          dis[i].x = (rnd.Float(1)*2-1);
+          dis[i].y = (rnd.Float(1)*2-1);
+          dis[i].z = (rnd.Float(1)*2-1);
+          break;
+        case 1:
+          dis[i].InitRandom(rnd);
+          break;
+        case 2:
+          dis[i].InitRandom(rnd);
+          dis[i].Unit();
+          break;
+        }
+        dis[i] = dis[i]*0.5*para->Random;
+      }
+
+      Wz4ChunkPhysics *ch;
+      Wz4MeshVertex *mv;
+      sFORALL(out->Vertices,mv)
+        mv->Temp = -1;
+      sInt n = out->Vertices.GetCount()-1;
+      sFORALLREVERSE(out->Chunks,ch)
+      {
+        ch->COM += dis[_i];
+        while(n>=ch->FirstVert)
+          out->Vertices[n--].Temp = _i;
+      }
+      sFORALL(out->Vertices,mv)
+        if(mv->Temp>=0)
+          mv->Pos += dis[mv->Temp];
+
+      delete[] dis;
+    }
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Bevel(Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {
+    float Amount(0..1000000 step 0.001) = 0.125;
+  }
+  code
+  {
+    out->CopyFrom(in0);  
+    out->Bevel(para->Amount);
+  }
+}
+
+/****************************************************************************/

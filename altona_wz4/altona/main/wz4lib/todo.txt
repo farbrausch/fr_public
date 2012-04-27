@@ -1,0 +1,141 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+[urgend bugs]
+
+[TC3]
+
+- spline editor
+
+- lighting:
+  x lichter anzeigen
+    x auch spotlight-kegel
+  x quick fake for progress bar: log window during calculation
+  x 3d handles painting im 3d-raum machen, 2d koordinaten nach 3d transformieren und nicht umgekehrt
+  - commandline version
+  - * cool multithreading *
+  - * cool distributed build system *
+
+- direct editing
+  - 3d ex:
+    x select from handles
+    - transform selection 'v'
+    - duplicate from 3d
+  - delete from tree does not reconnect
+- scene setup
+  - add op with default link to collision and library? multiple default ops?
+  - placer screen layout
+  - export
+- lighting   
+  - shadow flags: in node? in mesh?
+  - more parameters
+  - split lightmap and tonemapping
+  - render lightmap on trigger / cache texture pack
+  - export texture packet
+  - import texture packet
+- bumpmap in material
+- camera splines
+- effects
+  - water
+  - bystander
+
+[farbrausch]
+
+- load/merge morphs
+  x BakeMorph mit zwei meshes
+  - CreateMorph mit 3 inputs: base, ref und shape
+  - MorphFX
+    - lade shapes & basemesh
+    - eigene shader
+- allow names in wObjects. for extraction, imports, exports
+- normal map compression
+- r2t
+  - glare
+  - polar
+  - simple shadow maps
+  - self shadowing
+  - dof
+  - velocity motion blur
+  - the freaky morph effect
+- cubemaps
+  - load "cool" cubemap
+  - HDR cubemaps
+  
+- timeline conecpt / sequencing
+- complete mesh class
+  - cube
+  - sphere
+  - perlin / randomize
+  - invert
+  - particles as skinned objects, create and destroy skinned clusters
+  - explode
+- effects
+  - scene particles
+
+- rygs texture generator (in hardware!)
+
+[Small stuff]
+
+- proper typechecking for channels
+- buffer.PrintF(), für sString<>
+- close imports popup when opening "..." popup
+- opengl fixen
+- cubemap visualisation: switches 2d/cube/sphere
+- goto op, blinking
+- lange namen: sPoolString?
+- multiply: multiple inputs, gets chosen
+- rework 2d handles: use matrixf for viewport scaling and rotzoom transform
+- optimisation ChaosMesh: bundle all vertices (not faces) together for cheap mesh copying
+
+- filenames fixen: folders wz3, chaos
+- file requester for operator parameters
+- 2d-control for cube-glow, bump, lights,... mit "^" button wie color control
+- wz4ops: defaults for defualt ops
+- birdseye
+
+[hard stuff]
+
+- visualise calculation errors
+  - correct propagation of connect errors (dunkelrot)
+  - correct propagation of calc errors
+  - treeview: 
+  - bypass: rot ist schlechte farbe
+- loading unknown classes -> rework load/save code!
+- execution engine: inplace operators that have input[0] object = output object
+  - limit caching
+  - add flag & use flag
+- backups
+  - editor settings
+  - load old file
+  - specify backup directory
+  - do backups
+  - start backup timer on DocChange
+  - DocChange flag in doc or app?
+  - editor settings: 2d texture display absolute size or relative size (depending on real resolution)
+- clean up PaintInfo: move all drawing and interaction into sView
+
+[gui]
+
+- sWire: checkmarks in menus
+- sWire popup screens: set initial resolution
+- sWire: dragging help (aber zuerst ein paar tools coden!)
+- controls: scrolling in text input fields
+
+[Konzept-Lücken]
+
+- wenn es zwei importer für die selbe file extension gibt... -> select importer manually
+- Layers
+- programming editor | page editor | tree editor
+  - list metaprogramming: list -> formating programm -> commands
+- spline editing: list parameters for ops
+  - copy & paste of parameter blocks
+  - serialize
+- events
+- viewport editing
+

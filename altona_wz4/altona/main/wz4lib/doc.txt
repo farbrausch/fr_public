@@ -1,0 +1,29 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   Copyright (C) by Dierk Ohlerich                                    ***/
+/***   all rights reserverd                                               ***/
+/***                                                                      ***/
+/***   To license this software, please contact the copyright holder.     ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+color scheme:
+- die farben sind 90° entfernt
+- subtraktive primärfabren sind für die wichtigen klassen
+- additive primärfarben faben sind für unwichtigen klassen
+- rot ist für fehler
+
+(RED)   Fehler/Cubemap ff0000
+YELLOW  Scene       ffff00
+(GREEN) Material    00ff00
+CYAN    Mesh        00ffff
+(BLUE)  IPP         0000ff
+PINK    Bitmap      ff00ff
+
+- Saturation und Helligkeit geben die klasse an
+
+POC/BASIC   ff 40
+WZ4         a0 60
+WZ3         c0 a0
+TC3         e0 50
+

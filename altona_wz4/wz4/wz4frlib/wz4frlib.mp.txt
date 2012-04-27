@@ -1,0 +1,191 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{511A8CA6-3C5A-4259-B010-6EDD8979A70F}";
+
+license altona;
+include "altona/main";
+include "wz4";
+library;
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/gui";
+depend "altona/main/wz4lib";
+
+
+file "wz4frlib.mp.txt";
+
+folder "tools"
+{
+  file "bspline.?pp";
+  file "packfile.?pp";
+  file "packfilegen.?pp";
+}
+
+folder "oneshot"
+{
+  file "fr062_ops.ops";
+  file "fr062.?pp";
+//  file "fr033_ops.ops";
+//  file "fr033.?pp";
+
+  file "fr063_chaos_ops.ops";
+  file "fr063_chaos.?pp";
+  file "fr063_mandelbulb_ops.ops";
+  file "fr063_mandelbulb_shader.asc";
+  file "fr063_mandelbulb.?pp";
+  file "fr063_tron_ops.ops";
+  file "fr063_tron.?pp";
+  file "fr063_tron_shader.asc";
+  file "fr063_sph_ops.ops";
+  file "fr063_sph.?pp";
+  
+  file "fr067_ops.ops";
+  file "fr067.?pp";
+  file "fr067_shader.asc";
+  
+  file "easter.?pp";
+  file "easter_ops.ops";
+  file "easter_shader.asc";
+}
+
+folder "wz3"
+{
+  file "wz3_bitmap_ops.ops";
+  file "wz3_bitmap_code.?pp"; 
+  file "genvector.?pp";
+}
+
+folder "wz4_old"
+{
+  file "chaosmesh_ops.ops";
+  file "chaosmesh_code.?pp";
+  file "chaosmesh_xsi.?pp";
+  file "chaosmesh_fx.?pp";
+  file "wz4_mtrl_ops.ops";
+  file "wz4_mtrl.?pp";
+  file "wz4_mtrl_shader.asc";
+  file "chaos_font_ops.ops";
+  file "chaos_font.?pp";
+}
+
+folder "wz4"
+{
+  file "wz4_anim_ops.ops";
+  file "wz4_anim.?pp";
+//  file "wz4_cubemap_ops.ops";
+//  file "wz4_cubemap.?pp";
+  file "wz4_mesh_ops.ops";
+  file "wz4_mesh.?pp";
+  file "wz4_mesh_xsi.cpp";
+  file "wz4_mesh_lwo.cpp";
+  file "wz4_mesh_obj.cpp";
+}
+
+folder "wz4_rove"
+{
+  file "wz4_demo2_ops.ops";
+  file "wz4_demo2.?pp";
+  file "wz4_demo2nodes.?pp";
+  
+  file "wz4_mtrl2_ops.ops";
+  file "wz4_mtrl2.?pp";
+  file "wz4_mtrl2_shader.asc";
+  
+  file "wz4_rovemtrl_ops.ops";
+  file "wz4_rovemtrl.?pp";
+  file "wz4_rovemtrl_shader.asc";
+
+  file "wz4_modmtrl_ops.ops";
+  file "wz4_modmtrlmod_ops.ops";
+  file "wz4_modmtrl.?pp";
+  file "wz4_modmtrlmod.?pp";
+  file "wz4_modmtrlsc.?pp";
+
+  file "wz4_ipp_ops.ops";
+  file "wz4_ipp.?pp";
+  file "wz4_ipp_shader.asc";
+
+  file "wz4_bsp_ops.ops";
+  file "wz4_bsp.hpp";
+  file "wz4_bsp.cpp"  { config "*" { tool "VCCLCompilerTool" { FloatingPointModel="0"; } } }   // precise - important for this file.
+  
+  file "chaosfx_ops.ops";
+  file "chaosfx.?pp";
+  file "chaosfx_shader.asc";
+
+  file "fxparticle_ops.ops";
+  file "fxparticle.?pp";
+  file "fxparticle_mc.?pp";
+  file "fxparticle_shader.asc";
+  
+  file "wz4_audio_ops.ops";
+  file "wz4_audio.?pp";
+  
+  file "wz4_gui.?pp";
+}
+
+
+folder "tron"
+{  
+  file "adf.?pp";
+  file "adf_ops.ops";
+  file "adf_shader.asc";
+  file "pdf.?pp";
+  file "pdf_ops.ops";
+  file "tron.?pp";
+  file "tron_ops.ops";
+  file "tron_shader.asc";
+  file "tADF.?pp";
+}
+
+
+folder "_generated"
+{
+  file nonew "wz3_bitmap_ops.?pp";
+  file nonew "wz4_anim_ops.?pp";
+  file nonew "chaosfx_ops.?pp";
+  file nonew "chaosfx_shader.?pp";
+  file nonew "fxparticle_ops.?pp";
+  file nonew "fxparticle_shader.?pp";
+  file nonew "wz4_mtrl2_ops.?pp";
+  file nonew "wz4_mtrl2_shader.?pp";
+  file nonew "wz4_rovemtrl_ops.?pp";
+  file nonew "wz4_rovemtrl_shader.?pp";
+  file nonew "wz4_modmtrl_ops.?pp";
+  file nonew "wz4_modmtrlmod_ops.?pp";
+  file nonew "wz4_demo2_ops.?pp";
+  file nonew "wz4_mesh_ops.?pp";
+  file nonew "wz4_bsp_ops.?pp";
+  file nonew "wz4_ipp_ops.?pp";
+  file nonew "wz4_ipp_shader.?pp";
+  file nonew "wz4_audio_ops.?pp";
+  file nonew "chaos_font_ops.?pp";
+  file nonew "chaosmesh_ops.?pp";
+  file nonew "wz4_mtrl_ops.?pp";
+  file nonew "wz4_mtrl_shader.?pp";
+  
+  file nonew "fr062_ops.?pp"; 
+//  file nonew "fr033_ops.?pp";
+  file nonew "fr063_chaos_ops.?pp";
+  file nonew "fr063_sph_ops.?pp";
+  file nonew "fr063_tron_ops.?pp";
+  file nonew "fr063_mandelbulb_ops.?pp";
+  file nonew "fr063_mandelbulb_shader.?pp";
+  file nonew "fr063_tron_shader.?pp";
+  file nonew "easter_ops.?pp";
+  file nonew "easter_shader.?pp";
+  file nonew "fr067_shader.?pp";
+  file nonew "fr067_ops.?pp";
+
+  file nonew "adf_ops.?pp";
+  file nonew "adf_shader.?pp";
+  file nonew "pdf_ops.?pp";
+  file nonew "tron_ops.?pp";
+  file nonew "tron_shader.?pp";  
+}

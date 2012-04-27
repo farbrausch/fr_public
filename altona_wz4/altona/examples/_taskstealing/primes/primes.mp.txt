@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{BB035F2C-6ADF-44e4-A786-2C305A0B6468}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9_shell";
+create "debugfast_dx9_shell";
+create "release_dx9_shell";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "primes.mp.txt";
+

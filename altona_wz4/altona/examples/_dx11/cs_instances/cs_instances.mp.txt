@@ -1,0 +1,22 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{67F40B2F-C43B-4d9b-BCF0-708E4CC30880}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx11";
+create "release_dx11";
+
+depend "altona/main/base";
+depend "altona/main/util";
+
+file "main.?pp";
+file "shader.asc";
+file nonew "shader.?pp";
+file "cs_instances.mp.txt";

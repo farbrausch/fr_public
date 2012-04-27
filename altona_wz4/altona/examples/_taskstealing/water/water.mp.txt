@@ -1,0 +1,26 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{216DB065-93BC-41a3-A35A-38856DBDFF6C}";
+
+license altona;
+include "altona/main";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/extra";
+
+file "main.?pp";
+file "mc_shaders.asc";
+file nonew "mc_shaders.?pp";
+file "water.?pp";
+file "water.mp.txt";
+
