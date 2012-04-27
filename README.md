@@ -25,6 +25,7 @@ this code, but if you want to, we see no reason to keep you.
 
 So what do we have in here? Here's the basic directory structure:
 
+	altona_wz4/           - Altona and Werkkzeug4. Our most recent code foundation and tool.
     genthree/             - GenThree. Used for Candytron and nothing else.
       data/               - Candytron data files.
     kkrunchy/             - kkrunchy 0.23alpha code (latest we could find)
@@ -65,6 +66,11 @@ So, here's the sightseeing tips:
   are unlikely to work.
   If someone really wants a close-to-original werkkzeug3 kkrieger tree, it should
   be possible to dig up something from 2004 :)
+* altona_wz4 should actually be fully functional. It has been tested and there are
+  binaries which should function as fully-featured demomaker without the need to
+  touch any code. Also it's a good foundation to write your own engine or game
+  or tool or whatever. This stuff has seen heavy duty use in several companies and
+  went through several actual QA departments. It works.
 
 Contributors (in alphabetical order):
 
