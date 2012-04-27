@@ -1287,7 +1287,7 @@ void TestMemoryHeap()
     CHECK(h1.GetUsed()==0);
   }
 
-  delete mem;
+  delete [] mem;
 }
 
 
