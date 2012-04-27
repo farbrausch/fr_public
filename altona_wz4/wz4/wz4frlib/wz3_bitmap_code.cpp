@@ -1632,10 +1632,11 @@ void GenBitmap::Blur(sInt flags,sF32 sx,sF32 sy,sF32 _amp)
 
 // prepare
 
-  pp = (sU16 *)Data;
-  qq = (sU16 *) new sU64[Size];
   order = flags & 15;
   if(order==0) return;
+
+  pp = (sU16 *)Data;
+  qq = (sU16 *) new sU64[Size];
 
 // blur x
 
