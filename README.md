@@ -75,21 +75,21 @@ So, here's the sightseeing tips:
 Contributors (in alphabetical order):
 
 * Fabian "ryg" Giesen: GenThree, kkrunchy, kkrunchy_k7, ktg, lekktor, RG2,
-  werkkzeug3, werkkzeug3_kkrieger.
+  werkkzeug3, werkkzeug3_kkrieger, altona, werkkzeug4
 * Sebastian "Wayfinder" Grillmaier: RG2, dopplerdefekt, ein.schlag, debris,
-  kkrieger.
-* Tammo "kb" Hinrichs: V2, RG2, flybye, "welcome to".
-* Thomas "fiver2" / "theunitedstatesofamerica" Mahlke: werkkzeug3, debris,
-  kkrieger.
+  kkrieger
+* Tammo "kb" Hinrichs: V2, RG2, altona, werkkzeug4, flybye, "welcome to", easterparty
+* Thomas "fiver2" / "theunitedstatesofamerica" Mahlke: werkkzeug3, werkkzeug4,
+  debris, kkrieger.
 * Christoph "giZMo" Muetze: genthree, Candytron, RG2, flybye, "welcome to",
   werkkzeug3, wz_mobile, debris, kkrieger.
-* Dierk "Chaos" Ohlerich: GenThree, lekktor, werkkzeug3, werkkzeug3_kkrieger,
-  wz_mobile.
+* Dierk "Chaos" Ohlerich: GenThree, lekktor, werkkzeug3, werkkzeug3_kkrieger,  
+  wz_mobile, altona, werkkzeug4
 * Kai "cp" Poethkow: dopplerdefekt, ein.schlag, theta.
 * Ronny Pries: debris.
 * Dennis "Exoticorn" Ranke: RG2, flybye, werkkzeug3_kkrieger.
 * Leonard "paniq" Ritter: V2, theta.
-* Bastian "Tron" Zuehlke: werkkzeug3.
+* Bastian "Tron" Zuehlke: werkkzeug3, werkkzeug4
 
 
 Have fun!
