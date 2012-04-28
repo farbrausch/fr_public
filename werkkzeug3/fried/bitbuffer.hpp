@@ -44,7 +44,7 @@ namespace FRIED
     {
       sVERIFY(nBits <= 24);
       sVERIFY(BitPos >= nBits);
-      sVERIFY(value < (1<<nBits));
+      sVERIFY(value < (1u<<nBits));
 
       BitPos -= nBits;
       sVERIFY((Bits & (value << BitPos)) == 0);

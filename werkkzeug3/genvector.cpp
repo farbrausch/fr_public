@@ -315,7 +315,7 @@ VectorRasterizer::VectorRasterizer(GenBitmap *target_)
 	: target(target_)
 {
 	head = &ehead;
-	head->x = -0x80000000;
+	head->x = -0x7fffffff - 1; // VC warns for literal -0x80000000
 	head->dx = 0;
 }
 

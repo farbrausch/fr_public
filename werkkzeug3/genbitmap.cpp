@@ -2529,8 +2529,6 @@ GenBitmap * __stdcall Bitmap_Perlin(sInt xs,sInt ys,sInt freq,sInt oct,sF32 fade
   sInt x,y,noffs;
   sInt shiftx,shifty;
   sU64 c0,c1;
-  sInt val;
-  sF32 nn,s;
   sU64 *tile;
 
   bm = NewBitmap(xs,ys);
@@ -2566,7 +2564,7 @@ GenBitmap * __stdcall Bitmap_Perlin(sInt xs,sInt ys,sInt freq,sInt oct,sF32 fade
     for(x=0;x<257;x++)
       sinTab[x] = sFtol(sFSin(sPI2F * x / 256.0f) * 0.5f * 65536.0f);
   }
-#if 1
+#if !sINTRO
   sInt *nrow = new sInt[bm->XSize];
   sInt *poly = new sInt[bm->XSize>>freq];
 
@@ -2579,7 +2577,7 @@ GenBitmap * __stdcall Bitmap_Perlin(sInt xs,sInt ys,sInt freq,sInt oct,sF32 fade
   for(y=0;y<bm->YSize;y++)
   {
     sSetMem(nrow,0,sizeof(sInt)*bm->XSize);
-    s = 1.0f;
+    sF32 s = 1.0f;
 
     // make some noise
     for(i=freq;i<freq+oct;i++)
@@ -2598,7 +2596,6 @@ GenBitmap * __stdcall Bitmap_Perlin(sInt xs,sInt ys,sInt freq,sInt oct,sF32 fade
       sInt vy0 = sPerlinPermute[((vy+0)     )^seed];
       sInt vy1 = sPerlinPermute[((vy+1)&mask)^seed];
       sInt shf = i-freq;
-      //sInt si = sFtol(s * ampi);
       sInt si = sFtol(s * 16384.0f);
 
       if(shiftx+i < 16 || (py & 0xffff)) // otherwise, the contribution is always zero
@@ -2659,14 +2656,15 @@ GenBitmap * __stdcall Bitmap_Perlin(sInt xs,sInt ys,sInt freq,sInt oct,sF32 fade
   {
     for(x=0;x<bm->XSize;x++)
     {
-      n = 0;
-      s = 1.0f;
+      sInt val;
+      sF32 n = 0.0f, s = 1.0f;
+
       for(i=freq;i<freq+oct;i++)
       {
         sInt px = ((x)<<(16-shiftx))<<i;
         sInt py = ((y)<<(16-shifty))<<i;
 
-        nn = noise2(px,py,((1<<i)-1),seed);
+        sF32 nn = noise2(px,py,((1<<i)-1),seed);
         if(mode&1)
           nn = sFAbs(nn);
         if(mode&2)

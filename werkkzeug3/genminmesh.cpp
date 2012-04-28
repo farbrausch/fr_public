@@ -1949,7 +1949,7 @@ GenMinMesh * __stdcall MinMesh_OBJ(KOp *op,sChar *filename)
   {
     mesh = new GenMinMesh;
     mesh->Vertices.AtLeast(reader.vertices.size());
-    for(sInt i=0;i<reader.vertices.size();i++)
+    for(sInt i=0;i<(sInt)reader.vertices.size();i++)
     {
       const OBJFileReader::VertInfo& inVert = reader.vertices[i];
       GenMinVert* outVert = mesh->Vertices.Add();
@@ -1963,7 +1963,7 @@ GenMinMesh * __stdcall MinMesh_OBJ(KOp *op,sChar *filename)
 
     mesh->Faces.AtLeast(reader.faces.size());
 
-    for(sInt i=0;i<reader.faces.size();i++)
+    for(sInt i=0;i<(sInt)reader.faces.size();i++)
     {
       const OBJFileReader::FaceInfo& inFace = reader.faces[i];
       GenMinFace* outFace = mesh->Faces.Add();

@@ -790,7 +790,7 @@ sBool WerkkzeugApp::OnCommand(sU32 cmd)
   case CMD_MENU_DUALVIEW:
     // toggle single/dual view
     UpdateDualViewMode();
-    break;
+    return sTRUE;
 
   case CMD_MENU_CAMSPEED:
     // synchronize winview cam speed
