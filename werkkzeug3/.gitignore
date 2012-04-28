@@ -11,4 +11,9 @@ backup/
 *.opensdf
 *vs.hpp
 *ps.hpp
+*.v2m.raw
+*.ogg.raw
+*.kx
+*.sfxcache
 cubehorde_shader.?pp
+werkkzeug.config

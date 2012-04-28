@@ -1,0 +1,23 @@
+# Build directories
+debug_dx9_Win32
+release_dx9_Win32
+stripped_dx9_Win32
+debug_dx11_Win32
+release_dx11_Win32
+stripped_dx11_Win32
+debug_blank_shell_Win32
+release_blank_shell_Win32
+stripped_blank_shell_Win32
+Release
+Debug
+ipch
+
+# File types
+*.sln
+*.vcproj*
+*.vcxproj*
+*_ops.?pp
+*_shader.?pp
+*.sdf
+*.suo
+*.opensdf
