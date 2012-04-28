@@ -30,9 +30,9 @@ enum Lines
   LINE_FSAA,
   LINE_ASPECT,
   LINE_RTSIZE,
-  LINE_MAX,
   LINE_OVERSIZE,
   LINE_OVERFSAA,
+  LINE_MAX,
 };
 
 struct Resolution

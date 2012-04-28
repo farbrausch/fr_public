@@ -520,6 +520,7 @@ sBool sFastHuffmanDecoder::Init(const sInt *lens,sInt count)
     if(code && code-1 >= (1u<<i)) // er, these lengths don't seem to work
     {
       delete[] CodeMap;
+      delete[] codes;
       return sFALSE;
     }
 
