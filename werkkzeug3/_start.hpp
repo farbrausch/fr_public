@@ -366,6 +366,19 @@ struct sInputData
 #define sKEY_ESCAPE       27
 #define sKEY_SPACE        32
 
+#define sKEY_0            0x30            // VK_KEY_0
+#define sKEY_1            0x31            // VK_KEY_1
+#define sKEY_2            0x32            // VK_KEY_2
+#define sKEY_3            0x33            // VK_KEY_3
+#define sKEY_4            0x34            // VK_KEY_4
+#define sKEY_5            0x35            // VK_KEY_5
+#define sKEY_6            0x36            // VK_KEY_6
+#define sKEY_7            0x37            // VK_KEY_7
+#define sKEY_8            0x38            // VK_KEY_8
+#define sKEY_9            0x39            // VK_KEY_9
+#define sKEY_DECIMAL      0x2E            // '.'
+#define sKEY_SUBSTRACT    0x2D            // '-'
+
 #define sKEY_UP           0x00010000
 #define sKEY_DOWN         0x00010001
 #define sKEY_LEFT         0x00010002
