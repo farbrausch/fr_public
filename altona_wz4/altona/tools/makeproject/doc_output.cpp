@@ -463,7 +463,7 @@ void Document::OutputXProject() // for VS2010 and higher
     sPoolString *prop;
     sFORALL(conf->PropertySheets,prop)
     {
-      sString<sMAXPATH> path=sCONFIG_CODEROOT_WINDOWS;
+      sString<sMAXPATH> path=RootPath.Path(OmniPath::PT_SYSTEM);
       path.AddPath(*prop);
       OutBuffer.PrintF(L"\t\t<Import Project=\"%P\" />\r\n",path);
    }
