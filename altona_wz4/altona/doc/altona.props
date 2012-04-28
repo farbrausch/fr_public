@@ -19,7 +19,7 @@
       <OldD3DCompiler>False</OldD3DCompiler>
       <OldEngineXBox>False</OldEngineXBox>
       <GenCg>False</GenCg>
-      <CommandLineTemplate>asc [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [OldD3DCompiler][OldEngineXBox][GenCg]</CommandLineTemplate>
+      <CommandLineTemplate>$(AltonaRoot)\altona\bin\asc [inputs] [Quiet] [Debug] [NoOpt] [NoAuto] [OldEngine] [OldD3DCompiler][OldEngineXBox][GenCg]</CommandLineTemplate>
       <Outputs>%(RootDir)%(Directory)%(Filename).cpp; %(RootDir)%(Directory)%(Filename).hpp</Outputs>
       <ExecutionDescription>%(Filename)%(Extension)</ExecutionDescription>
     </asc>
@@ -35,7 +35,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ops>
-      <CommandLineTemplate>wz4ops [inputs]</CommandLineTemplate>
+      <CommandLineTemplate>$(AltonaRoot)\altona\bin\wz4ops [inputs]</CommandLineTemplate>
       <Outputs>$(ProjectDir)\%(Filename).cpp; $(ProjectDir)\%(Filename).hpp</Outputs>
       <ExecutionDescription>%(Filename)%(Extension)</ExecutionDescription>
     </ops>

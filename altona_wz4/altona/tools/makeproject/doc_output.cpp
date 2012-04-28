@@ -423,6 +423,7 @@ void Document::OutputXProject() // for VS2010 and higher
   OutBuffer.PrintF(L"\t\t<ProjectGuid>%s</ProjectGuid>\r\n",Project->Guid);
   OutBuffer.PrintF(L"\t\t<RootNamespace>%s</RootNamespace>\r\n",Project->Name);
   OutBuffer.Print(L"\t\t<Keyword>Win32Proj</Keyword>\r\n");
+  OutBuffer.PrintF(L"\t\t<AltonaRoot>%s</AltonaRoot>\r\n",RootPath.Path(OmniPath::PT_SOLUTION));
   OutBuffer.Print(L"\t</PropertyGroup>\r\n");
   OutBuffer.Print(L"\r\n");
 
@@ -452,8 +453,8 @@ void Document::OutputXProject() // for VS2010 and higher
 
   OutBuffer.Print(L"\t<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.props\" />\r\n");
   OutBuffer.Print(L"\t<ImportGroup Label=\"ExtensionSettings\">\r\n");
-  OutBuffer.PrintF(L"\t\t<Import Project=\"%s\\altona\\doc\\altona.props\"/>\r\n",RootPath.Path(OmniPath::PT_SOLUTION));  
-  OutBuffer.PrintF(L"\t\t<Import Project=\"%s\\altona\\doc\\yasm.props\"/>\r\n",RootPath.Path(OmniPath::PT_SOLUTION));
+  OutBuffer.Print(L"\t\t<Import Project=\"$(AltonaRoot)\\altona\\doc\\altona.props\"/>\r\n");
+  OutBuffer.Print(L"\t\t<Import Project=\"$(AltonaRoot)\\altona\\doc\\yasm.props\"/>\r\n");
   OutBuffer.Print(L"\t</ImportGroup>\r\n");
   
   FORALLCONFIG(conf)
@@ -462,11 +463,7 @@ void Document::OutputXProject() // for VS2010 and higher
     OutBuffer.Print(L"\t\t<Import Project=\"$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props\" Condition=\"exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')\" Label=\"LocalAppDataPlatform\" />\r\n");
     sPoolString *prop;
     sFORALL(conf->PropertySheets,prop)
-    {
-      sString<sMAXPATH> path=RootPath.Path(OmniPath::PT_SYSTEM);
-      path.AddPath(*prop);
-      OutBuffer.PrintF(L"\t\t<Import Project=\"%P\" />\r\n",path);
-   }
+      OutBuffer.PrintF(L"\t\t<Import Project=\"$(AltonaRoot)\\%P\" />\r\n",*prop);
     OutBuffer.Print(L"\t</ImportGroup>\r\n");
   }
   
