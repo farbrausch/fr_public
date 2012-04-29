@@ -481,6 +481,7 @@ GenOverlayManagerClass::GenOverlayManagerClass()
   GeoDouble = sSystem->GeoAdd(sFVF_DOUBLE,sGEO_QUAD);
   GeoDoubleTri = sSystem->GeoAdd(sFVF_DOUBLE,sGEO_TRI);
   GeoTSpace = sSystem->GeoAdd(sFVF_TSPACE3,sGEO_QUAD);
+  Master.Init();
 
   RefCount = 1;
   RealPaint = sFALSE;
