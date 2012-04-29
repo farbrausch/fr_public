@@ -104,7 +104,7 @@ bool WavefrontFileReader::parse(char* buffer, char* end)
 		else if(*current == '\r' || *current == 0) // empty line
 			;
 		else
-			parseLine(current, endOfLine);
+			parseLine(current, termPos+1);
 
 		// we should now be past the command, at the 0 terminator.
 		if(*current)
@@ -286,6 +286,7 @@ WavefrontMaterial::WavefrontMaterial()
 	specularExp = 16.0f;
 	refractiveInd = 1.0f;
 	opacity = 1.0f;
+  illuminationModel = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -323,6 +324,8 @@ void MTLFileReader::parseLine(const char*& current, const char* endOfLine)
 		parseFloat(current);
 	else if(matchCommand(current, "Ni")) // optical density
 		curMaterial().refractiveInd = parseFloat(current);
+  else if(matchCommand(current, "illum")) // illumination model
+    curMaterial().illuminationModel = parseInt(current);
 	else if(matchCommand(current, "d")) // dissolve
 	{
 		if(matchCommand(current, "-halo"))
@@ -408,12 +411,24 @@ void OBJFileReader::parseLine(const char*& current, const char* endOfLine)
 		nfo.start = vertices.size() - count;
 		nfo.count = count;
 		nfo.mtrl = currentMaterial;
+    nfo.smoothing_group = currentSmoothingGroup;
 		faces.push_back(nfo);
 	}
-	else if(matchCommand(current, "g"))
+	else if(matchCommand(current, "g")) // group
 	{
 		current = endOfLine;
 	}
+  else if(matchCommand(current, "o")) // object
+  {
+    current = endOfLine;
+  }
+  else if(matchCommand(current, "s")) // smooth shading
+  {
+    if(matchCommand(current, "off"))
+      currentSmoothingGroup = -1;
+    else
+      currentSmoothingGroup = parseInt(current) - 1;
+  }
 	else if(matchCommand(current, "usemtl"))
 	{
 		currentMaterial = findMaterial(current);
@@ -462,6 +477,7 @@ void OBJFileReader::onStartParse()
 	WavefrontMaterial mat;
 	materials.push_back(mat);
 	currentMaterial = 0;
+  currentSmoothingGroup = -1;
 }
 
 void OBJFileReader::onSuccessfulParse()

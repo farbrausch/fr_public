@@ -1549,7 +1549,9 @@ void GenMinMesh::AutoStitch()
     {
       GenMinFace *stitch = Faces.Add();
 
+      stitch->Select = 0;
       stitch->Count = 2;
+      stitch->Cluster = 0;
       stitch->Vertices[0] = i;
       stitch->Vertices[1] = next;
       stitch->Flags = 0;
@@ -1956,9 +1958,13 @@ GenMinMesh * __stdcall MinMesh_OBJ(KOp *op,sChar *filename)
 
       sSetMem(outVert,0,sizeof(GenMinVert));
       outVert->Pos.Init(reader.positions[inVert.pos]);
-      outVert->Normal.Init(reader.normals[inVert.norm]);
-      outVert->UV[0][0] = reader.texcoords[inVert.tex].x;
-      outVert->UV[0][1] = reader.texcoords[inVert.tex].y;
+      if(inVert.norm != -1)
+        outVert->Normal.Init(reader.normals[inVert.norm]);
+      if(inVert.tex != -1)
+      {
+        outVert->UV[0][0] = reader.texcoords[inVert.tex].x;
+        outVert->UV[0][1] = reader.texcoords[inVert.tex].y;
+      }
     }
 
     mesh->Faces.AtLeast(reader.faces.size());

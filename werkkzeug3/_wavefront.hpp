@@ -57,6 +57,7 @@ struct WavefrontMaterial
 	float specularExp;
 	float refractiveInd;
 	float opacity;
+  int illuminationModel;
 
 	std::string diffuseTex;
 	std::string bumpTex;
@@ -97,6 +98,7 @@ public:
 	{
 		size_t start;
 		int count,mtrl;
+    int smoothing_group;
 	};
 
 	std::vector<sVector> positions;
@@ -110,6 +112,7 @@ public:
 protected:
 	int currentMaterial;
 	int defaultMaterial;
+  int currentSmoothingGroup;
 
 	virtual void parseLine(const char*& current, const char* endOfLine);
 	virtual void onStartParse();
