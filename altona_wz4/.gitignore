@@ -21,3 +21,5 @@ ipch
 *.sdf
 *.suo
 *.opensdf
+*.ogg.raw
+*.v2m.raw
