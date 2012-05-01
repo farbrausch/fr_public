@@ -84,7 +84,7 @@ void RegisterWZ4Classes()
 void sMain()
 {
 //  sBreakOnAllocation(27005);
-  sAddMidi();
+//  sAddMidi();
   sAddSched();
   sAddGlobalBlobHeap();
   sEnlargeRTDepthBuffer(1024,1024);
