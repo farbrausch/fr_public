@@ -158,8 +158,10 @@ public:
   sInt WikiToggleFlag;
 
   void CmdNew();
+  void CmdNew2();
   void CmdOpen();
   void CmdOpen2();
+  void CmdOpen3();
   void CmdMerge();
   void CmdMerge2();
   void CmdOpenBackup();
@@ -171,6 +173,8 @@ public:
   void CmdExit();
   void CmdExit2();
   void CmdSaveQuit();
+  void CmdSaveNew();
+  void CmdSaveOpen();
   void CmdPanic();
   void CmdFlushCache();
   void CmdFlushCache2();

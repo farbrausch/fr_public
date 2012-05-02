@@ -2494,6 +2494,7 @@ void wDocument::New()
   Connect();
   Filename = L"";
   DocOptions.Init();
+  DocChanged = sFALSE;
 }
 
 sBool wDocument::Load(const sChar *filename)

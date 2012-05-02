@@ -501,7 +501,10 @@ void MainWindow::ResetWindows()
   for(sInt i=0;i<sCOUNTOF(ParaWin);i++)
     ParaWin[i]->SetOp(0);
   for(sInt i=0;i<sCOUNTOF(ViewWin);i++)
+  {
+    ViewWin[i]->SetOp(0);
     ViewWin[i]->CmdReset3D();
+  }
   UpdateWindows();
 }
 
@@ -1222,6 +1225,14 @@ void MainWindow::PopupText(const sChar *text)
 
 void MainWindow::CmdNew()
 {
+  if(Doc->DocChanged)
+    sContinueReallyDialog(sMessage(this,&MainWindow::CmdNew2),sMessage(this,&MainWindow::CmdSaveNew));
+  else
+    CmdExit2();
+}
+
+void MainWindow::CmdNew2()
+{
   Doc->New();
   Doc->DefaultDoc();
   Status->PrintF(STATUS_MESSAGE,L"new document");
@@ -1230,11 +1241,19 @@ void MainWindow::CmdNew()
 
 void MainWindow::CmdOpen()
 {
-  CmdPanic();
-  sOpenFileDialog(L"open",L"wz4",sSOF_LOAD,Doc->Filename,sMessage(this,&MainWindow::CmdOpen2),sMessage());
+  if(Doc->DocChanged)
+    sContinueReallyDialog(sMessage(this,&MainWindow::CmdOpen2),sMessage(this,&MainWindow::CmdSaveOpen));
+  else
+    CmdOpen2();
 }
 
 void MainWindow::CmdOpen2()
+{
+  CmdPanic();
+  sOpenFileDialog(L"open",L"wz4",sSOF_LOAD,Doc->Filename,sMessage(this,&MainWindow::CmdOpen3),sMessage());
+}
+
+void MainWindow::CmdOpen3()
 {
   CmdPanic();
 
@@ -1433,6 +1452,22 @@ void MainWindow::CmdSaveQuit()
     sErrorDialog(sMessage(),L"could not save file");
   else
     sExit();
+}
+
+void MainWindow::CmdSaveNew()
+{
+  if(!Doc->Save(Doc->Filename))
+    sErrorDialog(sMessage(),L"could not save file");
+  else
+    CmdNew2();
+}
+
+void MainWindow::CmdSaveOpen()
+{
+  if(!Doc->Save(Doc->Filename))
+    sErrorDialog(sMessage(),L"could not save file");
+  else
+    CmdOpen2();
 }
 
 void MainWindow::CmdPanic()
