@@ -15,10 +15,6 @@
 #include "base/input2.hpp"
 #include "base/windows.hpp"
 #include "util/shaders.hpp"
-#if sCONFIG_SDK_TC3
-#include "consoles/system2.hpp"
-#include "consoles/input2.hpp"
-#endif
 
 /****************************************************************************/
 

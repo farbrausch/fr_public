@@ -203,7 +203,6 @@ sINITMEM(sIMF_DEBUG|sIMF_CLEAR|sIMF_NORTL,64*1024*1024);
 void sMain()
 {
   sInit(sISF_3D|sISF_CONTINUOUS/*|sISF_FULLSCREEN*/,640,480);
-  sAddXInput();
   sSetApp(new MyApp());
   sSetWindowName(L"Cube");
 }

@@ -1475,6 +1475,7 @@ void sConvertsRGBTex(sBool e)
 sBool sConvertsRGBTex()
 {
   sVERIFYFALSE;
+  return sFALSE;
 }
 
 sTexture2D *sGetCurrentFrontBuffer() { return 0; }

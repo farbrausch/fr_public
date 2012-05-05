@@ -112,12 +112,11 @@ void MyApp::OnPaint3D()
   View.Model.l.Init(0,0,0);
   View.Camera.l.Init(0,0,-4);
   View.Prepare();
-  View.Set();
  
   // set material
 
   sCBuffer<sSimpleMaterialEnvPara> cb;
-  cb.Data->Set(Env);
+  cb.Data->Set(View,Env);
 
   // begin
 

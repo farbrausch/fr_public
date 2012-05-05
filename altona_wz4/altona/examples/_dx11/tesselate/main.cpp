@@ -138,9 +138,9 @@ void MyApp::OnPaint3D()
 
 // onkey: check for escape
 
-void MyApp::OnInput(const sInputEvent &ie)
+void MyApp::OnInput(const sInput2Event &ie)
 {
-  if(ie.DeviceType==sIED_KEYBOARD && (ie.Key&sKEYQ_MASK)==sKEY_ESCAPE) sExit();
+  if((ie.Key&sKEYQ_MASK)==sKEY_ESCAPE) sExit();
 }
 
 /****************************************************************************/

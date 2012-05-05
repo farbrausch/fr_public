@@ -58,7 +58,7 @@ void sMain()
   {
     ray.Start.x = rand.Float(4.0f);
     ray.Start.z = rand.Float(4.0f);
-    nHits2 += ray.HitBilinearPatch(dist,p00,p01,p10,p11) ? 1 : 0;
+    nHits2 += ray.HitBilinearPatch(dist,p00,p01,p10,p11,0,0) ? 1 : 0;
   }
   time2 = sGetTime() - time2;
 

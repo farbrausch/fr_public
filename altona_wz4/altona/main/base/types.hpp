@@ -1541,13 +1541,11 @@ enum sAllocMemFlags               // sAllocMem() flags
   sAMF_DEFAULT    = 0x0000,       // default memory type, set by sPushMemType() / sPopMemType()
   sAMF_HEAP       = 0x0001,       // normal heap memory
   sAMF_DEBUG      = 0x0002,       // debug memory (not available in stripped builds)
-  sAMF_GFX        = 0x0003,       // platform dependend behaviour.
-  sAMF_NETWORK    = 0x0004,       // used by TC3 network thread
+  sAMF_GFX        = 0x0003,       // platform dependent behaviour.
+  sAMF_NETWORK    = 0x0004,       // used by network thread
 
   sAMF_XTRA1      = 0x0005,       // 
   sAMF_XTRA2      = 0x0006,       // 
-
-  sAMF_AUDIO      = 0x0007,       // currently used by TC audio engine
 
   sAMF_MASK       = 0x000f,
   sAMF_ALT        = 0x0100,       // from end of heap, not beginning (alternative direction)

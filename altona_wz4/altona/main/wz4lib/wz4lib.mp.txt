@@ -1,6 +1,4 @@
 // die idee: die wz4 gui und die Base/proof of concept operatoren sind OpenSource
-// TC3 implementation ist (c) 49games
-// wz4 ops sind (c) fr oder tp
 
 guid "{76A7AACC-4853-4bef-9C17-7BF204C51270}";
 

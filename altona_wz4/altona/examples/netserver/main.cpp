@@ -6,7 +6,7 @@
 /**************************************************************************+*/
 
 #include "main.hpp"
-#include "network/httpserver.hpp"
+#include "network/http.hpp"
 
 const sChar8 Stylesheet[] = 
   "body {"

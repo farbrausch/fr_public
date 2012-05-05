@@ -37,13 +37,13 @@ void sMain()
 
   new wDocument();
   sGui->AddBackWindow(new MainWindow);
-  App->WikiPath = L"c:/svn2/wz4tc3wiki";
-  App->WikiCheckout = L"svn checkout svn://192.168.0.17/wz4tc3wiki c:/svn2/wz4tc3wiki --username wiki --password qwer12";
+  App->WikiPath = L"c:/svn2/wz4wiki";
+  App->WikiCheckout = L"svn checkout svn://192.168.0.17/wz4wiki c:/svn2/wz4wiki --username wiki --password qwer12";
   App->UnitTestPath = L"c:/svn2/altona/examples/wz4example/unittest";
   App->MainInit();
 
   sString<sMAXPATH> name;
-  name.PrintF(L"wz4tc3 V%d.%d",WZ4_VERSION,WZ4_REVISION);
+  name.PrintF(L"wz4example V%d.%d",WZ4_VERSION,WZ4_REVISION);
   sSetWindowName(name);
 }
 

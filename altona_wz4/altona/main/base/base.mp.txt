@@ -9,7 +9,6 @@ guid "{F13B45DE-3700-45fb-B651-E652B962BE4F}";
 
 license altona;
 include "altona/main";
-//if (sSDK_TC3) include "tc3/main";
 library;
 
 file "graphics.?pp";
