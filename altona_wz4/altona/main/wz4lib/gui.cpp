@@ -1234,7 +1234,7 @@ void MainWindow::CmdNew()
   if(Doc->DocChanged)
     sContinueReallyDialog(sMessage(this,&MainWindow::CmdNew2),sMessage(this,&MainWindow::CmdSaveNew));
   else
-    CmdExit2();
+    CmdNew2();
 }
 
 void MainWindow::CmdNew2()
