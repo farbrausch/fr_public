@@ -1259,7 +1259,8 @@ operator Wz4Mesh Bend(Wz4Mesh)
 
     sFORALL(out->Vertices,mv)
     {
-      if(logic(para->Selection,mv->Select))
+      sF32 sel = logicF(para->Selection,mv->Select);
+      if(sel>0)
       {
         sF32 d = plane ^ mv->Pos;
         sF32 angle,move;
