@@ -8,6 +8,7 @@ stripped_dx11_Win32
 debug_blank_shell_Win32
 release_blank_shell_Win32
 stripped_blank_shell_Win32
+release_linux_blank_shell
 Release
 Debug
 ipch
@@ -23,3 +24,9 @@ ipch
 *.opensdf
 *.ogg.raw
 *.v2m.raw
+
+*.o
+*.a
+*.swp
+Makefile*
+!Makefile.linux.boot

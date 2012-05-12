@@ -17,8 +17,8 @@
 /***                                                                      ***/
 /****************************************************************************/
 
-static sChar *shadername[] = { L"VS",L"HS",L"DS",L"GS",L"PS",L"CS" };
-static sChar *fullshadername[] = { L"VertexShader",L"HullShader",L"DomainShader",L"GeometryShader",L"PixelShader",L"ComputeShader" };
+static const sChar *shadername[] = { L"VS",L"HS",L"DS",L"GS",L"PS",L"CS" };
+static const sChar *fullshadername[] = { L"VertexShader",L"HullShader",L"DomainShader",L"GeometryShader",L"PixelShader",L"ComputeShader" };
 
 /****************************************************************************/
 

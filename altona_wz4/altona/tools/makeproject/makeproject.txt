@@ -282,7 +282,7 @@ build "linux"
     "CXXFLAGS    = -Wall -Wno-unused-function -Wno-invalid-offsetof $(INCDIR) $(DEFINES) -fno-exceptions -fno-common -fno-strict-aliasing -fno-rtti -fshort-wchar -finput-charset=ISO8859-1"
     "ASFLAGS     = -c -xassembler-with-cpp $(INCDIR) "
     "NASMFLAGS   = -f elf $(INCDIR) $(DEFINES)"
-    "LDFLAGS     = $(LIBDIR) -lm -lrt"
+    "LDFLAGS     = $(LIBDIR)"
     "DEPDIR      = $(CONFIG)/.deps"
     "DEPF        = $(DEPDIR)/$(*F)"
     ""
@@ -358,7 +358,7 @@ build "linux"
   }
   linkexe
   {
-    "  @g++ -o $@ $(OBJS) $(LDFLAGS) $(LIBS) $(DEPS)"
+    "  @g++ -o $@ $(OBJS) $(LDFLAGS) $(DEPS) $(LIBS)"
   }  
   linklib
   {
@@ -376,6 +376,9 @@ build "linux"
   extension custom="asc";
 
   define "sCONFIG_SYSTEM_LINUX";
+  link "m";
+  link "rt";
+  link "pthread";
 }
 
 build "debug_linux"

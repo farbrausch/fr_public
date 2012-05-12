@@ -5,7 +5,7 @@
 LIBDIR = 
 INCDIR =  -I./ -I../ 
 TARGET = base
-OBJS   = types.o types2.o serialize.o system.o system_linux.o graphics.o graphics_blank.o math.o
+OBJS   = types.o types2.o serialize.o system.o system_linux.o graphics.o graphics_blank.o math.o input2.o
 DEFINES = -DsCONFIG_GUID=\{0xB405548B,\{0xF306,0x45C9,0x856B\},\{0x76,0x7B,0xB3,0xF6,0xB6,0xE0\}\} -DsCONFIG_BUILD_DEBUG -DsCONFIG_RENDER_BLANK -DsCONFIG_OPTION_SHELL -DsCONFIG_SYSTEM_LINUX
 LIBS    =
  
@@ -29,7 +29,7 @@ LDFLAGS     = -Wl -mno-crt0 -L$(LIBDIR) -lm -lrt
 all: spacer lib$(TARGET).a
 
 spacer:
-	echo -e "\n\n\n B E G I N\n";
+	@echo -e "\n\n\n\tB E G I N\n";
 
 #$(TARGET).elf: $(OBJS)
 #	g++ -o $@  $(OBJS) $(LDFLAGS) $(LIBS) 

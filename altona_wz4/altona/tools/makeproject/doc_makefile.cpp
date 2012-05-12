@@ -22,7 +22,11 @@ static const sChar *MakePlatforms[] =
 
 static sBool ConfigMatchesPlatform(Config *config,sInt platform)
 {
-  return sFALSE;
+  switch(platform)
+  {
+  case sMAKE_LINUX: return (config->VSPlatformMask & sVSPLAT_LINUX) != 0; break;
+  default:          return sFALSE;
+  }
 }
 
 Config *FindConfig(sArray<Config *>*list,sInt platform)

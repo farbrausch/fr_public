@@ -7,7 +7,7 @@ INCDIR =  -I./ -I../../main/
 TARGET = makeproject
 OBJS   = main.o doc.o doc_output.o doc_makefile.o
 DEFINES = -DsCONFIG_GUID=\{0xB405548B,\{0xF306,0x45C9,0x856B},\{0x76,0x7B,0xB3,0xF6,0xB6,0xE0\}\} -DsCONFIG_BUILD_DEBUG -DsCONFIG_RENDER_BLANK -DsCONFIG_OPTION_SHELL -DsCONFIG_SYSTEM_LINUX
-LIBS    = -lbase -lutil
+LIBS    = -lbase -lutil -lpthread -lrt
  
 #
 # System settings
@@ -16,7 +16,7 @@ LIBS    = -lbase -lutil
 CFLAGS      = -O2 -Wall -Werror -I$(INCDIR)  -fno-strict-aliasing -fshort-wchar -msse
 CXXFLAGS    = -O2 -Wall $(DEFINES) $(INCDIR) -fno-exceptions -fno-strict-aliasing -fno-rtti -fshort-wchar -msse
 
-LDFLAGS     = -Wl -mno-crt0 $(LIBDIR) -lm -lrt
+LDFLAGS     = -Wl -mno-crt0 $(LIBDIR) -lm
 
 #
 # Rules
@@ -30,7 +30,7 @@ all: spacer $(TARGET).elf
 relink: remtarget $(TARGET).elf
 
 spacer:
-	echo -e "\n\n\n B E G I N\n";
+	@echo -e "\n\n\n B E G I N\n";
 
 $(TARGET).elf: $(OBJS)
 	g++ -o $@  $(OBJS) $(LDFLAGS) $(LIBS) 

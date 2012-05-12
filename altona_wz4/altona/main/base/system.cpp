@@ -252,7 +252,7 @@ sInt sDateAndTime::Compare(const sDateAndTime &x) const
   return 0;
 }
 
-#if sPLATFORM != sPLAT_WINDOWS
+#if sPLATFORM != sPLAT_WINDOWS && sPLATFORM != sPLAT_LINUX
 sU8 sGetFirstDayOfWeek()
 {
   const sU8 SUNDAY=0;
@@ -1648,7 +1648,7 @@ sBool sInput2IsKeyboardKey(sInt key)
 {
   sInt pureKey = key & sKEYQ_MASK;
          // not in page 0xe000          or   key below keyboard_border
-  return ((pureKey & 0xf000) != 0xe000) || (pureKey<=sKEY_KEYBOARD_MAX);
+  return ((pureKey & 0xf000) != 0xe000) || (pureKey<=(sInt)sKEY_KEYBOARD_MAX);
 }
 
 /****************************************************************************/

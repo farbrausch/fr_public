@@ -3473,10 +3473,12 @@ namespace rygdxt
     }
 
     // Pick colors at extreme points
-    sInt mind = 0x7fffffff,maxd = -0x7fffffff;
-    Pixel minp,maxp;
+    Pixel minp, maxp;
+    sInt mind, maxd;
 
-    for(sInt i=0;i<16;i++)
+    minp = maxp = block[0];
+    mind = maxd = block[0].p.r*v_r + block[0].p.g*v_g + block[0].p.b*v_b;
+    for(sInt i=1;i<16;i++)
     {
       sInt dot = block[i].p.r*v_r + block[i].p.g*v_g + block[i].p.b*v_b;
 

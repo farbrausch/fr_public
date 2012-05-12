@@ -256,6 +256,7 @@ sBool sScanner::IncludeFile(const sChar *filename)
   }
   else
   {
+    delete s;
     return 0;
   }
 }

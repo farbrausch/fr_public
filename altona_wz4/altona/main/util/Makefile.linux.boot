@@ -28,7 +28,7 @@ LDFLAGS     = -Wl -mno-crt0 -L$(LIBDIR) -lm -lrt
 all: spacer lib$(TARGET).a 
 
 spacer:
-	echo -e "\n\n\n B E G I N\n";
+	@echo -e "\n\n\n B E G I N\n";
 
 #$(TARGET).elf: $(OBJS)
 #	g++ -o $@  $(OBJS) $(LDFLAGS) $(LIBS) 
