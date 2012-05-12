@@ -604,7 +604,7 @@ void sInitKeys()
     { '9'           , VK_NUMPAD9  },
     { '*'           , VK_MULTIPLY },
     { '+'           , VK_ADD      },
-    { ','           , VK_DECIMAL  },
+    { '.'           , VK_DECIMAL  },
     { '/'           , VK_DIVIDE   },
     { '-'           , VK_SUBTRACT },
     { 0 }
