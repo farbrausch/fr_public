@@ -1239,6 +1239,7 @@ operator Wz4Mesh Bend(Wz4Mesh)
     float Angle(-4..4 step 0.001) = 0.25;
     float Radius(-1024..1024 step 0.001) = 1;
     flags Flags("-|pi=3");
+    flags Selection("all|none|selected|unselected");
   }
   code
   {
@@ -1258,25 +1259,29 @@ operator Wz4Mesh Bend(Wz4Mesh)
 
     sFORALL(out->Vertices,mv)
     {
-      sF32 d = plane ^ mv->Pos;
-      sF32 angle,move;
-      if(para->Flags)
+      sF32 sel = logicF(para->Selection,mv->Select);
+      if(sel>0)
       {
-        angle = sClamp<sF32>(d/para->Radius,0,para->Angle*6);
-        move = angle*para->Radius;
-        angle = angle * (sPI2F/6);
-      }
-      else
-      {
-        angle = sClamp<sF32>(d/para->Radius,0,para->Angle*sPI2F);
-        move = angle*para->Radius;
-      }
+        sF32 d = plane ^ mv->Pos;
+        sF32 angle,move;
+        if(para->Flags)
+        {
+          angle = sClamp<sF32>(d/para->Radius,0,para->Angle*6);
+          move = angle*para->Radius;
+          angle = angle * (sPI2F/6);
+        }
+        else
+        {
+          angle = sClamp<sF32>(d/para->Radius,0,para->Angle*sPI2F);
+          move = angle*para->Radius;
+        }
 
-      if(angle>=0)
-      {
-        mat.RotateAxis(axis,-angle);
-        mat.l = para->Start-d0 - sVector30(para->Start+move*dir-d0)*mat;
-        mv->Transform(mat,mat);
+        if(angle>=0)
+        {
+          mat.RotateAxis(axis,-angle);
+          mat.l = para->Start-d0 - sVector30(para->Start+move*dir-d0)*mat;
+          mv->Transform(mat,mat);
+        }
       }
     }
     out->Flush();
