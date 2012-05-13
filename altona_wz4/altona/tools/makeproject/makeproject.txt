@@ -247,10 +247,10 @@ build "x11"
   define "sCONFIG_GUI_X11";
   makedefine
   {
-    "CFLAGS     += `xft-config --cflags`"
-    "CXXFLAGS   += `xft-config --cflags`"
+    "CFLAGS     += `freetype-config --cflags`"
+    "CXXFLAGS   += `freetype-config --cflags`"
   }
-  define "sCONFIG_GUI_X11 `xft-config --cflags`"; // yes, one line. that's important.
+  define "sCONFIG_GUI_X11 `freetype-config --cflags`"; // yes, one line. that's important.
   link "X11";
   link "Xft";
 }

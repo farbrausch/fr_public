@@ -47,6 +47,7 @@ extern void sCollector(sBool exit=sFALSE);
 #if !sCOMMANDLINE
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#undef Status // goddamnit!
 
 XVisualInfo *sXVisualInfo;
 Visual *sXVisual;
@@ -1270,6 +1271,97 @@ private:
   sInput2DeviceImpl<sINPUT2_KEYBOARD_MAX> Device;
 };
 
+class sMouseData
+{
+public:
+  enum
+  {
+    sMB_LEFT = 1,                   // left mouse button
+    sMB_RIGHT = 2,                  // right mouse button
+    sMB_MIDDLE = 4,                 // middle mouse button
+    sMB_X1 = 8,                     // 4th mouse button
+    sMB_X2 = 16,                    // 5th mouse button
+  };
+
+  sMouseData(sInt num) 
+   : Device(sINPUT2_TYPE_MOUSE, num) 
+  {
+    X = Y = Z = RawX = RawY = Buttons = 0;
+    sInput2RegisterDevice(&Device);
+  }
+
+  ~sMouseData()
+  {
+    sInput2RemoveDevice(&Device);
+  }
+
+  void Poll() 
+  {
+    InputThreadLock->Lock();
+    sInput2DeviceImpl<sINPUT2_MOUSE_MAX>::Value_ v;
+    v.Value[sINPUT2_MOUSE_X] = X;
+    v.Value[sINPUT2_MOUSE_Y] = Y;
+    v.Value[sINPUT2_MOUSE_RAW_X] = RawX;
+    v.Value[sINPUT2_MOUSE_RAW_Y] = RawY;
+    v.Value[sINPUT2_MOUSE_WHEEL] = Z;
+    v.Value[sINPUT2_MOUSE_LMB] = Buttons & sMB_LEFT;
+    v.Value[sINPUT2_MOUSE_RMB] = Buttons & sMB_RIGHT;
+    v.Value[sINPUT2_MOUSE_MMB] = Buttons & sMB_MIDDLE;
+    v.Value[sINPUT2_MOUSE_X1] = Buttons & sMB_X1;
+    v.Value[sINPUT2_MOUSE_X2] = Buttons & sMB_X2;
+    v.Value[sINPUT2_MOUSE_VALID] = 1.0f;
+    v.Timestamp = sGetTime();
+    v.Status = 0;
+    Device.addValues(v);
+    InputThreadLock->Unlock();
+  }
+
+  sInt X;
+  sInt Y;
+  sInt Z;
+  sInt RawX;
+  sInt RawY;
+  sInt Buttons;
+
+private:
+  sInput2DeviceImpl<sINPUT2_MOUSE_MAX> Device;
+};
+
+static sThread *InputThread;
+static sKeyboardData *Keyboard;
+static sMouseData *Mouse;
+
+static void sPollInput(sThread *thread, void *data)
+{
+  while(thread->CheckTerminate())
+  {
+    Mouse->Poll();
+    Keyboard->Poll();
+    sSleep(5);
+  }
+}
+
+static void sInitInput()
+{
+#if !sCOMMANDLINE
+  Keyboard = new sKeyboardData(0);
+  Mouse = new sMouseData(0);
+  InputThreadLock = new sThreadLock;
+  InputThread = new sThread(sPollInput);
+#endif
+}
+
+static void sExitInput()
+{
+#if !sCOMMANDLINE
+  sDelete(InputThread);
+  sDelete(Keyboard);
+  sDelete(Mouse);
+  sDelete(InputThreadLock);
+#endif
+}
+sADDSUBSYSTEM(Input, 0x30, sInitInput, sExitInput);
+
 Display *sXDisplay()
 {
 #if !sCOMMANDLINE
@@ -1414,14 +1506,6 @@ void sInit(sInt flags,sInt xs,sInt ys)
   XStoreName(dpy,sXWnd,sLinuxFromWide(caption));
   XMapWindow(dpy,sXWnd);
   
-  sInputEventQueueLock = new sThreadLock;
-
-  if(flags & sISF_CONTINUOUS) // message queuing and sorting in continuous mode
-  {
-    InputEventQueue = new sStaticArray<sInputEvent>;
-    InputEventQueue->HintSize(256);
-  }
-  
   sSystemFlags = flags;
   if(flags & sISF_3D)
     InitGFX(flags,xs,ys);
@@ -1527,7 +1611,7 @@ static void sXMessageLoop()
   {
     sBool done = sFALSE;
     static const sInt buttonKey[10] = { 0,sKEY_LMB,sKEY_MMB,sKEY_RMB,sKEY_WHEELUP,sKEY_WHEELDOWN,0,0,sKEY_X1MB,sKEY_X2MB };
-    static const sInt buttonMask[10] = { 0,sMB_LEFT,sMB_MIDDLE,sMB_RIGHT,0,0,0,0,sMB_X1,sMB_X2 };
+    static const sInt buttonMask[10] = { 0,sMouseData::sMB_LEFT,sMouseData::sMB_MIDDLE,sMouseData::sMB_RIGHT,0,0,0,0,sMouseData::sMB_X1,sMouseData::sMB_X2 };
     
     while(!done)
     {
@@ -1536,7 +1620,6 @@ static void sXMessageLoop()
       if(!XPending(dpy) && !sXUpdateEmpty())
       {
         sFrameHook->Call();
-        sFlushInput();
 
         sBool app_fullpaint = sFALSE;
         
@@ -1577,7 +1660,6 @@ static void sXMessageLoop()
       while(XPending(dpy))
       {
         XNextEvent(dpy,&e);
-        MessageTimeStamp = sGetTime();
         
         switch(e.type)
         {
@@ -1645,13 +1727,13 @@ static void sXMessageLoop()
               wch[0] = sKEY_ENTER;
             
             for(sInt i=0;i<wch[i];i++)
-              sQueueInput(sIED_KEYBOARD,0,wch[i] | (sKEYQ_BREAK & ~orm));
+              sInput2SendEvent(sInput2Event(wch[i] | (sKEYQ_BREAK & ~orm)));
             
             if(!wch[0]) // nonprintable
             {
               sInt k = sXLookupKeySym(sym);
               if(k)
-                sQueueInput(sIED_KEYBOARD,0,k | (sKEYQ_BREAK & ~orm));
+                sInput2SendEvent(sInput2Event(k | (sKEYQ_BREAK & ~orm)));
             }
           }
           break;
@@ -1698,9 +1780,6 @@ static void sXMessageLoop()
     if(sSystemFlags & sISF_3D)
       ExitGFX();
   }
-  
-  sDelete(InputEventQueue);
-  sDelete(sInputEventQueueLock);
   
   XCloseDisplay(dpy);
 #endif
