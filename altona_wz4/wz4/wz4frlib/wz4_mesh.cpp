@@ -2679,7 +2679,7 @@ struct Island
   sVector30 Normal;
 };
 
-void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale)
+void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale,sInt SelectUpdateFlag)
 {
   sVERIFY(steps>0);
 
@@ -2698,6 +2698,10 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
   for(sInt i=0;i<Vertices.GetCount();i++)
     if(map[i]==-1)
       map[i] = i;
+
+  // store original faces (to keep trace of selected faces)
+  sArray<Wz4MeshFace> originalFaces;
+  originalFaces.Add(Faces);
 
   // find connected islands of selected faces
   sInt nFaces = Faces.GetCount();
@@ -3036,10 +3040,24 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
 
   // update selection
 
+  // clear selected vertices
   sFORALL(Vertices,v)
     v->Select = 0.0f;
-  sFORALL(Faces,f)
-    f->Select = (_i>=originalfacecount)?1.0f:0.0f;
+
+  // which faces to select ?
+  switch (SelectUpdateFlag)
+  {
+  case 0: // newest faces
+    sFORALL(Faces,f)
+      f->Select = (_i>=originalfacecount)?1.0f:0.0f;
+    break;
+
+  case 1: // original selected faces
+    sFORALL(originalFaces,f)
+      Faces[_i].Select = (f->Select > 0.0f)?1.0f:0.0f;
+    break;
+  }
+
 
   // done and free all
 
