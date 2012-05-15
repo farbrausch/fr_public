@@ -1349,10 +1349,11 @@ operator Wz4Mesh Extrude(Wz4Mesh)
     if((Flags & 6)==4)
       float31 Center(-1024..1024);
     float LocalScale(0..16.0 step 0.01) = 1.0;
+	flags SelectUpdateFlag "Selection"("newest faces|original faces");
   }
   code
   {
-    out->Extrude(para->Steps,para->Amount,para->Flags,para->Center,para->LocalScale);
+    out->Extrude(para->Steps,para->Amount,para->Flags,para->Center,para->LocalScale,para->SelectUpdateFlag);
   }
 }
 
