@@ -1404,7 +1404,7 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
   {
     layout flags Flags "Input" ("*6cube|sphere|vertex select|face select|all|by texture|cluster")=8;
     continue flags Flags "Logic" ("-|invert:*2clear|set|assign");
-    continue flags Flags "Output" ("*4vertex|touched face|enclosed face");
+    continue flags Flags "Output" ("*4inner vertex|touched face|enclosed face|full vertex");
     if(((Flags&0x1c0)==0x00) || ((Flags&0x1c0)==0x40))
     {
       float31 Scale (-1024..1024 step 0.01) = { 1,1,1 };
@@ -1451,8 +1451,12 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
     sInt refOuter = 0x80*(para->RefColorErr+para->RefColorSpread);
     sF32 refScale = 1.0f/(0x80*para->RefColorSpread);
 
+    sInt flagsInput = para->Flags & 0x1c0;
+    sInt flagsOutput = (para->Flags >> 4) & 3;
+    sBool selectVerts = flagsOutput==0 || flagsOutput==3;
+
     sF32 *fsel = new sF32[pc];
-    if((para->Flags & 0x1c0)==0x0c0)
+    if(flagsInput==0x0c0)
     {
       for(sInt i=0;i<pc;i++)
         fsel[i] = 0.0f;
@@ -1465,7 +1469,7 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
         }
       }
     }
-    if((para->Flags & 0x1c0)==0x180)
+    if(flagsInput==0x180)
     {
       for(sInt i=0;i<pc;i++)
         fsel[i] = 0.0f;
@@ -1480,7 +1484,7 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
     {
       v = vp->Pos * inv;
       sF32 inside = 0.0f;
-      switch(para->Flags & 0x1c0)
+      switch(flagsInput)
       {
       case 0x00:
         inside = (v.x>=-1&&v.x<=1 && v.y>=-1&&v.y<=1 && v.z>=-1&&v.z<=1)?1.0f:0.0f;
@@ -1547,12 +1551,34 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
         inside=1.0f-inside;
       
       fsel[_i] = inside;
+    }
 
-      if((para->Flags & 48)==0)
+    if(selectVerts)
+    {
+      if (flagsOutput==0)
       {
-        if(rnd.Float(1)>para->Random)
-          inside = 0;
+        for(sInt i=0;i<pc;i++)
+          if (rnd.Float(1)>para->Random)
+            fsel[i] = 0;
+      }
+      else
+      {
+        // smear
+        sInt *base = in0->BasePos(1);
+        for (sInt i=0;i<pc;i++)
+          fsel[base[i]] = sMax(fsel[base[i]],fsel[i]);
 
+        for (sInt i=0;i<pc;i++)
+        {
+          if (rnd.Float(1)>para->Random)
+            fsel[i] = 0;
+          fsel[i] = fsel[base[i]];
+        }
+        delete[] base;
+      }
+      sFORALL(out->Vertices,vp)
+      {
+        sF32 inside = fsel[_i];
         switch(para->Flags & 12)
         {
         case 0:
@@ -1567,7 +1593,7 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
         }
       }
     }
-    if(para->Flags&48)
+    else
     {
       sFORALL(out->Faces,face)
       {
@@ -1575,12 +1601,12 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
         for(sInt i=0;i<face->Count;i++)
           n += (fsel[face->Vertex[i]]>=0.5f)?1:0;
         sBool action = 0;
-        switch(para->Flags&48)
+        switch(flagsOutput)
         {
-        case 16:
+        case 1:
           action = (n>0);
           break;
-        case 32:
+        case 2:
           action = (n==face->Count);
           break;
         }
