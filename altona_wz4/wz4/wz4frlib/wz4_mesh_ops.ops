@@ -1884,6 +1884,14 @@ operator Wz4Mesh Deform(Wz4Mesh)
     }
     else
     {
+      if(pi.DeleteSelectedHandles)
+      {
+        // have to delete in reverse to not corrupt indices
+        for (sInt i=op->ArrayData.GetCount()-1;i>=0;i--)
+          if(pi.IsSelected(op,i+n))
+            op->RemArray(i);
+        Doc->Change(op);
+      }
       sFORALL(op->ArrayData,ap)
       {
         key = (sVector31 *)ap;
