@@ -1228,17 +1228,11 @@ sInt *Wz4Mesh::BasePos(sInt toitself)
     }
     vp->Temp = HashMap[hash];
     HashMap[hash] = _i;
-    map[_i] = -1;
+    map[_i] = toitself ? _i : -1;
 done:;
   }
 
   delete[] HashMap;
-
-  if(toitself)
-    for(sInt i=0;i<Vertices.GetCount();i++)
-      if(map[i]==-1)
-        map[i] = i;
-
   return map;
 }
 
