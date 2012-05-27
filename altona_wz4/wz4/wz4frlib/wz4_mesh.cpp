@@ -46,7 +46,7 @@ static sBool logic(sInt logic,sF32 select)
   case 1:
     return 0;
   case 2:
-    return select>0.5f;
+    return select>=0.5f;
   case 3:
     return select<0.5f;
   }
