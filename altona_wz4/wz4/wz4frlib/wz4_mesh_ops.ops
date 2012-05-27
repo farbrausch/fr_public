@@ -1564,7 +1564,7 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
       else
       {
         // smear
-        sInt *base = in0->BasePos(1);
+        sInt *base = out->BasePos(1);
         for (sInt i=0;i<pc;i++)
           fsel[base[i]] = sMax(fsel[base[i]],fsel[i]);
 
