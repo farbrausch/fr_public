@@ -2040,6 +2040,8 @@ void Wz4Mesh::ExtrudeNormal(sInt logic_,sF32 amount)
 
   delete[] accu;
   delete[] map;
+
+  CalcNormalAndTangents();
 }
 
 

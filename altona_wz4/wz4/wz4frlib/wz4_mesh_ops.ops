@@ -790,6 +790,7 @@ operator Wz4Mesh Transform(Wz4Mesh)
   {
     sMatrix34 mat,matInvT;
     sSRT srt;
+    sBool flipped = sFALSE;
     Wz4MeshVertex *mv;
 
     srt.Scale = para->Scale;
@@ -815,9 +816,11 @@ operator Wz4Mesh Transform(Wz4Mesh)
       sFORALL(out->Faces,f)
         f->Invert();
 
-      // normals just change sign, but tangents may or may not be affected.
-      out->CalcNormalAndTangents();
+      flipped = sTRUE;
     }
+
+    if(flipped || para->Selection>=2)
+      out->CalcNormalAndTangents();
 
     out->Flush();
   }
