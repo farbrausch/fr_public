@@ -2673,7 +2673,21 @@ struct Island
   sVector30 Normal;
 };
 
-void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale,sInt SelectUpdateFlag)
+// Fade such that fade(a, b, 0) == a and fade(a, b, 1) == b for all finite floats.
+sF32 ExactFade(sF32 a,sF32 b,sF32 t)
+{
+  return a*(1.0f-t) + b*t;
+}
+
+static void ExactFade(sVector31 &out,const sVector31 &a,const sVector31 &b,sF32 t)
+{
+  sF32 u = 1.0f - t;
+  out.x = u*a.x + t*b.x;
+  out.y = u*a.y + t*b.y;
+  out.z = u*a.z + t*b.z;
+}
+
+void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale,sInt SelectUpdateFlag,const sVector2 &uvOffset)
 {
   sVERIFY(steps>0);
 
@@ -2921,7 +2935,7 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
     }
 
     // transform away island
-    switch(flags & 6)
+    switch((flags >> 1) & 3)
     {
     case 0:
       for(sInt vi=isl->FirstCenter; vi != -1; vi=nextCenter[vi])
@@ -2929,17 +2943,21 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
         v = &Vertices[vi];
         v->Pos = isl->Center + (v->Pos - isl->Center) * localScale;
         v->Pos += isl->Normal*amount;
+        v->U0 += uvOffset.x;
+        v->V0 += uvOffset.y;
       }
       break;
-    case 2:
+    case 1:
       for(sInt vi=isl->FirstCenter; vi != -1; vi=nextCenter[vi])
       {
         v = &Vertices[vi];
         v->Pos = isl->Center + (v->Pos - isl->Center) * localScale;
         v->Pos += v->Normal*amount;
+        v->U0 += uvOffset.x;
+        v->V0 += uvOffset.y;
       }
       break;
-    case 4:
+    case 2:
       for(sInt vi=isl->FirstCenter; vi != -1; vi=nextCenter[vi])
       {
         v = &Vertices[vi];
@@ -2947,6 +2965,8 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
         n.Unit();
         v->Pos = isl->Center + (v->Pos - isl->Center) * localScale;
         v->Pos += n*amount;
+        v->U0 += uvOffset.x;
+        v->V0 += uvOffset.y;
       }
       break;
     }
@@ -2988,13 +3008,14 @@ void Wz4Mesh::Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,
           const Wz4MeshVertex &vb = Vertices[e->px[k]];
 
           v[j*2+k].Init();
-          if(j==steps) v[j*2+k].Pos = vb.Pos;
-          else         v[j*2+k].Pos.Fade(fade,va.Pos,vb.Pos); // fade is not precisze of fade=1 because in float: a+(b-a) != b . this will cause gaps!
-          v[j*2+k].Normal.x = isli;
+          ExactFade(v[j*2+k].Pos,va.Pos,vb.Pos,fade);
+          v[j*2+k].Normal.x = isli; // normal set up to prevent verts from being merged erroneously
           v[j*2+k].Normal.y = ei;
           v[j*2+k].Normal.z = j*2+k;
-          v[j*2+k].U0 = fade;
-          v[j*2+k].V0 = ei/sF32(isl->NumEdges);
+          v[j*2+k].U0 = ExactFade(va.U0,vb.U0,fade);
+          v[j*2+k].V0 = ExactFade(va.V0,vb.V0,fade);
+          v[j*2+k].U1 = ExactFade(va.U1,vb.U1,fade);
+          v[j*2+k].V1 = ExactFade(va.V1,vb.V1,fade);
 
           for(sInt i=0;i<sCOUNTOF(va.Index);i++)
           {

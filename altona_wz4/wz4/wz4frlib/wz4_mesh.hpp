@@ -218,7 +218,7 @@ public:
   void Crease();                  // create a crease between selected and unselected faces
   void Uncrease(sInt select);     // remove all creases at the selected vertices
   void Subdivide(sF32 smooth); // subdivide all selected faces
-  void Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale,sInt SelectUpdateFlag);
+  void Extrude(sInt steps,sF32 amount,sInt flags,const sVector31 &center,sF32 localScale,sInt SelectUpdateFlag,const sVector2 &uvOffset);
   void Splitter(Wz4Mesh *in,sF32 depth,sF32 scale);
   void Dual(Wz4Mesh *in,sF32 random);
   sBool DivideInChunks(sInt flags,const sVector30 &normal,const sVector30 &rot);
