@@ -519,6 +519,13 @@ void Document::_Parameter(Op *op,ExprNode *cond,sInt &offset,sInt &stringoffset,
     type = TYPE_FLOAT;
     para->CType = L"sF32";
   }
+  else if(Scan.IfName(L"float2"))
+  {
+    type = TYPE_FLOAT;
+    para->CType = L"sVector2";
+    count = 2;
+    para->XYZW = 1;
+  }
   else if(Scan.IfName(L"float30"))
   {
     type = TYPE_FLOAT;
