@@ -579,6 +579,11 @@ void Document::_Parameter(Op *op,ExprNode *cond,sInt &offset,sInt &stringoffset,
     type = TYPE_FLAGS;
     para->CType = L"sInt";
   }
+  else if(Scan.IfName(L"radio"))
+  {
+    type = TYPE_RADIO;
+    para->CType = L"sInt";
+  }
   else if(Scan.IfName(L"strobe"))
   {
     type = TYPE_STROBE;
@@ -762,6 +767,7 @@ void Document::_Parameter(Op *op,ExprNode *cond,sInt &offset,sInt &stringoffset,
         para->Max = sClamp(Scan.ScanInt(),1,4);
       break;
     case TYPE_FLAGS:
+    case TYPE_RADIO:
     case TYPE_STROBE:
       Scan.ScanString(para->Options);
       break;
@@ -821,6 +827,7 @@ void Document::_Parameter(Op *op,ExprNode *cond,sInt &offset,sInt &stringoffset,
       case TYPE_COLOR:
         para->DefaultU[num] = Scan.ScanInt();
         break;
+      case TYPE_RADIO:
       case TYPE_FLAGS:
         para->DefaultU[num] = _Flag(para->Options);
         break;

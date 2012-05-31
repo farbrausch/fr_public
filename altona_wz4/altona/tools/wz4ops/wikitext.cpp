@@ -114,7 +114,7 @@ void MakeWikiText(Op *op,sTextBuffer &tb)
 
 void PrintPara(Parameter *para,sTextBuffer &tb,sBool &header)
 {
-  if(header || para->Type==TYPE_FLAGS)
+  if(header || para->Type==TYPE_FLAGS  || para->Type==TYPE_RADIO)
   {
     tb.Print (L"!T 4 : 1 1 1 2\n");
     header = 0;
@@ -153,6 +153,7 @@ void PrintPara(Parameter *para,sTextBuffer &tb,sBool &header)
       tb.PrintF(L"[%d]",para->Count);
     tb.Print (L"\n !i *\n\n");
     break;
+  case TYPE_RADIO:
   case TYPE_FLAGS:
     {
       const sChar *label = para->Label.IsEmpty() ? oldlabel : (const sChar *)para->Label;

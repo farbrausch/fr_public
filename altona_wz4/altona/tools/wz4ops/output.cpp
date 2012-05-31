@@ -405,6 +405,9 @@ void Document::OutputPara(sArray<Parameter *> &pa,Op *op,sBool inarray)
         else
           CPP.PrintF(L"%_gh.Flags(&%s->%s,L\"%s\",gh.%s);\n",indent,name,para->Symbol,para->Options,para->LayoutFlag ? L"LayoutMsg" : L"ChangeMsg");
         break;
+      case TYPE_RADIO:
+        CPP.PrintF(L"%_gh.Radio(&%s->%s,L\"%s\",1);\n",indent,name,para->Symbol,para->Options);
+        break;
       case TYPE_STROBE:
         CPP.PrintF(L"%_gh.Flags(&op->Strobe,L\"%s\",gh.ChangeMsg);\n",indent,para->Options);
         break;
@@ -628,7 +631,7 @@ void Document::OutputOps()
           for(sInt i=0;i<para->Count;i++)
           {
             sInt t = para->Type;
-            if(t==TYPE_INT || t==TYPE_BITMASK || t==TYPE_COLOR || t==TYPE_FLAGS || t==TYPE_FLOAT || t==TYPE_CHARARRAY)
+            if(t==TYPE_INT || t==TYPE_BITMASK || t==TYPE_COLOR || t==TYPE_FLAGS || t==TYPE_FLOAT || t==TYPE_CHARARRAY || t==TYPE_RADIO)
             {
               if(para->Count==1)
                 CPP.PrintF(L"  e->%s = ",para->Symbol);
@@ -893,6 +896,7 @@ void Document::OutputOps()
         case TYPE_INT:
         case TYPE_BITMASK:
         case TYPE_COLOR:
+        case TYPE_RADIO:
         case TYPE_FLAGS:
           if(para->DefaultU[i])
             skip = 0;
@@ -926,6 +930,7 @@ void Document::OutputOps()
           {
           case TYPE_INT:
           case TYPE_FLAGS:
+          case TYPE_RADIO:
           case TYPE_COLOR:
           case TYPE_BITMASK:
             CPP.PrintF(L"0x%08x;\n",para->DefaultU[i]);
@@ -1191,7 +1196,7 @@ void Document::OutputAnim()
         {
           CPP.PrintF(L"  sc->BindLocalFloat(_%s,4,&para->%s.x);\n",para->Symbol,para->Symbol);
         }
-        else if(para->Type==TYPE_INT || para->Type==TYPE_FLAGS)
+        else if(para->Type==TYPE_INT || para->Type==TYPE_FLAGS  || para->Type==TYPE_RADIO)
         {
           if(para->Count>1)
             CPP.PrintF(L"  sc->BindLocalInt(_%s,%d,para->%s);\n",para->Symbol,para->Count,para->Symbol);
