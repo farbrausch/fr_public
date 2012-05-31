@@ -77,6 +77,24 @@ struct Wz4MeshFace
   void Invert();
 };
 
+struct Wz4MeshSel
+{
+  sU32 Id;            // element ID
+  sF32 Selected;      // selection value
+};
+
+enum Wz4MeshSelMode
+{
+  wMSM_LOAD   = 0x00,
+  wMSM_STORE  = 0x01,
+};
+
+enum Wz4MeshSelType
+{
+  wMST_VERTEX   = 0x00,
+  wMST_FACE     = 0x01,
+};
+
 struct Wz4MeshFaceConnect
 {
   sInt Adjacent[4];   // opposite halfedge for each halfedge in the mesh (face*4+vertInd)
@@ -113,6 +131,8 @@ class Wz4Mesh : public wObject
 public:
   sArray<Wz4MeshVertex> Vertices;
   sArray<Wz4MeshFace> Faces;
+  sArray<Wz4MeshSel> SelFaces[8];     // stored faces selection in slots
+  sArray<Wz4MeshSel> SelVertices[8];  // stored vertices selection in slots
   sArray<Wz4MeshCluster *> Clusters;
   Wz4Skeleton *Skeleton;
   sArray<Wz4ChunkPhysics> Chunks; // alternative to skeleton: just unconnected chunks (debris-style)#
@@ -199,6 +219,9 @@ public:
   sBool DivideInChunksR(Wz4MeshFace *mf,sInt mfi,Wz4MeshFaceConnect *conn);
   sVector30 GetFaceNormal(sInt face) const;
   void CalcBBox(sAABBox &box) const;
+
+  // selection
+  void SelStoreLoad(sInt mode, sInt type, sInt slot);
 
   /*** ops ***/
 

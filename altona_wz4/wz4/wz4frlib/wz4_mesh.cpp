@@ -531,6 +531,13 @@ void Wz4Mesh::CopyFrom(Wz4Mesh *src)
   Vertices = src->Vertices;
   Faces = src->Faces;
 
+  // copy selection in slots
+  for(sInt i=0; i<8; i++)
+  {
+    SelFaces[i] = src->SelFaces[i];
+    SelVertices[i] = src->SelVertices[i];
+  }
+
   CopyClustersFrom(src);
 
   if(src->Skeleton)
@@ -2654,6 +2661,88 @@ ende:
   delete[] edgelink;
   delete[] map;
   delete[] centerpos;
+}
+
+/****************************************************************************/
+
+void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
+{
+  Wz4MeshFace *f;
+  Wz4MeshVertex *v;
+  Wz4MeshSel s;
+
+  switch(mode)
+  {
+  case wMSM_LOAD:
+    switch(type)
+    {
+    case wMST_VERTEX:
+      // read all vertices stored and set selection
+      for(int i=0; i<SelVertices[slot].GetCount(); i++)
+        Vertices[SelVertices[slot][i].Id].Select = SelVertices[slot][i].Selected;
+
+      // clear faces selection
+      sFORALL(Faces,f)
+        f->Select = 0.0f;
+      break;
+
+    case wMST_FACE:
+      // read all faces stored and set selection
+      for(int i=0; i<SelFaces[slot].GetCount(); i++)
+        Faces[SelFaces[slot][i].Id].Select = SelFaces[slot][i].Selected;
+
+      // clear vertices selection
+      sFORALL(Vertices,v)
+        v->Select = 0.0f;
+      break;
+    }
+    break;
+
+  case wMSM_STORE:
+    switch(type)
+    {
+    case wMST_VERTEX:
+      // clear previous selection in this slot
+      SelVertices[slot].Clear();
+
+      // if vertex is selected add it to array
+      sFORALL(Vertices,v)
+      {
+        if(v->Select > 0.0f)
+        {
+          s.Id = _i;
+          s.Selected = v->Select;
+          SelVertices[slot].AddTail(s);
+         }
+      }
+
+      // clear faces selection
+      sFORALL(Faces,f)
+        f->Select = 0.0f;
+      break;
+
+    case wMST_FACE:
+      // clear previous selection in this slot
+      SelFaces[slot].Clear();
+
+      // if face is selected add it to array
+      sFORALL(Faces,f)
+      {
+        if(f->Select > 0.0f)
+        {
+          s.Id = _i;
+          s.Selected = f->Select;
+          SelFaces[slot].AddTail(s);
+         }
+      }
+
+      // clear vertices selection
+      sFORALL(Vertices,v)
+        v->Select = 0.0f;
+      break;
+    }
+    break;
+  }
 }
 
 /****************************************************************************/
