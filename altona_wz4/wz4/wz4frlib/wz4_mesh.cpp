@@ -2578,6 +2578,7 @@ found1b:
         nf->Cluster = f->Cluster;
         nf->Count = 4;
         nf->Select = f->Select;
+        nf->Selected = f->Selected;
         nf->Vertex[0] = centervert[i];
         nf->Vertex[2] = f->Vertex[(j+1)%count];
 
@@ -2630,6 +2631,7 @@ found1b:
           nf->Count = 3;
           nf->Cluster = f->Cluster;
           nf->Select = f->Select;
+          nf->Selected = f->Selected;
           nf->Vertex[0] = sv[(sg    )%sc];
           nf->Vertex[1] = sv[(sg+j+1)%sc];
           nf->Vertex[2] = sv[(sg+j+2)%sc];
@@ -6443,6 +6445,7 @@ void Wz4Mesh::SplitGenFace(sInt base,const sInt *verts,sInt count,sBool reuseBas
     out->Cluster = Faces[base].Cluster;
     out->Count  = count;
     out->Select = Faces[base].Select;
+    out->Selected = Faces[base].Selected;
     for(sInt i=0;i<count;i++)
       out->Vertex[i] = verts[i];
   }
@@ -6451,6 +6454,7 @@ void Wz4Mesh::SplitGenFace(sInt base,const sInt *verts,sInt count,sBool reuseBas
     out->Cluster = Faces[base].Cluster;
     out->Count = 4;
     out->Select = Faces[base].Select;
+    out->Selected = Faces[base].Selected;
     for(sInt i=0;i<4;i++)
       out->Vertex[i] = verts[i];
 
@@ -6458,6 +6462,7 @@ void Wz4Mesh::SplitGenFace(sInt base,const sInt *verts,sInt count,sBool reuseBas
     out->Cluster = Faces[base].Cluster;
     out->Count = 3;
     out->Select = Faces[base].Select;
+    out->Selected = Faces[base].Selected;
     out->Vertex[0] = verts[0];
     out->Vertex[1] = verts[count-2];
     out->Vertex[2] = verts[count-1];

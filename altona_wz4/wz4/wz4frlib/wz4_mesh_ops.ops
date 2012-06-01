@@ -657,6 +657,7 @@ operator Wz4Mesh Triangulate(Wz4Mesh)
       {
         nfp->Init(3);
         nfp->Select = fp->Select;
+        nfp->Selected = fp->Selected;
         nfp->Cluster = fp->Cluster;
         nfp->Vertex[0] = fp->Vertex[0];
         nfp->Vertex[1] = fp->Vertex[1];
@@ -664,6 +665,7 @@ operator Wz4Mesh Triangulate(Wz4Mesh)
         nfp++;
         nfp->Init(3);
         nfp->Select = fp->Select;
+        nfp->Selected = fp->Selected;
         nfp->Cluster = fp->Cluster;
         nfp->Vertex[0] = fp->Vertex[0];
         nfp->Vertex[1] = fp->Vertex[2];
