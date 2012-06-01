@@ -1331,7 +1331,7 @@ operator Wz4Mesh Subdivide(Wz4Mesh)
   {
     Wz4MeshFace *f;
     sFORALL(out->Faces,f)
-      f->Select = logic(para->Selection,f->Select)?1.0f:0.0f;
+      f->Select = logic(para->Selection,f->Select)?1:0;
 
     out->Flush();
     for(sInt i=0;i<para->Levels;i++)
@@ -1639,14 +1639,14 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
         {
         case 0:
           if(action)
-            face->Select = 0.0f;
+            face->Select = 0;
           break;
         case 4:
           if(action)
-            face->Select = 1.0f;
+            face->Select = 1;
           break;
         case 8:
-          face->Select = action?1.0f:0.0f;
+          face->Select = action?1:0;
           break;
         }
       }
