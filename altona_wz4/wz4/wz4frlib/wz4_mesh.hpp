@@ -70,7 +70,8 @@ struct Wz4MeshFace
 {
   sInt Cluster;
   sInt Count;
-  sF32 Select;
+  sU8 Select;
+  sU8 Selected;
   sInt Vertex[4];     // vertices (CCW)
 
   void Init(sInt count);
@@ -131,7 +132,6 @@ class Wz4Mesh : public wObject
 public:
   sArray<Wz4MeshVertex> Vertices;
   sArray<Wz4MeshFace> Faces;
-  sArray<Wz4MeshSel> SelFaces[8];     // stored faces selection in slots
   sArray<Wz4MeshSel> SelVertices[8];  // stored vertices selection in slots
   sArray<Wz4MeshCluster *> Clusters;
   Wz4Skeleton *Skeleton;

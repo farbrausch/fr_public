@@ -317,6 +317,7 @@ void Wz4MeshFace::Init(sInt count)
   Vertex[1] = 0;
   Vertex[2] = 0;
   Vertex[3] = 0;
+  Selected = 0;
 }
 
 void Wz4MeshFace::Invert()
@@ -531,12 +532,9 @@ void Wz4Mesh::CopyFrom(Wz4Mesh *src)
   Vertices = src->Vertices;
   Faces = src->Faces;
 
-  // copy selection in slots
+  // copy vertices selection in slots
   for(sInt i=0; i<8; i++)
-  {
-    SelFaces[i] = src->SelFaces[i];
     SelVertices[i] = src->SelVertices[i];
-  }
 
   CopyClustersFrom(src);
 
@@ -2683,13 +2681,15 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
 
       // clear faces selection
       sFORALL(Faces,f)
-        f->Select = 0.0f;
+        f->Select = 0;
       break;
 
     case wMST_FACE:
-      // read all faces stored and set selection
-      for(int i=0; i<SelFaces[slot].GetCount(); i++)
-        Faces[SelFaces[slot][i].Id].Select = SelFaces[slot][i].Selected;
+      sFORALL(Faces,f)
+      {
+        if((f->Selected & (1 << slot)) > 0)
+          f->Select = 1;
+      }
 
       // clear vertices selection
       sFORALL(Vertices,v)
@@ -2705,7 +2705,7 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
       // clear previous selection in this slot
       SelVertices[slot].Clear();
 
-      // if vertex is selected add it to array
+      // if vertex is selected add it's value and id to array
       sFORALL(Vertices,v)
       {
         if(v->Select > 0.0f)
@@ -2713,27 +2713,21 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
           s.Id = _i;
           s.Selected = v->Select;
           SelVertices[slot].AddTail(s);
-         }
+        }
       }
 
       // clear faces selection
       sFORALL(Faces,f)
-        f->Select = 0.0f;
+        f->Select = 0;
       break;
 
     case wMST_FACE:
-      // clear previous selection in this slot
-      SelFaces[slot].Clear();
-
-      // if face is selected add it to array
       sFORALL(Faces,f)
       {
-        if(f->Select > 0.0f)
-        {
-          s.Id = _i;
-          s.Selected = f->Select;
-          SelFaces[slot].AddTail(s);
-         }
+        if(f->Select > 0)
+          f->Selected |= (1 << slot);
+        else
+          f->Selected &= ~(1 << slot);
       }
 
       // clear vertices selection
