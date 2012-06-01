@@ -448,6 +448,13 @@ template <class streamer> void Wz4Mesh::Serialize_(streamer &s)
     s.Check();
   }
 
+  // clear vertices selection in slots
+  if (s.IsReading())
+  {
+    for(sInt slot=0; slot<8; slot++)
+      SelVertices[slot].Clear();
+  }
+
   s.Array(Faces);
   for (sInt i=0; i<Faces.GetCount(); i++)
   {
