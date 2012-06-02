@@ -69,9 +69,10 @@ struct Wz4MeshVertex
 struct Wz4MeshFace
 {
   sInt Cluster;
-  sInt Count;
+  sU8 Count;          // must be 3 or 4.
   sU8 Select;
-  sU8 Selected;
+  sU8 Selected;       // saved selections: bitfield - 1 bit per slot.
+  sU8 _pad;           // explicit padding. (this byte is unused)
   sInt Vertex[4];     // vertices (CCW)
 
   void Init(sInt count);

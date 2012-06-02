@@ -459,7 +459,9 @@ template <class streamer> void Wz4Mesh::Serialize_(streamer &s)
   for (sInt i=0; i<Faces.GetCount(); i++)
   {
     Wz4MeshFace &f=Faces[i];
-    s | f.Count;
+    sU32 count = f.Count;
+    s | count;
+    f.Count = count;
     if (s.IsReading()) f.Init(f.Count);
     for (sInt i=0; i<f.Count; i++) s | f.Vertex[i];
     s | f.Cluster;
