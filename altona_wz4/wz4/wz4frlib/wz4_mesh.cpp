@@ -2686,6 +2686,10 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
     switch(type)
     {
     case wMST_VERTEX:
+      // clear vertices selection
+      sFORALL(Vertices,v)
+        v->Select = 0.0f;
+
       // read all vertices stored and set selection
       for(int i=0; i<SelVertices[slot].GetCount(); i++)
         Vertices[SelVertices[slot][i].Id].Select = SelVertices[slot][i].Selected;
@@ -2700,6 +2704,8 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
       {
         if((f->Selected & (1 << slot)) > 0)
           f->Select = 1;
+        else
+          f->Select = 0;
       }
 
       // clear vertices selection

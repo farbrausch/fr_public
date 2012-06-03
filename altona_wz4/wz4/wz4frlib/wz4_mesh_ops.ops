@@ -1653,7 +1653,11 @@ operator Wz4Mesh Select(Wz4Mesh,?GenBitmap)
     }
 
     // face or vertex ?
-    sInt type = ((para->Flags&48)==0)?wMST_VERTEX:wMST_FACE;
+    sInt type = 0;
+    if(((para->Flags&0x1c0)!=0x1c0))
+      type = (selectVerts)?wMST_VERTEX:wMST_FACE;
+    if(((para->Flags&0x1c0)==0x1c0))
+      type = ((para->Flags >> 4) & 1)?wMST_FACE:wMST_VERTEX;
 
     // load slot
     if(((para->Flags&0x1c0)==0x1c0))
