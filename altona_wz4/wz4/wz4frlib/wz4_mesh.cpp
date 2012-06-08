@@ -3493,13 +3493,13 @@ void Wz4Mesh::Dual(Wz4Mesh *in,sF32 random)
 
 sBool Wz4Mesh::DivideInChunksR(Wz4MeshFace *mf,sInt mfi,Wz4MeshFaceConnect *conn)
 {
-  sVERIFY(mf->Select>=0.0f);
+  sVERIFY(mf->Temp>=0);
   for(sInt i=0;i<mf->Count;i++)
   {
-    if(Vertices[mf->Vertex[i]].Select<0.0f)
-      Vertices[mf->Vertex[i]].Select = mf->Select;
+    if(Vertices[mf->Vertex[i]].SelectTemp<0)
+      Vertices[mf->Vertex[i]].SelectTemp = mf->Temp;
     else
-      if(Vertices[mf->Vertex[i]].Select != mf->Select)
+      if(Vertices[mf->Vertex[i]].SelectTemp != mf->Temp)
         return 0;
   }
   for(sInt i=0;i<mf->Count;i++)
@@ -3508,15 +3508,15 @@ sBool Wz4Mesh::DivideInChunksR(Wz4MeshFace *mf,sInt mfi,Wz4MeshFaceConnect *conn
     {
       sInt fi = conn[mfi].Adjacent[i]/4;
       Wz4MeshFace *f = &Faces[fi];
-      if(f->Select<0.0f)
+      if(f->Temp<0)
       {
-        f->Select = mf->Select;
+        f->Temp = mf->Temp;
         if(!DivideInChunksR(f,fi,conn))
           return 0;
       }
-      if(f->Select != mf->Select)
+
+      if(f->Temp != mf->Temp)
         return 0;
-      
     }
   }
   return 1;
@@ -3531,17 +3531,17 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
 
   MergeVertices();
 
-  // find connectd clusters
+  // find connected clusters
 
   Wz4MeshFaceConnect *conn = Adjacency();
 
   sFORALL(Faces,mf)
   {
-    mf->Select = -1.0f;
+    mf->Temp = -1;
     sVERIFY(mf->Cluster>=0 && mf->Cluster<Clusters.GetCount());
   }
   sFORALL(Vertices,mv)
-    mv->Select = -1.0f;
+    mv->SelectTemp = -1;
 
   sInt chunks = 0;
   sFORALL(Clusters,cl)
@@ -3549,9 +3549,9 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
     sInt cli = _i;
     sFORALL(Faces,mf)
     {
-      if(mf->Cluster==cli && mf->Select<0.0f)
+      if(mf->Cluster==cli && mf->Temp<0)
       {
-        mf->Select = (sF32)(chunks++);
+        mf->Temp = chunks++;
         if(!DivideInChunksR(mf,_i,conn))
         {
           delete[] conn;
@@ -3563,21 +3563,18 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
 
   delete[] conn;
 
-  sFORALL(Faces,mf)
-    for(sInt i=0;i<mf->Count;i++)
-      sVERIFY(Vertices[mf->Vertex[i]].Select>=0.0f);
   sFORALL(Vertices,mv)
-    sVERIFY(mv->Select>=0.0f);
+    sVERIFY(mv->SelectTemp>=0);
 
   // sort faces by cluster
 
-  sIntroSort(sAll(Faces),sMemberLess(&Wz4MeshFace::Select));
+  sIntroSort(sAll(Faces),sMemberLess(&Wz4MeshFace::Temp));
 
   // reorganize vertices
 
   sFORALL(Vertices,mv)
     mv->Temp = _i;
-  sIntroSort(sAll(Vertices),sMemberLess(&Wz4MeshVertex::Select));
+  sIntroSort(sAll(Vertices),sMemberLess(&Wz4MeshVertex::SelectTemp));
   sInt *remap = new sInt[Vertices.GetCount()];
   sFORALL(Vertices,mv)
     remap[mv->Temp] = _i;
@@ -3590,7 +3587,7 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
   // debug
 
 //  sFORALL(Vertices,mv)
-//    mv->Pos.y += mv->Select*0.1f;
+//    mv->Pos.y += mv->SelectTemp*0.1f;
 
   // make chunks
 
@@ -3624,10 +3621,10 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
 
   sFORALL(Vertices,mv)
   {
-    if(mv->Select>=0 && mv->Select<chunks)
+    if(mv->SelectTemp>=0 && mv->SelectTemp<chunks)
     {
-      Chunks[(sInt)mv->Select].COM += sVector30(mv->Pos);
-      Chunks[(sInt)mv->Select].Temp ++;
+      Chunks[mv->SelectTemp].COM += sVector30(mv->Pos);
+      Chunks[mv->SelectTemp].Temp ++;
     }
   }
 
@@ -3635,10 +3632,10 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
 
   sFORALL(Faces,mf)
   {
-    if(Chunks[(sInt)mf->Select].FirstIndex==-1)
+    if(Chunks[mf->Temp].FirstIndex==-1)
     {
-      Chunks[(sInt)mf->Select].FirstIndex=-2;
-      Chunks[(sInt)mf->Select].FirstFace=_i;
+      Chunks[mf->Temp].FirstIndex=-2;
+      Chunks[mf->Temp].FirstFace=_i;
     }
   }
 
@@ -3646,12 +3643,12 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
 
   sFORALL(Vertices,mv)
   {
-    if(Chunks[(sInt)mv->Select].FirstIndex<0)
+    if(Chunks[mv->SelectTemp].FirstIndex<0)
     {
-      Chunks[(sInt)mv->Select].FirstIndex=0;
-      Chunks[(sInt)mv->Select].FirstVert=_i;
+      Chunks[mv->SelectTemp].FirstIndex=0;
+      Chunks[mv->SelectTemp].FirstVert=_i;
     }
-    mv->Index[0] = (sInt)mv->Select;
+    mv->Index[0] = mv->SelectTemp;
     mv->Index[1] = -1;
     mv->Index[2] = -1;
     mv->Index[3] = -1;
@@ -3671,9 +3668,10 @@ sBool Wz4Mesh::DivideInChunks(sInt flags,const sVector30 &normal,const sVector30
       ch->FirstIndex = 0;
     }
   }
-  
-  sFORALL(Faces,mf)
-    mf->Select = 0.0f;
+
+  // writing SelectTemp destroyed vertex selection, so just clear
+  // it to make sure it's initialized.
+
   sFORALL(Vertices,mv)
     mv->Select = 0.0f;
   SplitClustersChunked(74);

@@ -49,7 +49,11 @@ struct Wz4MeshVertex
 #endif
   sS16 Index[4];
   sF32 Weight[4];
-  sF32 Select;
+  union
+  {
+    sF32 Select;
+    sInt SelectTemp; // 2nd temp field - wipes selection!
+  };
   sInt Temp;
 
   void Init();
@@ -74,6 +78,7 @@ struct Wz4MeshFace
   sU8 Selected;       // saved selections: bitfield - 1 bit per slot.
   sU8 _pad;           // explicit padding. (this byte is unused)
   sInt Vertex[4];     // vertices (CCW)
+  sInt Temp;
 
   void Init(sInt count);
   void Invert();
