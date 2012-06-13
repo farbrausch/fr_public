@@ -101,6 +101,8 @@ public:
   void Render(Wz4RenderContext *ctx);
 
   void Eval(const sVector31 &pos,sVector30 &norm);
+
+  Wz4Mtrl *MtrlEx;
 };
 
 /****************************************************************************/
