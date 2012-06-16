@@ -77,7 +77,7 @@ operator Wz4Render Print(ChaosFont)
 
 /****************************************************************************/
 
-operator Wz4Render Ribbons()
+operator Wz4Render Ribbons(?Wz4Mtrl)
 {
   column = 1;
   parameter
@@ -91,6 +91,7 @@ operator Wz4Render Ribbons()
     anim float Freq  [3](-1024..1024 step 0.001) = { 2,3,4 };
     anim float Spread[3](-1024..1024 step 0.001) = 0.1;
     anim float Start [3](-1024..1024 step 0.0001);
+    int LightEnv(0..15)=0;
     int Renderpass(-127..127);
 
     group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
@@ -99,14 +100,25 @@ operator Wz4Render Ribbons()
   {
     RNRibbons *node = new RNRibbons();
     node->ParaBase = node->Para = *para;
+
+    if(in0)
+    {
+      node->MtrlEx = in0;
+      in0->AddRef();
+    }
+
     out->RootNode = node;
-    out->AddChilds(cmd,para->Renderpass);
+
+    if(in0)
+      out->AddCode(cmd,para->Renderpass);
+    else
+      out->AddChilds(cmd,para->Renderpass);
   }
 }
 
 /****************************************************************************/
 
-operator Wz4Render Ribbons2()
+operator Wz4Render Ribbons2(?Wz4Mtrl)
 {
   column = 1;
   parameter
@@ -118,6 +130,7 @@ operator Wz4Render Ribbons2()
     float30 Spread(-16..16 step 0.1) = 1;
     anim float Forward (0..4 step 0.001) = 0.1;
     anim float Side (0..4 step 0.001) = 0.05;
+    int LightEnv(0..15)=0;
     group "Sources";
     float31 Source0(-16..16 step 0.01);
     nolabel float Power0(-16..16 step 0.001);
@@ -134,8 +147,21 @@ operator Wz4Render Ribbons2()
   {
     RNRibbons2 *node = new RNRibbons2();
     node->ParaBase = node->Para = *para;
+
+    if(in0)
+    {
+      node->MtrlEx = in0;
+      in0->AddRef();
+    }
+
+
     out->RootNode = node;
-    out->AddChilds(cmd,para->Renderpass);
+
+    if(in0)
+      out->AddCode(cmd,para->Renderpass);
+    else
+      out->AddChilds(cmd,para->Renderpass);
+    //out->AddChilds(cmd,para->Renderpass);
   }
   handles
   {

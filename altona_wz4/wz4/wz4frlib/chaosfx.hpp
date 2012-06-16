@@ -73,6 +73,8 @@ public:
   void Simulate(Wz4RenderContext *ctx);
   void Prepare(Wz4RenderContext *ctx);
   void Render(Wz4RenderContext *ctx);
+
+  Wz4Mtrl *MtrlEx;
 };
 
 /****************************************************************************/
@@ -99,6 +101,8 @@ public:
   void Render(Wz4RenderContext *ctx);
 
   void Eval(const sVector31 &pos,sVector30 &norm);
+
+  Wz4Mtrl *MtrlEx;
 };
 
 /****************************************************************************/

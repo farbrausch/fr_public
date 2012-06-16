@@ -215,6 +215,7 @@ RNRibbons::RNRibbons()
   Mtrl = new sSimpleMaterial;
   Mtrl->Flags = sMTRL_CULLOFF|sMTRL_ZON|sMTRL_LIGHTING;
   Mtrl->Prepare(sVertexFormatStandard);
+  MtrlEx = 0;
 
   Anim.Init(Wz4RenderType->Script);
 }
@@ -223,6 +224,7 @@ RNRibbons::~RNRibbons()
 {
   delete Geo;
   delete Mtrl;
+  MtrlEx->Release();
 }
 
 /****************************************************************************/
@@ -247,6 +249,8 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
   sInt max = Para.Steps;
   const sF32 scale = 0.001f;
 
+  if(MtrlEx) MtrlEx->BeforeFrame(0);
+
   Geo->BeginLoadVB(2*max*Para.Around,sGD_FRAME,&vp);
   for(sInt j=0;j<Para.Around;j++)
   {
@@ -266,8 +270,12 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
 
       p += mat.k * Para.Forward;
       vp->Init(p-mat.i*Para.Side,mat.j,0,sF32(i)/max);
+      vp->u0 =  0.0f;
+      vp->v0 =  i+(1/Para.Steps);
       vp++;
       vp->Init(p+mat.i*Para.Side,mat.j,1,sF32(i)/max);
+      vp->u0 =  1.0f;
+      vp->v0 =  i+(1/Para.Steps);
       vp++;
     }
   }
@@ -286,15 +294,23 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
 
 void RNRibbons::Render(Wz4RenderContext *ctx)
 {
+  sMaterialEnv env;
+
   if(ctx->IsCommonRendermode())
   {
-    sMaterialEnv env;
-    env.AmbientColor = 0xff404040;
-    env.LightColor[0] = 0xffc0c0c0;
-    env.LightColor[1] = 0xffc0c0c0;
-    env.LightDir[0].Init(0,1,0);
-    env.LightDir[1].Init(0,-1,0);
-    env.Fix();
+    if(!MtrlEx)
+    {
+      env.AmbientColor = 0xff404040;
+      env.LightColor[0] = 0xffc0c0c0;
+      env.LightColor[1] = 0xffc0c0c0;
+      env.LightDir[0].Init(0,1,0);
+      env.LightDir[1].Init(0,-1,0);
+      env.Fix();
+    }
+    else
+    {
+      if(MtrlEx->SkipPhase(ctx->RenderMode,Para.LightEnv)) return;
+    }
 
     sMatrix34CM *mat;
     sFORALL(Matrices,mat)
@@ -302,10 +318,15 @@ void RNRibbons::Render(Wz4RenderContext *ctx)
       sViewport view = ctx->View;
       view.UpdateModelMatrix(sMatrix34(*mat));
 
-      sCBuffer<sSimpleMaterialEnvPara> cb;
-      cb.Data->Set(view,env);
+      if(!MtrlEx)
+      {
+        sCBuffer<sSimpleMaterialEnvPara> cb;
+        cb.Data->Set(view,env);
+        Mtrl->Set(&cb);
+      }
+      else
+        MtrlEx->Set(ctx->RenderMode|sRF_MATRIX_ONE,Para.LightEnv,mat,0,0,0);
 
-      Mtrl->Set(&cb);
       Geo->Draw();
     }
   }
@@ -325,6 +346,7 @@ RNRibbons2::RNRibbons2()
   Mtrl = new sSimpleMaterial;
   Mtrl->Flags = sMTRL_CULLOFF|sMTRL_ZON|sMTRL_LIGHTING;
   Mtrl->Prepare(sVertexFormatStandard);
+  MtrlEx = 0;
 
   Anim.Init(Wz4RenderType->Script);
 }
@@ -333,6 +355,7 @@ RNRibbons2::~RNRibbons2()
 {
   delete Geo;
   delete Mtrl;
+  MtrlEx->Release();
 }
 
 /****************************************************************************/
@@ -355,6 +378,8 @@ void RNRibbons2::Prepare(Wz4RenderContext *ctx)
   sVector30 camdir,norm;
   sVector30 dir,d0,d1;
   sVector31 p0,p1,p2,p3;
+
+  if(MtrlEx) MtrlEx->BeforeFrame(0);
 
   Random.Seed(1);
 
@@ -410,7 +435,11 @@ void RNRibbons2::Prepare(Wz4RenderContext *ctx)
       norm.Unit();
 
       vp[0].Init(pos-d0,norm,0,0);
+      vp[0].u0 = 0.0f;
+      vp[0].v0 = j+(1/Para.Length);
       vp[1].Init(pos+d0,norm,1,0);
+      vp[1].u0 = 1.0f;
+      vp[1].v0 = j+(1/Para.Length);
       vp+=2;
     }
   }
@@ -434,15 +463,23 @@ void RNRibbons2::Prepare(Wz4RenderContext *ctx)
 
 void RNRibbons2::Render(Wz4RenderContext *ctx)
 {
+  sMaterialEnv env;
+
   if(ctx->IsCommonRendermode())
   {
-    sMaterialEnv env;
-    env.AmbientColor = 0xff404040;
-    env.LightColor[0] = 0xffc0c0c0;
-    env.LightColor[1] = 0xffc0c0c0;
-    env.LightDir[0].Init(0,1,0);
-    env.LightDir[1].Init(0,-1,0);
-    env.Fix();
+    if(!MtrlEx)
+    {
+      env.AmbientColor = 0xff404040;
+      env.LightColor[0] = 0xffc0c0c0;
+      env.LightColor[1] = 0xffc0c0c0;
+      env.LightDir[0].Init(0,1,0);
+      env.LightDir[1].Init(0,-1,0);
+      env.Fix();
+    }
+    else
+    {
+      if(MtrlEx->SkipPhase(ctx->RenderMode,Para.LightEnv)) return;
+    }
 
     sMatrix34CM *mat;
     sFORALL(Matrices,mat)
@@ -450,10 +487,15 @@ void RNRibbons2::Render(Wz4RenderContext *ctx)
       sViewport view = ctx->View;
       view.UpdateModelMatrix(sMatrix34(*mat));
 
-      sCBuffer<sSimpleMaterialEnvPara> cb;
-      cb.Data->Set(view,env);
+      if(!MtrlEx)
+      {
+        sCBuffer<sSimpleMaterialEnvPara> cb;
+        cb.Data->Set(view,env);
+        Mtrl->Set(&cb);
+      }
+      else
+        MtrlEx->Set(ctx->RenderMode|sRF_MATRIX_ONE,Para.LightEnv,mat,0,0,0);
 
-      Mtrl->Set(&cb);
       Geo->Draw();
     }
   }
