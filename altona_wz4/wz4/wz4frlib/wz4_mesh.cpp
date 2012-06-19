@@ -6414,8 +6414,8 @@ static sInt ClassifyVertex(const Wz4MeshVertex &v,const sVector4 &plane)
 sInt Wz4Mesh::SplitEdgeAlongPlane(sInt va,sInt vb,const sVector4 &plane)
 {
   // TODO: hash table so vertices aren't generated multiple times
-  const Wz4MeshVertex &a = Vertices[va];
-  const Wz4MeshVertex &b = Vertices[vb];
+  const Wz4MeshVertex a = Vertices[va];
+  const Wz4MeshVertex b = Vertices[vb];
 
   sF32 da = a.Pos ^ plane;
   sF32 db = b.Pos ^ plane;
