@@ -32,14 +32,14 @@ union FloatBits
   sU32 u;
 };
 
-static sF32 float2bits(sF32 f)
+static sU32 float2bits(sF32 f)
 {
   FloatBits x;
   x.f = f;
   return x.u;
 }
 
-static sU32 bits2float(sU32 u)
+static sF32 bits2float(sU32 u)
 {
   FloatBits x;
   x.u = u;
