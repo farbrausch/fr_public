@@ -5,10 +5,20 @@
 // Constants.
 // --------------------------------------------------------------------------
 
+// Natural constants
 static const sF32 fcpi_2  = 1.5707963267948966192313216916398f;
 static const sF32 fcpi    = 3.1415926535897932384626433832795f;
 static const sF32 fc1p5pi = 4.7123889803846898576939650749193f;
 static const sF32 fc2pi   = 6.28318530717958647692528676655901f;
+static const sF32 fc32bit = 2147483648.0f; // 2^31 (original code has (2^31)-1, but this ends up rounding up to 2^31 anyway)
+
+// Synth constants
+static const sF32 fcoscbase   = 261.6255653f; // Oscillator base freq
+static const sF32 fcsrbase    = 44100.0f;     // Base sampling rate
+static const sF32 fcboostfreq = 150.0f;       // Bass boost cut-off freq
+static const sF32 fcframebase = 128.0f;       // size of a frame in samples
+static const sF32 fcdcflt     = 126.0f;
+static const sF32 fccfframe   = 11.0f;
 
 // --------------------------------------------------------------------------
 // General helper functions. 
@@ -88,5 +98,49 @@ static sF32 fastsinrc(sF32 x)
   
   return fastsin(x);
 }
+
+static sF32 calcfreq(sF32 x)
+{
+  return powf(2.0f, (x - 1.0f)*10.0f);
+}
+
+static sF32 calcfreq2(sF32 x)
+{
+  return powf(2.0f, (x - 1.0f)*fccfframe);
+}
+
+// --------------------------------------------------------------------------
+// V2 Instance
+// --------------------------------------------------------------------------
+
+struct V2Instance
+{
+  // Stuff that depends on the sample rate
+  sF32 SRfcobasefrq;
+  sF32 SRfclinfreq;
+  sF32 SRfcBoostCos, SRfcBoostSin;
+  sF32 SRfcdcfilter;
+
+  sInt SRcFrameSize;
+  sF32 SRfciframe;
+
+  void calcNewSampleRate(sInt samplerate)
+  {
+    sF32 sr = (sF32)samplerate;
+
+    SRfcobasefrq = (fcoscbase * fc32bit) / sr;
+    SRfclinfreq = fcsrbase / sr;
+    SRfcdcfilter = fcdcflt / sr - 1.0f;
+
+    // frame size
+    SRcFrameSize = (sInt)(fcframebase * sr / fcsrbase + 0.5f);
+    SRfciframe = 1.0f / (sF32)SRcFrameSize;
+
+    // low shelving EQ
+    sF32 boost = (fcboostfreq * fc2pi) / sr;
+    SRfcBoostCos = cos(boost);
+    SRfcBoostSin = sin(boost);
+  }
+};
 
 // vim: sw=2:sts=2:et
