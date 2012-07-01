@@ -671,11 +671,31 @@ struct syVEnv
 
 struct V2Env
 {
+  // Slightly different state ordering here than in V2 code, to make
+  // things simpler.
+  enum State
+  {
+    OFF,
+    RELEASE,
+
+    ATTACK,
+    DECAY,
+    SUSTAIN,
+  };
+
   sF32 out;
+  State state;
+  sF32 val;   // output value (0.0-128.0)
+  sF32 atd;   // attack delta (added every frame in stAttack, transition ->stDecay at 128.0)
+  sF32 dcf;   // decay factor (mul'd every frame in stDecay, transition ->stSustain at sul)
+  sF32 sul;   // sustain level (defines stDecay->stSustain transition point)
+  sF32 suf;   // sustain factor (mul'd every frame in stSustain, transition ->stRelease at gate off or ->stOff at 0.0)
+  sF32 ref;   // release factor (mul'd every frame in stRelease, transition ->stOff at 0.0)
+  sF32 gain;
 
   void init(V2Instance *)
   {
-    state = &V2Env::stOff;
+    state = OFF;
   }
 
   void set(const syVEnv *para)
@@ -699,92 +719,53 @@ struct V2Env
 
   void tick(bool gate)
   {
+    // process immediate gate transition
+    if (state <= RELEASE && gate) // gate on
+      state = ATTACK;
+    else if (state >= ATTACK && !gate) // gate off
+      state = RELEASE;
+
     // process current state
-    val = (this->*state)(gate);
-    out = val * gain;
-  }
+    switch (state)
+    {
+    case OFF:
+      val = 0.0f;
+      break;
 
-private:
-  typedef sF32 (V2Env::*StateFunc)(bool gate);
+    case ATTACK:
+      val += atd;
+      if (val >= 128.0f)
+      {
+        val = 128.0f;
+        state = DECAY;
+      }
+      break;
 
-  StateFunc state;
-  sF32 val;   // output value (0.0-128.0)
-  sF32 atd;   // attack delta (added every frame in stAttack, transition ->stDecay at 128.0)
-  sF32 dcf;   // decay factor (mul'd every frame in stDecay, transition ->stSustain at sul)
-  sF32 sul;   // sustain level (defines stDecay->stSustain transition point)
-  sF32 suf;   // sustain factor (mul'd every frame in stSustain, transition ->stRelease at gate off or ->stOff at 0.0)
-  sF32 ref;   // release factor (mul'd every frame in stRelease, transition ->stOff at 0.0)
-  sF32 gain;
+    case DECAY:
+      val *= dcf;
+      if (val <= sul)
+        state = SUSTAIN;
+      break;
 
-  sF32 transition_now(StateFunc new_state, bool gate)
-  {
-    state = new_state;
-    return (this->*state)(gate);
-  }
+    case SUSTAIN:
+      val *= suf;
+      if (val > 128.0f)
+        val = 128.0f;
+      break;
 
-  void check_low()
-  {
+    case RELEASE:
+      val *= ref;
+      break;
+    }
+
+    // avoid underflow to denormals
     if (val <= fclowest)
     {
       val = 0.0f;
-      state = &V2Env::stOff;
+      state = OFF;
     }
-  }
 
-  sF32 stOff(bool gate)
-  {
-    if (gate)
-      return transition_now(&V2Env::stAttack, gate);
-    return 0.0f;
-  }
-
-  sF32 stAttack(bool gate)
-  {
-    if (!gate)
-      return transition_now(&V2Env::stRelease, gate);
-
-    val += atd;
-    if (val >= 128.0f)
-    {
-      val = 128.0f;
-      state = &V2Env::stDecay;
-    }
-    return val;
-  }
-
-  sF32 stDecay(bool gate)
-  {
-    if (!gate)
-      return transition_now(&V2Env::stRelease, gate);
-
-    val *= dcf;
-    if (val <= sul)
-      state = &V2Env::stSustain;
-    else
-      check_low();
-    return val;
-  }
-
-  sF32 stSustain(bool gate)
-  {
-    if (!gate)
-      return transition_now(&V2Env::stRelease, gate);
-
-    val *= suf;
-    check_low();
-    if (val > 128.0f)
-      val = 128.0f;
-    return val;
-  }
-
-  sF32 stRelease(bool gate)
-  {
-    if (gate)
-      return transition_now(&V2Env::stAttack, gate);
-
-    val *= ref;
-    check_low();
-    return val;
+    out = val * gain;
   }
 };
 
