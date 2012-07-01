@@ -115,9 +115,15 @@ static sF32 calcfreq2(sF32 x)
   return powf(2.0f, (x - 1.0f)*fccfframe);
 }
 
+// square
+static inline sF32 sqr(sF32 x)
+{
+  return x*x;
+}
+
 // prevent values from getting too close to zero to avoid denormals.
 // used in the accumulators for filters and delay lines.
-static sF32 fixdenorm(sF32 x)
+static inline sF32 fixdenorm(sF32 x)
 {
   return (1.0f + x) - 1.0f;
 }
@@ -396,16 +402,81 @@ private:
 
     // calc helper values
     sF32 f = utof23(freq);
+    sF32 omf = 1.0f - f;
     sF32 rcpf = 1.0f / f;
     sF32 col = utof23(brpt);
-    sF32 b = 1.0f - col;
 
-    // m1 = 2/col
-    // m2 = -2/(1-col)
-    // c1 = gain/2*m1 = gain/col
-    // c2 = gain/2*m2 = -gain/(1-col)
+    // m1 = 2/col = slope of saw-up wave
+    // m2 = -2/(1-col) = slope of saw-down wave
+    // c1 = gain/2*m1 = gain/col = scaled integration constant
+    // c2 = gain/2*m2 = -gain/(1-col) = scaled integration constant
     sF32 c1 = gain / col;
     sF32 c2 = -gain / (1.0f - col);
+
+    // oscillator state machine
+    // we keep track of whether the current sample is in the saw-up or saw-down
+    // phase, whether the previous sample was, and if the waveform counter
+    // wrapped around on the transition. this allows us to figure out which of
+    // the cases above we fall into. not this code uses a different bit ordering
+    // from the ASM version that is hopefully a bit easier to understand.
+    //
+    // for reference: our bits map to the ASM version as follows (MSB->LSB order)
+    //   (o)ld_up
+    //   (c)arry
+    //   (n)ew_up
+    sU32 state; // bits(state) = old_up:new_up
+    state = ((cnt - freq) < brpt) ? 3 : 0;
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 p = utof23(cnt) - col;
+      sF32 y;
+
+      // old_state = new_state, new_state = (cnt < brpt)
+      state = ((state << 1) | (cnt < brpt)) & 3;
+
+      // we added freq to cnt going from the previous sample to the current
+      // one. so if cnt is less than freq, we carried.
+      sU32 mask = state | (cnt < freq ? 4 : 0); // carry:old_up:new_up
+      switch (mask)
+      {
+      case 0: // old=down, new=down, no carry - case c) above
+        // average of linear function = just sample in the middle
+        y = c2 * (p + p - f);
+        break;
+        
+      case 2: // old=up, new=down, no carry - case b) above
+        y = rcpf * (c2 * sqr(p) - c1 * sqr(p-f));
+        break;
+
+      case 3: // old=up, new=up, no carry - case a) above
+        // again, average of a linear function
+        y = c1 * (p + p - f);
+        break;
+
+      case 4: // old=down, new=down, carry - case f) above
+        y = rcpf * (gain - c2*omf*(p + p + omf));
+        break;
+
+      case 5: // old=down, new=up, carry - case d) above
+        y = -rcpf * (gain + c2*sqr(p + omf) - c1*sqr(p));
+        break;
+
+      case 7: // old=up, new=up, carry - case e) above
+        y = -rcpf * (gain + c1*omf*(p + p + omf));
+        break;
+
+      // INVALID CASES
+      case 1: // old=down, new=up, no carry - this can't happen (down->up always involves wrapping!)
+      case 6: // old=up, new=down, carry - this can't happen either.
+      default:
+        assert(false);
+        break;
+      }
+
+      cnt += freq;
+      output(dest + i, y + gain);
+    }
   }
 
   void renderNoise(sF32 *dest, sInt nsamples)
@@ -442,4 +513,4 @@ private:
   }
 };
 
-// vim: sw=2:sts=2:et
+// vim: sw=2:sts=2:et:cino=\:0l1g0(0
