@@ -138,6 +138,13 @@ static inline sF32 frandom(sU32 *seed)
   return f - 3.0f; // uniform random float in [-1,1)
 }
 
+// 32-bit value into float with 23 bits percision
+static inline sF32 utof23(sU32 x)
+{
+  sF32 f = bits2float((x >> 9) | 0x3f800000); // 1 + x/(2^32)
+  return f - 1.0f;
+}
+
 // --------------------------------------------------------------------------
 // Building blocks
 // --------------------------------------------------------------------------
@@ -314,6 +321,91 @@ private:
       *dest *= x;
     else
       *dest += x;
+  }
+
+  void renderTriSaw(sF32 *dest, sInt nsamples)
+  {
+    // Okay, so here's the general idea: instead of the classical sawtooth
+    // or triangle waves, V2 uses a generalized triangle wave that looks like
+    // this:
+    //
+    //       /\                  /\
+    //      /   \               /   \
+    //     /      \            /      \
+    // ---/---------\---------/---------\> t
+    //   /            \      /
+    //  /               \   /
+    // /                  \/
+    // [-----1 period-----]
+    // [-----] "break point" (brpt)
+    //
+    // If brpt=1/2 (ignoring fixed-point scaling), you get a regular triangle
+    // wave. The example shows brpt=1/3, which gives an asymmetrical triangle
+    // wave. At the extremes, brpt=0 gives a pure saw-down wave, and brpt=1
+    // (if that was a possible value, which it isn't) gives a pure saw-up wave.
+    //
+    // Purely point-sampling this (or any other) waveform would cause notable
+    // aliasing. The standard ways to avoid this issue are to either:
+    // 1) Over-sample by a certain amount and then use a low-pass filter to
+    //    (hopefully) get rid of the frequencies that would alias, or
+    // 2) Generate waveforms from a Fourier series that's cut off below the
+    //    Nyquist frequency, ensuring there's no aliasing to begin with.
+    // V2 does neither. Instead it computes the convolution of the continuous
+    // waveform with an analytical low-pass filter. The ideal low-pass in
+    // terms of frequency response would be a sinc filter, which unfortunately
+    // has infinite support. Instead, V2 just uses a simple box filter. This
+    // doesn't exactly have favorable frequency-domain characteristics, but
+    // it's still much better than point sampling and has the advantage that
+    // it's fairly simple analytically. It boils down to computing the average
+    // value of the waveform over the interval [t,t+h], where t is the current
+    // time and h = 1/SR (SR=sampling rate), which is in turn:
+    //
+    //    f_box(t) = 1/h * (integrate(x=t..t+h) f(x) dx)
+    //
+    // Now there's a bunch of cases for these intervals [t,t+h] that we need to
+    // consider. Bringing up the diagram again, and adding some intervals at the
+    // bottom:
+    //
+    //       /\                  /\
+    //      /   \               /   \
+    //     /      \            /      \
+    // ---/---------\---------/---------\> t
+    //   /            \      /
+    //  /               \   /
+    // /                  \/
+    // [-a-]      [-c]
+    //     [--b--]       [-d--]
+    //   [-----------e-----------]
+    //          [-----------f-----------]
+    //
+    // a) is purely in the saw-up region,
+    // b) starts in the saw-up region and ends in saw-down,
+    // c) is purely in the saw-down region,
+    // d) starts during saw-down and ends in saw-up.
+    // e) starts during saw-up and ends in saw-up, but passes through saw-down
+    // f) starts saw-down, ends saw-down, passes through saw-up.
+    //
+    // For simplicity here, I draw different-sized intervals sampling a fixed-
+    // frequency wave, even though in practice it's the other way round, but
+    // this way it's easier to put it all into a single picture.
+    //
+    // The original assembly code goes through a few gyrations to encode all
+    // these possible cases into a bitmask and then does a single switch.
+    // In practice, for all but very high-frequency waves, we're hitting the
+    // "easy" cases a) and c) almost all the time.
+
+    // calc helper values
+    sF32 f = utof23(freq);
+    sF32 rcpf = 1.0f / f;
+    sF32 col = utof23(brpt);
+    sF32 b = 1.0f - col;
+
+    // m1 = 2/col
+    // m2 = -2/(1-col)
+    // c1 = gain/2*m1 = gain/col
+    // c2 = gain/2*m2 = -gain/(1-col)
+    sF32 c1 = gain / col;
+    sF32 c2 = -gain / (1.0f - col);
   }
 
   void renderNoise(sF32 *dest, sInt nsamples)
