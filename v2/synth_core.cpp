@@ -1,5 +1,6 @@
 #include "types.h"
 #include <math.h>
+#include <assert.h>
 
 // --------------------------------------------------------------------------
 // Constants.
@@ -19,6 +20,9 @@ static const sF32 fcboostfreq = 150.0f;       // Bass boost cut-off freq
 static const sF32 fcframebase = 128.0f;       // size of a frame in samples
 static const sF32 fcdcflt     = 126.0f;
 static const sF32 fccfframe   = 11.0f;
+static const sF32 fcOscPitchOffs = 60.0;
+static const sF32 fcgain      = 0.6f;
+static const sF32 fcgainh     = 0.6f;
 
 // --------------------------------------------------------------------------
 // General helper functions. 
@@ -86,6 +90,8 @@ static sF32 fastsin(sF32 x)
 // Applies symmetries, then funnels into fastsin.
 static sF32 fastsinrc(sF32 x)
 {
+  assert(x >= 0.0f);
+
   // first range reduction: mod with 2pi
   x = fmodf(x, fc2pi);
   // now x in [0,2pi]
@@ -109,12 +115,73 @@ static sF32 calcfreq2(sF32 x)
   return powf(2.0f, (x - 1.0f)*fccfframe);
 }
 
+// prevent values from getting too close to zero to avoid denormals.
+// used in the accumulators for filters and delay lines.
+static sF32 fixdenorm(sF32 x)
+{
+  return (1.0f + x) - 1.0f;
+}
+
+// uniform randon number generator
+// just a linear congruential generator, nothing fancy.
+static inline sU32 urandom(sU32 *seed)
+{
+  *seed = *seed * 196314165 + 907633515;
+  return *seed;
+}
+
+// uniform random float in [-1,1)
+static inline sF32 frandom(sU32 *seed)
+{
+  sU32 bits = urandom(seed); // random 32-bit value
+  sF32 f = bits2float((bits >> 9) | 0x40000000); // random float in [2,4)
+  return f - 3.0f; // uniform random float in [-1,1)
+}
+
+// --------------------------------------------------------------------------
+// Building blocks
+// --------------------------------------------------------------------------
+
+struct StereoSample
+{
+  sF32 l, r;
+};
+
+// LRC filter.
+// The state variables are 'l' and 'b'. The time series for l and b
+// correspond to a resonant low-pass and band-pass respectively, hence
+// the name. 'step' returns 'h', which is just the "missing" resonant
+// high-pass.
+//
+// Note that 'freq' here isn't actually a frequency at all, it's actually
+// 2*(1 - cos(2pi*freq/SR)), but V2 calls this "frequency" anyway :)
+struct V2LRC
+{
+  sF32 l, b;
+
+  void init()
+  {
+    l = b = 0.0f;
+  }
+
+  sF32 step(sF32 in, sF32 freq, sF32 reso)
+  {
+    l += freq * b;
+    sF32 h = in - b*reso - l;
+    b += freq * h;
+
+    return h;
+  }
+};
+
 // --------------------------------------------------------------------------
 // V2 Instance
 // --------------------------------------------------------------------------
 
 struct V2Instance
 {
+  static const int MAX_FRAME_SIZE = 280; // in samples
+
   // Stuff that depends on the sample rate
   sF32 SRfcobasefrq;
   sF32 SRfclinfreq;
@@ -123,6 +190,10 @@ struct V2Instance
 
   sInt SRcFrameSize;
   sF32 SRfciframe;
+
+  // buffers
+  StereoSample auxabuf[MAX_FRAME_SIZE];
+  StereoSample auxbbuf[MAX_FRAME_SIZE];
 
   void calcNewSampleRate(sInt samplerate)
   {
@@ -136,10 +207,146 @@ struct V2Instance
     SRcFrameSize = (sInt)(fcframebase * sr / fcsrbase + 0.5f);
     SRfciframe = 1.0f / (sF32)SRcFrameSize;
 
+    assert(SRcFrameSize <= MAX_FRAME_SIZE);
+
     // low shelving EQ
     sF32 boost = (fcboostfreq * fc2pi) / sr;
     SRfcBoostCos = cos(boost);
     SRfcBoostSin = sin(boost);
+  }
+};
+
+// --------------------------------------------------------------------------
+// Oscillator
+// --------------------------------------------------------------------------
+
+enum OscMode
+{
+  OSC_OFF     = 0,
+  OSC_TRI_SAW = 1,
+  OSC_PULSE   = 2,
+  OSC_SIN     = 3,
+  OSC_NOISE   = 4,
+  OSC_FM_SIN  = 5,
+  OSC_AUXA    = 6,
+  OSC_AUXB    = 7,
+};
+
+struct syVOsc
+{
+  sF32 mode;    // OSC_* (as float. it's all floats in here)
+  sF32 ring;
+  sF32 pitch;
+  sF32 detune;
+  sF32 color;
+  sF32 gain;
+};
+
+struct V2Osc
+{
+  sInt mode;          // OSC_*
+  bool ring;          // ring modulation on/off
+  sU32 cnt;           // wave counter
+  sInt freq;          // wave counter inc (8x/sample)
+  sU32 brpt;          // break point for tri/pulse wave
+  sF32 nffrq, nfres;  // noise filter freq/resonance
+  sU32 nseed;         // noise random seed
+  sF32 gain;          // output gain
+  V2LRC nf;           // noise filter
+  sF32 note;
+  sF32 pitch;
+
+  V2Instance *inst;   // V2 instance we belong to.
+
+  void init(V2Instance *instance, sInt idx)
+  {
+    static const sU32 seeds[3] = { 0xdeadbeefu, 0xbaadf00du, 0xd3adc0deu };
+    cnt = 0;
+    nf.init();
+    nseed = seeds[idx];
+    inst = instance;
+  }
+
+  void noteOn()
+  {
+    chgPitch();
+  }
+
+  void chgPitch()
+  {
+    nffrq = inst->SRfclinfreq * calcfreq((pitch + 64.0f) / 128.0f);
+    freq = inst->SRfcobasefrq * pow(2.0f, (pitch + note - fcOscPitchOffs) / 12.0f);
+  }
+
+  void set(const syVOsc *para)
+  {
+    mode = (sInt)para->mode;
+    ring = (((sInt)para->ring) & 1) != 0; 
+
+    pitch = (para->pitch - 64.0f) + (para->detune - 64.0f) / 128.0f;
+    chgPitch();
+    gain = para->gain / 128.0f;
+
+    sF32 col = para->color / 128.0f;
+    brpt = 2u * ((sInt)(col * fc32bit));
+    nfres = 1.0f - sqrtf(col);
+  }
+
+  void render(sF32 *dest, sInt nsamples)
+  {
+    switch (mode & 7)
+    {
+    case OSC_OFF:     break;
+    case OSC_TRI_SAW: renderTriSaw(dest, nsamples); break;
+    case OSC_PULSE:   renderPulse(dest, nsamples); break;
+    case OSC_SIN:     renderSin(dest, nsamples); break;
+    case OSC_NOISE:   renderNoise(dest, nsamples); break;
+    case OSC_FM_SIN:  renderFMSin(dest, nsamples); break;
+    case OSC_AUXA:    renderAux(dest, inst->auxabuf, nsamples); break;
+    case OSC_AUXB:    renderAux(dest, inst->auxbbuf, nsamples); break; 
+    }
+  }
+
+private:
+  inline void output(sF32 *dest, sF32 x)
+  {
+    if (ring)
+      *dest *= x;
+    else
+      *dest += x;
+  }
+
+  void renderNoise(sF32 *dest, sInt nsamples)
+  {
+    V2LRC flt = nf;
+    sU32 seed = nseed;
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      // uniform random value (noise)
+      sF32 n = frandom(&seed);
+
+      // filter
+      sF32 h = flt.step(n, nffrq, nfres);
+      sF32 x = nfres*(flt.l + h) + flt.b;
+
+      output(dest + i, gain * x);
+    }
+
+    flt = nf;
+    nseed = seed;
+  }
+
+  void renderAux(sF32 *dest, const StereoSample *src, sInt nsamples)
+  {
+    sF32 g = gain * fcgain;
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 aux = g * (src[i].l + src[i].r);
+      if (ring)
+        aux *= dest[i];
+      dest[i] = aux;
+    }
   }
 };
 
