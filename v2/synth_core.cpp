@@ -329,6 +329,51 @@ private:
       *dest += x;
   }
 
+  // Oscillator state machine (read description of renderTriSaw for context)
+  //
+  // We keep track of whether the current sample is in the up or down phase,
+  // whether the previous sample was, and if the waveform counter wrapped
+  // around on the transition. This allows us to figure out which of
+  // the cases above we fall into. Note this code uses a different bit ordering
+  // from the ASM version that is hopefully a bit easier to understand.
+  //
+  // For reference: our bits map to the ASM version as follows (MSB->LSB order)
+  //   (o)ld_up
+  //   (c)arry
+  //   (n)ew_up
+
+  enum OSMTransitionCode    // carry:old_up:new_up
+  {
+    OSMTC_DOWN = 0,         // old=down, new=down, no carry
+    // 1 is an invalid configuration
+    OSMTC_UP_DOWN = 2,      // old=up, new=down, no carry
+    OSMTC_UP = 3,           // old=up, new=up, no carry
+    OSMTC_DOWN_UP_DOWN = 4, // old=down, new=down, carry
+    OSMTC_DOWN_UP = 5,      // old=down, new=up, carry
+    // 6 is an invalid configuration
+    OSMTC_UP_DOWN_UP = 7    // old=up, new=up, carry
+  };
+
+  inline sU32 osm_init() // our state field: old_up:new_up
+  {
+    return (cnt - freq) < brpt ? 3 : 0;
+  }
+
+  inline sU32 osm_tick(sU32 &state) // returns transition code
+  {
+    // old_up = new_up, new_up = (cnt < brpt)
+    sU32 new_state = ((state << 1) | (cnt < brpt)) & 3;
+
+    // we added freq to cnt going from the previous sample to the current one.
+    // so if cnt is less than freq, we carried.
+    sU32 transition_code = state | (cnt < freq ? 4 : 0); 
+
+    // finally, tick the oscillator
+    cnt += freq;
+
+    return transition_code;
+  }
+
   void renderTriSaw(sF32 *dest, sInt nsamples)
   {
     // Okay, so here's the general idea: instead of the classical sawtooth
@@ -413,69 +458,107 @@ private:
     sF32 c1 = gain / col;
     sF32 c2 = -gain / (1.0f - col);
 
-    // oscillator state machine
-    // we keep track of whether the current sample is in the saw-up or saw-down
-    // phase, whether the previous sample was, and if the waveform counter
-    // wrapped around on the transition. this allows us to figure out which of
-    // the cases above we fall into. not this code uses a different bit ordering
-    // from the ASM version that is hopefully a bit easier to understand.
-    //
-    // for reference: our bits map to the ASM version as follows (MSB->LSB order)
-    //   (o)ld_up
-    //   (c)arry
-    //   (n)ew_up
-    sU32 state; // bits(state) = old_up:new_up
-    state = ((cnt - freq) < brpt) ? 3 : 0;
+    sU32 state = osm_init();
 
     for (sInt i=0; i < nsamples; i++)
     {
       sF32 p = utof23(cnt) - col;
-      sF32 y;
+      sF32 y = 0.0f;
 
-      // old_state = new_state, new_state = (cnt < brpt)
-      state = ((state << 1) | (cnt < brpt)) & 3;
-
-      // we added freq to cnt going from the previous sample to the current
-      // one. so if cnt is less than freq, we carried.
-      sU32 mask = state | (cnt < freq ? 4 : 0); // carry:old_up:new_up
-      switch (mask)
+      // state machine action
+      switch (osm_tick(state))
       {
-      case 0: // old=down, new=down, no carry - case c) above
+      case OSMTC_UP: // case a)
         // average of linear function = just sample in the middle
-        y = c2 * (p + p - f);
-        break;
-        
-      case 2: // old=up, new=down, no carry - case b) above
-        y = rcpf * (c2 * sqr(p) - c1 * sqr(p-f));
-        break;
-
-      case 3: // old=up, new=up, no carry - case a) above
-        // again, average of a linear function
         y = c1 * (p + p - f);
         break;
 
-      case 4: // old=down, new=down, carry - case f) above
-        y = rcpf * (gain - c2*omf*(p + p + omf));
+      case OSMTC_DOWN: // case c)
+        // again, average of a linear function
+        y = c2 * (p + p - f);
+        break;
+        
+      case OSMTC_UP_DOWN: // case b)
+        y = rcpf * (c2 * sqr(p) - c1 * sqr(p-f));
         break;
 
-      case 5: // old=down, new=up, carry - case d) above
+      case OSMTC_DOWN_UP: // case d)
         y = -rcpf * (gain + c2*sqr(p + omf) - c1*sqr(p));
         break;
 
-      case 7: // old=up, new=up, carry - case e) above
+      case OSMTC_UP_DOWN_UP: // case e)
         y = -rcpf * (gain + c1*omf*(p + p + omf));
         break;
 
+      case OSMTC_DOWN_UP_DOWN: // case f)
+        y = rcpf * (gain - c2*omf*(p + p + omf));
+        break;
+
       // INVALID CASES
-      case 1: // old=down, new=up, no carry - this can't happen (down->up always involves wrapping!)
-      case 6: // old=up, new=down, carry - this can't happen either.
       default:
         assert(false);
         break;
       }
 
-      cnt += freq;
       output(dest + i, y + gain);
+    }
+  }
+
+  void renderPulse(sF32 *dest, sInt nsamples)
+  {
+    // This follows the same general pattern as renderTriSaw above, except
+    // this time the waveform is a pulse wave with variable pulse width,
+    // which means we get very simple integrals. The state machine works
+    // the exact same way, see above for description.
+
+    // calc helper values
+    sF32 f = utof23(freq);
+    sF32 gdf = gain / f;
+    sF32 col = utof23(brpt);
+
+    sF32 cc121 = gdf * 2.0f * (col - 1.0f) + gain;
+    sF32 cc212 = gdf * 2.0f * col - gain;
+
+    sU32 state = osm_init();
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 p = utof23(cnt);
+      sF32 out = 0.0f;
+
+      switch (osm_tick(state))
+      {
+      case OSMTC_UP:
+        out = gain;
+        break;
+
+      case OSMTC_DOWN:
+        out = -gain;
+        break;
+
+      case OSMTC_UP_DOWN:
+        out = gdf * 2.0f * (col - p) + gain;
+        break;
+
+      case OSMTC_DOWN_UP:
+        out = gdf * 2.0f * p - gain;
+        break;
+
+      case OSMTC_UP_DOWN_UP:
+        out = cc121;
+        break;
+
+      case OSMTC_DOWN_UP_DOWN:
+        out = cc212;
+        break;
+
+      // INVALID CASES
+      default:
+        assert(false);
+        break;
+      }
+
+      output(dest + i, out);
     }
   }
 
