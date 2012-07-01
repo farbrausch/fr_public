@@ -91,7 +91,10 @@ static sF32 fastsin(sF32 x)
 // Applies symmetries, then funnels into fastsin.
 static sF32 fastsinrc(sF32 x)
 {
-  assert(x >= 0.0f);
+  // NB this range reduction really only works for values >=0,
+  // yet FM-sine oscillators will also pass in negative values.
+  // This is not a good idea. At all. But it's what the original
+  // V2 code does. :)
 
   // first range reduction: mod with 2pi
   x = fmodf(x, fc2pi);
