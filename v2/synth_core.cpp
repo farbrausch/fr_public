@@ -562,6 +562,32 @@ private:
     }
   }
 
+  void renderSin(sF32 *dest, sInt nsamples)
+  {
+    // Sine is already a perfectly bandlimited waveform, so we needn't
+    // worry about aliasing here.
+    for (sInt i=0; i < nsamples; i++)
+    {
+      // Brace yourselves: The name is a lie! It's actually a cosine wave!
+      sU32 phase = cnt + 0x40000000; // quarter-turn (pi/2) phase offset
+      cnt += freq; // step the oscillator
+
+      // range reduce to [0,pi]
+      if (phase & 0x80000000) // Symmetry: cos(x) = cos(-x)
+        phase = ~phase; // V2 uses ~ not - which is slightly off but who cares
+
+      // convert to t in [1,2)
+      sF32 t = bits2float((phase >> 8) | 0x3f800000); // 1.0f + (phase / (2^31))
+
+      // and then to t in [-pi/2,pi/2)
+      // i know the V2 ASM code says "scale/move to (-pi/4 .. pi/4)".
+      // trust me, it's lying.
+      t = t * fcpi - fc1p5pi;
+
+      output(dest + i, gain * fastsin(t));
+    }
+  }
+
   void renderNoise(sF32 *dest, sInt nsamples)
   {
     V2LRC flt = nf;
