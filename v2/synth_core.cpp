@@ -20,7 +20,8 @@ static const sF32 fcboostfreq = 150.0f;       // Bass boost cut-off freq
 static const sF32 fcframebase = 128.0f;       // size of a frame in samples
 static const sF32 fcdcflt     = 126.0f;
 static const sF32 fccfframe   = 11.0f;
-static const sF32 fcOscPitchOffs = 60.0;
+static const sF32 fcOscPitchOffs = 60.0f;
+static const sF32 fcfmmax     = 2.0f;
 static const sF32 fcgain      = 0.6f;
 static const sF32 fcgainh     = 0.6f;
 
@@ -607,6 +608,30 @@ private:
 
     flt = nf;
     nseed = seed;
+  }
+
+  void renderFMSin(sF32 *dest, sInt nsamples)
+  {
+    // V2's take on FM is a bit unconventional but fairly slick and flexible.
+    // The carrier wave is always a sine, but the modulator is whatever happens
+    // to be in the voice buffer at that point - which is the output of the
+    // previous oscillators. So you can use all the oscillator waveforms
+    // (including noise, other FMs and the aux bus oscillators!) as modulator
+    // if you are so inclined.
+    //
+    // And it's very little code too :)
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 mod = dest[i] * fcfmmax;
+      sF32 t = (utof23(cnt) + mod) * fc2pi;
+      cnt += freq;
+
+      sF32 out = gain * fastsinrc(t);
+      if (ring)
+        dest[i] *= out;
+      else
+        dest[i] = out;
+    }
   }
 
   void renderAux(sF32 *dest, const StereoSample *src, sInt nsamples)
