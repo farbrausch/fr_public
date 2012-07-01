@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------
 
 // Natural constants
+static const sF32 fclowest = 1.220703125e-4f; // 2^(-13) - clamp EGs to 0 below this (their nominal range is 0..128) 
 static const sF32 fcpi_2  = 1.5707963267948966192313216916398f;
 static const sF32 fcpi    = 3.1415926535897932384626433832795f;
 static const sF32 fc1p5pi = 4.7123889803846898576939650749193f;
@@ -20,8 +21,12 @@ static const sF32 fcboostfreq = 150.0f;       // Bass boost cut-off freq
 static const sF32 fcframebase = 128.0f;       // size of a frame in samples
 static const sF32 fcdcflt     = 126.0f;
 static const sF32 fccfframe   = 11.0f;
+
 static const sF32 fcOscPitchOffs = 60.0f;
 static const sF32 fcfmmax     = 2.0f;
+static const sF32 fcattackmul = -0.09375f; // -0.0859375
+static const sF32 fcattackadd = 7.0f;
+static const sF32 fcsusmul    = 0.0019375f;
 static const sF32 fcgain      = 0.6f;
 static const sF32 fcgainh     = 0.6f;
 
@@ -647,6 +652,139 @@ private:
         aux *= dest[i];
       dest[i] = aux;
     }
+  }
+};
+
+// --------------------------------------------------------------------------
+// Envelope Generator
+// --------------------------------------------------------------------------
+
+struct syVEnv
+{
+  sF32 ar;  // attack rate
+  sF32 dr;  // decay rate
+  sF32 sl;  // sustain level
+  sF32 sr;  // sustain rate
+  sF32 rr;  // release rate
+  sF32 vol; // volume
+};
+
+struct V2Env
+{
+  sF32 out;
+
+  void init(V2Instance *)
+  {
+    state = &V2Env::stOff;
+  }
+
+  void set(const syVEnv *para)
+  {
+    // ar: 2^7 (128) to 2^-4 (0.03, ca. 10 secs at 344frames/sec)
+    atd = powf(2.0f, para->ar * fcattackmul + fcattackadd);
+
+    // dcf: 0 (5msecs thanks to volramping) up to almost 1
+    dcf = 1.0f - calcfreq2(1.0f - para->dr / 128.0f);
+
+    // sul: 0..127 is fine already
+    sul = para->sl;
+
+    // suf: 1/128 (15ms till it's gone) up to 128 (15ms till it's fully there)
+    suf = powf(2.0f, fcsusmul * (para->sr - 64.0f));
+
+    // ref: 0 (5ms thanks to volramping) up to almost 1
+    ref = 1.0f - calcfreq2(1.0f - para->rr / 128.0f);
+    gain = para->vol / 128.0f;
+  }
+
+  void tick(bool gate)
+  {
+    // process current state
+    val = (this->*state)(gate);
+    out = val * gain;
+  }
+
+private:
+  typedef sF32 (V2Env::*StateFunc)(bool gate);
+
+  StateFunc state;
+  sF32 val;   // output value (0.0-128.0)
+  sF32 atd;   // attack delta (added every frame in stAttack, transition ->stDecay at 128.0)
+  sF32 dcf;   // decay factor (mul'd every frame in stDecay, transition ->stSustain at sul)
+  sF32 sul;   // sustain level (defines stDecay->stSustain transition point)
+  sF32 suf;   // sustain factor (mul'd every frame in stSustain, transition ->stRelease at gate off or ->stOff at 0.0)
+  sF32 ref;   // release factor (mul'd every frame in stRelease, transition ->stOff at 0.0)
+  sF32 gain;
+
+  sF32 transition_now(StateFunc new_state, bool gate)
+  {
+    state = new_state;
+    return (this->*state)(gate);
+  }
+
+  void check_low()
+  {
+    if (val <= fclowest)
+    {
+      val = 0.0f;
+      state = &V2Env::stOff;
+    }
+  }
+
+  sF32 stOff(bool gate)
+  {
+    if (gate)
+      return transition_now(&V2Env::stAttack, gate);
+    return 0.0f;
+  }
+
+  sF32 stAttack(bool gate)
+  {
+    if (!gate)
+      return transition_now(&V2Env::stRelease, gate);
+
+    val += atd;
+    if (val >= 128.0f)
+    {
+      val = 128.0f;
+      state = &V2Env::stDecay;
+    }
+    return val;
+  }
+
+  sF32 stDecay(bool gate)
+  {
+    if (!gate)
+      return transition_now(&V2Env::stRelease, gate);
+
+    val *= dcf;
+    if (val <= sul)
+      state = &V2Env::stSustain;
+    else
+      check_low();
+    return val;
+  }
+
+  sF32 stSustain(bool gate)
+  {
+    if (!gate)
+      return transition_now(&V2Env::stRelease, gate);
+
+    val *= suf;
+    check_low();
+    if (val > 128.0f)
+      val = 128.0f;
+    return val;
+  }
+
+  sF32 stRelease(bool gate)
+  {
+    if (gate)
+      return transition_now(&V2Env::stAttack, gate);
+
+    val *= ref;
+    check_low();
+    return val;
   }
 };
 
