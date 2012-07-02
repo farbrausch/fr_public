@@ -1,6 +1,7 @@
 #include "types.h"
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 
 // --------------------------------------------------------------------------
 // Constants.
@@ -29,6 +30,8 @@ static const sF32 fcattackadd = 7.0f;
 static const sF32 fcsusmul    = 0.0019375f;
 static const sF32 fcgain      = 0.6f;
 static const sF32 fcgainh     = 0.6f;
+
+static const sF32 fcdcoffset  = 3.814697265625e-6f; // 2^-18
 
 // --------------------------------------------------------------------------
 // General helper functions. 
@@ -130,13 +133,6 @@ static inline sF32 sqr(sF32 x)
   return x*x;
 }
 
-// prevent values from getting too close to zero to avoid denormals.
-// used in the accumulators for filters and delay lines.
-static inline sF32 fixdenorm(sF32 x)
-{
-  return (1.0f + x) - 1.0f;
-}
-
 // uniform randon number generator
 // just a linear congruential generator, nothing fancy.
 static inline sU32 urandom(sU32 *seed)
@@ -188,11 +184,46 @@ struct V2LRC
 
   sF32 step(sF32 in, sF32 freq, sF32 reso)
   {
-    l += freq * b;
+    // the filters get slightly biased inputs to avoid the state variables
+    // getting too close to 0 for prolonged periods of time (which would
+    // cause denormals to appear)
+    in += fcdcoffset;
+
+    l += freq * b - fcdcoffset; // undo bias here (1 sample delay)
     sF32 h = in - b*reso - l;
     b += freq * h;
 
     return h;
+  }
+};
+
+// Moog filter state
+struct V2Moog
+{
+  sF32 b[5]; // filter state
+
+  void init()
+  {
+    b[0] = b[1] = b[2] = b[3] = b[4] = 0.0f;
+  }
+
+  sF32 step(sF32 realin, sF32 f, sF32 p, sF32 q)
+  {
+    sF32 in = realin + fcdcoffset; // again, biased in
+    sF32 t1, t2, t3, b4;
+
+    in -= q * b[4]; // feedback
+    t1 = b[1]; b[1] = (in + b[0]) * p - b[1] * f;
+    t2 = b[2]; b[2] = (t1 + b[1]) * p - b[2] * f;
+    t3 = b[3]; b[3] = (t2 + b[2]) * p - b[3] * f;
+               b4   = (t3 + b[3]) * p - b[4] * f; 
+
+    b4 -= b4*b4*b4 * (1.0f/6.0f); // clipping
+    b4 -= fcdcoffset; // un-bias
+    b[4] = b4 - fcdcoffset;
+    b[0] = realin;
+
+    return b4;
   }
 };
 
@@ -242,18 +273,6 @@ struct V2Instance
 // Oscillator
 // --------------------------------------------------------------------------
 
-enum OscMode
-{
-  OSC_OFF     = 0,
-  OSC_TRI_SAW = 1,
-  OSC_PULSE   = 2,
-  OSC_SIN     = 3,
-  OSC_NOISE   = 4,
-  OSC_FM_SIN  = 5,
-  OSC_AUXA    = 6,
-  OSC_AUXB    = 7,
-};
-
 struct syVOsc
 {
   sF32 mode;    // OSC_* (as float. it's all floats in here)
@@ -266,6 +285,18 @@ struct syVOsc
 
 struct V2Osc
 {
+  enum Mode
+  {
+    OSC_OFF     = 0,
+    OSC_TRI_SAW = 1,
+    OSC_PULSE   = 2,
+    OSC_SIN     = 3,
+    OSC_NOISE   = 4,
+    OSC_FM_SIN  = 5,
+    OSC_AUXA    = 6,
+    OSC_AUXB    = 7,
+  };
+
   sInt mode;          // OSC_*
   bool ring;          // ring modulation on/off
   sU32 cnt;           // wave counter
@@ -766,6 +797,160 @@ struct V2Env
     }
 
     out = val * gain;
+  }
+};
+
+// --------------------------------------------------------------------------
+// Filter
+// --------------------------------------------------------------------------
+
+struct syVFlt
+{
+  sF32 mode;
+  sF32 cutoff;
+  sF32 reso;
+};
+
+struct V2Flt
+{
+  enum Mode
+  {
+    BYPASS,
+    LOW,
+    BAND,
+    HIGH,
+    NOTCH,
+    ALL,
+    MOOGL,
+    MOOGH
+  };
+
+  sInt mode;
+  sF32 cfreq;
+  sF32 res;
+  sF32 moogf, moogp, moogq; // moog filter coeffs
+  V2LRC lrc;
+  V2Moog moog;
+  sInt step;
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance)
+  {
+    lrc.init();
+    moog.init();
+    step = 1; // ASM code has this in bytes, we count in full floats
+    inst = instance;
+  }
+
+  void set(const syVFlt *para)
+  {
+    mode = (sInt)para->mode;
+    sF32 f = calcfreq(para->cutoff / 128.0f) * inst->SRfclinfreq;
+    sF32 r = para->reso / 128.0f;
+
+    if (mode < MOOGL)
+    {
+      res = 1.0f - r;
+      cfreq = f;
+    }
+    else
+    {
+      f *= 0.25f;
+      sF32 t = 1.0f - f;
+
+      moogp = f + 0.8f * f * t;
+      moogf = 1.0f - moogp - moogp;
+      moogq = 4.0f * r * (1.0f + 0.5f * t * (1.0f - t + 5.6f * t * t));
+    }
+  }
+
+  void render(sF32 *dest, const sF32 *src, sInt nsamples)
+  {
+    V2LRC flt;
+    V2Moog m;
+
+    switch (mode & 7)
+    {
+    case BYPASS:
+      // ignores step? this seems very wrong.
+      if (dest != src)
+        memmove(dest, src, nsamples * sizeof(sF32));
+      break;
+
+    case LOW:
+      flt = lrc;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        flt.step(src[i*step], cfreq, res);
+        dest[i*step] = flt.l;
+      }
+      lrc = flt;
+      break;
+
+    case BAND:
+      flt = lrc;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        flt.step(src[i*step], cfreq, res);
+        dest[i*step] = flt.b;
+      }
+      lrc = flt;
+      break;
+
+    case HIGH:
+      flt = lrc;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 h = flt.step(src[i*step], cfreq, res);
+        dest[i*step] = h;
+      }
+      lrc = flt;
+      break;
+
+    case NOTCH:
+      flt = lrc;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 h = flt.step(src[i*step], cfreq, res);
+        dest[i*step] = flt.l + h;
+      }
+      lrc = flt;
+      break;
+
+    case ALL:
+      flt = lrc;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 h = flt.step(src[i*step], cfreq, res);
+        dest[i*step] = flt.l + flt.b + h;
+      }
+      lrc = flt;
+      break;
+
+    case MOOGL:
+      // Moog filters are 2x oversampled, so run filter twice.
+      m = moog;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 in = src[i*step];
+        m.step(in, moogf, moogp, moogq);
+        dest[i*step] = m.step(in, moogf, moogp, moogq);
+      }
+      moog = m;
+      break;
+
+    case MOOGH:
+      m = moog;
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 in = src[i*step];
+        m.step(in, moogf, moogp, moogq);
+        dest[i*step] = in - m.step(in, moogf, moogp, moogq);
+      }
+      moog = m;
+      break;
+    }
   }
 };
 
