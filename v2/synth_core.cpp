@@ -2,6 +2,7 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 // --------------------------------------------------------------------------
 // Constants.
@@ -328,7 +329,7 @@ struct V2Osc
   void chgPitch()
   {
     nffrq = inst->SRfclinfreq * calcfreq((pitch + 64.0f) / 128.0f);
-    freq = inst->SRfcobasefrq * pow(2.0f, (pitch + note - fcOscPitchOffs) / 12.0f);
+    freq = (sInt)(inst->SRfcobasefrq * pow(2.0f, (pitch + note - fcOscPitchOffs) / 12.0f));
   }
 
   void set(const syVOsc *para)
@@ -402,11 +403,11 @@ private:
   inline sU32 osm_tick(sU32 &state) // returns transition code
   {
     // old_up = new_up, new_up = (cnt < brpt)
-    sU32 new_state = ((state << 1) | (cnt < brpt)) & 3;
+    state = ((state << 1) | (cnt < brpt)) & 3;
 
     // we added freq to cnt going from the previous sample to the current one.
     // so if cnt is less than freq, we carried.
-    sU32 transition_code = state | (cnt < freq ? 4 : 0); 
+    sU32 transition_code = state | (cnt < (sU32)freq ? 4 : 0); 
 
     // finally, tick the oscillator
     cnt += freq;
@@ -951,6 +952,128 @@ struct V2Flt
       moog = m;
       break;
     }
+  }
+};
+
+// --------------------------------------------------------------------------
+// Low Frequency Oscillator
+// --------------------------------------------------------------------------
+
+struct syVLFO
+{
+  sF32 mode;    // 0=saw, 1=tri, 2=pulse, 3=sin, 4=s&h
+  sF32 sync;    // 0=free, 1=in sync with keyon
+  sF32 egmode;  // 0=continuous 1=one-shot (EG mode)
+  sF32 rate;    // rate (0Hz..~43Hz)
+  sF32 phase;   // start phase shift
+  sF32 pol;     // polarity: +, -, +/-
+  sF32 amp;     // amplification (0..1)
+};
+
+struct V2LFO
+{
+  enum Mode
+  {
+    SAW,
+    TRI,
+    PULSE,
+    SIN,
+    S_H
+  };
+
+  sF32 out;
+  sInt mode;    // mode
+  bool sync;    // sync mode
+  bool eg;      // envelope generator mode
+  sInt freq;    // frequency
+  sU32 cntr;    // counter
+  sU32 cphase;  // counter sync phase
+  sF32 gain;    // output gain
+  sF32 dc;      // output dc
+  sU32 nseed;   // random seed
+  sU32 last;    // last counter value (for s&h transition)
+
+  void init(V2Instance *)
+  {
+    cntr = last = 0;
+    nseed = rand(); // not really, but close enough...
+  }
+
+  void set(const syVLFO *para)
+  {
+    mode = (sInt)para->mode;
+    sync = (sInt)para->sync != 0;
+    eg = (sInt)para->egmode != 0;
+    freq = (sInt)(0.5f * fc32bit * calcfreq(para->rate / 128.0f));
+    cphase = 2*(sInt)(fc32bit * para->phase / 128.0f);
+
+    switch ((sInt)para->pol)
+    {
+    case 0: // +
+      gain = para->amp;
+      dc = 0.0f;
+      break;
+
+    case 1: // -
+      gain = -para->amp;
+      dc = 0.0f;
+      break;
+
+    case 2: // +/-
+      gain = para->amp;
+      dc = -0.5f * para->amp;
+      break;
+    }
+  }
+
+  void keyOn()
+  {
+    if (sync)
+    {
+      cntr = cphase;
+      last = ~0u;
+    }
+  }
+
+  void tick()
+  {
+    sF32 v;
+    sU32 x;
+
+    switch (mode & 7)
+    {
+    case SAW:
+    default:
+      v = utof23(cntr);
+      break;
+
+    case TRI:
+      x = (cntr << 1) | (sS32(cntr) >> 31);
+      v = utof23(cntr);
+      break;
+
+    case PULSE:
+      x = sS32(cntr) >> 31;
+      v = utof23(cntr);
+      break;
+
+    case SIN:
+      v = utof23(cntr);
+      v = fastsinrc(v * fc2pi) * 0.5f + 0.5f;
+      break;
+
+    case S_H:
+      if (cntr < last)
+        nseed = urandom(&nseed);
+      last = cntr;
+      v = utof23(nseed);
+      break;
+    }
+
+    out = v * gain + dc;
+    cntr += freq;
+    if (cntr < (sU32)freq && eg) // in one-shot mode, clamp at wrap-around
+      cntr = ~0u;
   }
 };
 
