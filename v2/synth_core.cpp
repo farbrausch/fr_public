@@ -100,6 +100,7 @@ static sF32 fastsin(sF32 x)
 // Applies symmetries, then funnels into fastsin.
 static sF32 fastsinrc(sF32 x)
 {
+  // @@@BUG
   // NB this range reduction really only works for values >=0,
   // yet FM-sine oscillators will also pass in negative values.
   // This is not a good idea. At all. But it's what the original
@@ -132,6 +133,12 @@ static sF32 calcfreq2(sF32 x)
 static inline sF32 sqr(sF32 x)
 {
   return x*x;
+}
+
+template<typename T>
+static inline T clamp(T x, T min, T max)
+{
+  return (x < min) ? min : (x > max) ? max : x;
 }
 
 // uniform randon number generator
@@ -832,7 +839,6 @@ struct V2Flt
   sF32 moogf, moogp, moogq; // moog filter coeffs
   V2LRC lrc;
   V2Moog moog;
-  sInt step;
 
   V2Instance *inst;
 
@@ -840,7 +846,6 @@ struct V2Flt
   {
     lrc.init();
     moog.init();
-    step = 1; // ASM code has this in bytes, we count in full floats
     inst = instance;
   }
 
@@ -857,6 +862,7 @@ struct V2Flt
     }
     else
     {
+      // @@@BUG? V2 code for this part looks suspicious.
       f *= 0.25f;
       sF32 t = 1.0f - f;
 
@@ -866,7 +872,7 @@ struct V2Flt
     }
   }
 
-  void render(sF32 *dest, const sF32 *src, sInt nsamples)
+  void render(sF32 *dest, const sF32 *src, sInt nsamples, sInt step=1)
   {
     V2LRC flt;
     V2Moog m;
@@ -874,7 +880,8 @@ struct V2Flt
     switch (mode & 7)
     {
     case BYPASS:
-      // ignores step? this seems very wrong.
+      // @@@BUG ignores step? this is wrong but I suppose this
+      // never gets hit for stereo case.
       if (dest != src)
         memmove(dest, src, nsamples * sizeof(sF32));
       break;
@@ -1074,6 +1081,204 @@ struct V2LFO
     cntr += freq;
     if (cntr < (sU32)freq && eg) // in one-shot mode, clamp at wrap-around
       cntr = ~0u;
+  }
+};
+
+// --------------------------------------------------------------------------
+// Distortion
+// --------------------------------------------------------------------------
+
+struct syVDist
+{
+  sF32 mode;    // see below
+  sF32 ingain;  // -12dB .. 36dB
+  sF32 param1;  // outgain / crush / outfreq / cutoff
+  sF32 param2;  // offset / xor / jitter / reso
+};
+
+struct V2Dist
+{
+  enum Mode
+  {
+    OFF = 0,
+    OVERDRIVE,
+    CLIP,
+    BITCRUSHER,
+    DECIMATOR,
+
+    FLT_BASE  = DECIMATOR,
+    FLT_LOW   = FLT_BASE + V2Flt::LOW,
+    FLT_BAND  = FLT_BASE + V2Flt::BAND,
+    FLT_HIGH  = FLT_BASE + V2Flt::HIGH,
+    FLT_NOTCH = FLT_BASE + V2Flt::NOTCH,
+    FLT_ALL   = FLT_BASE + V2Flt::ALL,
+    FLT_MOOGL = FLT_BASE + V2Flt::MOOGL,
+    FLT_MOOGH = FLT_BASE + V2Flt::MOOGH,
+  };
+
+  sInt mode;
+  sF32 gain1;     // input gain for all fx
+  sF32 gain2;     // output gain for od/clip
+  sF32 offs;      // offs for od/clip
+  sF32 crush1;    // 1/crush_factor
+  sInt crush2;    // crush_factor
+  sInt crxor;     // xor value for crush
+  sU32 dcount;    // decimator counter
+  sU32 dfreq;     // decimator frequency
+  sF32 dvall;     // last decimator value (mono/left)
+  sF32 dvalr;     // last decimator value (mono/right)
+  V2Flt fltl;     // filter mono/left
+  V2Flt fltr;     // filter right
+
+  void init(V2Instance *instance)
+  {
+    dcount = 0;
+    dvall = dvalr = 0.0f;
+    fltl.init(instance);
+    fltr.init(instance);
+  }
+
+  void set(const syVDist *para)
+  {
+    sF32 x;
+
+    mode = (sInt)para->mode;
+    gain1 = powf(2.0f, (para->ingain - 32.0f) / 16.0f);
+
+    switch (mode)
+    {
+    case OFF:
+      break;
+
+    case OVERDRIVE:
+      gain2 = (para->param1 / 128.0f) / atan(gain1);
+      offs = gain1 * 2.0f * ((para->param2 / 128.0f) - 0.5f);
+      break;
+
+    case CLIP:
+      gain2 = para->param1 / 128.0f;
+      offs = gain1 * 2.0f * ((para->param2 / 128.0f) - 0.5f);
+      break;
+
+    case BITCRUSHER:
+      x = para->param1 * 256.0f + 1.0f;
+      crush2 = (sInt)x;
+      crush1 = gain1 * (32768.0f / x);
+      crxor = ((sInt)para->param2) << 9;
+      break;
+
+    case DECIMATOR:
+      dfreq = 2 * (sInt)(fc32bit * calcfreq(para->param1 / 128.0f));
+      break;
+
+    default: // filters
+      {
+        syVFlt setup;
+        setup.cutoff = para->param1;
+        setup.reso = para->param2;
+        setup.mode = (sF32)(mode - FLT_BASE);
+        fltl.set(&setup);
+        fltr.set(&setup);
+      }
+      break;
+    }
+  }
+
+  void renderMono(sF32 *dest, const sF32 *src, sInt nsamples)
+  {
+    switch (mode)
+    {
+    case OFF:
+      if (dest != src)
+        memmove(dest, src, nsamples * sizeof(sF32));
+      break;
+
+    case OVERDRIVE:
+      for (sInt i=0; i < nsamples; i++)
+        dest[i] = overdrive(src[i]);
+      break;
+
+    case CLIP:
+      for (sInt i=0; i < nsamples; i++)
+        dest[i] = clip(src[i]);
+      break;
+
+    case BITCRUSHER:
+      for (sInt i=0; i < nsamples; i++)
+        dest[i] = bitcrusher(src[i]);
+      break;
+
+    case DECIMATOR:
+      for (sInt i=0; i < nsamples; i++)
+      {
+        decimator_tick(src[i], 0.0f);
+        dest[i] = dvall;
+      }
+      break;
+
+    default: // filters
+      fltl.render(dest, src, nsamples);
+      break;
+    }
+  }
+
+  void renderStereo(StereoSample *dest, const StereoSample *src, sInt nsamples)
+  {
+    // @@@BUG this matches the original V2 code, but frankly I have my doubts
+    // that always running the Moog filters in Mono mode is intentional... 
+    switch (mode)
+    {
+    case DECIMATOR:
+      for (sInt i=0; i < nsamples; i++)
+      {
+        decimator_tick(src[i].l, src[i].r);
+        dest[i].l = dvall;
+        dest[i].r = dvalr;
+      }
+      break;
+
+    case FLT_LOW:
+    case FLT_BAND:
+    case FLT_HIGH:
+    case FLT_NOTCH:
+    case FLT_ALL:
+      fltl.render(&dest[0].l, &src[0].l, nsamples, 2);
+      fltr.render(&dest[0].r, &src[0].r, nsamples, 2);
+      break;
+
+    default:
+      // everything else we presume to be stateless and just pass through the
+      // mono version.
+      renderMono(&dest[0].l, &src[0].l, nsamples*2);
+    }
+  }
+
+private:
+  inline sF32 overdrive(sF32 in)
+  {
+    return gain2 * fastatan(in * gain1 + offs);
+  }
+
+  inline sF32 clip(sF32 in)
+  {
+    return gain2 * clamp(in * gain1 + offs, -1.0f, 1.0f);
+  }
+
+  inline sF32 bitcrusher(sF32 in)
+  {
+    sInt t = (sInt)(in * crush1);
+    t = clamp(t * crush2, -0x7fff, 0x7fff) ^ crxor;
+    return (sF32)t / 32768.0f;
+  }
+
+  inline void decimator_tick(sF32 l, sF32 r)
+  {
+    dcount += dfreq;
+    if (dcount < dfreq) // carry
+    {
+      dvall = l;
+      dvalr = r;
+    }
   }
 };
 
