@@ -250,6 +250,28 @@ struct V2Moog
   }
 };
 
+// DC filter state. Just a highpass used with a very low cut-off
+// to remove DC offsets from a signal.
+struct V2DCF
+{
+  sF32 xm1; // x(n-1)
+  sF32 ym1; // y(n-1)
+
+  void init()
+  {
+    xm1 = ym1 = 0.0f;
+  }
+
+  sF32 step(sF32 in, sF32 R)
+  {
+    // y(n) = x(n) - x(n-1) + R*y(n-1)
+    sF32 y = R*ym1 - xm1 + in;
+    xm1 = in;
+    ym1 = y;
+    return y;
+  }
+};
+
 // --------------------------------------------------------------------------
 // V2 Instance
 // --------------------------------------------------------------------------
@@ -1294,6 +1316,51 @@ private:
       dvall = l;
       dvalr = r;
     }
+  }
+};
+
+// --------------------------------------------------------------------------
+// DC filter
+// --------------------------------------------------------------------------
+
+// This is just a high-pass with very low cut-off to remove DC offsets from
+// the signal.
+struct V2DCFilter
+{
+  V2DCF fl;         // left/mono filter state
+  V2DCF fr;         // right filter state
+  V2Instance *inst;
+
+  void init(V2Instance *instance)
+  {
+    inst = instance;
+    fl.init();
+    fr.init();
+  }
+
+  void renderMono(sF32 *dest, const sF32 *src, sInt nsamples)
+  {
+    sF32 R = inst->SRfcdcfilter;
+
+    V2DCF l = fl;
+    for (sInt i=0; i < nsamples; i++)
+      dest[i] = l.step(src[i], R);
+    fl = l;
+  }
+
+  void renderStereo(StereoSample *dest, const StereoSample *src, sInt nsamples)
+  {
+    sF32 R = inst->SRfcdcfilter;
+
+    V2DCF l = fl;
+    V2DCF r = fr;
+    for (sInt i=0; i < nsamples; i++)
+    {
+      dest[i].l = l.step(src[i].l, R);
+      dest[i].r = r.step(src[i].r, R);
+    }
+    fl = l;
+    fr = r;
   }
 };
 
