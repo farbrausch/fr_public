@@ -874,6 +874,25 @@ operator Wz4Mesh Center(Wz4Mesh)
 
 /****************************************************************************/
 
+operator Wz4Mesh SelectGrow(Wz4Mesh)
+{
+  column = 3;
+  flags = passinput|passoutput;
+  parameter
+  {
+    int Amount(0..1024) = 0;
+  }
+  code
+  {
+    while(para->Amount--)
+      out->SelectGrow();
+
+    out->Flush();
+  }
+}
+
+/****************************************************************************/
+
 operator Wz4Mesh Multiply "Multiply (old)" (Wz4Mesh)
 {
   column = 3;
