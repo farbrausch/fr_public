@@ -190,14 +190,29 @@ struct V2LRC
     l = b = 0.0f;
   }
 
+  // Single step
   sF32 step(sF32 in, sF32 freq, sF32 reso)
+  {
+    l += freq * b;
+    sF32 h = in - b*reso - l;
+    b += freq * h;
+    return h;
+  }
+
+  // 2x oversampled step (the good stuff)
+  sF32 step_2x(sF32 in, sF32 freq, sF32 reso)
   {
     // the filters get slightly biased inputs to avoid the state variables
     // getting too close to 0 for prolonged periods of time (which would
     // cause denormals to appear)
     in += fcdcoffset;
 
+    // step 1
     l += freq * b - fcdcoffset; // undo bias here (1 sample delay)
+    b += freq * (in - b*reso - l);
+
+    // step 2
+    l += freq * b;
     sF32 h = in - b*reso - l;
     b += freq * h;
 
@@ -890,7 +905,7 @@ struct V2Flt
       flt = lrc;
       for (sInt i=0; i < nsamples; i++)
       {
-        flt.step(src[i*step], cfreq, res);
+        flt.step_2x(src[i*step], cfreq, res);
         dest[i*step] = flt.l;
       }
       lrc = flt;
@@ -900,7 +915,7 @@ struct V2Flt
       flt = lrc;
       for (sInt i=0; i < nsamples; i++)
       {
-        flt.step(src[i*step], cfreq, res);
+        flt.step_2x(src[i*step], cfreq, res);
         dest[i*step] = flt.b;
       }
       lrc = flt;
@@ -910,7 +925,7 @@ struct V2Flt
       flt = lrc;
       for (sInt i=0; i < nsamples; i++)
       {
-        sF32 h = flt.step(src[i*step], cfreq, res);
+        sF32 h = flt.step_2x(src[i*step], cfreq, res);
         dest[i*step] = h;
       }
       lrc = flt;
@@ -920,7 +935,7 @@ struct V2Flt
       flt = lrc;
       for (sInt i=0; i < nsamples; i++)
       {
-        sF32 h = flt.step(src[i*step], cfreq, res);
+        sF32 h = flt.step_2x(src[i*step], cfreq, res);
         dest[i*step] = flt.l + h;
       }
       lrc = flt;
@@ -930,7 +945,7 @@ struct V2Flt
       flt = lrc;
       for (sInt i=0; i < nsamples; i++)
       {
-        sF32 h = flt.step(src[i*step], cfreq, res);
+        sF32 h = flt.step_2x(src[i*step], cfreq, res);
         dest[i*step] = flt.l + flt.b + h;
       }
       lrc = flt;
