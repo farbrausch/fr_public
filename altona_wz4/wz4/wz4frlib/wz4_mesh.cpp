@@ -2758,6 +2758,36 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
 
 /****************************************************************************/
 
+void Wz4Mesh::SelectGrow()
+{
+  Wz4MeshFace *f;
+
+  Wz4MeshFaceConnect *adj = Adjacency();
+
+  sFORALL(Faces,f)
+    f->Temp = 0;
+
+  sFORALL(Faces,f)
+  {
+    if(f->Select==1 && f->Temp==0)
+    {
+      for(sInt j=0;j<f->Count;j++)
+      {
+        sInt m = adj[_i].Adjacent[j];
+        Wz4MeshFace *f0 = &Faces[m/4];
+
+        if(m>=0 && f0->Select==0)
+        {
+          f0->Select = 1;
+          f0->Temp = 1;
+        }
+      }
+    }
+  }
+}
+
+/****************************************************************************/
+
 struct IslandEdge 
 { 
   sInt p[2]; 

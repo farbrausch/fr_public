@@ -228,6 +228,7 @@ public:
 
   // selection
   void SelStoreLoad(sInt mode, sInt type, sInt slot);
+  void SelectGrow();
 
   /*** ops ***/
 
