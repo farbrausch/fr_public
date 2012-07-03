@@ -38,6 +38,8 @@ static const sF32 fcdcoffset  = 3.814697265625e-6f; // 2^-18
 // General helper functions. 
 // --------------------------------------------------------------------------
 
+#define COUNTOF(x)    (sizeof(x)/sizeof(*(x)))
+
 // Float bitcasts. Union-based type punning to maximize compiler
 // compatibility.
 union FloatBits
@@ -290,6 +292,12 @@ struct V2Instance
   sF32 SRfciframe;
 
   // buffers
+  sF32 vcebuf[MAX_FRAME_SIZE];
+  sF32 vcebuf2[MAX_FRAME_SIZE];
+  StereoSample chanbuf[MAX_FRAME_SIZE];
+  sF32 aux1buf[MAX_FRAME_SIZE];
+  sF32 aux2buf[MAX_FRAME_SIZE];
+  StereoSample mixbuf[MAX_FRAME_SIZE];
   StereoSample auxabuf[MAX_FRAME_SIZE];
   StereoSample auxbbuf[MAX_FRAME_SIZE];
 
@@ -358,7 +366,9 @@ struct V2Osc
 
   void init(V2Instance *instance, sInt idx)
   {
-    static const sU32 seeds[3] = { 0xdeadbeefu, 0xbaadf00du, 0xd3adc0deu };
+    static const sU32 seeds[] = { 0xdeadbeefu, 0xbaadf00du, 0xd3adc0deu };
+    assert(idx < COUNTOF(seeds));
+
     cnt = 0;
     nf.init();
     nseed = seeds[idx];
@@ -1361,6 +1371,258 @@ struct V2DCFilter
     }
     fl = l;
     fr = r;
+  }
+};
+
+// --------------------------------------------------------------------------
+// V2 Voice
+// --------------------------------------------------------------------------
+
+struct syVV2
+{
+  // Voice parameters.
+  // changing any of these *will* invalidate all V2M files!
+  static const sInt NOSC = 3; // number of oscillators
+  static const sInt NFLT = 2; // number of filters (NB: changing this would complicate routing too)
+  static const sInt NENV = 2; // number of envelope generators
+  static const sInt NLFO = 2; // number of LFOs
+
+  sF32 panning;
+  sF32 transp;   // transpose
+  syVOsc osc[NOSC];
+  syVFlt flt[NFLT];
+  sF32 routing; // 0: single 1: serial 2: parallel
+  sF32 fltbal;  // parallel filter balance
+  syVDist dist;
+  syVEnv env[NENV];
+  syVLFO lfo[NLFO];
+  sF32 oscsync; // 0: none 1: osc 2: full
+};
+
+struct V2Voice
+{
+  enum FilterRouting
+  {
+    FLTR_SINGLE = 0,
+    FLTR_SERIAL,
+    FLTR_PARALLEL
+  };
+
+  enum KeySync
+  {
+    SYNC_NONE = 0,
+    SYNC_OSC,
+    SYNC_FULL
+  };
+
+  sInt note;
+  sF32 velo;
+  bool gate;
+
+  sF32 curvol;
+  sF32 volramp;
+
+  sF32 xpose;     // transpose
+  sInt fmode;     // FLTR_*
+  sF32 lvol;      // left volume
+  sF32 rvol;      // right volume
+  sF32 f1gain;    // filter 1 gain
+  sF32 f2gain;    // filter 2 gain
+
+  sInt keysync;
+
+  V2Osc osc[syVV2::NOSC];
+  V2Flt vcf[syVV2::NFLT];
+  V2Env env[syVV2::NENV];
+  V2LFO lfo[syVV2::NLFO];
+  V2Dist dist;    // distorter
+  V2DCFilter dcf; // post DC filter
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance)
+  {
+    for (sInt i=0; i < syVV2::NOSC; i++)
+      osc[i].init(instance, i);
+    for (sInt i=0; i < syVV2::NFLT; i++)
+      vcf[i].init(instance);
+    for (sInt i=0; i < syVV2::NENV; i++)
+      env[i].init(instance);
+    for (sInt i=0; i < syVV2::NLFO; i++)
+      lfo[i].init(instance);
+    dist.init(instance);
+    dcf.init(instance);
+    inst = instance;
+  }
+
+  void tick()
+  {
+    for (sInt i=0; i < syVV2::NENV; i++)
+      env[i].tick(gate);
+
+    for (sInt i=0; i < syVV2::NLFO; i++)
+      lfo[i].tick();
+
+    // volume ramping slope
+    volramp = (env[0].out / 128.0f - curvol) * inst->SRfciframe;
+  }
+
+  void render(StereoSample *dest, sInt nsamples)
+  {
+    assert(nsamples <= V2Instance::MAX_FRAME_SIZE);
+
+    // clear voice buffer
+    sF32 *voice = inst->vcebuf;
+    sF32 *voice2 = inst->vcebuf2;
+    memset(voice, 0, nsamples * sizeof(*voice));
+
+    // oscillators -> voice buffer
+    for (sInt i=0; i < syVV2::NOSC; i++)
+      osc[i].render(voice, nsamples);
+
+    // voice buffer -> filters -> voice buffer
+    switch (fmode)
+    {
+    case FLTR_SINGLE:
+      vcf[0].render(voice, voice, nsamples);
+      break;
+
+    case FLTR_SERIAL:
+    default:
+      vcf[0].render(voice, voice, nsamples);
+      vcf[1].render(voice, voice, nsamples);
+      break;
+
+    case FLTR_PARALLEL:
+      vcf[1].render(voice2, voice, nsamples);
+      vcf[0].render(voice, voice, nsamples);
+      for (sInt i=0; i < nsamples; i++)
+        voice[i] = voice[i]*f1gain + voice2[i]*f2gain;
+      break;
+    }
+
+    // voice buffer -> distortion -> voice buffer
+    dist.renderMono(voice, voice, nsamples);
+
+    // voice buffer -> dc filter -> voice buffer
+    dcf.renderMono(voice, voice, nsamples);
+
+    // voice buffer (mono) -> +=output buffer (stereo)
+    // original ASM code has chan buffer hardwired as output here
+    sF32 cv = curvol;
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 out = voice[i] * cv;
+      cv += volramp;
+
+      dest[i].l += lvol * out + fcdcoffset;
+      dest[i].r += rvol * out + fcdcoffset;
+    }
+
+    curvol = cv;
+  }
+
+  void set(const syVV2 *para)
+  {
+    xpose = para->transp - 64.0f;
+    updateNote();
+
+    fmode = (sInt)para->routing;
+    keysync = (sInt)para->oscsync;
+
+    // equal power panning
+    sF32 p = para->panning / 128.0f;
+    lvol = sqrtf(1.0f - p);
+    rvol = sqrtf(p);
+
+    // filter balance for parallel
+    sF32 x = (para->fltbal - 64.0f) / 64.0f;
+    if (x >= 0.0f)
+    {
+      f2gain = 1.0f;
+      f1gain = 1.0f - x;
+    }
+    else
+    {
+      f1gain = 1.0f;
+      f2gain = 1.0f + x;
+    }
+
+    // subsections
+    for (sInt i=0; i < syVV2::NOSC; i++)
+      osc[i].set(&para->osc[i]);
+
+    for (sInt i=0; i < syVV2::NENV; i++)
+      env[i].set(&para->env[i]);
+
+    for (sInt i=0; i < syVV2::NFLT; i++)
+      vcf[i].set(&para->flt[i]);
+
+    for (sInt i=0; i < syVV2::NLFO; i++)
+      lfo[i].set(&para->lfo[i]);
+
+    dist.set(&para->dist);
+  }
+
+  void noteOn(sInt note, sInt vel)
+  {
+    this->note = note;
+    updateNote();
+
+    velo = (sF32)vel;
+    gate = true;
+
+    // reset EGs
+    for (sInt i=0; i < syVV2::NENV; i++)
+      env[i].state = V2Env::ATTACK;
+
+    // process sync
+    switch (keysync)
+    {
+    case SYNC_FULL:
+      for (sInt i=0; i < syVV2::NENV; i++)
+        env[i].val = 0.0f;
+      curvol = 0.0f;
+
+      for (sInt i=0; i < syVV2::NOSC; i++)
+        osc[i].init(inst, i);
+
+      for (sInt i=0; i < syVV2::NFLT; i++)
+        vcf[i].init(inst);
+
+      dist.init(inst);
+      // fall-through
+
+    case SYNC_OSC:
+      for (sInt i=0; i < syVV2::NOSC; i++)
+        osc[i].cnt = 0;
+      // fall-through
+
+    case SYNC_NONE:
+    default:
+      break;
+    }
+
+    for (sInt i=0; i < syVV2::NOSC; i++)
+      osc[i].chgPitch();
+
+    for (sInt i=0; i < syVV2::NLFO; i++)
+      lfo[i].keyOn();
+
+    dcf.init(inst);
+  }
+
+  void noteOff()
+  {
+    gate = false;
+  }
+
+private:
+  void updateNote()
+  {
+    sF32 n = xpose + (sF32)note;
+    for (sInt i=0; i < syVV2::NOSC; i++)
+      osc[i].note = n;
   }
 };
 
