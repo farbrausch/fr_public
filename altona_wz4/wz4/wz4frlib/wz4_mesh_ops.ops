@@ -881,11 +881,17 @@ operator Wz4Mesh SelectGrow(Wz4Mesh)
   parameter
   {
     int Amount(0..1024) = 0;
+    flags Input("face|vertices");
   }
   code
   {
+    Wz4MeshFaceConnect *adj = out->Adjacency();
+
+    if(para->Input)
+      out->SelVerticesToFaces(true, false);
+
     while(para->Amount--)
-      out->SelectGrow();
+      out->SelectGrow(adj);
 
     out->Flush();
   }
