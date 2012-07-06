@@ -170,9 +170,13 @@ static inline sF32 utof23(sU32 x)
 // Building blocks
 // --------------------------------------------------------------------------
 
-struct StereoSample
+union StereoSample
 {
-  sF32 l, r;
+  struct
+  {
+    sF32 l, r;
+  };
+  sF32 ch[2];
 };
 
 // LRC filter.
@@ -1623,6 +1627,93 @@ private:
     sF32 n = xpose + (sF32)note;
     for (sInt i=0; i < syVV2::NOSC; i++)
       osc[i].note = n;
+  }
+};
+
+// @@@TODO storeV2Values (voice setup/mod matrix!!)
+// but needs fleshed-out V2Instance.
+
+// --------------------------------------------------------------------------
+// Bass boost (fixed low shelving EQ)
+// --------------------------------------------------------------------------
+
+struct syVVBoost
+{
+  sF32 amount;    // boost in dB (0..18)
+};
+
+struct V2Boost
+{
+  bool enabled;
+  sF32 a1, a2;      // normalized filter coeffs
+  sF32 b0, b1, b2;
+  sF32 x1[2];       // state variables
+  sF32 x2[2];
+  sF32 y1[2];
+  sF32 y2[2];
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance)
+  {
+    inst = instance;
+  }
+
+  void set(const syVVBoost *para)
+  {
+    enabled = ((sInt)para->amount) != 0;
+    if (!enabled)
+      return;
+
+    // A = 10^(dBgain/40), or a rough approximation anyway
+    sF32 A = powf(2.0f, para->amount / 128.0f);
+
+    // V2 code computes beta = sqrt((A^2 + 1) - (A-1)^2) for some reason
+    // but applying the binomial formula just gives sqrt(2A)
+    sF32 beta = sqrtf(2.0f * A);
+
+    // temp vars
+    sF32 bs = beta * inst->SRfcBoostSin;
+    sF32 Am1 = A - 1.0f;
+    sF32 Ap1 = A + 1.0f;
+    sF32 cAm1 = Am1 * inst->SRfcBoostCos;
+    sF32 cAp1 = Ap1 * inst->SRfcBoostCos;
+
+    // a0 = (A+1) + (A-1)*cos + beta*sin
+    sF32 ia0 = 1.0f / (Ap1 + cAm1 + bs);
+
+    b1 = 2.0f * A * (Am1 - cAp1) * A * 2.0f * ia0;
+    a1 = -2.0f * (Am1 + cAp1) * ia0;
+    a2 = (Ap1 + cAm1 - bs) * ia0;
+    b0 = A * (Ap1 - cAm1 + bs) * ia0;
+    b2 = A * (Ap1 - cAm1 - bs) * ia0;
+  }
+
+  void render(StereoSample *buf, sInt nsamples)
+  {
+    if (!enabled)
+      return;
+
+    for (sInt ch=0; ch < 2; ch++)
+    {
+      sF32 xm1 = x1[ch], xm2 = x2[ch];
+      sF32 ym1 = y1[ch], ym2 = y2[ch];
+
+      for (sInt i=0; i < nsamples; i++)
+      {
+        sF32 x = buf[i].ch[ch] + fcdcoffset;
+
+        // Second-order IIR filter
+        sF32 y = b0*x + b1*xm1 + b2*xm2 - a1*ym1 - a2*ym2;
+        ym2 = ym1; ym1 = y;
+        xm2 = xm1; xm1 = x;
+
+        buf[i].ch[ch] = y;
+      }
+
+      x1[ch] = xm1; x2[ch] = xm2;
+      y1[ch] = ym1; y2[ch] = ym2;
+    }
   }
 };
 
