@@ -880,8 +880,8 @@ operator Wz4Mesh SelectGrow(Wz4Mesh)
   flags = passinput|passoutput;
   parameter
   {
-    int Amount(0..1024) = 0;
     flags Input("face|vertices");
+    int Amount(0..1024) = 0;
   }
   code
   {

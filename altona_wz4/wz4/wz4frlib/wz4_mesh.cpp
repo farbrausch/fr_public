@@ -2858,34 +2858,6 @@ void Wz4Mesh::SelFacesToVertices(sBool outputType)
 
 /****************************************************************************/
 
-/*void Wz4Mesh::SelectGrow()
-{
-  Wz4MeshFace *f;
-
-  Wz4MeshFaceConnect *adj = Adjacency();
-
-  sFORALL(Faces,f)
-    f->Temp = 0;
-
-  sFORALL(Faces,f)
-  {
-    if(f->Select==1 && f->Temp==0)
-    {
-      for(sInt j=0;j<f->Count;j++)
-      {
-        sInt m = adj[_i].Adjacent[j];
-        Wz4MeshFace *f0 = &Faces[m/4];
-
-        if(m>=0 && f0->Select==0)
-        {
-          f0->Select = 1;
-          f0->Temp = 1;
-        }
-      }
-    }
-  }
-}*/
-
 void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj)
 {
   Wz4MeshFace *f;
@@ -2893,15 +2865,10 @@ void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj)
   sFORALL(Faces,f)
   {
     f->Temp = 0;
-
-    // select face vertices if face is selected
-    if(f->Select == 1)
+    for(sInt k=0; k<f->Count; k++)
     {
-      for(sInt k=0; k<f->Count; k++)
-      {
-        if(Vertices.IsIndexValid(f->Vertex[k]))
-          Vertices[f->Vertex[k]].Select = 1.0f;
-      }
+      if(Vertices.IsIndexValid(f->Vertex[k]))
+          Vertices[f->Vertex[k]].Select = f->Select;
     }
   }
 
@@ -2910,13 +2877,12 @@ void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj)
   {
     if(f->Select==1 && f->Temp==0)
     {
-      for(sInt j=0;j<f->Count;j++)
+      for(sInt j=0; j<f->Count; j++)
       {
-        sInt m = adj[_i].Adjacent[j]/4;
+        sInt m = adj[_i].Adjacent[j];
         if(m>=0)
         {
-          Wz4MeshFace *f0 = &Faces[m];
-
+          Wz4MeshFace *f0 = &Faces[m/4];
           if(f0->Select==0)
           {
             f0->Temp = 1;
