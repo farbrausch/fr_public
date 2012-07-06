@@ -229,8 +229,8 @@ public:
   // selection
   void SelStoreLoad(sInt mode, sInt type, sInt slot);
   void SelectGrow(Wz4MeshFaceConnect *adj);
-  void SelFacesToVertices(sBool outputType);
-  void SelVerticesToFaces(sBool outputType, sBool addToInput);
+  void SelFacesToVertices(sBool outputType, sBool addToInput, sF32 vertexValue, sBool clearFaces);
+  void SelVerticesToFaces(sBool outputType, sBool addToInput, sF32 vertexValue);
 
   /*** ops ***/
 

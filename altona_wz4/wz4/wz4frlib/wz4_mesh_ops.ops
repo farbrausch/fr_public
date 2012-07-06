@@ -888,7 +888,9 @@ operator Wz4Mesh SelectGrow(Wz4Mesh)
     Wz4MeshFaceConnect *adj = out->Adjacency();
 
     if(para->Input)
-      out->SelVerticesToFaces(true, false);
+      out->SelVerticesToFaces(true, false, 1.0f);
+    else
+      out->SelFacesToVertices(true, false, 1.0f, false);
 
     while(para->Amount--)
       out->SelectGrow(adj);
