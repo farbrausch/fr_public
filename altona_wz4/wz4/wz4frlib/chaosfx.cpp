@@ -269,13 +269,9 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
       mat.EulerXYZ(rx,ry,rz);
 
       p += mat.k * Para.Forward;
-      vp->Init(p-mat.i*Para.Side,mat.j,0,sF32(i)/max);
-      vp->u0 =  0.0f;
-      vp->v0 =  i+(1/Para.Steps);
+      vp->Init(p-mat.i*Para.Side,-mat.j,0.0f,i+(1/Para.Steps));
       vp++;
-      vp->Init(p+mat.i*Para.Side,mat.j,1,sF32(i)/max);
-      vp->u0 =  1.0f;
-      vp->v0 =  i+(1/Para.Steps);
+      vp->Init(p+mat.i*Para.Side,-mat.j,1.0f,i+(1/Para.Steps));
       vp++;
     }
   }
@@ -431,15 +427,11 @@ void RNRibbons2::Prepare(Wz4RenderContext *ctx)
       d0 *= Para.Side;
 
       pos += speed*Para.Forward;
-      norm.Cross(camdir,d0);
+      norm.Cross(d0, speed);
       norm.Unit();
 
-      vp[0].Init(pos-d0,norm,0,0);
-      vp[0].u0 = 0.0f;
-      vp[0].v0 = j+(1/Para.Length);
-      vp[1].Init(pos+d0,norm,1,0);
-      vp[1].u0 = 1.0f;
-      vp[1].v0 = j+(1/Para.Length);
+      vp[0].Init(pos-d0,norm,0.0f,j+(1/Para.Length));
+      vp[1].Init(pos+d0,norm,1.0f,j+(1/Para.Length));
       vp+=2;
     }
   }
