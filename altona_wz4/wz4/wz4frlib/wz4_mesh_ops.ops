@@ -882,18 +882,22 @@ operator Wz4Mesh SelectGrow(Wz4Mesh)
   {
     flags Input("face|vertices");
     int Amount(0..1024) = 0;
+    float Range(0..1 step 0.001)=0;
+    int Power(0..12)=1;
+    float Bias(0..16 step 0.01)=1;
   }
   code
   {
     Wz4MeshFaceConnect *adj = out->Adjacency();
+    sF32 bias = sClamp(para->Amount*para->Range*para->Bias, 0.0f, 1.0f);
 
     if(para->Input)
-      out->SelVerticesToFaces(true, false, 1.0f);
+      out->SelVerticesToFaces(true, false, bias);
     else
-      out->SelFacesToVertices(true, false, 1.0f, false);
+      out->SelFacesToVertices(true, false, bias, false);
 
     while(para->Amount--)
-      out->SelectGrow(adj);
+      out->SelectGrow(adj, para->Amount, para->Power, para->Range);
 
     out->Flush();
 

@@ -2878,9 +2878,10 @@ void Wz4Mesh::SelFacesToVertices(sBool outputType, sInt addToInput, sF32 value, 
 
 /****************************************************************************/
 
-void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj)
+void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj, sInt amount, sInt power, sF32 range)
 {
   Wz4MeshFace *f;
+  sF32 selectValue = sClamp( powf(amount*range, power) ,0.0f, 1.0f);
 
   sFORALL(Faces,f)
     f->Temp = 0;
@@ -2905,7 +2906,7 @@ void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj)
             for(sInt k=0; k<f0->Count; k++)
             {
               if(Vertices.IsIndexValid(f0->Vertex[k]))
-                Vertices[f0->Vertex[k]].Select = 1.0f;
+                Vertices[f0->Vertex[k]].Select = selectValue;
             }
           }
         }
