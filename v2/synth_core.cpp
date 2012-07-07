@@ -31,6 +31,7 @@ static const sF32 fcattackadd = 7.0f;
 static const sF32 fcsusmul    = 0.0019375f;
 static const sF32 fcgain      = 0.6f;
 static const sF32 fcgainh     = 0.6f;
+static const sF32 fcmdlfomul  = 1973915.49f;
 
 static const sF32 fcdcoffset  = 3.814697265625e-6f; // 2^-18
 
@@ -47,13 +48,6 @@ union FloatBits
   sF32 f;
   sU32 u;
 };
-
-static sU32 float2bits(sF32 f)
-{
-  FloatBits x;
-  x.f = f;
-  return x.u;
-}
 
 static sF32 bits2float(sU32 u)
 {
@@ -164,6 +158,19 @@ static inline sF32 utof23(sU32 x)
 {
   sF32 f = bits2float((x >> 9) | 0x3f800000); // 1 + x/(2^32)
   return f - 1.0f;
+}
+
+// float from [0,1) into 0.32 unsigned fixed-point
+// this loses a bit, but that's what V2 does.
+static inline sU32 ftou32(sF32 v)
+{
+  return 2u * (sInt)(v * fc32bit);
+}
+
+// linear interpolation between a and b using t.
+static inline sF32 lerp(sF32 a, sF32 b, sF32 t)
+{
+  return a + t * (b-a);
 }
 
 // --------------------------------------------------------------------------
@@ -400,7 +407,7 @@ struct V2Osc
     gain = para->gain / 128.0f;
 
     sF32 col = para->color / 128.0f;
-    brpt = 2u * ((sInt)(col * fc32bit));
+    brpt = ftou32(col);
     nfres = 1.0f - sqrtf(col);
   }
 
@@ -1063,7 +1070,7 @@ struct V2LFO
     sync = (sInt)para->sync != 0;
     eg = (sInt)para->egmode != 0;
     freq = (sInt)(0.5f * fc32bit * calcfreq(para->rate / 128.0f));
-    cphase = 2*(sInt)(fc32bit * para->phase / 128.0f);
+    cphase = ftou32(para->phase / 128.0f);
 
     switch ((sInt)para->pol)
     {
@@ -1219,7 +1226,7 @@ struct V2Dist
       break;
 
     case DECIMATOR:
-      dfreq = 2 * (sInt)(fc32bit * calcfreq(para->param1 / 128.0f));
+      dfreq = ftou32(calcfreq(para->param1 / 128.0f));
       break;
 
     default: // filters
@@ -1714,6 +1721,135 @@ struct V2Boost
       x1[ch] = xm1; x2[ch] = xm2;
       y1[ch] = ym1; y2[ch] = ym2;
     }
+  }
+};
+
+// --------------------------------------------------------------------------
+// Modulating delay
+// --------------------------------------------------------------------------
+
+struct syVModDel
+{
+  sF32 amount;    // dry/wet value (0=-wet, 64=dry, 127=wet)
+  sF32 fb;        // feedback (0=-100%, 64=0%, 127=~100%)
+  sF32 llength;   // length of left delay
+  sF32 rlength;   // length of right delay
+  sF32 mrate;     // modulation rate
+  sF32 mdepth;    // modulation depth
+  sF32 mphase;    // modulation stereo phase (0=-180deg, 64=0deg, 127=180deg)
+};
+
+struct V2ModDel
+{
+  sF32 *db[2];    // left/right delay buffer
+  sU32 dbufmask;  // delay buffer mask (size-1, must be pow2)
+
+  sU32 dbptr;     // buffer write pos
+  sU32 dboffs[2]; // buffer read offset
+  
+  sU32 mcnt;      // mod counter
+  sInt mfreq;     // mod freq
+  sU32 mphase;    // mod phase
+  sU32 mmaxoffs;  // mod max offs (2048samples*depth)
+
+  sF32 fbval;     // feedback val
+  sF32 dryout;
+  sF32 wetout;
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance, sF32 *buf1, sF32 *buf2, sInt buflen)
+  {
+    assert(buflen != 0 && (buflen & (buflen - 1)) != 0);
+    db[0] = buf1;
+    db[1] = buf2;
+    dbufmask = buflen - 1;
+    inst = instance;
+
+    reset();
+  }
+
+  void reset()
+  {
+    dbptr = 0;
+    mcnt = 0;
+
+    memset(db[0], 0, (dbufmask + 1) * sizeof(sF32));
+    memset(db[1], 0, (dbufmask + 1) * sizeof(sF32));
+  }
+
+  void set(const syVModDel *para)
+  {
+    wetout = (para->amount - 64.0f) / 64.0f;
+    dryout = 1.0f - fabsf(wetout);
+    fbval = (para->fb - 64.0f) / 64.0f;
+
+    sF32 lenscale = ((sF32)dbufmask - 1023.0f) / 128.0f;
+    dboffs[0] = (sInt)(para->llength * lenscale);
+    dboffs[1] = (sInt)(para->rlength * lenscale);
+
+    mfreq = (sInt)(inst->SRfclinfreq * fcmdlfomul * calcfreq(para->mrate / 128.0f));
+    mmaxoffs = (sInt)(para->mdepth * 1023.0f / 128.0f);
+    mphase = ftou32((para->mphase - 64.0f) / 128.0f);
+  }
+
+  void renderAux2Main(StereoSample *dest, sInt nsamples)
+  {
+    if (!wetout)
+      return;
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      StereoSample x;
+
+      sF32 in = inst->aux2buf[i] + fcdcoffset;
+      processSample(&x, in, in, 0.0f);
+
+      dest[i].l += x.l;
+      dest[i].r += x.r;
+    }
+  }
+
+  void renderChan(StereoSample *chanbuf, sInt nsamples)
+  {
+    if (!wetout)
+      return;
+
+    sF32 dry = dryout;
+    for (sInt i=0; i < nsamples; i++)
+      processSample(&chanbuf[i], chanbuf[i].l + fcdcoffset, chanbuf[i].r + fcdcoffset, dry);
+  }
+
+private:
+  inline sF32 processChanSample(sF32 in, sInt ch, sF32 dry)
+  {
+    // modulation is a triangle wave
+    sU32 counter = mcnt + (ch ? mphase : 0);
+    counter = (counter < 0x80000000u) ? counter*2 : 0xffffffffu - counter*2;
+    
+    // determine effective offset
+    sU64 offs32_32 = (sU64)counter * mmaxoffs; // 32.32 fixed point
+    sU32 offs_int = sU32(offs32_32 >> 32) + dboffs[ch];
+    sU32 index = dbptr - offs_int;
+
+    // linear interpolation using low-order bits of offs32_32.
+    sF32 *delaybuf = db[ch];
+    sF32 x = utof23((sU32)(offs32_32 & 0xffffffffu));
+    sF32 delayed = lerp(delaybuf[(index - 0) & dbufmask], delaybuf[(index - 1) & dbufmask], x);
+    
+    // mix and output
+    delaybuf[dbptr] = in + delayed*fbval;
+    return in*dry + delayed*wetout;
+  }
+
+  inline void processSample(StereoSample *out, sF32 l, sF32 r, sF32 dry)
+  {
+    out->l = processChanSample(l, 0, dry);
+    out->r = processChanSample(r, 1, dry);
+
+    // tick
+    mcnt += mfreq;
+    dbptr = (dbptr + 1) & dbufmask;
   }
 };
 
