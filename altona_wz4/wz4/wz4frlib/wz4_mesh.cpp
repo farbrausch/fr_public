@@ -2758,28 +2758,157 @@ void Wz4Mesh::SelStoreLoad(sInt mode, sInt type, sInt slot)
 
 /****************************************************************************/
 
-void Wz4Mesh::SelectGrow()
+void Wz4Mesh::SelVerticesToFaces(sBool outputType, sBool addToInput, sF32 vertexValue)
 {
+  // outputType = 0 => touched Faces
+  // outputType = 1 => enclosed Faces
+  // addToInput = 0 => previous face selection is cleared
+  // addToInput = 1 => add new selected faces to previous face selection
+  // vertexValue => new selected vertex value
+
+  Wz4MeshVertex *v;
   Wz4MeshFace *f;
 
-  Wz4MeshFaceConnect *adj = Adjacency();
+  sInt pc = Vertices.GetCount();
+  sF32 *fsel = new sF32[pc];
+
+  sFORALL(Vertices,v)
+  {
+    fsel[_i] = v->Select;
+
+    // replace select value
+    if(v->Select >= 0.5f)
+      v->Select = vertexValue;
+  }
+
+  sFORALL(Faces,f)
+  {
+    sInt n=0;
+    sBool action=0;
+
+    for(sInt i=0; i<f->Count; i++)
+      n += (fsel[f->Vertex[i]]>=0.5f)?1:0;
+
+    // select touched or enclosed faces
+    if(outputType)
+    {
+      // enclosed faces
+      action = (n==f->Count);
+    }
+    else
+    {
+       // touched faces
+      action = (n>0);
+    }
+
+    // selection output
+    if(addToInput)
+    {
+      // add new selected faces to previous face selection
+      if(action)
+        f->Select = 1;
+    }
+    else
+    {
+      // don't keep previous face selection
+      f->Select = action?1:0;
+    }
+  }
+
+  delete[] fsel;
+}
+
+/****************************************************************************/
+
+void Wz4Mesh::SelFacesToVertices(sBool outputType, sInt addToInput, sF32 value, sBool clearFaces)
+{
+  // outputType = 0 => inner vertex
+  // outputType = 1 => full vertex
+  // addToInput = 0 => previous vertex selection is cleared
+  // addToInput = 1 => add new selected vertex to previous vertice selection
+  // vertexValue => new selected vertex value
+  // clearFaces = 0 => clear previous face selection
+  // clearFaces = 1 => keep previous face selection
+
+  Wz4MeshVertex *v;
+  Wz4MeshFace *f;
+
+  sInt pc = Vertices.GetCount();
+  sF32 *fsel = new sF32[pc];
+
+  for(sInt i=0; i<pc; i++)
+    fsel[i] = 0.0f;
+
+  sFORALL(Faces,f)
+  {
+    if(f->Select==1)
+    {
+      for(sInt i=0; i<f->Count; i++)
+        fsel[f->Vertex[i]] = value;
+    }
+
+    if(clearFaces)
+      f->Select = 0;
+  }
+
+  // select full vertex
+  if(outputType)
+  {
+    sInt *base = BasePos(1);
+
+    for (sInt i=0;i<pc;i++)
+      fsel[base[i]] = sMax(fsel[base[i]],fsel[i]);
+
+    for (sInt i=0;i<pc;i++)
+      fsel[i] = fsel[base[i]];
+
+    delete[] base;
+  }
+
+  sFORALL(Vertices,v)
+  {
+    if(addToInput)
+      v->Select = sMin(v->Select+fsel[_i],1.0f);
+    else
+      v->Select = fsel[_i];
+  }
+
+  delete[] fsel;
+}
+
+/****************************************************************************/
+
+void Wz4Mesh::SelectGrow(Wz4MeshFaceConnect *adj, sInt amount, sInt power, sF32 range)
+{
+  Wz4MeshFace *f;
+  sF32 selectValue = sClamp( powf(amount*range, power) ,0.0f, 1.0f);
 
   sFORALL(Faces,f)
     f->Temp = 0;
 
+  // calculation is based on faces selection
   sFORALL(Faces,f)
   {
     if(f->Select==1 && f->Temp==0)
     {
-      for(sInt j=0;j<f->Count;j++)
+      for(sInt j=0; j<f->Count; j++)
       {
         sInt m = adj[_i].Adjacent[j];
-        Wz4MeshFace *f0 = &Faces[m/4];
-
-        if(m>=0 && f0->Select==0)
+        if(m>=0)
         {
-          f0->Select = 1;
-          f0->Temp = 1;
+          Wz4MeshFace *f0 = &Faces[m/4];
+          if(f0->Select==0)
+          {
+            f0->Temp = 1;
+
+            // select faces and vertices
+            f0->Select = 1;
+            for(sInt k=0; k<f0->Count; k++)
+            {
+              if(Vertices.IsIndexValid(f0->Vertex[k]))
+                Vertices[f0->Vertex[k]].Select = selectValue;
+            }
+          }
         }
       }
     }
