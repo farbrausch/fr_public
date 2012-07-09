@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+// TODO:
+// - Need to zero-initialize everything
+
 // --------------------------------------------------------------------------
 // Constants.
 // --------------------------------------------------------------------------
@@ -1698,7 +1701,7 @@ private:
 // Bass boost (fixed low shelving EQ)
 // --------------------------------------------------------------------------
 
-struct syVVBoost
+struct syVBoost
 {
   sF32 amount;    // boost in dB (0..18)
 };
@@ -1720,7 +1723,7 @@ struct V2Boost
     inst = instance;
   }
 
-  void set(const syVVBoost *para)
+  void set(const syVBoost *para)
   {
     enabled = ((sInt)para->amount) != 0;
     if (!enabled)
@@ -2234,6 +2237,160 @@ struct V2Reverb
       }
     }
   }
+};
+
+// --------------------------------------------------------------------------
+// Channel
+// --------------------------------------------------------------------------
+
+struct syVChan
+{
+  sF32 chanvol;
+  sF32 auxarcv; // aux a receive
+  sF32 auxbrcv; // aux b receive
+  sF32 auxasnd; // aux a send
+  sF32 auxbsnd; // aux b send
+  sF32 aux1;
+  sF32 aux2;
+  sF32 fxroute;
+  syVBoost boost;
+  syVDist dist;
+  syVModDel chorus;
+  syVComp comp;
+};
+
+struct V2Chan
+{
+  enum FXRouting
+  {
+    FXR_DIST_THEN_CHORUS = 0,
+    FXR_CHORUS_THEN_DIST,
+  };
+
+  sF32 chgain;    // channel gain
+  sF32 a1gain;    // aux1 gain
+  sF32 a2gain;    // aux2 gain
+  sF32 aasnd;     // aux a send gain
+  sF32 absnd;     // aux b send gain
+  sF32 aarcv;     // aux a receive gain
+  sF32 abrcv;     // aux b receive gain
+  sInt fxr;
+  V2DCFilter dcf1;
+  V2Boost boost;
+  V2Dist dist;
+  V2DCFilter dcf2;
+  V2ModDel chorus;
+  V2Comp comp;
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance, sF32 *delbuf1, sF32 *delbuf2, sInt buflen)
+  {
+    inst = instance;
+    dcf1.init(inst);
+    boost.init(inst);
+    dist.init(inst);
+    dcf2.init(inst);
+    chorus.init(inst, delbuf1, delbuf2, buflen);
+    comp.init(inst);
+  }
+
+  void set(const syVChan *para)
+  {
+    aarcv = para->auxarcv / 128.0f;
+    abrcv = para->auxbrcv / 128.0f;
+    aasnd = fcgain * (para->auxasnd / 128.0f);
+    absnd = fcgain * (para->auxbsnd / 128.0f);
+    chgain = fcgain * (para->chanvol / 128.0f);
+    a1gain = chgain * fcgainh * (para->aux1 / 128.0f);
+    a2gain = chgain * fcgainh * (para->aux2 / 128.0f);
+    fxr = (sInt)para->fxroute;
+    dist.set(&para->dist);
+    chorus.set(&para->chorus);
+    comp.set(&para->comp);
+    boost.set(&para->boost);
+  }
+
+  void process(sInt nsamples)
+  {
+    StereoSample *chan = inst->chanbuf;
+
+    // AuxA/B receive (stereo)
+    accumulate(chan, inst->auxabuf, nsamples, aarcv);
+    accumulate(chan, inst->auxbbuf, nsamples, abrcv);
+
+    // Filters
+    dcf1.renderStereo(chan, chan, nsamples);
+    comp.render(chan, nsamples);
+    boost.render(chan, nsamples);
+    if (fxr == FXR_DIST_THEN_CHORUS)
+    {
+      dist.renderStereo(chan, chan, nsamples);
+      dcf2.renderStereo(chan, chan, nsamples);
+      chorus.renderChan(chan, nsamples);
+    }
+    else // FXR_CHORUS_THEN_DIST
+    {
+      chorus.renderChan(chan, nsamples);
+      dist.renderStereo(chan, chan, nsamples);
+      dcf2.renderStereo(chan, chan, nsamples);
+    }
+
+    // Aux1/2 send (mono)
+    accumulateMonoMix(inst->aux1buf, chan, nsamples, a1gain);
+    accumulateMonoMix(inst->aux2buf, chan, nsamples, a2gain);
+
+    // AuxA/B send (stereo)
+    accumulate(inst->auxabuf, chan, nsamples, aasnd);
+    accumulate(inst->auxbbuf, chan, nsamples, absnd);
+
+    // Channel buffer to mix buffer (stereo)
+    accumulate(inst->mixbuf, chan, nsamples, chgain);
+  }
+
+private:
+  void accumulate(StereoSample *dest, const StereoSample *src, sInt nsamples, sF32 gain)
+  {
+    if (gain == 0.0f)
+      return;
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      dest[i].l += gain * src[i].l;
+      dest[i].r += gain * src[i].r;
+    }
+  }
+
+  void accumulateMonoMix(sF32 *dest, const StereoSample *src, sInt nsamples, sF32 gain)
+  {
+    if (gain == 0.0f)
+      return;
+
+    for (sInt i=0; i < nsamples; i++)
+      dest[i] += gain * (src[i].l + src[i].r);
+  }
+};
+
+// @@@TODO: storeChanValues
+
+// --------------------------------------------------------------------------
+// Sound definitions
+// --------------------------------------------------------------------------
+
+struct V2Mod
+{
+  sU8 source;   // source: vel/ctl1-7/aenv/env2/lfo1/lfo2
+  sU8 val;      // 0=-1 .. 128=1
+  sU8 dest;     // destination (index into V2Sound)
+};
+
+struct V2Sound
+{
+  sU8 voice[sizeof(syVV2) / sizeof(sF32)];
+  sU8 chan[sizeof(syVChan) / sizeof(sF32)];
+  sU8 maxpoly;
+  sU8 modnum;
+  V2Mod modmatrix[1]; // actually modnum entries!
 };
 
 // vim: sw=2:sts=2:et:cino=\:0l1g0(0
