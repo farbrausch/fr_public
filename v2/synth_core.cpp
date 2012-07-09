@@ -292,6 +292,50 @@ struct V2DCF
   }
 };
 
+// Constant-length delay line
+class V2Delay
+{
+  sU32 pos, len;
+  sF32 *buf;
+
+public:
+  V2Delay()
+    : pos(0), len(0), buf(0)
+  {
+  }
+
+  ~V2Delay()
+  {
+    delete[] buf;
+  }
+
+  void init(sU32 len)
+  {
+    delete[] buf;
+    this->len = len;
+    buf = new sF32[len];
+    reset();
+  }
+
+  void reset()
+  {
+    memset(buf, 0, sizeof(*buf)*len);
+    pos = 0;
+  }
+
+  inline sF32 fetch() const
+  {
+    return buf[pos];
+  }
+
+  inline void feed(sF32 v)
+  {
+    buf[pos] = v;
+    if (++pos == len)
+      pos = 0;
+  }
+};
+
 // --------------------------------------------------------------------------
 // V2 Instance
 // --------------------------------------------------------------------------
@@ -2062,6 +2106,133 @@ private:
     rmsval[ch] += insq - rmsbuf[rmscnt].ch[ch]; // add new sample, remove oldest
     rmsbuf[rmscnt].ch[ch] = insq; // keep track of value we added
     return sqrtf(rmsval[ch] / (sF32)RMSLEN);
+  }
+};
+
+// --------------------------------------------------------------------------
+// Stereo reverb
+// --------------------------------------------------------------------------
+
+struct syVReverb
+{
+  sF32 revtime;
+  sF32 highcut;
+  sF32 lowcut;
+  sF32 vol;
+};
+
+struct V2Reverb
+{
+  sF32 gainc[4];  // feedback gain for comb filter delays 0-3
+  sF32 gaina[2];  // feedback gain for allpas delays 0-1
+  sF32 gainin;    // input gain
+  sF32 damp;      // high cut (1-val^2)
+  sF32 lowcut;    // low cut (val^2)
+
+  V2Delay combd[2][4];  // left/right comb filter delay lines
+  sF32 combl[2][4];     // left/right comb delay filter buffers
+  V2Delay alld[2][2];   // left/right allpass filters
+  sF32 hpf[2];          // memory for low cut filters
+
+  V2Instance *inst;
+
+  void init(V2Instance *instance)
+  {
+    static const int lens[2][6] = {
+      { 1309, 1635, 1811, 1926, 220, 74 },
+      { 1327, 1631, 1833, 1901, 205, 77 }
+    };
+
+    for (sInt ch=0; ch < 2; ch++)
+    {
+      // init comb filters
+      for (sInt i=0; i < 4; i++)
+        combd[ch][i].init(lens[ch][i]);
+
+      // init allpass filters
+      for (sInt i=0; i < 2; i++)
+        alld[ch][i].init(lens[ch][4+i]);
+    }
+
+    instance = inst;
+    reset();
+  }
+
+  void reset()
+  {
+    for (sInt ch=0; ch < 2; ch++)
+    {
+      // comb
+      for (sInt i=0; i < 4; i++)
+      {
+        combd[ch][i].reset();
+        combl[ch][i] = 0.0f;
+      }
+
+      // allpass
+      for (sInt i=0; i < 2; i++)
+        alld[ch][i].reset();
+
+      // low cut
+      hpf[ch] = 0.0f;
+    }
+  }
+
+  void set(const syVReverb *para)
+  {
+    static const sF32 gaincdef[4] = {
+      0.966384599f, 0.958186359f, 0.953783929f, 0.950933178f
+    };
+    static const sF32 gainadef[2] = {
+      0.994260075f, 0.998044717f
+    };
+
+    sF32 e = inst->SRfclinfreq * sqr(64.0f / (para->revtime + 1.0f));
+    for (sInt i=0; i < 4; i++)
+      gainc[i] = powf(gaincdef[i], e);
+
+    for (sInt i=0; i < 2; i++)
+      gaina[i] = powf(gainadef[i], e);
+
+    damp = inst->SRfclinfreq * (para->highcut / 128.0f);
+    gainin = para->vol / 128.0f;
+    lowcut = inst->SRfclinfreq * sqr(sqr(para->lowcut / 128.0f));
+  }
+
+  void render(StereoSample *dest, sInt nsamples)
+  {
+    const sF32 *inbuf = inst->aux1buf;
+
+    for (sInt i=0; i < nsamples; i++)
+    {
+      sF32 in = inbuf[i] * gainin + fcdcoffset;
+
+      for (sInt ch=0; ch < 2; ch++)
+      {
+        // parallel comb filters
+        sF32 cur = 0.0f;
+        for (sInt j=0; j < 4; j++)
+        {
+          sF32 nv = in + gainc[j] * combd[ch][j].fetch();
+          combl[ch][j] += damp * (nv - combl[ch][j]);
+          combd[ch][j].feed(combl[ch][j]);
+          cur += combl[ch][j];
+        }
+
+        // serial allpass filters
+        for (sInt j=0; j < 2; j++)
+        {
+          sF32 dv = alld[ch][j].fetch();
+          sF32 dz = cur + gaina[j] * dv;
+          alld[ch][j].feed(dz);
+          cur = dv - dz * gaina[j] * dz;
+        }
+
+        // low cut and output
+        hpf[ch] += lowcut * (cur - hpf[ch]);
+        dest[i].ch[ch] += cur - hpf[ch];
+      }
+    }
   }
 };
 
