@@ -2197,6 +2197,10 @@ struct V2Reverb
     for (sInt i=0; i < 2; i++)
       gaina[i] = powf(gainadef[i], e);
 
+    // alternate phase on odd combs
+    gainc[1] = -gainc[1];
+    gainc[3] = -gainc[3];
+
     damp = inst->SRfclinfreq * (para->highcut / 128.0f);
     gainin = para->vol / 128.0f;
     lowcut = inst->SRfclinfreq * sqr(sqr(para->lowcut / 128.0f));
