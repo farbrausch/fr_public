@@ -307,17 +307,17 @@ public:
   {
   }
 
-  ~V2Delay()
+  void init(sF32 *buf, sU32 len)
   {
-    delete[] buf;
+    this->buf = buf;
+    this->len = len;
+    reset();
   }
 
-  void init(sU32 len)
+  template<sU32 N>
+  void init(sF32 (&buf)[N])
   {
-    delete[] buf;
-    this->len = len;
-    buf = new sF32[len];
-    reset();
+    init(buf, N);
   }
 
   void reset()
@@ -2139,23 +2139,35 @@ struct V2Reverb
 
   V2Instance *inst;
 
+  // delay line buffers
+  sF32 bcombl0[1309];
+  sF32 bcombl1[1635];
+  sF32 bcombl2[1811];
+  sF32 bcombl3[1926];
+  sF32 balll0[220];
+  sF32 balll1[74];
+  sF32 bcombr0[1327];
+  sF32 bcombr1[1631];
+  sF32 bcombr2[1833];
+  sF32 bcombr3[1901];
+  sF32 ballr0[205];
+  sF32 ballr1[77];
+
   void init(V2Instance *instance)
   {
-    static const int lens[2][6] = {
-      { 1309, 1635, 1811, 1926, 220, 74 },
-      { 1327, 1631, 1833, 1901, 205, 77 }
-    };
-
-    for (sInt ch=0; ch < 2; ch++)
-    {
-      // init comb filters
-      for (sInt i=0; i < 4; i++)
-        combd[ch][i].init(lens[ch][i]);
-
-      // init allpass filters
-      for (sInt i=0; i < 2; i++)
-        alld[ch][i].init(lens[ch][4+i]);
-    }
+    // init filters
+    combd[0][0].init(bcombl0);
+    combd[0][1].init(bcombl1);
+    combd[0][2].init(bcombl2);
+    combd[0][3].init(bcombl3);
+    alld[0][0].init(balll0);
+    alld[0][1].init(balll1);
+    combd[1][0].init(bcombr0);
+    combd[1][1].init(bcombr1);
+    combd[1][2].init(bcombr2);
+    combd[1][3].init(bcombr3);
+    alld[1][0].init(ballr0);
+    alld[1][1].init(ballr1);
 
     instance = inst;
     reset();
@@ -2393,5 +2405,9 @@ struct V2Sound
   sU8 modnum;
   V2Mod modmatrix[1]; // actually modnum entries!
 };
+
+// --------------------------------------------------------------------------
+// Synth
+// --------------------------------------------------------------------------
 
 // vim: sw=2:sts=2:et:cino=\:0l1g0(0
