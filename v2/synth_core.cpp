@@ -2228,7 +2228,7 @@ struct V2Reverb
           sF32 dv = alld[ch][j].fetch();
           sF32 dz = cur + gaina[j] * dv;
           alld[ch][j].feed(dz);
-          cur = dv - dz * gaina[j] * dz;
+          cur = dv - gaina[j] * dz;
         }
 
         // low cut and output
