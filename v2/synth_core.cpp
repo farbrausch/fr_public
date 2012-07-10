@@ -1696,9 +1696,6 @@ private:
   }
 };
 
-// @@@TODO storeV2Values (voice setup/mod matrix!!)
-// but needs fleshed-out V2Instance.
-
 // --------------------------------------------------------------------------
 // Bass boost (fixed low shelving EQ)
 // --------------------------------------------------------------------------
@@ -2446,13 +2443,13 @@ struct V2Synth
   static const sInt POLY = 64;
   static const sInt CHANS = 16;
 
-  const void *patchmap;
+  const V2Sound **patchmap;
   sU32 mrstat;
   sU32 curalloc;
   sInt samplerate;
-  sInt chanmap[POLY];
+  sInt chanmap[POLY];   // voice -> chan
   sInt allocpos[POLY];
-  sInt voicemap[CHANS];
+  sInt voicemap[CHANS]; // chan -> choice
   sInt tickd;
 
   V2ChanInfo chans[CHANS];
@@ -2501,7 +2498,7 @@ struct V2Synth
     ronanCBSetSR(&ronan, samplerate);
 
     // patch map
-    this->patchmap = patchmap;
+    this->patchmap = (const V2Sound **)patchmap;
 
     // init voices
     for (sInt i=0; i < POLY; i++)
@@ -2525,8 +2522,34 @@ struct V2Synth
     dcf.init(&instance);
   }
 
-  void render(void *buf, sInt nsamples, void *buf2, sInt add)
+  void render(sF32 *buf, sInt nsamples, sF32 *buf2, bool add)
   {
+    sInt todo = nsamples;
+
+    // fragment loop - chunk everything into frames.
+    while (todo)
+    {
+      // do we need to render a new frame?
+      if (!tickd)
+      {
+        // play a single tick
+        for (sInt i=0; i < POLY; i++)
+        {
+          if (chanmap[i] < 0)
+            continue;
+
+          storeV2Values(i);
+          voicesw[i].tick();
+
+          // if EG1 finished, turn off chan
+          if (voicesw[i].env[0].state == V2Env::OFF)
+            chanmap[i] = -1;
+        }
+
+        tickd = instance.SRcFrameSize;
+        renderBlock();
+      }
+    }
   }
 
   void processMIDI(const void *ptr)
@@ -2548,6 +2571,57 @@ struct V2Synth
   void setLyrics(const char **ptr)
   {
   }
+
+private:
+  void storeV2Values(sInt voice)
+  {
+    sInt chan = chanmap[voice];
+    if (chan < 0)
+      return;
+
+    // get patch definition
+    const V2Sound *patch = patchmap[chans[chan].pgm];
+    syVV2 *vpara = &voicesv[voice];
+    V2Voice *vwork = &voicesw[voice];
+    sF32 *vparaf = (sF32 *)vpara;
+    
+    // copy voice dependent data
+    for (sInt i=0; i < COUNTOF(patch->voice); i++)
+      vparaf[i] = (sF32)patch->voice[i];
+
+    // modulation matrix
+    for (sInt i=0; i < patch->modnum; i++)
+    {
+      const V2Mod *mod = &patch->modmatrix[i];
+      if (mod->dest >= COUNTOF(patch->voice))
+        continue;
+
+      // read source
+      sF32 in;
+      switch (mod->source)
+      {
+      case 0: in = vwork->velo; break;        // velocity
+      case 1: case 2: case 3: case 4: case 5: case 6: case 7: // controller value
+        in = chans[chan].ctl[mod->source-1];
+        break;
+      case 8: in = vwork->env[0].out; break;  // env0 output
+      case 9: in = vwork->env[1].out; break;  // env1 output
+      case 10: in = vwork->lfo[0].out; break; // lfo0 output
+      case 11: in = vwork->lfo[1].out; break; // lfo1 output
+      default: in = 2.0f * (vwork->note - 48.0f); break; // note
+      }
+
+      // apply
+      sF32 scale = (mod->val - 64.0f) / 64.0f;
+      vparaf[mod->dest] = clamp(vparaf[mod->dest] + scale*in, 0.0f, 128.0f);
+    }
+
+    vwork->set(vpara);
+  }
+
+  void renderBlock()
+  {
+  }
 };
 
 // --------------------------------------------------------------------------
@@ -2566,7 +2640,7 @@ void __stdcall synthInit(void *pthis, const void *patchmap, int samplerate)
 
 void __stdcall synthRender(void *pthis, void *buf, int smp, void *buf2, int add)
 {
-  ((V2Synth *)pthis)->render(buf, smp, buf2, add);
+  ((V2Synth *)pthis)->render((sF32 *)buf, smp, (sF32 *)buf2, add != 0);
 }
 
 void __stdcall synthProcessMIDI(void *pthis, const void *ptr)
