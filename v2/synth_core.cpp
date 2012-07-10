@@ -2197,10 +2197,6 @@ struct V2Reverb
     for (sInt i=0; i < 2; i++)
       gaina[i] = powf(gainadef[i], e);
 
-    // alternate phase on odd combs
-    gainc[1] = -gainc[1];
-    gainc[3] = -gainc[3];
-
     damp = inst->SRfclinfreq * (para->highcut / 128.0f);
     gainin = para->vol / 128.0f;
     lowcut = inst->SRfclinfreq * sqr(sqr(para->lowcut / 128.0f));
@@ -2220,7 +2216,8 @@ struct V2Reverb
         sF32 cur = 0.0f;
         for (sInt j=0; j < 4; j++)
         {
-          sF32 nv = in + gainc[j] * combd[ch][j].fetch();
+          sF32 dv = combd[ch][j].fetch();
+          sF32 nv = gainc[j] * dv + ((j & 1) ? -in : in); // alternate phase on combs
           combl[ch][j] += damp * (nv - combl[ch][j]);
           combd[ch][j].feed(combl[ch][j]);
           cur += combl[ch][j];
