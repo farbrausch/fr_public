@@ -138,6 +138,18 @@ static inline sF32 sqr(sF32 x)
 }
 
 template<typename T>
+static inline T min(T a, T b)
+{
+  return a < b ? a : b;
+}
+
+template<typename T>
+static inline T max(T a, T b)
+{
+  return a > b ? a : b;
+}
+
+template<typename T>
 static inline T clamp(T x, T min, T max)
 {
   return (x < min) ? min : (x > max) ? max : x;
@@ -177,12 +189,6 @@ static inline sU32 ftou32(sF32 v)
 static inline sF32 lerp(sF32 a, sF32 b, sF32 t)
 {
   return a + t * (b-a);
-}
-
-template<typename T>
-static inline T max(T a, T b)
-{
-  return a > b ? a : b;
 }
 
 // --------------------------------------------------------------------------
@@ -2448,7 +2454,7 @@ struct V2Synth
   sInt chanmap[POLY];   // voice -> chan
   sInt allocpos[POLY];
   sInt voicemap[CHANS]; // chan -> choice
-  sInt tickd;
+  sInt tickd;           // number of finished samples left in mix buffer
 
   V2ChanInfo chans[CHANS];
   syVV2 voicesv[POLY];
@@ -2529,24 +2535,46 @@ struct V2Synth
     {
       // do we need to render a new frame?
       if (!tickd)
+        tick();
+
+      // copy to dest buffer(s)
+      const StereoSample *src = &instance.mixbuf[instance.SRcFrameSize - tickd];
+      sInt nread = min(todo, tickd);
+      if (!buf2) // interleaved samples
       {
-        // play a single tick
-        for (sInt i=0; i < POLY; i++)
+        if (!add)
+          memcpy(buf, src, nsamples * sizeof(StereoSample));
+        else
         {
-          if (chanmap[i] < 0)
-            continue;
-
-          storeV2Values(i);
-          voicesw[i].tick();
-
-          // if EG1 finished, turn off chan
-          if (voicesw[i].env[0].state == V2Env::OFF)
-            chanmap[i] = -1;
+          for (sInt i=0; i < nsamples; i++)
+          {
+            buf[i*2+0] += src[i].l;
+            buf[i*2+1] += src[i].r;
+          }
         }
-
-        tickd = instance.SRcFrameSize;
-        renderBlock();
       }
+      else // buf = left, buf2 = right
+      {
+        if (!add)
+        {
+          for (sInt i=0; i < nsamples; i++)
+          {
+            buf[i] = src[i].l;
+            buf2[i] = src[i].r;
+          }
+        }
+        else
+        {
+          for (sInt i=0; i < nsamples; i++)
+          {
+            buf[i] += src[i].l;
+            buf2[i] += src[i].r;
+          }
+        }
+      }
+
+      todo -= nread;
+      tickd -= nread;
     }
   }
 
@@ -2581,10 +2609,10 @@ private:
     case 1: case 2: case 3: case 4: case 5: case 6: case 7: // controller value
       in = chans[chan].ctl[source-1];
       break;
-    case 8: in = voice->env[0].out; break;  // env0 output
-    case 9: in = voice->env[1].out; break;  // env1 output
-    case 10: in = voice->lfo[0].out; break; // lfo0 output
-    case 11: in = voice->lfo[1].out; break; // lfo1 output
+    case 8: in = voice->env[0].out; break;  // EG1 output
+    case 9: in = voice->env[1].out; break;  // EG2 output
+    case 10: in = voice->lfo[0].out; break; // LFO1 output
+    case 11: in = voice->lfo[1].out; break; // LFO2 output
     default: in = 2.0f * (voice->note - 48.0f); break; // note
     }
 
@@ -2653,8 +2681,103 @@ private:
     cwork->set(cpara);
   }
 
-  void renderBlock()
+  void tick()
   {
+    // voices
+    for (sInt i=0; i < POLY; i++)
+    {
+      if (chanmap[i] < 0)
+        continue;
+
+      storeV2Values(i);
+      voicesw[i].tick();
+
+      // if EG1 finished, turn off voice
+      if (voicesw[i].env[0].state == V2Env::OFF)
+        chanmap[i] = -1;
+    }
+
+    // chans
+    for (sInt i=0; i < CHANS; i++)
+      storeChanValues(i);
+
+    ronanCBTick(&ronan);
+    tickd = instance.SRcFrameSize;
+    renderFrame();
+  }
+
+  void renderFrame()
+  {
+    sInt nsamples = instance.SRcFrameSize;
+
+    // clear output buffer
+    memset(instance.mixbuf, 0, nsamples * sizeof(StereoSample));
+
+    // clear aux buffers
+    memset(instance.aux1buf, 0, nsamples * sizeof(sF32));
+    memset(instance.aux2buf, 0, nsamples * sizeof(sF32));
+    memset(instance.auxabuf, 0, nsamples * sizeof(StereoSample));
+    memset(instance.auxbbuf, 0, nsamples * sizeof(StereoSample));
+
+    // process all channels
+    for (sInt chan=0; chan < CHANS; chan++)
+    {
+      // check if any voices are active on this channel
+      sInt voice = 0;
+      while (voice < POLY && chanmap[voice] != chan)
+        voice++;
+
+      if (voice == POLY)
+        continue;
+
+      // clear channel buffer
+      memset(instance.chanbuf, 0, nsamples * sizeof(StereoSample));
+
+      // render all voices on this channel
+      for (; voice < POLY; voice++)
+      {
+        if (chanmap[voice] != chan)
+          continue;
+
+        voicesw[voice].render(instance.chanbuf, nsamples);
+      }
+
+      // channel 15 -> Ronan
+      if (chan == 15)
+        ronanCBProcess(&ronan, &instance.chanbuf[0].l, nsamples);
+
+      chansw[chan].process(nsamples); 
+    }
+
+    // global filters
+    StereoSample *mix = instance.mixbuf;
+    reverb.render(mix, nsamples);
+    delay.renderAux2Main(mix, nsamples);
+    dcf.renderStereo(mix, mix, nsamples);
+
+    // low cut/high cut
+    sF32 lcf = lcfreq, hcf = hcfreq;
+    for (sInt i=0; i < nsamples; i++)
+    {
+      for (sInt ch=0; ch < 2; ch++)
+      {
+        // low cut
+        sF32 x = mix[i].ch[ch] - lcbuf[ch];
+        lcbuf[ch] += lcf * x;
+
+        // high cut
+        if (hcf != 1.0f)
+        {
+          hcbuf[ch] += hcf * (x - hcbuf[ch]);
+          x = hcbuf[ch];
+        }
+
+        mix[i].ch[ch] = x;
+      }
+    }
+
+    // sum compressor
+    compr.render(mix, nsamples);
   }
 };
 
