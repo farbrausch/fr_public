@@ -1,4 +1,5 @@
 #include "types.h"
+#include "synth.h"
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -2408,6 +2409,26 @@ struct V2Sound
 };
 
 // --------------------------------------------------------------------------
+// Ronan
+// --------------------------------------------------------------------------
+
+struct syWRonan
+{
+  sU8 mem[64*1024]; // "that should be enough" --synth.asm. :)
+};
+
+extern "C"
+{
+  void __stdcall ronanCBInit(syWRonan *pthis);
+  void __stdcall ronanCBTick(syWRonan *pthis);
+  void __stdcall ronanCBNoteOn(syWRonan *pthis);
+  void __stdcall ronanCBNoteOff(syWRonan *pthis);
+  void __stdcall ronanCBSetCtl(syWRonan *pthis, sU32 ctl, sU32 val);
+  void __stdcall ronanCBProcess(syWRonan *pthis, sF32 *buf, sU32 len);
+  void __stdcall ronanCBSetSR(syWRonan *pthis, sInt samplerate);
+}
+
+// --------------------------------------------------------------------------
 // Synth
 // --------------------------------------------------------------------------
 
@@ -2420,7 +2441,7 @@ struct V2ChanInfo
 // V2Synth holds a V2Instance.
 // In the original code these are one and the same struct (SYN) but that
 // would turn out fairly awkward in this C++ version, hence the split.
-struct V2Synth : public V2Instance
+struct V2Synth
 {
   static const sInt POLY = 64;
   static const sInt CHANS = 16;
@@ -2428,7 +2449,7 @@ struct V2Synth : public V2Instance
   const void *patchmap;
   sU32 mrstat;
   sU32 curalloc;
-  sU32 samplerate;
+  sInt samplerate;
   sInt chanmap[POLY];
   sInt allocpos[POLY];
   sInt voicemap[CHANS];
@@ -2459,12 +2480,49 @@ struct V2Synth : public V2Instance
   sF32 hcfreq;    // high cut freq
   sF32 hcbuf[2];  // high cut buf l/r
 
+  // delay buffers
+  sF32 maindelbuf[2][32768];
+  sF32 chandelbuf[CHANS][2][2048];
+
   V2Instance instance;
 
-  sU8 ronanw[65536]; // should be enough
+  syWRonan ronan;
 
   void init(const void *patchmap, sInt samplerate)
   {
+    // Ahem, so this is somewhat dubious, but we don't use
+    // virtual functions or anything so it should be fine. Ahem.
+    // Look away please :)
+    memset(this, 0, sizeof(this));
+
+    // set sampling rate
+    this->samplerate = samplerate;
+    instance.calcNewSampleRate(samplerate);
+    ronanCBSetSR(&ronan, samplerate);
+
+    // patch map
+    this->patchmap = patchmap;
+
+    // init voices
+    for (sInt i=0; i < POLY; i++)
+    {
+      chanmap[i] = -1;
+      voicesw[i].init(&instance);
+    }
+
+    // init channels
+    for (sInt i=0; i < CHANS; i++)
+    {
+      chans[i].ctl[6] = 0x7f;
+      chansw[i].init(&instance, chandelbuf[i][0], chandelbuf[i][1], COUNTOF(chandelbuf[i][0]));
+    }
+
+    // global filters
+    reverb.init(&instance);
+    delay.init(&instance, maindelbuf[0], maindelbuf[1], COUNTOF(maindelbuf[0]));
+    ronanCBInit(&ronan);
+    compr.init(&instance);
+    dcf.init(&instance);
   }
 
   void render(void *buf, sInt nsamples, void *buf2, sInt add)
@@ -2531,29 +2589,29 @@ void __stdcall synthGetPgm(void *pthis, void *dest)
   ((V2Synth *)pthis)->getPgm(dest);
 }
 
-void __stdcall synthSetVUMode(void *pthis, int mode)
+void __stdcall synthSetVUMode(void *, int)
 {
   // nyi
 }
 
-void __stdcall synthGetChannelVU(void *pthis, int ch, float *l, float *r)
+void __stdcall synthGetChannelVU(void *, int, float *, float *)
 {
   // nyi
 }
 
-void __stdcall synthGetMainVU(void *pthis, float *l, float *r)
+void __stdcall synthGetMainVU(void *, float *, float *)
 {
   // nyi
 }
 
 long __stdcall synthGetFrameSize(void *pthis)
 {
-  return ((V2Synth *)pthis)->SRcFrameSize;
+  return ((V2Synth *)pthis)->instance.SRcFrameSize;
 }
 
-void __stdcall synthSetLyrics(void *pthis, const char **ptr)
+extern "C" void * __stdcall synthGetSpeechMem(void *pthis)
 {
-  ((V2Synth *)pthis)->setLyrics(ptr);
+  return &((V2Synth *)pthis)->ronan;
 }
 
 // vim: sw=2:sts=2:et:cino=\:0l1g0(0
