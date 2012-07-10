@@ -6,6 +6,7 @@
 
 // TODO:
 // - Need to zero-initialize everything
+// - VU meters?
 
 // --------------------------------------------------------------------------
 // Constants.
@@ -2409,5 +2410,150 @@ struct V2Sound
 // --------------------------------------------------------------------------
 // Synth
 // --------------------------------------------------------------------------
+
+struct V2ChanInfo
+{
+  sU8 pgm;    // program
+  sU8 ctl[7]; // controllers
+};
+
+// V2Synth holds a V2Instance.
+// In the original code these are one and the same struct (SYN) but that
+// would turn out fairly awkward in this C++ version, hence the split.
+struct V2Synth : public V2Instance
+{
+  static const sInt POLY = 64;
+  static const sInt CHANS = 16;
+
+  const void *patchmap;
+  sU32 mrstat;
+  sU32 curalloc;
+  sU32 samplerate;
+  sInt chanmap[POLY];
+  sInt allocpos[POLY];
+  sInt voicemap[CHANS];
+  sInt tickd;
+
+  V2ChanInfo chans[CHANS];
+  syVV2 voicesv[POLY];
+  V2Voice voicesw[POLY];
+  syVChan chansv[CHANS];
+  V2Chan chansw[CHANS];
+
+  struct Globals
+  {
+    syVReverb rvbparm;
+    syVModDel delparm;
+    sF32 vlowcut;
+    sF32 vhighcut;
+    syVComp cprparm;
+    sU8 guicolor;
+  } globals;
+
+  V2Reverb reverb;
+  V2ModDel delay;
+  V2DCFilter dcf;
+  V2Comp compr;
+  sF32 lcfreq;    // low cut freq
+  sF32 lcbuf[2];  // low cut buf l/r
+  sF32 hcfreq;    // high cut freq
+  sF32 hcbuf[2];  // high cut buf l/r
+
+  V2Instance instance;
+
+  sU8 ronanw[65536]; // should be enough
+
+  void init(const void *patchmap, sInt samplerate)
+  {
+  }
+
+  void render(void *buf, sInt nsamples, void *buf2, sInt add)
+  {
+  }
+
+  void processMIDI(const void *ptr)
+  {
+  }
+
+  void setGlobals(const void *ptr)
+  {
+  }
+
+  void getPoly(void *dest)
+  {
+  }
+
+  void getPgm(void *dest)
+  {
+  }
+
+  void setLyrics(const char **ptr)
+  {
+  }
+};
+
+// --------------------------------------------------------------------------
+// C-style interface
+// --------------------------------------------------------------------------
+
+unsigned int __stdcall synthGetSize()
+{
+  return sizeof(V2Synth);
+}
+
+void __stdcall synthInit(void *pthis, const void *patchmap, int samplerate)
+{
+  ((V2Synth *)pthis)->init(patchmap, samplerate);
+}
+
+void __stdcall synthRender(void *pthis, void *buf, int smp, void *buf2, int add)
+{
+  ((V2Synth *)pthis)->render(buf, smp, buf2, add);
+}
+
+void __stdcall synthProcessMIDI(void *pthis, const void *ptr)
+{
+  ((V2Synth *)pthis)->processMIDI(ptr);
+}
+
+void __stdcall synthSetGlobals(void *pthis, const void *ptr)
+{
+  ((V2Synth *)pthis)->setGlobals(ptr);
+}
+
+void __stdcall synthGetPoly(void *pthis, void *dest)
+{
+  ((V2Synth *)pthis)->getPoly(dest);
+}
+
+void __stdcall synthGetPgm(void *pthis, void *dest)
+{
+  ((V2Synth *)pthis)->getPgm(dest);
+}
+
+void __stdcall synthSetVUMode(void *pthis, int mode)
+{
+  // nyi
+}
+
+void __stdcall synthGetChannelVU(void *pthis, int ch, float *l, float *r)
+{
+  // nyi
+}
+
+void __stdcall synthGetMainVU(void *pthis, float *l, float *r)
+{
+  // nyi
+}
+
+long __stdcall synthGetFrameSize(void *pthis)
+{
+  return ((V2Synth *)pthis)->SRcFrameSize;
+}
+
+void __stdcall synthSetLyrics(void *pthis, const char **ptr)
+{
+  ((V2Synth *)pthis)->setLyrics(ptr);
+}
 
 // vim: sw=2:sts=2:et:cino=\:0l1g0(0
