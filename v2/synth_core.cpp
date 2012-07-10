@@ -2383,8 +2383,6 @@ private:
   }
 };
 
-// @@@TODO: storeChanValues
-
 // --------------------------------------------------------------------------
 // Sound definitions
 // --------------------------------------------------------------------------
@@ -2573,17 +2571,39 @@ struct V2Synth
   }
 
 private:
-  void storeV2Values(sInt voice)
+  sF32 getmodsource(const V2Voice *voice, sInt chan, sInt source)
   {
-    sInt chan = chanmap[voice];
+    sF32 in = 0.0f;
+
+    switch (source)
+    {
+    case 0: in = voice->velo; break;        // velocity
+    case 1: case 2: case 3: case 4: case 5: case 6: case 7: // controller value
+      in = chans[chan].ctl[source-1];
+      break;
+    case 8: in = voice->env[0].out; break;  // env0 output
+    case 9: in = voice->env[1].out; break;  // env1 output
+    case 10: in = voice->lfo[0].out; break; // lfo0 output
+    case 11: in = voice->lfo[1].out; break; // lfo1 output
+    default: in = 2.0f * (voice->note - 48.0f); break; // note
+    }
+
+    return in;
+  }
+
+  void storeV2Values(sInt vind)
+  {
+    sInt chan = chanmap[vind];
     if (chan < 0)
       return;
 
     // get patch definition
     const V2Sound *patch = patchmap[chans[chan].pgm];
-    syVV2 *vpara = &voicesv[voice];
-    V2Voice *vwork = &voicesw[voice];
+
+    // voice data
+    syVV2 *vpara = &voicesv[vind];
     sF32 *vparaf = (sF32 *)vpara;
+    V2Voice *voice = &voicesw[vind];
     
     // copy voice dependent data
     for (sInt i=0; i < COUNTOF(patch->voice); i++)
@@ -2596,27 +2616,41 @@ private:
       if (mod->dest >= COUNTOF(patch->voice))
         continue;
 
-      // read source
-      sF32 in;
-      switch (mod->source)
-      {
-      case 0: in = vwork->velo; break;        // velocity
-      case 1: case 2: case 3: case 4: case 5: case 6: case 7: // controller value
-        in = chans[chan].ctl[mod->source-1];
-        break;
-      case 8: in = vwork->env[0].out; break;  // env0 output
-      case 9: in = vwork->env[1].out; break;  // env1 output
-      case 10: in = vwork->lfo[0].out; break; // lfo0 output
-      case 11: in = vwork->lfo[1].out; break; // lfo1 output
-      default: in = 2.0f * (vwork->note - 48.0f); break; // note
-      }
-
-      // apply
       sF32 scale = (mod->val - 64.0f) / 64.0f;
-      vparaf[mod->dest] = clamp(vparaf[mod->dest] + scale*in, 0.0f, 128.0f);
+      vparaf[mod->dest] = clamp(vparaf[mod->dest] + scale*getmodsource(voice, chan, mod->source), 0.0f, 128.0f);
     }
 
-    vwork->set(vpara);
+    voice->set(vpara);
+  }
+
+  void storeChanValues(sInt chan)
+  {
+    // get patch definition
+    const V2Sound *patch = patchmap[chans[chan].pgm];
+
+    // chan data
+    syVChan *cpara = &chansv[chan];
+    sF32 *cparaf = (sF32 *)cpara;
+    V2Chan *cwork = &chansw[chan];
+    V2Voice *voice = &voicesw[voicemap[chan]];
+
+    // copy channel dependent data
+    for (sInt i=0; i < COUNTOF(patch->chan); i++)
+      cparaf[i] = (sF32)patch->chan[i];
+
+    // modulation matrix
+    for (sInt i=0; i < patch->modnum; i++)
+    {
+      const V2Mod *mod = &patch->modmatrix[i];
+      sInt dest = mod->dest - COUNTOF(patch->voice);
+      if (dest < 0 || dest >= COUNTOF(patch->chan))
+        continue;
+
+      sF32 scale = (mod->val - 64.0f) / 64.0f;
+      cparaf[dest] = clamp(cparaf[dest] + scale*getmodsource(voice, chan, mod->source), 0.0f, 128.0f);
+    }
+
+    cwork->set(cpara);
   }
 
   void renderBlock()
