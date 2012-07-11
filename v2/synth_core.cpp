@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 // TODO:
-// - Need to zero-initialize everything
 // - VU meters?
 
 // --------------------------------------------------------------------------
@@ -2448,11 +2447,11 @@ struct V2Synth
   static const sInt CHANS = 16;
 
   const V2Sound **patchmap;
-  sU32 mrstat;
+  sU32 mrstat;          // running status in MIDI decoding
   sU32 curalloc;
   sInt samplerate;
   sInt chanmap[POLY];   // voice -> chan
-  sInt allocpos[POLY];
+  sU32 allocpos[POLY];
   sInt voicemap[CHANS]; // chan -> choice
   sInt tickd;           // number of finished samples left in mix buffer
 
@@ -2470,6 +2469,7 @@ struct V2Synth
     sF32 vhighcut;
     syVComp cprparm;
     sU8 guicolor;
+    sU8 _pad[3];
   } globals;
 
   V2Reverb reverb;
@@ -2578,24 +2578,232 @@ struct V2Synth
     }
   }
 
-  void processMIDI(const void *ptr)
+  void processMIDI(const sU8 *cmd)
   {
+    while (*cmd != 0xfd) // until end of stream
+    {
+      if (*cmd & 0x80) // start of message
+        mrstat = *cmd++;
+
+      if (mrstat < 0x80) // we don't have a current message? uhm...
+        break;
+
+      sInt chan = mrstat & 0xf;
+      switch ((mrstat >> 4) & 7)
+      {
+      case 1: // Note on
+        if (cmd[1] != 0) // velocity==0 is actually a note off
+        {
+          if (chan == CHANS-1)
+            ronanCBNoteOn(&ronan);
+
+          // calculate current polyphony for this channel
+          const V2Sound *sound = patchmap[chans[chan].pgm];
+          sInt npoly = 0;
+          for (sInt i=0; i < POLY; i++)
+            npoly += (chanmap[i] == chan);
+
+          // voice allocation. this is equivalent to the original V2 code,
+          // but hopefully simpler to follow.
+          sInt usevoice = -1;
+          sInt chanmask, chanfind;
+
+          if (npoly < sound->maxpoly)
+          {
+            // if we haven't reached polyphony limit yet, try to find a free voice
+            // first.
+            for (sInt i=0; i < POLY; i++)
+            {
+              if (chanmap[i] < 0)
+              {
+                usevoice = i;
+                break;
+              }
+            }
+
+            // okay, need to find a free voice. we'll take any channel.
+            chanmask = 0;
+            chanfind = 0;
+          }
+          else
+          {
+            // if we're at polyphony limit, we know there's at least one voice
+            // used by this channel, so we can limit ourselves to killing
+            // voices from our own chan.
+            chanmask = 0xf;
+            chanfind = chan;
+          }
+
+          // don't have a voice yet? kill oldest eligible one with gate off.
+          if (usevoice < 0)
+          {
+            sU32 oldest = curalloc;
+            for (sInt i=0; i < POLY; i++)
+            {
+              if ((chanmap[i] & chanmask) == chanfind && !voicesw[i].gate && allocpos[i] < oldest)
+              {
+                oldest = allocpos[i];
+                usevoice = i;
+              }
+            }
+          }
+
+          // still no voice? okay, just take the oldest one we can find, period.
+          if (usevoice < 0)
+          {
+            sU32 oldest = curalloc;
+            for (sInt i=0; i < POLY; i++)
+            {
+              if ((chanmap[i] & chanmask) == chanfind && allocpos[i] < oldest)
+              {
+                oldest = allocpos[i];
+                usevoice = i;
+              }
+            }
+          }
+
+          // we have our voice - assign it!
+          chanmap[usevoice] = chan;
+          voicemap[chan] = usevoice;
+          allocpos[usevoice] = curalloc++;
+
+          // and note on!
+          storeV2Values(usevoice);
+          voicesw[usevoice].noteOn(cmd[0], cmd[1]);
+          cmd += 2;
+          break;
+        }
+        // fall-through (for when we had a note off)
+
+      case 0: // Note off
+        if (chan == CHANS-1)
+          ronanCBNoteOff(&ronan);
+
+        for (sInt i=0; i < POLY; i++)
+        {
+          if (chanmap[i] != chan)
+            continue;
+
+          V2Voice *voice = &voicesw[i];
+          if (voice->note == cmd[0] && voice->gate)
+            voice->noteOff();
+        }
+        cmd += 2;
+        break;
+
+      case 2: // Aftertouch
+        cmd++; // ignored
+        break;
+
+      case 3: // Control change
+        {
+          sInt ctrl = cmd[0];
+          sU8 val = cmd[1];
+          if (ctrl >= 1 && ctrl <= 7)
+          {
+            chans[chan].ctl[ctrl - 1] = val;
+            if (chan == CHANS-1)
+              ronanCBSetCtl(&ronan, ctrl, val);
+          }
+          else if (ctrl == 120) // CC #120: all sound off
+          {
+            for (sInt i=0; i < POLY; i++)
+            {
+              if (chanmap[i] != chan)
+                continue;
+
+              voicesw[i].init(&instance);
+              chanmap[i] = -1;
+            }
+          }
+          else if (ctrl == 123) // CC #123: all notes off
+          {
+            if (chan == CHANS-1)
+              ronanCBNoteOff(&ronan);
+
+            for (sInt i=0; i < POLY; i++)
+            {
+              if (chanmap[i] == chan)
+                voicesw[i].noteOff();
+            }
+          }
+        }
+        cmd += 2;
+        break;
+
+      case 4: // Program change
+        {
+          sU8 pgm = *cmd++ & 0x7f;
+          // did the program actually change?
+          if (chans[chan].pgm != pgm)
+          {
+            chans[chan].pgm = pgm;
+
+            // need to turn all voices on this channel off.
+            for (sInt i=0; i < POLY; i++)
+            {
+              if (chanmap[i] == chan)
+                chanmap[i] = -1;
+            }
+          }
+
+          // either way, reset controllers
+          for (sInt i=0; i < 6; i++)
+            chans[chan].ctl[i] = 0;
+        }
+        break;
+
+      case 5: // Pitch bend
+        cmd += 2; // ignored
+        break;
+
+      case 6: // Poly Aftertouch
+        cmd += 2; // ignored
+        break;
+
+      case 7: // System
+        if (chan == 0xf) // Reset
+          init(patchmap, samplerate);
+        break; // rest ignored
+      }
+    }
   }
 
-  void setGlobals(const void *ptr)
+  void setGlobals(const sU8 *para)
   {
+    // copy over
+    sF32 *globf = (sF32 *)&globals;
+    for (sInt i=0; i < sizeof(globals)/sizeof(sF32); i++)
+      globf[i] = para[i];
+
+    // set
+    reverb.set(&globals.rvbparm);
+    delay.set(&globals.delparm);
+    compr.set(&globals.cprparm);
+    lcfreq = sqr((globals.vlowcut + 1.0f) / 128.0f);
+    hcfreq = sqr((globals.vhighcut + 1.0f) / 128.0f);
   }
 
-  void getPoly(void *dest)
+  void getPoly(sInt *dest)
   {
+    for (sInt i=0; i <= CHANS; i++)
+      dest[i] = 0;
+
+    for (sInt i=0; i < POLY; i++)
+    {
+      sInt chan = chanmap[i];
+      if (chan < 0)
+        continue;
+
+      dest[chan]++;
+      dest[CHANS]++;
+    }
   }
 
-  void getPgm(void *dest)
+  void getPgm(sInt *dest)
   {
-  }
-
-  void setLyrics(const char **ptr)
-  {
+    for (sInt i=0; i < CHANS; i++)
+      dest[i] = chans[i].pgm;
   }
 
 private:
@@ -2743,7 +2951,7 @@ private:
       }
 
       // channel 15 -> Ronan
-      if (chan == 15)
+      if (chan == CHANS-1)
         ronanCBProcess(&ronan, &instance.chanbuf[0].l, nsamples);
 
       chansw[chan].process(nsamples); 
@@ -2802,22 +3010,22 @@ void __stdcall synthRender(void *pthis, void *buf, int smp, void *buf2, int add)
 
 void __stdcall synthProcessMIDI(void *pthis, const void *ptr)
 {
-  ((V2Synth *)pthis)->processMIDI(ptr);
+  ((V2Synth *)pthis)->processMIDI((const sU8 *)ptr);
 }
 
 void __stdcall synthSetGlobals(void *pthis, const void *ptr)
 {
-  ((V2Synth *)pthis)->setGlobals(ptr);
+  ((V2Synth *)pthis)->setGlobals((const sU8 *)ptr);
 }
 
 void __stdcall synthGetPoly(void *pthis, void *dest)
 {
-  ((V2Synth *)pthis)->getPoly(dest);
+  ((V2Synth *)pthis)->getPoly((sInt*)dest);
 }
 
 void __stdcall synthGetPgm(void *pthis, void *dest)
 {
-  ((V2Synth *)pthis)->getPgm(dest);
+  ((V2Synth *)pthis)->getPgm((sInt*)dest);
 }
 
 void __stdcall synthSetVUMode(void *, int)
