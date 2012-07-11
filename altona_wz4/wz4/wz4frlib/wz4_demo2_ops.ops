@@ -822,6 +822,7 @@ operator Wz4Render Variable (?*Wz4Render)
 operator Wz4Render Spline (Wz4Render)
 {
   column = 0;
+  shortcut = 'S';
   customed = Wz4SplineCed;
   parameter 
   {
@@ -1010,6 +1011,7 @@ operator Wz4Render Spline (Wz4Render)
 operator Wz4Render Layer2D(Texture2D,?Texture2D)
 {
   column = 0;
+  shortcut = 'L';
   parameter
   { 
     int Renderpass(-128..128);

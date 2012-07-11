@@ -109,6 +109,7 @@ operator SimpleMtrl SimpleMaterial(?Texture2D,?Texture2D,?Texture2D)
 {
   tab = Wz4Mtrl;
   column = 0;
+  shortcut = 'M';
   parameter
   {
     flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted:*7-|Light")=0x93;

@@ -1377,6 +1377,7 @@ operator Wz4Mesh Subdivide(Wz4Mesh)
 operator Wz4Mesh Extrude(Wz4Mesh)
 {
   column = 2;
+  shortcut = 'e';
   flags = passinput|passoutput;
   parameter
   {
@@ -2065,6 +2066,7 @@ operator Wz4Mesh RandomizeChunks(Wz4Mesh)
 operator Wz4Mesh Bevel(Wz4Mesh)
 {
   column = 3;
+  shortcut = 'b';
   parameter
   {
     float Amount(0..1000000 step 0.001) = 0.125;
