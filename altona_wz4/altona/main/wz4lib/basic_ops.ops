@@ -139,7 +139,7 @@ operator TextObject TextExport(TextObject)
 operator AnyType Nop(AnyType)
 {
   column = 30;
-  shortcut = 'N';
+  shortcut = '-';
   flags = verticalresize|typefrominput;
 }
 
