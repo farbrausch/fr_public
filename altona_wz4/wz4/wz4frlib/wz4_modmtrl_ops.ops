@@ -85,6 +85,7 @@ operator ModMtrl ModMaterial(?*ModShader)
 {
   tab = Wz4Mtrl;
   column = 0;
+  shortcut = 'm';
   parameter
   {
     flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted") = 0x13;
@@ -227,6 +228,7 @@ operator Wz4Render ModLight(?Wz4Render)
 {
   tab = Wz4Mtrl;
   column = 1;
+  shortcut = 'L';
   parameter
   {
     action Swap_RG(1);

@@ -32,6 +32,7 @@ operator ModShader Flat()
 {
   tab = Wz4Mtrl;
   column = 4;
+  shortcut = 'f';
 
   parameter
   {
@@ -51,6 +52,7 @@ operator ModShader Lambert()
 {
   tab = Wz4Mtrl;
   column = 4;
+  shortcut = 'b';
 
   parameter
   {
@@ -70,6 +72,7 @@ operator ModShader Phong(?ModShaderSampler)
 {
   tab = Wz4Mtrl;
   column = 4;
+  shortcut = 'p';
 
   parameter
   {
@@ -183,6 +186,7 @@ operator ModShaderSampler Tex2D(Texture2D)
 { 
   tab = Wz4Mtrl;
   column = 6;
+  shortcut = 't';
 
   parameter
   {
@@ -265,6 +269,7 @@ operator ModShaderSampler Tex2DSurround(Texture2D)
 { 
   tab = Wz4Mtrl;
   column = 6;
+  shortcut = 'T';
 
   parameter
   {
@@ -353,6 +358,7 @@ operator ModShaderSampler Const()
 { 
   tab = Wz4Mtrl;
   column = 6;
+  shortcut = 'c';
 
   parameter
   {
@@ -459,6 +465,7 @@ operator ModShader Diffuse(ModShaderSampler)
 { 
   tab = Wz4Mtrl;
   column = 5;
+  shortcut = 'd';
 
   parameter
   {
@@ -481,6 +488,7 @@ operator ModShader Gloss(ModShaderSampler)
 { 
   tab = Wz4Mtrl;
   column = 5;
+  shortcut = 'g';
 
   parameter
   {
@@ -503,6 +511,7 @@ operator ModShader Emissive(ModShaderSampler)
 { 
   tab = Wz4Mtrl;
   column = 5;
+  shortcut = 'e';
 
   parameter
   {
@@ -525,6 +534,7 @@ operator ModShader Specular(ModShaderSampler)
 { 
   tab = Wz4Mtrl;
   column = 5;
+  shortcut = 'u';
 
   parameter
   {
@@ -681,6 +691,7 @@ operator ModShader NormalMap(ModShaderSampler)
 { 
   tab = Wz4Mtrl;
   column = 5;
+  shortcut = 'n';
 
   code
   {
