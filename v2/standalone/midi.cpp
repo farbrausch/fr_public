@@ -56,7 +56,8 @@ void msInit()
 
 	for (i=0; i<msnumdevs; i++)
 		if (!strncmp(msdevnames[i],"LB",2) ||
-			  !strncmp(msdevnames[i],"MIDI Yoke",9))
+			  !strncmp(msdevnames[i],"MIDI Yoke",9) ||
+        !strncmp(msdevnames[i],"LoopBe Internal MIDI", 20))
 		{
 			msSetDevice(i);
 			break;
