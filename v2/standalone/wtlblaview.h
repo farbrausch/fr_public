@@ -254,7 +254,7 @@ public:
 		}
 
 		srcmenu.CreatePopupMenu();
-		for (i=0; i<v2nsources; i++)
+		for (int i=0; i<v2nsources; i++)
 		{
 			if (i==1 || i==8)
 				srcmenu.AppendMenu(MF_SEPARATOR);
@@ -282,8 +282,9 @@ public:
 	void UpdateDisplay(int nr=-1)
 	{
 		int n=(int)ptr[0];
+    int i;
 
-		for (int i=((nr==-1)?0:nr); i<((nr==-1)?n:nr+1); i++)
+		for (i=((nr==-1)?0:nr); i<((nr==-1)?n:nr+1); i++)
 		{
 			char *p2=ptr+1+3*i;
 			sources[i].ShowWindow(1);
@@ -702,7 +703,8 @@ public:
     synthSetGlobals(v2instance,ptr);
 		if (ptr)
 			for (int i=0; i<v2ngparms; i++)
-				parm[i]->SendMessage(TBM_SETPOS, i, ptr[i]-v2gparms[i].offset);
+        if (parm[i])
+				  parm[i]->SendMessage(TBM_SETPOS, i, ptr[i]-v2gparms[i].offset);
 		return 0;
 	}
 
@@ -814,12 +816,12 @@ public:
 		case EN_CHANGE:
 			if (lParam==(LPARAM)(engl_in.m_hWnd))
 			{
-				char in[256];
+				/*char in[256];
 				char out[256];
 				engl_in.GetWindowText(in,255);
 				e2p_initio(in,out);
 				e2p_main();
-				phon_out.SetWindowText(out);
+				phon_out.SetWindowText(out);*/
 			}
 			for (sInt i=0; i<64; i++) if (lParam==(LPARAM)(texts[i].m_hWnd))
 			{
@@ -1013,12 +1015,12 @@ public:
 		devsel.SetFont(sysfnt);
 		devsel.ResetContent();
 		devsel.AddString("MIDI IN disabled");
-		for (i=0; i<msnumdevs; i++)
+		for (int i=0; i<msnumdevs; i++)
 			devsel.AddString(msdevnames[i]);
 		devsel.SetCurSel(msGetDevice()+1);
 
 		clipl=clipr=0;
-		for (i=0; i<16; i++)
+		for (int i=0; i<16; i++)
 			gpo[i]=gpg[i]=-1;
 		gpo[16]=-1;
 

@@ -1821,7 +1821,7 @@ struct V2ModDel
 
   void init(V2Instance *instance, sF32 *buf1, sF32 *buf2, sInt buflen)
   {
-    assert(buflen != 0 && (buflen & (buflen - 1)) != 0);
+    assert(buflen != 0 && (buflen & (buflen - 1)) == 0);
     db[0] = buf1;
     db[1] = buf2;
     dbufmask = buflen - 1;
@@ -2173,7 +2173,7 @@ struct V2Reverb
     alld[1][0].init(ballr0);
     alld[1][1].init(ballr1);
 
-    instance = inst;
+    inst = instance;
     reset();
   }
 
@@ -2481,6 +2481,8 @@ struct V2Synth
   sF32 hcfreq;    // high cut freq
   sF32 hcbuf[2];  // high cut buf l/r
 
+  bool initialized;
+
   // delay buffers
   sF32 maindelbuf[2][32768];
   sF32 chandelbuf[CHANS][2][2048];
@@ -2524,6 +2526,8 @@ struct V2Synth
     ronanCBInit(&ronan);
     compr.init(&instance);
     dcf.init(&instance);
+
+    initialized = true;
   }
 
   void render(sF32 *buf, sInt nsamples, sF32 *buf2, bool add)
@@ -2771,6 +2775,9 @@ struct V2Synth
 
   void setGlobals(const sU8 *para)
   {
+    if (!initialized)
+      return;
+
     // copy over
     sF32 *globf = (sF32 *)&globals;
     for (sInt i=0; i < sizeof(globals)/sizeof(sF32); i++)

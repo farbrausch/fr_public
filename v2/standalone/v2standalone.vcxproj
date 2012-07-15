@@ -62,11 +62,12 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">v2edit Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">v2edit Release\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">false</LinkIncremental>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <PreprocessorDefinitions>RONAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RONAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -84,7 +85,6 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>Release/v2edit.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>.\Release/v2edit.map</MapFileName>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -103,7 +103,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>RONAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RONAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -123,7 +123,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/wtlbla.pdb</ProgramDatabaseFile>
-      <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>.\Debug/wtlbla.map</MapFileName>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -142,7 +141,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">
     <ClCompile>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <PreprocessorDefinitions>RONAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RONAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -160,7 +159,6 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>Release/v2edit.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>.\Release/v2edit.map</MapFileName>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -177,6 +175,9 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\dsio_cpp.cpp" />
+    <ClCompile Include="..\ronan.cpp" />
+    <ClCompile Include="..\synth_core.cpp" />
     <ClCompile Include="..\tool\file.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>

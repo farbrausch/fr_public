@@ -51,6 +51,7 @@ public:
 		int n=1;
 		int max=7;
 		char *s,*sp=strings;
+    int i;
 
 		if (sp[0]=='!')
 		{
@@ -69,7 +70,7 @@ public:
 		
 		s=strings[0]=='!'?strings+1:strings;
 		char s2[256];
-		for (int i=0; i<128; i++)
+		for (i=0; i<128; i++)
 		{
 			if (!*s)
 				break;

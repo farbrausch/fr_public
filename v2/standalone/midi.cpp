@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <mmsystem.h>
 
+#include "atlstr.h"
+
 #include "../types.h"
 #include "../libv2.h"
 #include "midi.h"

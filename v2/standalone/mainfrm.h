@@ -143,7 +143,7 @@ public:
 				patch+=v2nparms;
 				in.read(patch,1);
 			  // remap mods
-				for (j=0; j<*patch; j++)
+				for (int j=0; j<*patch; j++)
 				{
 					sU8 *mod=patch+3*j+1;
 					if (in.read(mod,3)<3) goto loaderr;

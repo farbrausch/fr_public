@@ -22,11 +22,14 @@
 #include <atlctrlx.h>
 #include <atlscrl.h>
 #include <atldlgs.h>
+#include <atlframe.h>
+#include <atlsplit.h>
 
 #include "midi.h"
 #include "../types.h"
 #include "../soundsys.h"
 #include "../sounddef.h"
+#include "resource.h"
 
 CAppModule _Module;
 extern sU8 v2instance[3*1024*1024];

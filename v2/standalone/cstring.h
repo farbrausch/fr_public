@@ -1,7 +1,7 @@
 
 // minimal mockup implementation of MFC/WTL's CString just because.
 
-class CString
+/*class CString
 {
 private:
   char *str;
@@ -39,4 +39,4 @@ public:
   }
 
   inline operator const char* () { return str; }
-};
+};*/

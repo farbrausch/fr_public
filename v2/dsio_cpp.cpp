@@ -106,7 +106,8 @@ static DWORD WINAPI threadfunc(void *param)
 
 sU32 __stdcall dsInit(DSIOCALLBACK *callback, void *parm, void *hwnd)
 {
-  static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 44100, 44100*2*2, 4, 16, 0 };
+  //static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 44100, 44100*2*2, 4, 16, 0 };
+  static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 48000, 48000*2*2, 4, 16, 0 };
   static const DSBUFFERDESC primdesc = { sizeof(DSBUFFERDESC), DSBCAPS_PRIMARYBUFFER, 0, 0, 0 };
   static const DSBUFFERDESC streamdesc = { sizeof(DSBUFFERDESC), DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS, BUFFERLEN, 0, (WAVEFORMATEX*)&wfxprimary };
 
