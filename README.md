@@ -35,17 +35,17 @@ So what do we have in here? Here's the basic directory structure:
   	ktg/                  - OpenKTG texture generator. See below.
   	lekktor/              - May summon Eldritch Abominations. Handle with care.
   	RG2/                  - RauschGenerator 2. Used for several 64k intros.
-    		dopplerdefekt/      - data files for fr-029: dopplerdefekt
-    		einschlag/          - data files for fr-022: ein.schlag
-    		flybye/             - data files for fr-013: flybye
-    		welcome_to/         - data files for fr-024: welcome to...
+    	dopplerdefekt/      - data files for fr-029: dopplerdefekt
+    	einschlag/          - data files for fr-022: ein.schlag
+    	flybye/             - data files for fr-013: flybye
+    	welcome_to/         - data files for fr-024: welcome to...
   	v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
   	werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
-    		data/               - Source data for kkrieger and some test projects.
-      			debris/           - Source data for fr-041: debris.
-      			theta/            - Source data for fr-038: theta.
-    		w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
-    		wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
+    	data/               - Source data for kkrieger and some test projects.
+    		debris/           - Source data for fr-041: debris.
+    		theta/            - Source data for fr-038: theta.
+    	w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
+    	wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
   	werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
 
 So, here's the sightseeing tips:
