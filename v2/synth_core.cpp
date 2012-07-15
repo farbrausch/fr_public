@@ -5,6 +5,20 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define DEBUGSCOPES 1
+
+#if DEBUGSCOPES
+#include "scope.h"
+#define DEBUG_PLOT_OPEN(which, title, rate, w, h) scopeOpen((which), (title), (rate), (w), (h))
+#define DEBUG_PLOT(which, data, nsamples) scopeSubmit((which), (data), (nsamples))
+#define DEBUG_PLOT_UPDATE() scopeUpdateAll()
+#else
+#define DEBUG_PLOT_OPEN(which, title, rate, w, h)
+#define DEBUG_PLOT(which, data, nsamples)
+#define DEBUG_PLOT_UPDATE()
+#endif
+
+
 // TODO:
 // - VU meters?
 
@@ -28,7 +42,6 @@ static const sF32 fcframebase = 128.0f;       // size of a frame in samples
 static const sF32 fcdcflt     = 126.0f;
 static const sF32 fccfframe   = 11.0f;
 
-static const sF32 fcOscPitchOffs = 60.0f;
 static const sF32 fcfmmax     = 2.0f;
 static const sF32 fcattackmul = -0.09375f; // -0.0859375
 static const sF32 fcattackadd = 7.0f;
@@ -470,7 +483,7 @@ struct V2Osc
   void chgPitch()
   {
     nffrq = inst->SRfclinfreq * calcfreq((pitch + 64.0f) / 128.0f);
-    freq = (sInt)(inst->SRfcobasefrq * pow(2.0f, (pitch + note - fcOscPitchOffs) / 12.0f));
+    freq = (sInt)(inst->SRfcobasefrq * pow(2.0f, (pitch + note - 60.0f) / 12.0f));
   }
 
   void set(const syVOsc *para)
@@ -500,6 +513,8 @@ struct V2Osc
     case OSC_AUXA:    renderAux(dest, inst->auxabuf, nsamples); break;
     case OSC_AUXB:    renderAux(dest, inst->auxbbuf, nsamples); break; 
     }
+
+    DEBUG_PLOT(this, dest, nsamples);
   }
 
 private:
@@ -2545,6 +2560,9 @@ struct V2Synth
     compr.init(&instance);
     dcf.init(&instance);
 
+    // debug plots
+    DEBUG_PLOT_OPEN(&voicesw[0].osc[0], "Voice 0 osc 0", 48000/10, 800, 150);
+
     initialized = true;
   }
 
@@ -2603,6 +2621,8 @@ struct V2Synth
       todo -= nread;
       tickd -= nread;
     }
+
+    DEBUG_PLOT_UPDATE();
   }
 
   void processMIDI(const sU8 *cmd)

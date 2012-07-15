@@ -181,6 +181,7 @@
     <ClCompile Include="..\ronan.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
     </ClCompile>
+    <ClCompile Include="..\scope.cpp" />
     <ClCompile Include="..\synth_core.cpp" />
     <ClCompile Include="..\tool\file.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -208,6 +209,7 @@
     <ClCompile Include="wtlbla.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\scope.h" />
     <ClInclude Include="..\tool\File.h" />
     <ClInclude Include="aboutdlg.h" />
     <ClInclude Include="cstring.h" />

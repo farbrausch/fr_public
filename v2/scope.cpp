@@ -1,4 +1,5 @@
 #include "scope.h"
+#include <assert.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -14,42 +15,55 @@ namespace
     std::vector<float> samples;
     size_t pos;
 
-    CRITICAL_SECTION csec;
+    DWORD orig_thread_id;
 
     HWND hwnd;
     HDC hdc;
     HGLRC hglrc;
 
+    char window_title[256];
+    int window_w, window_h;
+
   public:
-    Scope(int size, const char *title, int w, int h)
+    const void *unique_id;
+
+    Scope(const void *uniq, int size, const char *title, int w, int h)
     {
+      unique_id = uniq;
       samples.resize(size);
       pos = 0;
+      
+      orig_thread_id = 0;
+      hwnd = 0;
+      hdc = 0;
+      hglrc = 0;
 
-      InitializeCriticalSection(&csec);
-      init_window(title, w, h);
+      strcpy_s(window_title, title);
+      window_w = w;
+      window_h = h;
     }
 
     ~Scope()
     {
-      DeleteCriticalSection(&csec);
       wglDeleteContext(hglrc);
       ReleaseDC(hwnd, hdc);
       DestroyWindow(hwnd);
     }
 
-    void submit(const float *data, size_t count)
+    void submit(const float *data, size_t stride, size_t count)
     {
-      EnterCriticalSection(&csec);
+      delayed_init();
+      assert(this_is_the_right_thread());
+
       size_t cur = 0;
       while (cur < count)
       {
         size_t block = min(count - cur, samples.size() - pos);
-        memcpy(&samples[pos], &data[cur], block * sizeof(float));
+        for (size_t i=0; i < block; i++)
+          samples[pos+i] = data[(cur+i) * stride];
         cur += block;
         pos = (pos + block) % samples.size();
       }
-      LeaveCriticalSection(&csec);
     }
 
     void msgloop()
@@ -64,30 +78,45 @@ namespace
 
     void render()
     {
+      delayed_init();
+      assert(this_is_the_right_thread());
+
       glClearColor(0, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT);
 
       glColor3ub(0, 255, 0);
       glEnable(GL_LINE_SMOOTH);
       glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-      glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
       glEnable(GL_BLEND);
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       glOrtho(0.0f, (float)samples.size() - 1.0f, -1.0f, 1.0f, -0.5f, 0.5f);
 
-      EnterCriticalSection(&csec);
       glBegin(GL_LINE_STRIP);
       for (size_t i=0; i < samples.size(); i++)
         glVertex2f((float)i, samples[i]);
       glEnd();
-      LeaveCriticalSection(&csec);
 
       SwapBuffers(hdc);
     }
 
   private:
+    bool this_is_the_right_thread()
+    {
+      return GetCurrentThreadId() == orig_thread_id;
+    }
+
+    void delayed_init()
+    {
+      if (!orig_thread_id)
+      {
+        orig_thread_id = GetCurrentThreadId();
+        init_window(window_title, window_w, window_h);
+      }
+    }
+
     static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
       Scope *me = (Scope *)GetWindowLongPtrA(hwnd, GWLP_USERDATA);
@@ -102,9 +131,10 @@ namespace
         break;
 
       case WM_ERASEBKGND:
-        return 0;
+        return 1;
 
       case WM_PAINT:
+        assert(me != 0);
         me->render();
         ValidateRect(hwnd, 0);
         return 0;
@@ -160,32 +190,52 @@ namespace
 
 static Scope *scopes[MAXSCOPES];
 
-static bool index_valid(int index)
+static Scope *get_scope(const void *unique_id)
 {
-  return index >= 0 && index < MAXSCOPES;
+  for (int i=0; i < MAXSCOPES; i++)
+    if (scopes[i] && scopes[i]->unique_id == unique_id)
+      return scopes[i];
+
+  return 0;
 }
 
-void scopeOpen(int index, const char *title, int nsamples, int w, int h)
+void scopeOpen(const void *unique_id, const char *title, int nsamples, int w, int h)
 {
-  if (!index_valid(index))
-    return;
+  if (get_scope(unique_id))
+    scopeClose(unique_id);
 
-  scopes[index] = new Scope(nsamples, title, w, h);
-}
-
-void scopeClose(int index)
-{
-  if (index_valid(index) && scopes[index])
+  for (int i=0; i < MAXSCOPES; i++)
   {
-    delete scopes[index];
-    scopes[index] = 0;
+    if (!scopes[i])
+    {
+      scopes[i] = new Scope(unique_id, nsamples, title, w, h);
+      break;
+    }
   }
 }
 
-void scopeSubmit(int index, const float *data, int nsamples)
+void scopeClose(const void *unique_id)
 {
-  if (index_valid(index) && scopes[index])
-    scopes[index]->submit(data, nsamples);
+  for (int i=0; i < MAXSCOPES; i++)
+  {
+    if (scopes[i]->unique_id == unique_id)
+    {
+      delete scopes[i];
+      scopes[i] = 0;
+    }
+  }
+}
+
+void scopeSubmit(const void *unique_id, const float *data, int nsamples)
+{
+  if (Scope *s = get_scope(unique_id))
+    s->submit(data, 1, nsamples);
+}
+
+void scopeSubmitStrided(const void *unique_id, const float *data, int stride, int nsamples)
+{
+  if (Scope *s = get_scope(unique_id))
+    s->submit(data, stride, nsamples);
 }
 
 void scopeUpdateAll()
