@@ -63,6 +63,8 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">v2edit Release\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">false</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -176,7 +178,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\dsio_cpp.cpp" />
-    <ClCompile Include="..\ronan.cpp" />
+    <ClCompile Include="..\ronan.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
+    </ClCompile>
     <ClCompile Include="..\synth_core.cpp" />
     <ClCompile Include="..\tool\file.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
