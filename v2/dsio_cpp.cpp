@@ -86,14 +86,10 @@ static DWORD WINAPI threadfunc(void *param)
     g_dsound.callback(g_dsound.cbparm, g_dsound.mixbuffer, nwrite / 4);
 
     // float->int, clamp
-    const sF32 *src = g_dsound.mixbuffer;
     if (buf1)
-    {
-      clamp(buf1, src, len1/2);
-      src += len1/2;
-    }
+      clamp(buf1, g_dsound.mixbuffer, len1/2);
     if (buf2)
-      clamp(buf2, src, len2/2);
+      clamp(buf2, g_dsound.mixbuffer + len1/2, len2/2);
 
     g_dsound.sbuf->Unlock(buf1, len1, buf2, len2);
 
@@ -106,8 +102,8 @@ static DWORD WINAPI threadfunc(void *param)
 
 sU32 __stdcall dsInit(DSIOCALLBACK *callback, void *parm, void *hwnd)
 {
-  //static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 44100, 44100*2*2, 4, 16, 0 };
-  static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 48000, 48000*2*2, 4, 16, 0 };
+  //static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 44100, 44100*2*2, 2*2, 16, 0 };
+  static const WAVEFORMATEX wfxprimary = { WAVE_FORMAT_PCM, 2, 48000, 48000*2*2, 2*2, 16, 0 };
   static const DSBUFFERDESC primdesc = { sizeof(DSBUFFERDESC), DSBCAPS_PRIMARYBUFFER, 0, 0, 0 };
   static const DSBUFFERDESC streamdesc = { sizeof(DSBUFFERDESC), DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS, BUFFERLEN, 0, (WAVEFORMATEX*)&wfxprimary };
 

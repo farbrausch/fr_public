@@ -346,6 +346,18 @@ public:
   }
 };
 
+// debug stuff
+static void checkRange(const sF32 *src, sInt nsamples)
+{
+  for (sInt i=0; i < nsamples; i++)
+    assert(src[i] >= -1.5f && src[i] < 1.5f);
+}
+
+static void checkRange(const StereoSample *src, sInt nsamples)
+{
+  checkRange(&src[0].l, nsamples * 2);
+}
+
 // --------------------------------------------------------------------------
 // V2 Instance
 // --------------------------------------------------------------------------
@@ -2547,21 +2559,23 @@ struct V2Synth
       if (!buf2) // interleaved samples
       {
         if (!add)
-          memcpy(buf, src, nsamples * sizeof(StereoSample));
+          memcpy(buf, src, nread * sizeof(StereoSample));
         else
         {
-          for (sInt i=0; i < nsamples; i++)
+          for (sInt i=0; i < nread; i++)
           {
             buf[i*2+0] += src[i].l;
             buf[i*2+1] += src[i].r;
           }
         }
+
+        buf += 2*nread;
       }
       else // buf = left, buf2 = right
       {
         if (!add)
         {
-          for (sInt i=0; i < nsamples; i++)
+          for (sInt i=0; i < nread; i++)
           {
             buf[i] = src[i].l;
             buf2[i] = src[i].r;
@@ -2569,12 +2583,15 @@ struct V2Synth
         }
         else
         {
-          for (sInt i=0; i < nsamples; i++)
+          for (sInt i=0; i < nread; i++)
           {
             buf[i] += src[i].l;
             buf2[i] += src[i].r;
           }
         }
+
+        buf += nread;
+        buf2 += nread;
       }
 
       todo -= nread;
