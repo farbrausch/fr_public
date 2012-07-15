@@ -2420,6 +2420,12 @@ struct V2Sound
   V2Mod modmatrix[1]; // actually modnum entries!
 };
 
+union V2PatchMap
+{
+  sU32 offsets[128];    // offsets into raw_data[]
+  sU8 raw_data[1];      // variable size
+};
+
 // --------------------------------------------------------------------------
 // Ronan
 // --------------------------------------------------------------------------
@@ -2458,7 +2464,7 @@ struct V2Synth
   static const sInt POLY = 64;
   static const sInt CHANS = 16;
 
-  const V2Sound **patchmap;
+  const V2PatchMap *patchmap;
   sU32 mrstat;          // running status in MIDI decoding
   sU32 curalloc;
   sInt samplerate;
@@ -2516,7 +2522,7 @@ struct V2Synth
     ronanCBSetSR(&ronan, samplerate);
 
     // patch map
-    this->patchmap = (const V2Sound **)patchmap;
+    this->patchmap = (const V2PatchMap*)patchmap;
 
     // init voices
     for (sInt i=0; i < POLY; i++)
@@ -2619,7 +2625,7 @@ struct V2Synth
             ronanCBNoteOn(&ronan);
 
           // calculate current polyphony for this channel
-          const V2Sound *sound = patchmap[chans[chan].pgm];
+          const V2Sound *sound = getpatch(chans[chan].pgm);
           sInt npoly = 0;
           for (sInt i=0; i < POLY; i++)
             npoly += (chanmap[i] == chan);
@@ -2629,7 +2635,7 @@ struct V2Synth
           sInt usevoice = -1;
           sInt chanmask, chanfind;
 
-          if (npoly < sound->maxpoly)
+          if (!npoly || npoly < sound->maxpoly) // even if maxpoly is 0, allow at least 1.
           {
             // if we haven't reached polyphony limit yet, try to find a free voice
             // first.
@@ -2684,6 +2690,7 @@ struct V2Synth
           }
 
           // we have our voice - assign it!
+          assert(usevoice >= 0);
           chanmap[usevoice] = chan;
           voicemap[chan] = usevoice;
           allocpos[usevoice] = curalloc++;
@@ -2831,7 +2838,13 @@ struct V2Synth
   }
 
 private:
-  sF32 getmodsource(const V2Voice *voice, sInt chan, sInt source)
+  const V2Sound *getpatch(sInt pgm) const
+  {
+    assert(pgm >= 0 && pgm < 128);
+    return (const V2Sound *)&patchmap->raw_data[patchmap->offsets[pgm]];
+  }
+
+  sF32 getmodsource(const V2Voice *voice, sInt chan, sInt source) const
   {
     sF32 in = 0.0f;
 
@@ -2858,7 +2871,7 @@ private:
       return;
 
     // get patch definition
-    const V2Sound *patch = patchmap[chans[chan].pgm];
+    const V2Sound *patch = getpatch(chans[chan].pgm);
 
     // voice data
     syVV2 *vpara = &voicesv[vind];
@@ -2886,7 +2899,7 @@ private:
   void storeChanValues(sInt chan)
   {
     // get patch definition
-    const V2Sound *patch = patchmap[chans[chan].pgm];
+    const V2Sound *patch = getpatch(chans[chan].pgm);
 
     // chan data
     syVChan *cpara = &chansv[chan];
