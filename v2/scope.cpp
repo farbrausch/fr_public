@@ -45,6 +45,7 @@ namespace
 
     ~Scope()
     {
+      wglMakeCurrent(hdc, 0);
       wglDeleteContext(hglrc);
       ReleaseDC(hwnd, hdc);
       DestroyWindow(hwnd);
@@ -81,10 +82,11 @@ namespace
       delayed_init();
       assert(this_is_the_right_thread());
 
+      wglMakeCurrent(hdc, hglrc);
+
       glClearColor(0, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT);
 
-      glColor3ub(0, 255, 0);
       glEnable(GL_LINE_SMOOTH);
       glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -92,11 +94,19 @@ namespace
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      glOrtho(0.0f, (float)samples.size() - 1.0f, -1.0f, 1.0f, -0.5f, 0.5f);
+      glOrtho(0.0f, (float)samples.size() - 1.0f, -1.05f, 1.05f, -0.5f, 0.5f);
+
+      glColor3ub(0, 255, 0);
 
       glBegin(GL_LINE_STRIP);
       for (size_t i=0; i < samples.size(); i++)
         glVertex2f((float)i, samples[i]);
+      glEnd();
+
+      glColor3ub(255, 255, 255);
+      glBegin(GL_LINES);
+      glVertex2f((float)pos, -100.0f);
+      glVertex2f((float)pos,  100.0f);
       glEnd();
 
       SwapBuffers(hdc);
@@ -114,6 +124,7 @@ namespace
       {
         orig_thread_id = GetCurrentThreadId();
         init_window(window_title, window_w, window_h);
+        msgloop();
       }
     }
 
@@ -218,7 +229,7 @@ void scopeClose(const void *unique_id)
 {
   for (int i=0; i < MAXSCOPES; i++)
   {
-    if (scopes[i]->unique_id == unique_id)
+    if (scopes[i] && scopes[i]->unique_id == unique_id)
     {
       delete scopes[i];
       scopes[i] = 0;
