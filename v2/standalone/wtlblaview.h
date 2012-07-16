@@ -660,7 +660,7 @@ public:
 	LRESULT OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
 	  bHandled=0;
-		for (int i=0; i<v2ngparms; i++) if ((LPARAM)parm[i]->m_hWnd==lParam)
+		for (int i=0; i<v2ngparms; i++) if (parm[i] && (LPARAM)parm[i]->m_hWnd==lParam)
 		{
 			int pos=wParam+v2gparms[i].offset;
 			ptr[i]=pos;
@@ -673,7 +673,7 @@ public:
 	LRESULT OnHScroll(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
 		bHandled=0;
-		for (int i=0; i<v2ngparms; i++) if ((LPARAM)parm[i]->m_hWnd==lParam)
+		for (int i=0; i<v2ngparms; i++) if (parm[i] && (LPARAM)parm[i]->m_hWnd==lParam)
 		{
 			int pos=((CTrackBarCtrl *)(parm[i]))->GetPos()+v2gparms[i].offset;
 			ptr[i]=pos;

@@ -9,8 +9,8 @@
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="v2edit Release|Win32">
-      <Configuration>v2edit Release</Configuration>
+    <ProjectConfiguration Include="Release_synthasm|Win32">
+      <Configuration>Release_synthasm</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -23,7 +23,7 @@
     <SccProvider />
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
@@ -41,7 +41,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
@@ -59,12 +59,10 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">v2edit Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">v2edit Release\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">false</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">$(ProjectDir)..\..\..\WTL\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,7 +138,7 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">
     <ClCompile>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <PreprocessorDefinitions>RONAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -159,7 +157,6 @@
     <Link>
       <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>Release/v2edit.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MapFileName>.\Release/v2edit.map</MapFileName>
       <SubSystem>Windows</SubSystem>
@@ -180,15 +177,18 @@
     <ClCompile Include="..\dsio_cpp.cpp" />
     <ClCompile Include="..\ronan.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">MinSpace</Optimization>
     </ClCompile>
     <ClCompile Include="..\scope.cpp" />
-    <ClCompile Include="..\synth_core.cpp" />
+    <ClCompile Include="..\synth_core.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\tool\file.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="midi.cpp" />
@@ -197,7 +197,7 @@
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='v2edit Release|Win32'">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\v2mconv.cpp">
@@ -223,6 +223,16 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="v2edit.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\synth.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">yasm -f win32 -o "$(OutDir)\%(Filename).obj" %(Identity)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">yasm -f win32 -o "$(OutDir)\%(Filename).obj" %(Identity)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_synthasm|Win32'">$(OutDir)\%(Filename).obj</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

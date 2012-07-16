@@ -5,7 +5,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define DEBUGSCOPES 0
+// Ye olde original V2 bugs you can turn on and off :)
+#define BUG_V2_FM_RANGE 1     // Broken sine range reduction for FM oscis
+
+#define DEBUGSCOPES 1
 
 #if DEBUGSCOPES
 #include "scope.h"
@@ -130,7 +133,12 @@ static sF32 fastsinrc(sF32 x)
 
   // first range reduction: mod with 2pi
   x = fmodf(x, fc2pi);
-  // now x in [0,2pi]
+  // now x in [-2pi,2pi]
+
+#if !BUG_V2_FM_RANGE
+  if (x < 0.0f)
+    x += fc2pi;
+#endif
 
   // need to reduce to [-pi/2, pi/2] to call fastsin
   if (x > fc1p5pi) // x in (3pi/2,2pi]
@@ -209,6 +217,20 @@ static inline sU32 ftou32(sF32 v)
 static inline sF32 lerp(sF32 a, sF32 b, sF32 t)
 {
   return a + t * (b-a);
+}
+
+// DEBUG
+#include <stdarg.h>
+#include <stdio.h>
+extern "C" void __stdcall OutputDebugStringA(const char *what);
+static void dprintf(const char *fmt, ...)
+{
+  char buf[256];
+  va_list arg;
+  va_start(arg, fmt);
+  vsprintf_s(buf, fmt, arg);
+  va_end(arg);
+  OutputDebugStringA(buf);
 }
 
 // --------------------------------------------------------------------------
@@ -2141,6 +2163,7 @@ struct V2Comp
         buf[i].ch[ch] = v * gain;
       }
 
+      curgain[ch] = gain;
       if (ch == 1)
         dbcnt = dbind;
     }
@@ -2385,6 +2408,7 @@ struct V2Chan
 
     // Filters
     dcf1.renderStereo(chan, chan, nsamples);
+    DEBUG_PLOT_STEREO(&dcf1, chan, nsamples);
     comp.render(chan, nsamples);
     boost.render(chan, nsamples);
     if (fxr == FXR_DIST_THEN_CHORUS)
@@ -2411,7 +2435,7 @@ struct V2Chan
     // Channel buffer to mix buffer (stereo)
     accumulate(inst->mixbuf, chan, nsamples, chgain);
 
-    DEBUG_PLOT_STEREO(this, inst->mixbuf, nsamples);
+    DEBUG_PLOT_STEREO(this, chan, nsamples);
   }
 
 private:
@@ -2587,13 +2611,15 @@ struct V2Synth
     sInt sr_lfo = 800;
     sInt w = 800, h = 150;
 
-    DEBUG_PLOT_OPEN(&voicesw[0].osc[0], "Voice 0 VCO 0", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[0].osc[0], "Voice 0 VCO 0", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(&voicesw[0].osc[1], "Voice 0 VCO 1", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(&voicesw[0].vcf[0], "Voice 0 VCF 0", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(&voicesw[0].env[0], "Voice 0 Env 0", sr_lfo, w, h);
-    DEBUG_PLOT_OPEN(&voicesw[0].dist, "Voice 0 Dist", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[0].dist, "Voice 0 Dist", sr_plot, w, h);
     DEBUG_PLOT_OPEN(&voicesw[0], "Voice 0 final", sr_plot, w, h);
-    //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0], 0), "Channel 0 L", sr_plot, w, h);
+    DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0].dcf1, 0), "Chan 0 DCF1 L", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0].dcf1, 1), "Chan 0 DCF1 R", sr_plot, w, h);
+    DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0], 0), "Channel 0 L", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0], 1), "Channel 0 R", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&instance.mixbuf, 0), "Mix L", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&instance.mixbuf, 1), "Mix R", sr_plot, w, h);
@@ -2921,6 +2947,7 @@ private:
 
   void storeV2Values(sInt vind)
   {
+    assert(vind >= 0 && vind < POLY);
     sInt chan = chanmap[vind];
     if (chan < 0)
       return;
@@ -2953,6 +2980,8 @@ private:
 
   void storeChanValues(sInt chan)
   {
+    assert(chan >= 0 && chan < CHANS);
+
     // get patch definition
     const V2Sound *patch = getpatch(chans[chan].pgm);
 
