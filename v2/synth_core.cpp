@@ -8,7 +8,7 @@
 // Ye olde original V2 bugs you can turn on and off :)
 #define BUG_V2_FM_RANGE 1     // Broken sine range reduction for FM oscis
 
-#define DEBUGSCOPES 1
+#define DEBUGSCOPES 0
 
 #if DEBUGSCOPES
 #include "scope.h"
@@ -1819,7 +1819,7 @@ struct V2Boost
     // a0 = (A+1) + (A-1)*cos + beta*sin
     sF32 ia0 = 1.0f / (Ap1 + cAm1 + bs);
 
-    b1 = 2.0f * A * (Am1 - cAp1) * A * 2.0f * ia0;
+    b1 = 2.0f * A * (Am1 - cAp1) * ia0;
     a1 = -2.0f * (Am1 + cAp1) * ia0;
     a2 = (Ap1 + cAm1 - bs) * ia0;
     b0 = A * (Ap1 - cAm1 + bs) * ia0;
