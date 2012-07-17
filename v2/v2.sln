@@ -1,10 +1,12 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyplayer", "tinyplayer\tinyplayer.vcxproj", "{9A6967F4-9ABB-47CE-89F9-DA3962F56A90}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libv2", "libv2\libv2.vcxproj", "{3E32F6B2-BD3D-4863-BA7E-55620F0C163D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "conv2m", "conv2m\conv2m.vcxproj", "{5A0BFCBE-B826-46C8-88D9-F39504F67EC4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyplayer_cpp", "tinyplayer_cpp\tinyplayer_cpp.vcxproj", "{FFF77618-81CF-48BE-BA80-361CD5879292}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,10 @@ Global
 		{5A0BFCBE-B826-46C8-88D9-F39504F67EC4}.Debug|Win32.Build.0 = Debug|Win32
 		{5A0BFCBE-B826-46C8-88D9-F39504F67EC4}.Release|Win32.ActiveCfg = Release|Win32
 		{5A0BFCBE-B826-46C8-88D9-F39504F67EC4}.Release|Win32.Build.0 = Release|Win32
+		{FFF77618-81CF-48BE-BA80-361CD5879292}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FFF77618-81CF-48BE-BA80-361CD5879292}.Debug|Win32.Build.0 = Debug|Win32
+		{FFF77618-81CF-48BE-BA80-361CD5879292}.Release|Win32.ActiveCfg = Release|Win32
+		{FFF77618-81CF-48BE-BA80-361CD5879292}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

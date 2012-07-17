@@ -2496,6 +2496,8 @@ struct syWRonan
   sU8 mem[64*1024]; // "that should be enough" --synth.asm. :)
 };
 
+#ifdef RONAN
+
 extern "C"
 {
   void __stdcall ronanCBInit(syWRonan *pthis);
@@ -2506,6 +2508,20 @@ extern "C"
   void __stdcall ronanCBProcess(syWRonan *pthis, sF32 *buf, sU32 len);
   void __stdcall ronanCBSetSR(syWRonan *pthis, sInt samplerate);
 }
+
+#else
+
+static inline void ronanCBInit(syWRonan *) {}
+static inline void ronanCBTick(syWRonan *) {}
+static inline void ronanCBNoteOn(syWRonan *) {}
+static inline void ronanCBNoteOff(syWRonan *) {}
+static inline void ronanCBSetCtl(syWRonan *, sU32, sU32) {}
+static inline void ronanCBProcess(syWRonan *, sF32 *, sU32) {}
+static inline void ronanCBSetSR(syWRonan *, sInt) {}
+
+extern "C" void __stdcall synthSetLyrics(void *, const char **) {}
+
+#endif
 
 // --------------------------------------------------------------------------
 // Synth
