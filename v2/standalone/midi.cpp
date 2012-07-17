@@ -241,7 +241,7 @@ void msStartAudio(HWND hwnd, void *patchmap, void *globals, const char **speech)
 void msStartAudio(HWND hwnd, void *patchmap, void *globals)
 #endif
 {
-	synthInit(v2instance, patchmap, 48000);
+	synthInit(v2instance, patchmap, 44100);
 	synthSetGlobals(v2instance, globals);
 #ifdef RONAN
 	synthSetLyrics(v2instance, speech);

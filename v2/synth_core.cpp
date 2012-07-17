@@ -2623,7 +2623,7 @@ struct V2Synth
     dcf.init(&instance);
 
     // debug plots (uncomment the ones you want)
-    sInt sr_plot = 48000/10; // plot rate
+    sInt sr_plot = 44100/10; // plot rate
     sInt sr_lfo = 800;
     sInt w = 800, h = 150;
 
