@@ -30,6 +30,8 @@ void print(const char *bla)
 
 extern "C" const sU8 theTune[];
 
+extern void synthPrintCoverage();
+
 #ifdef NDEBUG
 extern "C" void mainCRTStartup()
 #else
@@ -59,5 +61,8 @@ void main()
 
   dsClose();
   player.Close();
+
+  //synthPrintCoverage();
+
 	ExitProcess(0);
 }

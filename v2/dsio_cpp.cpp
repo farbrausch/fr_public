@@ -7,6 +7,7 @@
 #pragma comment(lib, "dsound.lib")
 
 static const int BUFFERLEN = 0x10000;  // bytes
+//static const int BUFFERLEN = (44100/10)*4; // bytes
 
 static struct DSData
 {

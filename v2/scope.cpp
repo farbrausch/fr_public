@@ -162,7 +162,7 @@ namespace
       wc.hInstance = (HINSTANCE)GetModuleHandle(0);
       wc.hCursor = LoadCursor(0, IDC_ARROW);
       wc.lpszClassName = "debug.win.scope";
-      RegisterClass(&wc);
+      RegisterClassA(&wc);
 
       DWORD style = WS_CAPTION;
       RECT r = { 0, 0, w, h };
