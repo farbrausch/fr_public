@@ -160,6 +160,7 @@ operator Wz4Render Render "Add" (?*Wz4Render)
 
 operator Wz4Render Camera(?Rendertarget2D,?*Wz4Render) 
 {
+  shortcut = 'C';
   column = 0;
   parameter
   {

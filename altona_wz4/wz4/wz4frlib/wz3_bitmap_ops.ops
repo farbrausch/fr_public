@@ -283,6 +283,7 @@ operator GenBitmap Cell()
 operator GenBitmap Gradient()
 {
   column = 0;
+  shortcut = 'G';
   parameter 
   {
     flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
@@ -466,7 +467,6 @@ operator GenBitmap GlowRect(GenBitmap = GenBitmap Flat)
     pi.LineTex2D(helper->x1,helper->y2,helper->x2,helper->y2);
     pi.LineTex2D(helper->x2,helper->y1,helper->x2,helper->y2);
   }  
-  shortcut = 'g';
 }
 
 /****************************************************************************/
@@ -474,6 +474,7 @@ operator GenBitmap GlowRect(GenBitmap = GenBitmap Flat)
 operator GenBitmap Dots(GenBitmap = GenBitmap Flat)
 {
   column = 0;
+  shortcut = 'w';
   flags = passinput|passoutput;
   parameter
   {
@@ -722,6 +723,7 @@ operator GenBitmap PreMulAlpha(GenBitmap)
 operator GenBitmap Mask(GenBitmap,GenBitmap,GenBitmap)
 {
   column = 2;
+  shortcut = 'm';
   parameter
   {
     flags Mode("mix|add|sub|mul");
@@ -992,7 +994,6 @@ operator GenBitmap Twirl(GenBitmap)
     pi.LineTex2D(para->Center[0],helper->y1,helper->x1,helper->y1);
     pi.LineTex2D(helper->x1,para->Center[1],helper->x1,helper->y1);
   }  
-  shortcut = 'g';
 }
 
 /****************************************************************************/
@@ -1168,7 +1169,6 @@ operator GenBitmap Bump(GenBitmap,GenBitmap)
 operator GenBitmap Downsample(GenBitmap)
 {
   column = 3;
-  shortcut = 'r';
   parameter
   {
     flags Size("current| 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
@@ -1263,6 +1263,7 @@ operator GenBitmap Bulge(GenBitmap)
 
 operator GenBitmap Bricks()
 {
+  shortcut = 'q';
   parameter
   {
     flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
