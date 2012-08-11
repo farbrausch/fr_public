@@ -113,6 +113,7 @@ public:
 
 class RNBlowNoise : public Wz4RenderNode
 {
+  sVertexFormatHandle *VertFormat;
   sGeometry *Geo;
   sGeometry *GeoWire;
   //sSimpleMaterial *Mtrl;
@@ -129,6 +130,7 @@ class RNBlowNoise : public Wz4RenderNode
     sVector31 Pos;
     sVector31 PosOld;
     sVector30 Normal;
+    sVector30 Tangent;
     sF32 U,V;
   };
 

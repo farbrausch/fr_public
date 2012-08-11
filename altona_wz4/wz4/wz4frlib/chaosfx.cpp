@@ -535,11 +535,21 @@ void RNRibbons2::Eval(const sVector31 &pos,sVector30 &norm)
 /***                                                                      ***/
 /****************************************************************************/
 
+struct BlowNoiseVertex // 44 bytes
+{
+  sVector31 Pos;
+  sVector30 Normal;
+  sVector30 Tangent;
+  sF32 U,V;
+};
 
 RNBlowNoise::RNBlowNoise()
 {
+  static const sU32 desc[] = { sVF_POSITION,sVF_NORMAL,sVF_TANGENT|sVF_F3,sVF_UV0,0 };
+
+  VertFormat = sCreateVertexFormat(desc);
   Geo = new sGeometry;
-  Geo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatStandard);
+  Geo->Init(sGF_TRILIST|sGF_INDEX32,VertFormat);
 
   Mtrl = 0;
   Verts = 0;
@@ -693,7 +703,7 @@ void RNBlowNoise::Prepare(Wz4RenderContext *ctx)
   }
 
 
-  // calc normals
+  // calc normals and tangents
 
   for(sInt y=1;y<SizeY-1;y++)
   {
@@ -709,19 +719,25 @@ void RNBlowNoise::Prepare(Wz4RenderContext *ctx)
       dy = p10-p11;
       v->Normal.Cross(dy,dx);
       v->Normal.Unit();
+      v->Tangent = dx - v->Normal * (v->Normal * dx);
+      v->Tangent.Unit();
     }
   }
 
   // load vb
 
-  sVertexStandard *vp;
+  BlowNoiseVertex *vp;
   sU32 *ip;
 
   v = Verts;
   Geo->BeginLoadVB(SizeX*SizeY,sGD_FRAME,&vp);
   for(sInt i=0;i<SizeX*SizeY;i++)
   {
-    vp->Init(v->Pos,v->Normal,v->U,v->V);
+    vp->Pos = v->Pos;
+    vp->Normal = v->Normal;
+    vp->Tangent = v->Tangent;
+    vp->U = v->U;
+    vp->V = v->V;
     vp++;
     v++;
   }
