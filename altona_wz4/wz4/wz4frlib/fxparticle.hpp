@@ -441,6 +441,10 @@ class RPSparcle : public Wz4ParticleNode
     sVector30 Speed;
   };
   sArray<Sparc> Sparcs;
+  sInt MaxSparks;
+  sBool NeedInit;
+
+  void DelayedInit();
 
 public:
   RPSparcle();

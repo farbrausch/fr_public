@@ -3081,6 +3081,8 @@ void RPBulge::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
 RPSparcle::RPSparcle()
 {
   Source = 0;
+  MaxSparks = 0;
+  NeedInit = sTRUE;
 }
 
 RPSparcle::~RPSparcle()
@@ -3091,13 +3093,15 @@ RPSparcle::~RPSparcle()
 void RPSparcle::Init()
 {
   Para = ParaBase;
-  sVector30 speed;
+  MaxSparks = Source->GetPartCount() * Para.SamplePoints * Para.Percentage;
+  NeedInit = sTRUE;
+}
 
+void RPSparcle::DelayedInit()
+{
   sRandom rnd;
   rnd.Seed(Para.RandomSeed);
-
   sInt maxsrc = Source->GetPartCount();
-
 
   Wz4PartInfo part[2];
   sInt db = 0;
@@ -3108,6 +3112,7 @@ void RPSparcle::Init()
   part[db].Reset();
   Source->Func(part[db],-1.0f,0);
 
+  Sparcs.Clear();
   for(sInt i=0;i<Para.SamplePoints;i++)
   {
     db = !db;
@@ -3117,8 +3122,9 @@ void RPSparcle::Init()
 
     for(sInt j=0;j<maxsrc;j++)
     {
-      if(part[db].Parts[j].Time>=0 && rnd.Float(1)<Para.Percentage)
+      if(part[db].Parts[j].Time>=0 && rnd.Float(1)<Para.Percentage && Sparcs.GetCount()<MaxSparks)
       {
+        sVector30 speed;
         Sparc *s = Sparcs.AddMany(1);
 
         s->Time0 = time;
@@ -3131,11 +3137,13 @@ void RPSparcle::Init()
       }
     }
   }
+
+  NeedInit = sFALSE;
 }
 
 sInt RPSparcle::GetPartCount()
 {
-  return Sparcs.GetCount();
+  return MaxSparks;
 }
 
 sInt RPSparcle::GetPartFlags()
@@ -3146,8 +3154,10 @@ sInt RPSparcle::GetPartFlags()
 void RPSparcle::Simulate(Wz4RenderContext *ctx)
 {
   Source->Simulate(ctx);
-
   SimulateCalc(ctx);
+
+  if (NeedInit)
+    DelayedInit();
 }
 
 void RPSparcle::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
