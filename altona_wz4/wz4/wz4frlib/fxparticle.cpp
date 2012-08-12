@@ -2812,6 +2812,7 @@ RPSplinedParticles::RPSplinedParticles()
 {
   Anim.Init(Wz4RenderType->Script);
   Source = 0;
+  Spline = AltSpline = 0;
 }
 
 RPSplinedParticles::~RPSplinedParticles()
