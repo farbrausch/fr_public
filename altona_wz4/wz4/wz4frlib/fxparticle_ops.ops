@@ -810,6 +810,8 @@ operator Wz4Particles FromMesh(Wz4Mesh)
     float Raster (0..1024 step 0.01) = 0.125;
     float31 Offset (-1024..1024 step 0.001) = 0;
     flags Flags ("-|Hollow");
+    float Random (0..1 step 0.01) = 1;
+    int RandomSeed (0..255);
   }
   code
   {
