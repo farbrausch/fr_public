@@ -223,6 +223,27 @@ operator Wz4Particles Cloud2()
 
 /****************************************************************************/
 
+operator Wz4Particles FromVertex(Wz4Mesh)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    float Random(0..1 step 0.01) = 1;
+    int RandomSeed(0..255);
+  }
+  code
+  {
+    RPFromVertex *node = new RPFromVertex();
+    node->ParaBase = node->Para = *para;
+    node->Init(in0);
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
+
 operator Wz4Particles Wobble(Wz4Particles)
 {
   tab = Wz4Render;

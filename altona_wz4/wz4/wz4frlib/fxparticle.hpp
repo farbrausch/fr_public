@@ -574,6 +574,31 @@ public:
   void Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt);
 };
 
+
+/****************************************************************************/
+
+class RPFromVertex : public Wz4ParticleNode
+{
+  struct Part
+  {
+    sVector31 Pos;
+  };
+  sArray<Part> Parts;
+public:
+  RPFromVertex();
+  ~RPFromVertex();
+  void Init(Wz4Mesh *mesh);
+
+  Wz4ParticlesParaFromVertex Para,ParaBase;
+  Wz4ParticlesParaFromVertex Anim;
+  Wz4ParticleNode *Source;
+
+  void Simulate(Wz4RenderContext *ctx);
+  sInt GetPartCount();
+  sInt GetPartFlags();
+  void Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt);
+};
+
 /****************************************************************************/
 
 class RPFromMesh : public Wz4ParticleNode

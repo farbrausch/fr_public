@@ -3350,3 +3350,61 @@ void RPFromMesh::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
 }
 
 /****************************************************************************/
+/***                                                                      ***/
+/***   FromVertex (generate node particles from each vertex in the mesh)  ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+RPFromVertex::RPFromVertex()
+{
+}
+
+RPFromVertex::~RPFromVertex()
+{
+}
+
+void RPFromVertex::Init(Wz4Mesh *mesh)
+{
+  Wz4MeshVertex * vp;
+  Para = ParaBase;
+  sRandom rnd;
+  rnd.Seed(Para.RandomSeed);
+
+  sVERIFY(mesh != 0);
+
+  sFORALL(mesh->Vertices, vp)
+  {
+    if (rnd.Float(1)<=Para.Random)
+    {
+      Part *p = Parts.AddMany(1);
+      p->Pos.Init(vp->Pos.x, vp->Pos.y, vp->Pos.z);
+    }
+  }
+}
+
+
+void RPFromVertex::Simulate(Wz4RenderContext *ctx)
+{
+  //SimulateCalc(ctx);
+}
+
+sInt RPFromVertex::GetPartCount()
+{
+  return Parts.GetCount();
+}
+
+sInt RPFromVertex::GetPartFlags()
+{
+  return 0;
+}
+
+void RPFromVertex::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
+{
+  sInt count = Parts.GetCount();
+
+  for(sInt i=0;i<count;i++)
+  {
+    pinfo.Parts[i].Init(Parts[i].Pos,1.0f);
+  }
+  pinfo.Used = count;
+}
