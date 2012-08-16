@@ -330,10 +330,11 @@ void InitGFX(sInt flags_,sInt xs_,sInt ys_)
     d3dpp[0].Windowed = 0;
     d3dpp[0].BackBufferWidth = DXScreenMode.ScreenX;
     d3dpp[0].BackBufferHeight = DXScreenMode.ScreenY;
-    d3dpp[0].BackBufferCount = 2;
     d3dpp[0].SwapEffect = D3DSWAPEFFECT_FLIP;
+    d3dpp[0].BackBufferCount = 2;
     d3dpp[0].BackBufferFormat = colormode;
     d3dpp[0].PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+    d3dpp[0].FullScreen_RefreshRateInHz = DXScreenMode.Frequency;
   }
   else
   {
