@@ -294,24 +294,27 @@ void sRenderTargetManager_::SetTarget(sTexture2D *tex,sInt clrflags,sU32 clrcol,
 void sRenderTargetManager_::FinishScreen()
 {
 #if sPLATFORM==sPLAT_WINDOWS  // Until sSetScreen is available on all platforms
-  if(ScreenProxy && ScreenProxyDirty)
+  if(ScreenProxy)
   {
-    const sRect sr(0,0,ScreenX,ScreenY);
-    sInt z;
-    sCopyTexturePara ctp;
-    ctp.Source = ScreenProxy;
-    ctp.SourceRect = sr;
-    ctp.Dest = ToTexture ? ToTexture : sGetScreenColorBuffer();
-    if(ScreenProxy)
-      ctp.DestRect = *Window;
-    else
-      ctp.Dest->GetSize(ctp.DestRect.x1,ctp.DestRect.y1,z);
+    if (ScreenProxyDirty)
+    {
+      const sRect sr(0,0,ScreenX,ScreenY);
+      sInt z;
+      sCopyTexturePara ctp;
+      ctp.Source = ScreenProxy;
+      ctp.SourceRect = sr;
+      ctp.Dest = ToTexture ? ToTexture : sGetScreenColorBuffer();
+      if(ScreenProxy)
+        ctp.DestRect = *Window;
+      else
+        ctp.Dest->GetSize(ctp.DestRect.x1,ctp.DestRect.y1,z);
 
-    sCopyTexture(ctp);
-//    sSetScreen(ScreenProxy,sGFF_NONE,Window,);
+      sCopyTexture(ctp);
+  //    sSetScreen(ScreenProxy,sGFF_NONE,Window,);
+      ScreenProxyDirty = 0;
+    }
     Release(ScreenProxy);
     ScreenProxy = 0;
-    ScreenProxyDirty = 0;
   }
   Release(ToTexture);
   ToTexture = 0;
