@@ -84,6 +84,9 @@ public:
 
   sBool Read(void *buffer, sDInt size, sDInt &read);
 
+  const sChar *GetETag() { return ETag; }
+  void SetETag(const sChar *etag) { ETag = etag; }
+
   // not implemented yet!
   //virtual sBool Write(const void *buffer, sDInt bytes, sDInt &written) { sVERIFYFALSE; return sFALSE; }
 
@@ -94,10 +97,10 @@ protected:
   sChar8 Buffer[1024];
   sInt Fill;
   sDInt Size;   // CHAOS: das habe ich mal auf 64 bit gestellt...
+  sString<256> ETag;
+  sInt ChunkLeft;
 
   sBool Send8(const sChar *str);
-
-
 };
 
 /****************************************************************************/

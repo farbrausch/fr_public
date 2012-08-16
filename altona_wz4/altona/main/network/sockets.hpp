@@ -81,6 +81,8 @@ public:
 
   sBool GetPeerAddress(sIPAddress &address);
   sBool GetPeerPort(sIPPort &port);
+  sBool GetLocalAddress(sIPAddress &address);
+  sBool GetLocalPort(sIPPort &port);
 
   // check if sockets are able to read/write
   sBool CanRead();

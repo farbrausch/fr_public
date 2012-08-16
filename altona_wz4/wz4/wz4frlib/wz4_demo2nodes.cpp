@@ -539,11 +539,19 @@ void RNMultiplyMesh::Render(Wz4RenderContext *ctx)
 
 RNAdd::RNAdd()
 {
+  TimeOverride = 0;
 }
 
 void RNAdd::Simulate(Wz4RenderContext *ctx)
 {
   SimulateCalc(ctx);
+
+  if (TimeOverride != 0)
+  {
+    ctx->SetTime(*TimeOverride);
+    ctx->SetLocalTime(*TimeOverride);
+  }
+
   SimulateChilds(ctx);
 }
 

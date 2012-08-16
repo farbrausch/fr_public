@@ -98,6 +98,8 @@ class RNAdd : public Wz4RenderNode
 public:
   RNAdd();
 
+  sF32 *TimeOverride;
+
   void Simulate(Wz4RenderContext *ctx);
 };
 

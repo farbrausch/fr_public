@@ -33,4 +33,4 @@ file "algorithms.hpp";
 file "ipp.?pp";
 file "rasterizer.?pp";
 file "simd_float.hpp";
-
+file "json.hpp";

@@ -158,6 +158,22 @@ operator Wz4Render Render "Add" (?*Wz4Render)
 
 /****************************************************************************/
 
+operator Wz4Render RenderNull "Null" (?*Wz4Render) 
+{
+  column = 0;
+  parameter
+  {
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script:0;
+  }
+  code
+  {
+    out->RootNode = new RNAdd;
+    out->AddChilds(cmd,0);
+  }
+}
+
+/****************************************************************************/
+
 operator Wz4Render Camera(?Rendertarget2D,?*Wz4Render) 
 {
   shortcut = 'C';
