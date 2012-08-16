@@ -273,8 +273,8 @@ public:
     sSetTarget(sTargetPara(sST_CLEARALL|sST_NOMSAA,0));
 
     sInt sx,sy;
-    sGetScreenSize(sx,sy);
-    sF32 scrnaspect=sGetScreenAspect();
+    sGetRendertargetSize(sx,sy);
+    sF32 scrnaspect=sGetRendertargetAspect();
     sF32 demoaspect=sF32(Doc->DocOptions.ScreenX)/sF32(Doc->DocOptions.ScreenY);
     sF32 arr=scrnaspect/demoaspect;
     sF32 w=0.5f, h=0.5f;
