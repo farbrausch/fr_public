@@ -690,6 +690,7 @@ operator Wz4Mesh DeleteFace(Wz4Mesh)
   parameter
   {
     flags Selection("all|none|selected|unselected")=2;
+    flags DeleteUnusedVertices "Vertices" ("keep|delete")=0;
   }
   code
   {
@@ -713,6 +714,33 @@ operator Wz4Mesh DeleteFace(Wz4Mesh)
     }
 
     out->Faces = newfaces;
+
+    // delete vertices without faces ?
+    if(para->DeleteUnusedVertices)
+    {
+      sInt vc = 0;
+      sFORALL(out->Faces,fp)
+        vc += fp->Count;
+
+      Wz4MeshVertex *nv = new Wz4MeshVertex[vc];
+
+      sInt nc = 0;
+      sFORALL(out->Faces,fp)
+      {
+        for(sInt i=0;i<fp->Count;i++)
+        {
+          nv[nc] = out->Vertices[fp->Vertex[i]];
+          fp->Vertex[i] = nc;
+          nc++;
+        }
+      }
+      sVERIFY(nc==vc);
+
+      out->Vertices.Resize(nc);
+      sCopyMem(out->Vertices.GetData(),nv,sizeof(Wz4MeshVertex)*nc);
+      delete[] nv;
+    }
+
     out->Flush();
   }
 }
