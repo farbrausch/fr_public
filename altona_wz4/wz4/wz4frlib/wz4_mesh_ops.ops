@@ -690,7 +690,7 @@ operator Wz4Mesh DeleteFace(Wz4Mesh)
   parameter
   {
     flags Selection("all|none|selected|unselected")=2;
-    flags KeepVertices "Keep vertices" ("yes|no");
+    flags DeleteUnusedVertices "Vertices" ("keep|delete")=0;
   }
   code
   {
@@ -716,7 +716,7 @@ operator Wz4Mesh DeleteFace(Wz4Mesh)
     out->Faces = newfaces;
 
     // delete vertices without faces ?
-    if(para->KeepVertices == 1)
+    if(para->DeleteUnusedVertices)
     {
       sInt vc = 0;
       sFORALL(out->Faces,fp)
