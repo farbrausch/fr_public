@@ -41,6 +41,11 @@ folder "resources"
   file "resources/icon.ico"  license default;
 }
 
+folder "data"
+{
+  file "config.txt";
+}
+
 folder "3rdparty"
 {
   file "pugiconfig.hpp";
@@ -52,3 +57,5 @@ file "main.cpp";
 file "vorbisplayer.?pp";
 file "network.?pp";
 file "playlists.?pp";
+file "config.hpp";
+

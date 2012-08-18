@@ -304,6 +304,7 @@ struct bMusicPlayer::VerySecret : protected bRenderer
   {
     Exit();
     File = sCreateFile(filename);
+    if (!File) return;
     
     const sChar *ext = sFindFileExtension(filename);
     if (!sCmpStringI(ext,L"ogg"))

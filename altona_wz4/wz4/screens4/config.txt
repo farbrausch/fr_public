@@ -1,0 +1,25 @@
+// config for screens4
+
+defaults
+{
+  resolution 1280,720 // if missing, use desktop resolution
+  fullscreen 1
+}
+
+// available commands:
+// -------------------------------------------
+// playsound "soundfile.ogg" (Vorbis only)
+// stopsound
+// resolution x,y[,rate]
+// togglefullscreen
+
+keys
+{
+  ESC: stopsound
+  F1: playsound "sounds/announce.ogg"
+  F2: playsound "sounds/compo.ogg"
+  
+  SHIFT F5: resolution 1280,720,50
+  SHIFT F6: resolution 1280,720,60
+  SHIFT F11: togglefullscreen
+}

@@ -6,30 +6,26 @@
 /**************************************************************************+*/
 
 #include "base/types.hpp"
-#include "wz4lib/doc.hpp"
-#include "wz4frlib/packfile.hpp"
-#include "wz4frlib/packfilegen.hpp"
-#include "wz4lib/version.hpp"
 #include "util/painter.hpp"
 #include "util/taskscheduler.hpp"
 #include "extra/blobheap.hpp"
-#include "extra/freecam.hpp"
-
+#include "wz4lib/doc.hpp"
 #include "wz4lib/basic.hpp"
+#include "wz4lib/version.hpp"
+#include "wz4frlib/packfile.hpp"
 #include "wz4frlib/wz4_demo2.hpp"
 #include "wz4frlib/wz4_demo2nodes.hpp"
 
+#include "config.hpp"
 #include "vorbisplayer.hpp"
-
 #include "network.hpp"
-
-#include "util/json.hpp"
-
 #include "playlists.hpp"
 
 /****************************************************************************/
 
+static Config *MyConfig;
 static sDemoPackFile *PackFile=0;
+static sScreenMode ScreenMode;
 
 #define PrepareFactor 16     // every 16 beats count as (Preparefactor) ops for the progressbar
 
@@ -85,6 +81,36 @@ void RegisterWZ4Classes()
 /****************************************************************************/
 /****************************************************************************/
 
+static void SetupScreenMode(Config::Resolution resolution, sBool fullscreen)
+{
+  ScreenMode.Aspect = (float)resolution.Width/(float)resolution.Height;
+  ScreenMode.Display = -1;
+  ScreenMode.Flags = 0;
+  if (fullscreen)
+  {
+    ScreenMode.Flags |= sSM_FULLSCREEN;
+  }
+  ScreenMode.Frequency = resolution.RefreshRate;
+  ScreenMode.MultiLevel = 0;
+  ScreenMode.OverMultiLevel = 0;
+  ScreenMode.OverX = ScreenMode.ScreenX = MyConfig->DefaultResolution.Width;
+  ScreenMode.OverY = ScreenMode.ScreenY = MyConfig->DefaultResolution.Height;
+
+  // find max resolution for z buffer
+  ScreenMode.RTZBufferX = 2048;
+  ScreenMode.RTZBufferY = 2048;
+  /*
+  for (sInt i=0; i<MyConfig->Keys.GetCount(); i++) if (MyConfig->Keys[i].Type == Config::SETRESOLUTION)
+  {
+    sm.RTZBufferX = sMax(sm.RTZBufferX, MyConfig->Keys[i].ParaRes.Width);
+    sm.RTZBufferY = sMax(sm.RTZBufferY, MyConfig->Keys[i].ParaRes.Height);
+  }
+  */
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
 template <typename T> class sAutoPtr
 {
 public:
@@ -132,7 +158,7 @@ public:
 
   PlaylistMgr PlMgr;
 
-  sRandom Rnd;
+  sRandomMT Rnd;
 
   struct NamedObject
   {
@@ -160,6 +186,8 @@ public:
 
   sF32 TransTime, TransDurMS, CurRenderTime, NextRenderTime;
 
+  bMusicPlayer SoundPlayer;
+
   MyApp()
   {
     Loaded=sFALSE;
@@ -184,6 +212,7 @@ public:
     Doc->EditOptions.BackColor=0xff000000;
 
     Server = 0;
+    Rnd.Seed(sGetRandomSeed());
   }
 
   ~MyApp()
@@ -199,7 +228,8 @@ public:
       sRemFileHandler(PackFile);
       sDelete(PackFile);
     }
-
+  
+    sDelete(MyConfig);
   }
 
 
@@ -439,9 +469,9 @@ public:
         if (newslide->TransitionTime>0)
         {
           if (newslide->TransitionId >= Transitions.GetCount())
-            SetTransition(Rnd.Int(Transitions.GetCount()));
+            SetTransition(Rnd.Int(Transitions.GetCount()),newslide->TransitionTime);
           else
-            SetTransition(newslide->TransitionId);
+            SetTransition(newslide->TransitionId,newslide->TransitionTime);
         }
         else
           EndTransition();
@@ -515,7 +545,6 @@ public:
 
   void OnInput(const sInput2Event &ie)
   {
-
     if (PlMgr.OnInput(ie))
       return;
 
@@ -523,6 +552,28 @@ public:
     key &= ~sKEYQ_CAPS;
     if(key & sKEYQ_SHIFT) key |= sKEYQ_SHIFT;
     if(key & sKEYQ_CTRL ) key |= sKEYQ_CTRL;
+    if(key & sKEYQ_ALT ) key |= sKEYQ_ALT;
+
+    Config::KeyEvent *kev;
+    sFORALL(MyConfig->Keys,kev) if (key == kev->Key) switch (kev->Type)
+    {
+    case Config::PLAYSOUND:
+      SoundPlayer.Init(kev->ParaStr);
+      SoundPlayer.Play();
+      return;
+    case Config::STOPSOUND:
+      SoundPlayer.Exit();
+      return;
+    case Config::FULLSCREEN:
+      ScreenMode.Flags ^= sSM_FULLSCREEN;
+      sSetScreenMode(ScreenMode);
+      return;
+    case Config::SETRESOLUTION:
+      SetupScreenMode(kev->ParaRes,ScreenMode.Flags&sSM_FULLSCREEN);
+      sSetScreenMode(ScreenMode);
+      return;
+    }
+
     switch(key)
     {
     case sKEY_ESCAPE|sKEYQ_SHIFT:
@@ -591,16 +642,11 @@ void sMain()
   sSetWindowName(wintitle);
   sAddGlobalBlobHeap();
 
-  //const sChar* str = L"{\"rpc\":{\"@attributes\":{\"type\":\"request\",\"name\":\"get_playlists\"}}}";
- 
-//  sJSON json;
-//  sJSON::Object *obj = json.Parse(str)->As<sJSON::Object>();
-//  sJSON::Object *rpc = obj->Items.Get(L"rpc")->As<sJSON::Object>();
-//  const sChar *type = rpc->Attributes.Get(L"type")->As<sJSON::String>()->Value;
-//  const sChar  *name = rpc->Attributes.Get(L"name")->As<sJSON::String>()->Value;
-  
-//  delete obj;
-//  return;
+  MyConfig = new Config;
+  if (!MyConfig->Read(L"config.txt"))
+  {
+    sFatal(MyConfig->GetError());
+  }
 
   // find packfile and open it
   {
@@ -658,55 +704,29 @@ void sMain()
     sFatal(L"no .suitable .wz4 file found");
   }
   
-  // try to load doc options from wz4 file
-  wDocOptions opt;
-  LoadOptions(wz4name,opt);
-
-  // get demo title from doc options
-  sString<256> title=sGetWindowName();
-  if (!opt.ProjectName.IsEmpty())
-  {
-    if (opt.ProjectId>0)
-      title.PrintF(L"fr-0%d: %s",opt.ProjectId,opt.ProjectName);
-    else if (opt.ProjectId<0)
-      title.PrintF(L"fr-minus-0%d: %s",-opt.ProjectId,opt.ProjectName);
-    else
-      title.PrintF(L"%s",opt.ProjectName);
-    sSetWindowName(title);
-  }
-
   // open selector and set screen mode
-  sTextBuffer tb;
   sInt flags=sISF_2D|sISF_3D|sISF_CONTINUOUS; // need 2D for text rendering
 
- 
+  sString<256> title=sGetWindowName();
   title.PrintAddF(L"  (player V%d.%d)",WZ4_VERSION,WZ4_REVISION);
   if(sCONFIG_64BIT)
     title.PrintAddF(L" (64Bit)");
   sSetWindowName(title);
 
-//  sCheckCapsHook->Add(CheckCapsCallback);   // for fr-062 vertex texture check
+  sInt refresh = MyConfig->DefaultResolution.RefreshRate;
+  if (MyConfig->DefaultResolution.Width==0 || MyConfig->DefaultResolution.Height==0)
+  {
+    sScreenInfo si;
+    sGetScreenInfo(si);
+    MyConfig->DefaultResolution.Width = si.CurrentXSize;
+    MyConfig->DefaultResolution.Height = si.CurrentYSize;
+  }
 
-
-  sScreenMode sm;
-  sm.Aspect = (float)opt.ScreenX/(float)opt.ScreenY;
-  sm.Display = -1;
-  sm.Flags = 0;
-#if sRELEASE
-  flags|=sISF_FULLSCREEN;
-  sm.Flags |= sSM_FULLSCREEN;
-#endif
-  sm.Frequency = 0;
-  sm.MultiLevel = 0;
-  sm.OverMultiLevel = 0;
-  sm.OverX = sm.ScreenX = opt.ScreenX;
-  sm.OverY = sm.ScreenY = opt.ScreenY;
-  sm.RTZBufferX = 2048;
-  sm.RTZBufferY = 2048;
-
-  sSetScreenMode(sm);
-  sInit(flags,sm.ScreenX,sm.ScreenY);
-
+  SetupScreenMode(MyConfig->DefaultResolution,MyConfig->DefaultFullscreen);
+  sSetScreenMode(ScreenMode);
+  if (ScreenMode.Flags & sSM_FULLSCREEN) flags|=sISF_FULLSCREEN;
+  sInit(flags,ScreenMode.ScreenX,ScreenMode.ScreenY);
+ 
   sSched = new sStsManager(128*1024,512,0);
 
   // .. and go!

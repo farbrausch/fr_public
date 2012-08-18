@@ -17,8 +17,8 @@
 class RefCountObj
 {
 public:
-  void AddRef() { sAtomicInc(&RefCount); }
-  void Release() { if (!sAtomicDec(&RefCount)) delete this; }
+  int AddRef()  { return sAtomicInc(&RefCount); }
+  int Release() { int rc=sAtomicDec(&RefCount);  if (!rc) delete this; return rc; }
 
   RefCountObj() : RefCount(1) {}
 
