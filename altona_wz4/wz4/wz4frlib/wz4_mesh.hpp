@@ -243,6 +243,9 @@ public:
   sBool Deform(sInt count,const sVector31 &p0,const sVector31 &p1,sInt keycount,const struct Wz4MeshArrayDeform *keys,sInt selection,sInt upflags,const sVector30 &up);
   void ExtrudeNormal(sInt logic,sF32 amount);
   void Heal(Wz4Mesh *reference, sInt flags, sF32 posThres, sF32 normThres);
+  void TransformRange(sInt rangeMode,sInt mode,sInt selection,sVector2 direction, sVector2 axialRange,
+                      sVector31 scaleStart, sVector30 rotateStart, sVector31 translateStart,
+                      sVector31 scaleEnd, sVector30 rotateEnd, sVector31 translateEnd);
 
   // topology
 
