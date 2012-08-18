@@ -4279,8 +4279,8 @@ void Wz4Mesh::TransformRange(sInt rangeMode, sInt mode, sInt selection, sVector2
   else
   {
     // range defined by axialRange
-    ymin = axialRange.x;
-    ymax = axialRange.y;
+    ymin = axialRange.y;
+    ymax = axialRange.x;
   }
 
   sF32 yscale = 1.0f / (ymax - ymin);
@@ -4308,7 +4308,7 @@ void Wz4Mesh::TransformRange(sInt rangeMode, sInt mode, sInt selection, sVector2
 
       t = sFade(t,1.0f,0.0f);
 
-      mat0.FadeOrthonormal(t, matStart, matEnd);
+      mat0.Fade(t, matStart, matEnd);
 
       matInvT = mat0;
       matInvT.Invert3();

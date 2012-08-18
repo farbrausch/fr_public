@@ -162,6 +162,13 @@ void sVector30::Cross(sVector30Arg a,sVector30Arg b)
                    ,a.x*b.y-a.y*b.x);
 }
 
+void sMatrix34::Fade(sF32 f,const sMatrix34 &mat0,const sMatrix34 &mat1)
+{
+  i.Fade(f,mat0.i,mat1.i);
+  j.Fade(f,mat0.j,mat1.j);
+  k.Fade(f,mat0.k,mat1.k);
+  l.Fade(f,mat0.l,mat1.l);
+}
 
 void sMatrix34::FadeOrthonormal(sF32 f,const sMatrix34 &mat0,const sMatrix34 &mat1)
 {

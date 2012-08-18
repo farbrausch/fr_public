@@ -479,6 +479,7 @@ public:
   void Cross(sVector30Arg v);
   void FadeOrthonormal(sF32 f,const sMatrix34 &mat0,const sMatrix34 &mat1);
   void FadeOrthonormalPrecise(sF32 f,const sMatrix34 &mat0,const sMatrix34 &mat1);
+  void Fade(sF32 f,const sMatrix34 &mat0,const sMatrix34 &mat1);
 
   // manipulate matrix
 
