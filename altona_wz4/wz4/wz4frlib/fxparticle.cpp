@@ -366,6 +366,7 @@ Wz4Explosion::~Wz4Explosion()
 
 RPExploder::RPExploder()
 {
+  InitSinTable();
   Mesh = 0;
 }
 
