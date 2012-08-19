@@ -36,6 +36,8 @@ public:
     Resolution ParaRes;
   };
 
+  sInt Port;
+  sInt HttpPort;
   Resolution DefaultResolution;
   sBool DefaultFullscreen;
   sArray<KeyEvent> Keys;
@@ -45,6 +47,8 @@ public:
     Scan=0;
     sClear(DefaultResolution);
     DefaultFullscreen = sRELEASE;
+    Port = 1234;
+    HttpPort = 8080;
   }
 
   sBool Read(const sChar *filename)
@@ -96,6 +100,10 @@ private:
         _Resolution(DefaultResolution);
       else if (Scan->IfName(L"fullscreen"))
         DefaultFullscreen = Scan->ScanInt();
+      else if (Scan->IfName(L"port"))
+        Port = Scan->ScanInt();
+      else if (Scan->IfName(L"httpport"))
+        HttpPort = Scan->ScanInt();
       else
         Scan->Error(L"syntax error");
     }

@@ -79,7 +79,7 @@ class RPCServer
   sBool GetSystemInfo(pugi::xml_node &in, pugi::xml_node &out);
 
 public:
-  RPCServer(PlaylistMgr &plMgr);
+  RPCServer(PlaylistMgr &plMgr, sInt port);
   ~RPCServer();
 
 };

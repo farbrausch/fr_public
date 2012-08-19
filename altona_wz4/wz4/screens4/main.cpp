@@ -355,7 +355,7 @@ public:
     MakeNextSlide(L"beamslide.png");
     EndTransition();
 
-    Server = new RPCServer(PlMgr);
+    Server = new RPCServer(PlMgr, MyConfig->Port);
 
     Loaded=sTRUE;
   };

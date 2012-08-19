@@ -34,9 +34,9 @@ void RPCServer::Connection::write(const void* data, size_t size)
 
 /****************************************************************************/
 
-RPCServer::RPCServer(PlaylistMgr &plMgr) : PlMgr(plMgr)
+RPCServer::RPCServer(PlaylistMgr &plMgr, sInt port) : PlMgr(plMgr)
 {
-  Socket.Listen(1234);
+  Socket.Listen((sIPPort)port);
   StartTime = sGetTime();
   Thread = new sThread(ThreadProxy,0,0,this);
 }

@@ -289,49 +289,86 @@ struct bMusicPlayer::VerySecret : protected bRenderer
   sInt      SeekBufferLen;
   sInt      CurBufferPos;
 
+  sThread *InitThread;
+  sThreadLock ITLock;
+  sThreadEvent ITEvent;
+  sString<1024> NextFile;
+
   VerySecret(sBool seekable) : Seekable(seekable), Buffer(0), File(0), Vorbis(0), Playing(sFALSE), Loop(sFALSE)
   { 
     sClear(SeekBuffer);
     CurBuffer=0;
+    InitThread = new sThread(InitThreadProxy, -1, 0, this);
   }
 
   ~VerySecret() 
   { 
-    Exit(); 
+    InitThread->Terminate();
+    ITLock.Lock();
+    NextFile = L"";
+    ITLock.Unlock();
+    ITEvent.Signal();
+    delete InitThread;
+  }
+
+  static void InitThreadProxy(sThread *t, void *obj)
+  {
+    ((VerySecret*)obj)->InitThreadFunc(t);
+  }
+
+  void InitThreadFunc(sThread *t)
+  {
+    while (t->CheckTerminate())
+    {
+      if (!ITEvent.Wait(100)) 
+        continue;
+
+      DoExit();
+      {
+        sScopeLock lock(&ITLock);
+        if (NextFile != L"")
+        {
+          File = sCreateFile(NextFile);
+          if (!File) continue;
+        }
+      }
+
+      const sChar *ext = sFindFileExtension(NextFile);
+      if (!sCmpStringI(ext,L"ogg"))
+      InitVorbis(File->MapAll(),File->GetSize());
+    }
+    DoExit();
   }
 
   void Init(const sChar *filename)
   {
-    Exit();
-    File = sCreateFile(filename);
-    if (!File) return;
-    
-    const sChar *ext = sFindFileExtension(filename);
-    if (!sCmpStringI(ext,L"ogg"))
-      InitVorbis(File->MapAll(),File->GetSize());
-  }
-
-  sBool InitCommon(void *ptr, sDInt size)
-  {
-    if (!ptr || !size) return sFALSE;
-
-    Buffer=(sU8*)ptr;
-    BufSize=size;
-    
-    Playing=sFALSE;
-   
+    sScopeLock lock(&ITLock);
     CurVol=1.0f;
     DestVol=1.0f;
     VolDelta=0.0f;
     ZeroCount=0;
     SamplePos=0;
     SkipSamples = 0;
+    NextFile = filename;
+    ITEvent.Signal();
+  }
+
+  sBool InitCommon(void *ptr, sDInt size)
+  {
+    
+    Playing=sFALSE;
+   
+   
     return sTRUE;
   }
 
   void InitVorbis(void *ptr, sDInt size)
   {
-    if (!InitCommon(ptr,size)) return;
+
+    if (!ptr || !size) return;
+
+    Buffer=(sU8*)ptr;
+    BufSize=size;
 
     InitDecoder();
 
@@ -385,14 +422,14 @@ struct bMusicPlayer::VerySecret : protected bRenderer
     if (error)
     {
       sDPrintF(L"STB isn't as good as Bob, code: %d\n",error);
-      Exit();
+      DoExit();
       return;
     }
 
     VorbisInfo = stb_vorbis_get_info(Vorbis);
   }
 
-  void Exit()
+  void DoExit()
   {
     if (!Buffer) return;
 
@@ -421,14 +458,12 @@ struct bMusicPlayer::VerySecret : protected bRenderer
 
   void Play()
   {
-    if (!Buffer) return;
     Playing=sTRUE;
   }
 
 
   void Pause()
   {
-    if (!Buffer) return;
     Playing=sFALSE;
   }
 
@@ -587,7 +622,7 @@ bMusicPlayer::bMusicPlayer(sBool seekable) { p=new VerySecret(seekable); }
 bMusicPlayer::~bMusicPlayer() { delete p; }
 void bMusicPlayer::Init(const sChar *filename) { p->Init(filename); }
 //void bMusicPlayer::Init(void *ptr, sDInt size) { p->Init(ptr,size);  }
-void bMusicPlayer::Exit() { p->Exit(); }
+void bMusicPlayer::Exit() { p->Init(L""); }
 void bMusicPlayer::Play() { p->Play(); }
 void bMusicPlayer::Pause() { p->Pause(); }
 void bMusicPlayer::Seek(sF32 time) { p->Seek(time); }
