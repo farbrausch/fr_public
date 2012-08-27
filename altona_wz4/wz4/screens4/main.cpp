@@ -83,22 +83,22 @@ void RegisterWZ4Classes()
 
 static void SetupScreenMode(Config::Resolution resolution, sBool fullscreen)
 {
+  sClear(ScreenMode);
   ScreenMode.Aspect = (float)resolution.Width/(float)resolution.Height;
   ScreenMode.Display = -1;
-  ScreenMode.Flags = 0;
   if (fullscreen)
   {
     ScreenMode.Flags |= sSM_FULLSCREEN;
   }
   ScreenMode.Frequency = resolution.RefreshRate;
-  ScreenMode.MultiLevel = 0;
-  ScreenMode.OverMultiLevel = 0;
+  ScreenMode.MultiLevel = -1;
+  ScreenMode.OverMultiLevel = -1;
   ScreenMode.OverX = ScreenMode.ScreenX = MyConfig->DefaultResolution.Width;
   ScreenMode.OverY = ScreenMode.ScreenY = MyConfig->DefaultResolution.Height;
 
   // find max resolution for z buffer
-  ScreenMode.RTZBufferX = 2048;
-  ScreenMode.RTZBufferY = 2048;
+  //ScreenMode.RTZBufferX = 2048;
+  //ScreenMode.RTZBufferY = 2048;
   /*
   for (sInt i=0; i<MyConfig->Keys.GetCount(); i++) if (MyConfig->Keys[i].Type == Config::SETRESOLUTION)
   {
@@ -385,8 +385,8 @@ public:
     SlidePic[0] = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",Tex1Op));
     SlidePic[1] = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",Tex2Op));
 
-    MakeNextSlide(L"beamslide.png");
-    EndTransition();
+    //MakeNextSlide(L"beamslide.png");
+    //EndTransition();
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
     Web = new WebServer(PlMgr, MyConfig->HttpPort);

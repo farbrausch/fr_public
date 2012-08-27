@@ -199,7 +199,7 @@ void RPCServer::OnMessage(Connection *conn, Buffer *lastbuf, const sU8 *lastptr)
       len += buf->Count;
 
   sInt xmlpos = 0;
-  sU8 *xmldata = new sU8[len];
+  sU8 *xmldata = new sU8[len+1];
   buf = conn->InBuffers.RemHead();
   while (xmlpos<len)
   {
@@ -214,6 +214,7 @@ void RPCServer::OnMessage(Connection *conn, Buffer *lastbuf, const sU8 *lastptr)
     if (todo<buf->Count) sMoveMem(buf->Data,buf->Data+todo,buf->Count-todo);
     buf->Count-=todo;
   }
+  xmldata[xmlpos]=0;
   conn->InBuffers.AddHead(buf);
 
   if (!doc.load_buffer_inplace(xmldata,len))
@@ -221,6 +222,8 @@ void RPCServer::OnMessage(Connection *conn, Buffer *lastbuf, const sU8 *lastptr)
 
   // get rpc node
   xml = doc.child(L"xml");
+  if (!xml)
+    Error(1,L"FAILED: no xml node");
   rpc = xml.child(L"rpc");
   if (!rpc)
     Error(1,L"FAILED: no rpc node");

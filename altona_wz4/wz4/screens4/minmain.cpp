@@ -25,22 +25,18 @@ static sScreenMode ScreenMode;
 
 static void SetupScreenMode(Config::Resolution resolution, sBool fullscreen)
 {
+  sClear(ScreenMode);
   ScreenMode.Aspect = (float)resolution.Width/(float)resolution.Height;
   ScreenMode.Display = -1;
-  ScreenMode.Flags = 0;
   if (fullscreen)
   {
     ScreenMode.Flags |= sSM_FULLSCREEN;
   }
   ScreenMode.Frequency = resolution.RefreshRate;
-  ScreenMode.MultiLevel = 0;
-  ScreenMode.OverMultiLevel = 0;
+  ScreenMode.MultiLevel = -1;
+  ScreenMode.OverMultiLevel = -1;
   ScreenMode.OverX = ScreenMode.ScreenX = MyConfig->DefaultResolution.Width;
   ScreenMode.OverY = ScreenMode.ScreenY = MyConfig->DefaultResolution.Height;
-
-  // find max resolution for z buffer
-  ScreenMode.RTZBufferX = 2048;
-  ScreenMode.RTZBufferY = 2048;
 }
 
 /****************************************************************************/
@@ -179,20 +175,57 @@ public:
     if (TransTime>=0)
     {
       c1 = 0x1010101 * int(255*sClamp(1-TransTime,0.0f,1.0f));
+      sU32 c2 = c1 & 0xff000000;
 
-      // fill geo for 2nd slide
-      sF32 arr=scrnaspect*sF32(Tex1->SizeY)/sF32(Tex1->SizeX);
+      // fill geo for 2nd slide (with explicit letterbox/pillarbox for blending)
+      sF32 arr=scrnaspect*sF32(Tex2->SizeY)/sF32(Tex2->SizeX);
       sF32 w=0.5f, h=0.5f;
-      if (arr>1) w/=arr; else h*=arr;
-      rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+      if (arr>1) 
+      {
+        w/=arr; 
+        rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
 
-      geo.BeginLoadVB(4,sGD_STREAM,&vp);
-      vp[0].Init(rect.x0,rect.y0,0.5,c1,0,0);
-      vp[1].Init(rect.x1,rect.y0,0.5,c1,1,0);
-      vp[2].Init(rect.x1,rect.y1,0.5,c1,1,1);
-      vp[3].Init(rect.x0,rect.y1,0.5,c1,0,1);
-      geo.EndLoadVB();
+        geo.BeginLoadVB(12,sGD_STREAM,&vp);
+        (*vp++).Init(      0,rect.y0,0.5,c2,0,0);
+        (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
+        (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
+        (*vp++).Init(      0,rect.y1,0.5,c2,0,0);
 
+        (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
+        (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
+        (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
+        (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
+
+        (*vp++).Init(     sx,rect.y0,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
+        (*vp++).Init(     sx,rect.y1,0.5,c2,0,0);
+        geo.EndLoadVB();
+      }
+      else
+      {
+        h*=arr;
+        rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+
+        geo.BeginLoadVB(12,sGD_STREAM,&vp);
+        (*vp++).Init(rect.x0,      0,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,      0,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
+        (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
+
+        (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
+        (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
+        (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
+        (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
+
+        (*vp++).Init(rect.x0,     sy,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,     sy,0.5,c2,0,0);
+        (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
+        (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
+
+        geo.EndLoadVB();
+      }
+     
       // set material
       sCBuffer<sSimpleMaterialPara> cb;
       cb.Data->Set(view);

@@ -131,7 +131,7 @@ private:
       // scan for key name
       if(Scan->Token==sTOK_CHAR)
       {
-        key = sMakeUnshiftedKey(Scan->ScanChar());
+        key = Scan->ScanChar();
       }
       else if(Scan->Token==sTOK_NAME)
       {
