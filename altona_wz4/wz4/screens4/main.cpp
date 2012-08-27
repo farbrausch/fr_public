@@ -155,6 +155,7 @@ public:
   wPaintInfo PaintInfo;
 
   RPCServer *Server;
+  WebServer *Web;
 
   PlaylistMgr PlMgr;
 
@@ -174,6 +175,9 @@ public:
   sAutoPtr<Texture2D> Tex1, Tex2;
   sAutoPtr<Wz4Render> SlidePic[2];
   int CurPhase;
+
+  sAutoPtr<Rendertarget2D> CurRT;
+  sAutoPtr<Rendertarget2D> NextRT;
 
   sAutoPtr<Wz4Render> CurShow;
   
@@ -212,6 +216,7 @@ public:
     Doc->EditOptions.BackColor=0xff000000;
 
     Server = 0;
+    Web = 0;
     Rnd.Seed(sGetRandomSeed());
   }
 
@@ -219,6 +224,7 @@ public:
   {
 
     sDelete(Server);
+    sDelete(Web);
 
     sRemRoot(Doc);
     delete Painter;
@@ -288,10 +294,33 @@ public:
     }
   }
 
+  void SetRTRecursive(Wz4RenderNode *node, Rendertarget2D *rt, sInt pass)
+  {
+    if (!sCmpString(node->Op->Class->Name,L"Camera"))
+    {
+      RNCamera *cam = (RNCamera*)node;
+      sRelease(cam->Target);
+      cam->Target=rt;
+      sAddRef(cam->Target);
+      cam->Para.Renderpass = pass;
+      return;
+    }
+
+    Wz4RenderNode *child;
+    sFORALL(node->Childs,child)
+      SetRTRecursive(child,rt, pass);
+  }
+
+  void SetRT(const sAutoPtr<Wz4Render> node, const sAutoPtr<Rendertarget2D> rt, int pass)
+  {
+    SetRTRecursive(node->RootNode, rt, pass);
+  }
+
   void SetTransition(int i, sF32 duration=1.0f)
   {
     const NamedObject &no = Transitions[i];
     SetChild(Main,no.Obj,&TransTime);
+    SetRT(NextSlide, NextRT, 200);
     SetChild(NextRender,NextSlide,&NextRenderTime);
 
     TransTime = 0.0f;
@@ -306,6 +335,7 @@ public:
     NextSlide = 0;
     TransTime = -1.0f;
 
+    SetRT(CurSlide, CurRT, 100);
     SetChild(CurRender,CurSlide,&CurRenderTime);
     SetChild(NextRender,0,0);
     SetChild(Main,CurShow,0);
@@ -329,6 +359,9 @@ public:
     Tex2Op = Doc->FindStore(L"Tex2");
     Tex1 = (Texture2D*)Doc->CalcOp(Tex1Op);
     Tex2 = (Texture2D*)Doc->CalcOp(Tex2Op);
+
+    CurRT = (Rendertarget2D *)Doc->CalcOp(Doc->FindStore(L"CurRT"));
+    NextRT = (Rendertarget2D *)Doc->CalcOp(Doc->FindStore(L"NextRT"));
 
     CurShow = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"CurShow"));
     CurRender = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"CurRender"));
@@ -356,6 +389,7 @@ public:
     EndTransition();
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
+    Web = new WebServer(PlMgr, MyConfig->HttpPort);
 
     Loaded=sTRUE;
   };

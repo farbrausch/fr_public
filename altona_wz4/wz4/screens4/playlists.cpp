@@ -656,6 +656,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       // TODO: support several file types
       sImage img;
       img.LoadPNG(ptr,(sInt)f->GetSize());
+      img.PMAlpha();
       nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
       delete f;
     }

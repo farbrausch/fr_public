@@ -10,6 +10,7 @@
 
 #include "base/types.hpp"
 #include "network/sockets.hpp"
+#include "network/http.hpp"
 #include "base/system.hpp"
 #include "pugixml.hpp"
 #include "playlists.hpp"
@@ -83,7 +84,24 @@ public:
   ~RPCServer();
 
 };
-  
+
+class WebServer
+{
+
+  sHTTPServer Httpd;
+  sThread *Thread;
+
+  static void ThreadProxy(sThread *t, void *obj)
+  {
+    ((sHTTPServer*)obj)->Run(t);
+  }
+
+public:
+
+  WebServer(PlaylistMgr &plMgr, sInt port);
+  ~WebServer();
+
+};
 
 /****************************************************************************/
 

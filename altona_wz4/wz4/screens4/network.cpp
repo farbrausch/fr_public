@@ -439,3 +439,81 @@ sBool RPCServer::GetSystemInfo(pugi::xml_node &in, pugi::xml_node &out)
   data.append_child(L"uptime").text().set((sGetTime()-StartTime)/1000.0f);
   return sTRUE;
 }
+
+/****************************************************************************/
+/****************************************************************************/
+
+struct PlayControlHandler : public sHTTPServer::SimpleHandler
+{
+  const sChar *MyUrl;
+
+  void Link(const sChar *text, sInt set=-1, sInt value=0)
+  {
+    if (set>=0)
+      PrintF(L"<a href=\"%s?set=%d&value=%d\">%s</a>",MyUrl,set,value,text);
+    else
+      PrintF(L"<a href=\"%s\">%s</a>",MyUrl,text);
+  }
+
+  sHTTPServer::HandlerResult WriteDocument(const sChar *URL)
+  {
+    MyUrl=URL;
+
+    WriteHTMLHeader(L"Screens4 playlist control",0);
+
+    Print(L"<h1>Screens4 playlist control</h1><hr>");
+
+    Print(L"<button type=\"button\">|&lt;</button> ");
+    Print(L"<button type=\"button\">&lt;</button> ");
+    Print(L"<button type=\"button\">&gt;</button> ");
+    Print(L"<button type=\"button\">&gt;|</button> ");
+
+    WriteHTMLFooter();
+    return sHTTPServer::HR_OK;
+  }
+
+  static PlaylistMgr *PlMgr;
+  static Handler *Factory() { return new PlayControlHandler; }
+};
+
+PlaylistMgr *PlayControlHandler::PlMgr = 0;
+
+
+struct ThumbnailHandler : public sHTTPServer::Handler
+{
+public:
+
+  sHTTPServer::HandlerResult Init(sHTTPServer::Connection *conn)
+  {
+    return sHTTPServer::HR_OK;
+  }
+
+  sBool DataAvailable()
+  {
+    return sTRUE;
+  }
+
+  sInt GetData(sU8 *,sInt)
+  {
+    return 0;
+  }
+
+  static Handler *Factory() { return new ThumbnailHandler; }
+};
+
+WebServer::WebServer(PlaylistMgr &plMgr, sInt port)
+{
+  Httpd.Init(port);
+
+  Thread = new sThread(ThreadProxy, -1, 0, &Httpd);
+
+  PlayControlHandler::PlMgr = &plMgr;
+  Httpd.AddHandler(L"/",PlayControlHandler::Factory);
+  Httpd.AddHandler(L"/thumb/*",ThumbnailHandler::Factory);
+}
+
+WebServer::~WebServer()
+{
+  Thread->Terminate();
+  sDelete(Thread);
+}

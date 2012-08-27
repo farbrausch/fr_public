@@ -1,0 +1,56 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+guid "{74F17E89-915F-4264-B67A-BADF3375325A}";
+
+license altona;
+ 
+depend "altona/main/base";
+depend "altona/main/util";
+depend "altona/main/network";
+depend "altona/main/ogg";
+
+create "debug_dx9";
+create "debugfast_dx9";
+create "release_dx9";
+create "stripped_dx9";
+
+create "debug_dx11";
+create "debugfast_dx11";
+create "release_dx11";
+create "stripped_dx11";
+
+create "debug_ogl2";
+create "debugfast_ogl2";
+create "release_ogl2";
+
+include "altona/main";
+
+folder "resources"
+{
+  file "icon.rc";
+  file "resources/icon.ico"  license default;
+}
+
+folder "data"
+{
+  file "config.txt";
+}
+
+folder "3rdparty"
+{
+  file "pugiconfig.hpp";
+  file "pugixml.?pp";
+}
+
+file "screens4minimal.mp.txt";
+file "minmain.cpp";
+file "vorbisplayer.?pp";
+file "network.?pp";
+file "playlists.?pp";
+file "config.hpp";
+
