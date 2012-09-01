@@ -4856,6 +4856,11 @@ sBool sRender3DBegin()
     if(DXMayRestore)
     {
       InitGFX(0,0,0);
+      if (DXRestore)
+      {
+        sSleep(10);
+        return 0;
+      }
     }
     else
     {
