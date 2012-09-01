@@ -21,6 +21,8 @@
 #include "network.hpp"
 #include "playlists.hpp"
 
+#include "network/netdebug.hpp"
+
 /****************************************************************************/
 
 static Config *MyConfig;
@@ -126,8 +128,54 @@ private:
   T* ptr;
 };
 
+class sRandomMarkov
+{
+public:
+  sRandomMarkov() { Total=0; }
+
+  explicit sRandomMarkov(sInt max)
+  {
+    Init(max);
+  }
+
+  void Init(sInt n)
+  {
+    Weights.Reset();
+    Weights.HintSize(n);
+    for (sInt i=0; i<n; i++)
+      Weights.AddTail(1);
+    Total = n;
+    Rnd.Seed(sGetRandomSeed());
+  }
+
+  sInt Get()
+  {
+    // pick random number
+    sInt i;
+    sInt x = Rnd.Int32()%Total;
+    sInt n = Weights.GetCount();
+    for (i=0; x>=Weights[i] && i<n; i++) x-=Weights[i];
+
+    // update model
+    for (int j=0; j<n; j++) Weights[j]++;
+    Total+=n-Weights[i];
+    Weights[i]=0;
+
+    return i;  
+  }
+
+private:
+
+  sRandomMT Rnd;
+  sStaticArray<sInt> Weights;
+  sInt Total;
+};
+
+/****************************************************************************/
+/****************************************************************************/
 
 sINITMEM(0,0);
+sINITDEBUGMEM(0);
 
 class MyApp : public sApp
 {
@@ -168,6 +216,7 @@ public:
   };
 
   sArray<NamedObject> Transitions;
+  sRandomMarkov RndTrans;
 
   wClass *CallClass;
 
@@ -380,6 +429,7 @@ public:
         Transitions.AddTail(no);
       }
     }
+    RndTrans.Init(Transitions.GetCount());
 
     // load slide renderers
     SlidePic[0] = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",Tex1Op));
@@ -389,7 +439,7 @@ public:
     //EndTransition();
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
-    Web = new WebServer(PlMgr, MyConfig->HttpPort);
+    //Web = new WebServer(PlMgr, MyConfig->HttpPort);
 
     Loaded=sTRUE;
   };
@@ -504,7 +554,7 @@ public:
           if (newslide->TransitionTime>0)
           {
             if (newslide->TransitionId >= Transitions.GetCount())
-              SetTransition(Rnd.Int(Transitions.GetCount()),newslide->TransitionTime);
+              SetTransition(RndTrans.Get(),newslide->TransitionTime);
             else
               SetTransition(newslide->TransitionId,newslide->TransitionTime);
           }
@@ -685,6 +735,8 @@ void sMain()
     sFatal(MyConfig->GetError());
   }
 
+  sAddDebugServer(MyConfig->HttpPort);
+
   // find packfile and open it
   {
     sString<1024> pakname;
@@ -749,6 +801,7 @@ void sMain()
   if(sCONFIG_64BIT)
     title.PrintAddF(L" (64Bit)");
   sSetWindowName(title);
+
 
   sInt refresh = MyConfig->DefaultResolution.RefreshRate;
   if (MyConfig->DefaultResolution.Width==0 || MyConfig->DefaultResolution.Height==0)
