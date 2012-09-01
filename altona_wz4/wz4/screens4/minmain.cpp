@@ -257,13 +257,17 @@ public:
 
     if (newslide)
     {
-      if (TransTime>=0)
-        EndTransition();
-      MakeNextSlide(*newslide->ImgData);
-      if (newslide->TransitionTime>0)
-          SetTransition(newslide->TransitionTime);
-      else
-        EndTransition();
+      if (!newslide->Error)
+      {
+        if (TransTime>=0)
+          EndTransition();
+        MakeNextSlide(*newslide->ImgData);
+        if (newslide->TransitionTime>0)
+            SetTransition(newslide->TransitionTime);
+        else
+          EndTransition();
+      }
+      else sDPrintF(L"skipping faulty slide\n");
       delete newslide;
     }
 

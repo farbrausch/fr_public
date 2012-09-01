@@ -471,8 +471,7 @@ public:
 
         Load();
 
-        sRender3DBegin();
-
+        sBool ret = sRender3DBegin();
         PaintInfo.CacheWarmup = 0;
       }
     }
@@ -497,18 +496,22 @@ public:
 
       if (newslide)
       {
-        if (TransTime>=0)
-          EndTransition();
-        MakeNextSlide(*newslide->ImgData);
-        if (newslide->TransitionTime>0)
+        if (!newslide->Error)
         {
-          if (newslide->TransitionId >= Transitions.GetCount())
-            SetTransition(Rnd.Int(Transitions.GetCount()),newslide->TransitionTime);
+          if (TransTime>=0)
+            EndTransition();
+          MakeNextSlide(*newslide->ImgData);
+          if (newslide->TransitionTime>0)
+          {
+            if (newslide->TransitionId >= Transitions.GetCount())
+              SetTransition(Rnd.Int(Transitions.GetCount()),newslide->TransitionTime);
+            else
+              SetTransition(newslide->TransitionId,newslide->TransitionTime);
+          }
           else
-            SetTransition(newslide->TransitionId,newslide->TransitionTime);
+            EndTransition();
         }
-        else
-          EndTransition();
+        else sDPrintF(L"skipping faulty slide.\n");
         delete newslide;
       }
 

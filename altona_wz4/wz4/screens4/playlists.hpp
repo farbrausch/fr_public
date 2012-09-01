@@ -157,6 +157,7 @@ public:
   sInt TransitionId;
   sF32 TransitionTime;
   sImageData *ImgData;
+  sBool Error;
 
   NewSlideData() : ImgData(0) {}
   ~NewSlideData() { delete ImgData; }

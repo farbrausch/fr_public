@@ -9,6 +9,7 @@
 #include "playlists.hpp"
 #include "network/http.hpp"
 #include "util/image.hpp"
+#include "image_win.hpp"
 
 /****************************************************************************/
 
@@ -635,6 +636,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
 
       nsd = new NewSlideData;
       nsd->ImgData = 0;
+      nsd->Error = sFALSE;
       nsd->TransitionId = item->TransitionId;
       nsd->TransitionTime = SwitchHard ? 0 : item->TransitionDuration;
       myAsset = item->MyAsset;
@@ -653,11 +655,30 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       sFile *f = sCreateFile(filename);
       sU8 *ptr = f->MapAll();
 
-      // TODO: support several file types
+      // TODO: support several asset types
       sImage img;
-      img.LoadPNG(ptr,(sInt)f->GetSize());
-      img.PMAlpha();
-      nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
+      sInt size = (sInt)f->GetSize();
+      if (img.LoadPNG(ptr,size))
+      {
+        img.PMAlpha();
+        nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
+      }
+      else
+      {
+        // if the internal image loader fails, try the Windows one
+        sImage *img2 = sLoadImageWin32(f);
+        if (img2)
+        {
+          img2->PMAlpha();
+          nsd->ImgData = new sImageData(img2,sTEX_2D|sTEX_ARGB8888);
+          delete img2;
+        }
+        else
+        {
+          sDPrintF(L"Error loading %s\n",myAsset->Path);
+          nsd->Error = sTRUE;
+        }
+      }
       delete f;
     }
    

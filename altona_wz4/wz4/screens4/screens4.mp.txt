@@ -58,4 +58,6 @@ file "vorbisplayer.?pp";
 file "network.?pp";
 file "playlists.?pp";
 file "config.hpp";
+file "image_win.?pp";
+
 
