@@ -78,7 +78,7 @@ sTextureBase *sRenderTargetManager_::AcquireProxy(sTexture2D *tex)
     {
       t->RefCount = 1;
       ((sTextureProxy*)(t->Texture))->Connect(tex);
-      return (sTexture2D *)t->Texture;
+      return t->Texture;
     }
   }
   t = Targets.AddMany(1);

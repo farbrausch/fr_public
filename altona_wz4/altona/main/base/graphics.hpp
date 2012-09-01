@@ -201,7 +201,7 @@ enum sTextureFlags
   sTEX_SCREENSIZE   = 0x00020000, // for rendertargets: use size of screen, update when resizing, use SizeX & SizeY as shift to create half / qarter screens.
   sTEX_SOFTWARE     = 0x00040000, // flagging sTextureSoftware type
   sTEX_SWIZZLED     = 0x00080000, // hardware dependent swizzled texture
-  sTEX_ENDIAN_NN    = 0x00100000, // non native endianess of texture
+  sTEX_PROXY        = 0x00100000, // flagging sTextureProxy type
   sTEX_AUTOMIPMAP   = 0x00200000, // generate mipmaps for rendertarget
   sTEX_STREAM       = 0x00400000, // texture is update every frame
   sTEX_FASTDXTC     = 0x00800000, // texture uses fast dxt compression

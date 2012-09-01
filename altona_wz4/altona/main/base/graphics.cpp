@@ -1829,6 +1829,7 @@ sTextureProxy::sTextureProxy()
 {
   Link = 0;
   Node.Proxy = this;
+  Flags = sTEX_PROXY;
 }
 
 sTextureProxy::~sTextureProxy()
@@ -1857,17 +1858,23 @@ void sTextureProxy::Connect(sTextureBase *tex)
     Link->Proxies.Rem(&Node);
     Link = 0;
 
-    Flags = 0;
+    Flags = sTEX_PROXY;
     Mipmaps = 0;
     BitsPerPixel = 0;
     SizeX = 0;
     SizeY = 0;
     SizeZ = 0;
   }
+
+  while (tex && tex->Flags&sTEX_PROXY)
+  {
+    tex = ((sTextureProxy*)tex)->Link;
+  }
+
   Link = tex;
   if(Link)
   {
-    Flags = Link->Flags;
+    Flags = Link->Flags|sTEX_PROXY;
     Mipmaps = Link->Mipmaps;
     BitsPerPixel = Link->BitsPerPixel;
     SizeX = Link->SizeX;
@@ -1875,7 +1882,6 @@ void sTextureProxy::Connect(sTextureBase *tex)
     SizeZ = Link->SizeZ;
 
     Link->Proxies.AddTail(&Node);
-    
     Connect2();
   }
 }
