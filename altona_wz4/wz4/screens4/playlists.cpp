@@ -65,6 +65,26 @@ template<class streamer> void PlayPosition::Serialize_(streamer &s)
 
 /****************************************************************************/
 
+static sU32 ParseColor(const sChar *str)
+{
+  sU32 color = 0xffff007f;
+  int len = str ? sGetStringLen(str) : 0;
+  if (len>0 && str[0]=='#') 
+  {
+    sInt val;
+    if (sScanHex(++str,val,6))
+    {
+      if (len>=7)
+        color = 0xff000000 | val;
+      else
+        color = 0xff000000 | ((val&0xf00)*0x1100) | ((val&0xf0)*0x110) | ((val&0xf)*0x11);
+    }
+  }
+  return color;
+}
+
+/****************************************************************************/
+
 PlaylistMgr::PlaylistMgr()
 {
   // set up cache directories
@@ -639,8 +659,38 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       nsd->Error = sFALSE;
       nsd->TransitionId = item->TransitionId;
       nsd->TransitionTime = SwitchHard ? 0 : item->TransitionDuration;
+
+      if (!sCmpStringI(item->Type,L"Image"))
+        nsd->Type = IMAGE;
+      else if (!sCmpStringI(item->Type,L"siegmeister_bars"))
+      {
+        nsd->Type = SIEGMEISTER_BARS;
+      }
+      else if (!sCmpStringI(item->Type,L"siegmeister_winners"))
+      {
+        nsd->Type = SIEGMEISTER_WINNERS;
+        nsd->TransitionTime = 0;
+      }
+      else
+        nsd->Type = UNKNOWN;
+
       myAsset = item->MyAsset;
       myAsset->AddRef();
+
+      if (nsd->Type == SIEGMEISTER_BARS || nsd->Type == SIEGMEISTER_WINNERS)
+      {
+        SiegmeisterData *sd = new SiegmeisterData;
+
+        sd->BarColor = ParseColor(item->BarColor);
+        sd->BarBlinkColor1 = ParseColor(item->BarBlinkColor1);
+        sd->BarBlinkColor2 = ParseColor(item->BarBlinkColor2);
+        sd->BarAlpha = item->BarAlpha;
+        sd->BarPositions.Copy(item->BarPositions);
+        sSortDown(sd->BarPositions, &sFRect::x1);
+        sd->Winners = nsd->Type == SIEGMEISTER_WINNERS;
+
+        nsd->SiegData = sd;
+      }
     }
 
     // ok, let's just hope any NOTCACHED asset will eventually...

@@ -4,7 +4,7 @@ defaults
 {
   port 1234 // for partymeister connection, default is 1234
   httpport 8080 // for web interface, default is 8080
-  resolution 1280,720,60 // if missing, use desktop resolution
+  //resolution 640,360 // if missing, use desktop resolution
   fullscreen 1
 }
 

@@ -20,6 +20,8 @@
 static Config *MyConfig;
 static sScreenMode ScreenMode;
 
+static const sF32 SiegMaxTime = 10;
+
 /****************************************************************************/
 /****************************************************************************/
 
@@ -64,10 +66,14 @@ public:
   sRandomMT Rnd;
 
   sTexture2D *Tex1, *Tex2;
-  sSimpleMaterial *Mtrl1, *Mtrl2;
+  sSimpleMaterial *Mtrl1, *Mtrl2, *BarMtrl;
   sF32 TransTime, TransDurMS;
+  sF32 SlideTime;
+  sInt Started;
 
   bMusicPlayer SoundPlayer;
+
+  SiegmeisterData *SiegData, *NextSiegData;
 
   MyApp()
   {
@@ -77,6 +83,8 @@ public:
     Painter = new sPainter();
     FramesRendered = 0;
     TransTime = -1.0f;
+    SiegData = 0;
+    NextSiegData = 0;
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
     Web = new WebServer(PlMgr, MyConfig->HttpPort);
@@ -99,17 +107,24 @@ public:
     Mtrl2->BlendColor = sMB_PMALPHA;
     Mtrl2->Prepare(sVertexFormatSingle);
 
+    BarMtrl = new sSimpleMaterial;
+    BarMtrl->Flags = sMTRL_ZOFF|sMTRL_CULLOFF;
+    BarMtrl->BlendColor = sMB_PMALPHA;
+    BarMtrl->Prepare(sVertexFormatSingle);
   }
 
   ~MyApp()
   {
     sDelete(Mtrl1);
     sDelete(Mtrl2);
+    sDelete(BarMtrl);
     sDelete(Tex1);
     sDelete(Tex2);
     sDelete(Server);
     sDelete(Web);
     sDelete(Painter);
+    sDelete(SiegData);
+    sDelete(NextSiegData);
     sDelete(MyConfig);
   }
 
@@ -117,25 +132,31 @@ public:
   {
     Tex2->ReInit(idata.SizeX,idata.SizeY,idata.Format);
     Tex2->LoadAllMipmaps(idata.Data);
-    sSwap(Tex1, Tex2);     
-    sSwap(Mtrl1, Mtrl2);
+    
   }
 
   void SetTransition(sF32 duration=1.0f)
   {
     TransTime = 0.0f;
     TransDurMS = 1000*duration;
+    Started = 0;
   }
 
   void EndTransition()
   {
+    sSwap(Tex1, Tex2);     
+    sSwap(Mtrl1, Mtrl2);
     TransTime = -1.0f;
+    SlideTime = 0;
+    Started = 0;
+    sDelete(SiegData);
+    SiegData = NextSiegData;
+    NextSiegData = 0;
   }
 
-  void DoPaint()
-  {
-    sSetTarget(sTargetPara(sST_CLEARALL|sST_NOMSAA,sRELEASE?0:0xffff007f));
 
+  void DrawSlide(sMaterial *mtrl, sU32 c1, SiegmeisterData *sieg)
+  {
     // make screen rectangle and viewport
     sInt sx,sy;
     sGetRendertargetSize(sx,sy);
@@ -148,93 +169,115 @@ public:
     // init geo
     sGeometry geo;
     geo.Init(sGF_QUADLIST|sGF_INDEXOFF,sVertexFormatSingle);
-    sU32 c1 = 0xffffffff;
     sVertexSingle *vp;
     sRect rect;
 
-    // fill geo for 1st slide
-    sF32 arr=scrnaspect*sF32(Tex1->SizeY)/sF32(Tex1->SizeX);
-    sF32 w=0.5f, h=0.5f;
-    if (arr>1) w/=arr; else h*=arr;
-    rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
-    geo.BeginLoadVB(4,sGD_STREAM,&vp);
-    vp[0].Init(rect.x0,rect.y0,0.5,c1,0,0);
-    vp[1].Init(rect.x1,rect.y0,0.5,c1,1,0);
-    vp[2].Init(rect.x1,rect.y1,0.5,c1,1,1);
-    vp[3].Init(rect.x0,rect.y1,0.5,c1,0,1);
-    geo.EndLoadVB();
+    sU32 c2 = c1 & 0xff000000;
 
+    // fill geo  (with explicit letterbox/pillarbox for blending)
+    sF32 arr=scrnaspect*sF32(mtrl->Texture[0]->SizeY)/sF32(mtrl->Texture[0]->SizeX);
+    sF32 w=0.5f, h=0.5f;
+    if (arr>1) 
+    {
+      w/=arr; 
+      rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+
+      geo.BeginLoadVB(12,sGD_STREAM,&vp);
+      (*vp++).Init(      0,rect.y0,0.5,c2,0,0);
+      (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
+      (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
+      (*vp++).Init(      0,rect.y1,0.5,c2,0,0);
+
+      (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
+      (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
+      (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
+      (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
+
+      (*vp++).Init(     sx,rect.y0,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
+      (*vp++).Init(     sx,rect.y1,0.5,c2,0,0);
+      geo.EndLoadVB();
+    }
+    else
+    {
+      h*=arr;
+      rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+
+      geo.BeginLoadVB(12,sGD_STREAM,&vp);
+      (*vp++).Init(rect.x0,      0,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,      0,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
+      (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
+
+      (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
+      (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
+      (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
+      (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
+
+      (*vp++).Init(rect.x0,     sy,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,     sy,0.5,c2,0,0);
+      (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
+      (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
+
+      geo.EndLoadVB();
+    }
+     
     // set material
     sCBuffer<sSimpleMaterialPara> cb;
     cb.Data->Set(view);
-    Mtrl1->Set(&cb);
+    mtrl->Set(&cb);
 
     // draw
     geo.Draw();
 
-    if (TransTime>=0)
+    // siegmeister bars
+    if (sieg)
     {
-      c1 = 0x1010101 * int(255*sClamp(1-TransTime,0.0f,1.0f));
-      sU32 c2 = c1 & 0xff000000;
+      sF32 time = sieg->Winners ? 1 : (Started ? sClamp(SlideTime/SiegMaxTime,0.0f,1.0f) : 0);
+      sInt bars = sieg->BarPositions.GetCount();
 
-      // fill geo for 2nd slide (with explicit letterbox/pillarbox for blending)
-      sF32 arr=scrnaspect*sF32(Tex2->SizeY)/sF32(Tex2->SizeX);
-      sF32 w=0.5f, h=0.5f;
-      if (arr>1) 
+      geo.BeginLoadVB(4*bars,sGD_STREAM,&vp);
+      for (sInt i=0; i<bars; i++)
       {
-        w/=arr; 
-        rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+        sFRect brect = sieg->BarPositions[i];
+        sU32 color = (sieg->Winners && i<3) ? sColorFade(sieg->BarBlinkColor1,sieg->BarBlinkColor2,0.5*sFCos(2*SlideTime)+0.5) : sieg->BarColor;
+        color = sMulColor(sColorFade(0,color,sieg->BarAlpha),c1);
+        
+        sF32 phase = sFMod(brect.x1*10000,sPI2F);
+        sF32 t = time + 0.25*sFSin(phase)*(4*(-time*time+time));
+        sF32 w = sClamp(t, 0.0f, brect.x1-brect.x0);
 
-        geo.BeginLoadVB(12,sGD_STREAM,&vp);
-        (*vp++).Init(      0,rect.y0,0.5,c2,0,0);
-        (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
-        (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
-        (*vp++).Init(      0,rect.y1,0.5,c2,0,0);
-
-        (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
-        (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
-        (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
-        (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
-
-        (*vp++).Init(     sx,rect.y0,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
-        (*vp++).Init(     sx,rect.y1,0.5,c2,0,0);
-        geo.EndLoadVB();
+        brect.x1 = rect.x0+(brect.x0+w)*(rect.x1-rect.x0);
+        brect.x0 = rect.x0+brect.x0*(rect.x1-rect.x0);
+        brect.y0 = rect.y0+brect.y0*(rect.y1-rect.y0);
+        brect.y1 = rect.y0+brect.y1*(rect.y1-rect.y0);
+        
+        (*vp++).Init(brect.x0,brect.y0,0.5,color,0,0);
+        (*vp++).Init(brect.x1,brect.y0,0.5,color,1,0);
+        (*vp++).Init(brect.x1,brect.y1,0.5,color,1,1);
+        (*vp++).Init(brect.x0,brect.y1,0.5,color,0,1);
       }
-      else
-      {
-        h*=arr;
-        rect.Init(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
+      geo.EndLoadVB();
 
-        geo.BeginLoadVB(12,sGD_STREAM,&vp);
-        (*vp++).Init(rect.x0,      0,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,      0,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,rect.y0,0.5,c2,0,0);
-        (*vp++).Init(rect.x0,rect.y0,0.5,c2,0,0);
-
-        (*vp++).Init(rect.x0,rect.y0,0.5,c1,0,0);
-        (*vp++).Init(rect.x1,rect.y0,0.5,c1,1,0);
-        (*vp++).Init(rect.x1,rect.y1,0.5,c1,1,1);
-        (*vp++).Init(rect.x0,rect.y1,0.5,c1,0,1);
-
-        (*vp++).Init(rect.x0,     sy,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,     sy,0.5,c2,0,0);
-        (*vp++).Init(rect.x1,rect.y1,0.5,c2,0,0);
-        (*vp++).Init(rect.x0,rect.y1,0.5,c2,0,0);
-
-        geo.EndLoadVB();
-      }
-     
       // set material
-      sCBuffer<sSimpleMaterialPara> cb;
-      cb.Data->Set(view);
-      Mtrl2->Set(&cb);
+      BarMtrl->Set(&cb);
 
       // draw
       geo.Draw();
     }
+  }
 
+  void DoPaint()
+  {
+    sSetTarget(sTargetPara(sST_CLEARALL|sST_NOMSAA,sRELEASE?0:0xffff007f));
+
+    // current slide
+    DrawSlide(Mtrl1,0xffffffff,SiegData);
+
+    // next slide
+    if (TransTime>=0)
+      DrawSlide(Mtrl2, 0x1010101 * int(255*sClamp(TransTime,0.0f,1.0f)), NextSiegData);
   }
 
   void OnPaint3D()
@@ -261,7 +304,11 @@ public:
       {
         if (TransTime>=0)
           EndTransition();
+       
         MakeNextSlide(*newslide->ImgData);
+        NextSiegData = newslide->SiegData;
+        newslide->SiegData = 0;
+
         if (newslide->TransitionTime>0)
             SetTransition(newslide->TransitionTime);
         else
@@ -285,11 +332,18 @@ public:
     DoPaint();
     FramesRendered++;
 
+    SlideTime += tdelta/1000.0f;
     if (TransTime>=0)
     {
       TransTime += tdelta/TransDurMS;
       if (TransTime>=1.0f)
         EndTransition();
+    }
+
+    if (SiegData && Started==1 && !SiegData->Winners && SlideTime>=SiegMaxTime)
+    {
+      PlMgr.Next(sTRUE);
+      Started = 2;
     }
 
     sEnableGraphicsStats(0);
@@ -348,6 +402,13 @@ public:
       Fps = !Fps;
       break;
 
+    case ' ':
+      if (TransTime<0 && !Started)
+      {
+        Started=1;
+        SlideTime = 0;
+      }
+      break;
     }
   }
 };

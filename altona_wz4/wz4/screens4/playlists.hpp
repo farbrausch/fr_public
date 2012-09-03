@@ -150,17 +150,38 @@ private:
 
 /****************************************************************************/
 
+enum SlideType
+{
+  UNKNOWN,
+  IMAGE,
+  SIEGMEISTER_BARS,
+  SIEGMEISTER_WINNERS,
+};
+
+class SiegmeisterData
+{
+public:
+  sU32 BarColor, BarBlinkColor1, BarBlinkColor2;
+  sF32 BarAlpha;
+  sArray<sFRect> BarPositions;
+  sBool Winners;
+};
+
 class NewSlideData
 {
 public:
 
+  SlideType Type;
   sInt TransitionId;
   sF32 TransitionTime;
+
   sImageData *ImgData;
+  SiegmeisterData *SiegData;
+
   sBool Error;
 
-  NewSlideData() : ImgData(0) {}
-  ~NewSlideData() { delete ImgData; }
+  NewSlideData() : ImgData(0), SiegData(0) {}
+  ~NewSlideData() { delete ImgData; delete SiegData; }
 };
 
 class PlaylistMgr
