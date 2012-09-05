@@ -2,10 +2,12 @@
 
 defaults
 {
-  port 1234 // for partymeister connection, default is 1234
-  httpport 8080 // for web interface, default is 8080
-  //resolution 640,360 // if missing, use desktop resolution
-  fullscreen 1
+  port 1234             // for partymeister connection, default is 1234
+  httpport 8080         // for web interface, default is 8080
+  bartime 5             // length of siegmeister bar animation in seconds
+  barspread 0.5         // "spread" of siegmeister bars (aka surprise factor), 0..1
+  //resolution 640,360    // if missing, use desktop resolution
+  fullscreen 1          // fullscreen (0 or 1)
 }
 
 // available commands:

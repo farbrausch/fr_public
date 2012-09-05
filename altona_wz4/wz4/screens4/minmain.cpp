@@ -20,8 +20,6 @@
 static Config *MyConfig;
 static sScreenMode ScreenMode;
 
-static const sF32 SiegMaxTime = 10;
-
 /****************************************************************************/
 /****************************************************************************/
 
@@ -234,7 +232,7 @@ public:
     // siegmeister bars
     if (sieg)
     {
-      sF32 time = sieg->Winners ? 1 : (Started ? sClamp(SlideTime/SiegMaxTime,0.0f,1.0f) : 0);
+      sF32 time = sieg->Winners ? 1 : (Started ? sClamp(SlideTime/MyConfig->BarAnimTime,0.0f,1.0f) : 0);
       sInt bars = sieg->BarPositions.GetCount();
 
       geo.BeginLoadVB(4*bars,sGD_STREAM,&vp);
@@ -245,7 +243,7 @@ public:
         color = sMulColor(sColorFade(0,color,sieg->BarAlpha),c1);
         
         sF32 phase = sFMod(brect.x1*10000,sPI2F);
-        sF32 t = time + 0.25*sFSin(phase)*(4*(-time*time+time));
+        sF32 t = time + 0.25*MyConfig->BarAnimSpread *sFSin(phase)*(4*(-time*time+time));
         sF32 w = sClamp(t, 0.0f, brect.x1-brect.x0);
 
         brect.x1 = rect.x0+(brect.x0+w)*(rect.x1-rect.x0);
@@ -340,9 +338,9 @@ public:
         EndTransition();
     }
 
-    if (SiegData && Started==1 && !SiegData->Winners && SlideTime>=SiegMaxTime)
+    if (SiegData && Started==1 && !SiegData->Winners && SlideTime>=MyConfig->BarAnimTime)
     {
-      PlMgr.Next(sTRUE);
+      PlMgr.Next(sTRUE, sTRUE);
       Started = 2;
     }
 

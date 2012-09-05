@@ -144,6 +144,11 @@ folder "tron"
   file "tADF.?pp";
 }
 
+folder "screens4"
+{
+  file "screens4_ops.ops";
+  file "screens4fx.?pp";
+}
 
 folder "_generated"
 {
@@ -188,4 +193,6 @@ folder "_generated"
   file nonew "pdf_ops.?pp";
   file nonew "tron_ops.?pp";
   file nonew "tron_shader.?pp";  
+
+  file nonew "screens4_ops.?pp";
 }

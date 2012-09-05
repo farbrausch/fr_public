@@ -62,6 +62,8 @@ void RegisterWZ4Classes()
     sREGOPS(fr063_tron,1);   // chaos+tron
     sREGOPS(adf,1);     
     sREGOPS(pdf,1);
+
+    sREGOPS(screens4,1);
   }
 
   Doc->FindType(L"Scene")->Secondary = 1;

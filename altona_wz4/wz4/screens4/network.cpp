@@ -414,7 +414,7 @@ sBool RPCServer::Next(pugi::xml_node &in)
       hard = para.text().as_int();
   }
 
-  PlMgr.Next(hard);
+  PlMgr.Next(hard, sFALSE);
   return sTRUE;
 }
 

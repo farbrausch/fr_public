@@ -246,7 +246,7 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta)
   if (CurrentSwitchTime>0 && (Time-CurrentSwitchTime)>=CurrentDuration)
   {
     CurrentSwitchTime = 0;
-    Next(sFALSE);
+    Next(sFALSE, sTRUE);
   }
 
   Time += delta;
@@ -279,7 +279,7 @@ sBool PlaylistMgr::OnInput(const sInput2Event &ev)
     // next
   case sKEY_RIGHT:
   case sKEY_RIGHT|sKEYQ_SHIFT:
-    Next(!!(key&sKEYQ_SHIFT));
+    Next(!!(key&sKEYQ_SHIFT), sFALSE);
     return sTRUE;
 
     // skip to beginning
@@ -344,25 +344,29 @@ void PlaylistMgr::Seek(const sChar *plId, const sChar *slideId, sBool hard)
   RawSeek(pl, slide, hard);
 }
 
-void PlaylistMgr::Next(sBool hard)
+void PlaylistMgr::Next(sBool hard, sBool force)
 {
   sLogF(L"pl",L"Next %s\n",hard?L"(hard)":L"");
   if (!CurrentPl) return;
   Playlist *pl = CurrentPl;
-  sInt slide = CurrentPos.SlideNo+1;
-  if (slide >= pl->Items.GetCount())
+  sInt slide = CurrentPos.SlideNo;
+  do
   {
-    if (pl->Loop)
+    slide++;
+    if (slide >= pl->Items.GetCount())
     {
-      slide = 0;
+      if (pl->Loop)
+      {
+        slide = 0;
+      }
+      else
+      {
+        pl = GetPlaylist(LastLoopPos.PlaylistId);
+        if (!pl) return;
+        slide = LastLoopPos.SlideNo;
+      }
     }
-    else
-    {
-      pl = GetPlaylist(LastLoopPos.PlaylistId);
-      if (!pl) return;
-      slide = LastLoopPos.SlideNo;
-    }
-  }
+  } while (!force && !sCmpStringI(pl->Items[slide]->Type,L"siegmeister_winners"));
   RawSeek(pl, slide, hard);
 }
 
@@ -371,15 +375,19 @@ void PlaylistMgr::Previous(sBool hard)
   sLogF(L"pl",L"Prev %s\n",hard?L"(hard)":L"");
   if (!CurrentPl) return;
   Playlist *pl = CurrentPl;
-  sInt slide = CurrentPos.SlideNo-1;
-  if (slide<0) 
+  sInt slide = CurrentPos.SlideNo;
+  do
   {
-    if (pl->Loop)
-      slide = pl->Items.GetCount()-1;
-    else
-      return;
-  }
-  RawSeek(pl, slide, hard);
+    slide--;
+    if (slide<0) 
+    {
+      if (pl->Loop)
+        slide = pl->Items.GetCount()-1;
+      else
+        return;
+    }
+    RawSeek(pl, slide, hard);
+  } while (!sCmpStringI(pl->Items[slide]->Type,L"siegmeister_winners"));
 }
 
 

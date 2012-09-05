@@ -204,7 +204,7 @@ public:
 
   // commands
   void Seek(const sChar *plId, const sChar *slideId, sBool hard);
-  void Next(sBool hard);
+  void Next(sBool hard, sBool force);
   void Previous(sBool hard);
 
   NewSlideData* OnFrame(sF32 delta);

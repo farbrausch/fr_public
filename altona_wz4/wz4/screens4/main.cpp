@@ -15,6 +15,7 @@
 #include "wz4frlib/packfile.hpp"
 #include "wz4frlib/wz4_demo2.hpp"
 #include "wz4frlib/wz4_demo2nodes.hpp"
+#include "wz4frlib/screens4fx.hpp"
 
 #include "config.hpp"
 #include "vorbisplayer.hpp"
@@ -66,6 +67,8 @@ void RegisterWZ4Classes()
 
     sREGOPS(adf,0);     
     sREGOPS(pdf,0);
+
+    sREGOPS(screens4,0);
   }
 
   Doc->FindType(L"Scene")->Secondary = 1;
@@ -220,10 +223,13 @@ public:
 
   wClass *CallClass;
 
-  wOp *Tex1Op, *Tex2Op;
-  sAutoPtr<Texture2D> Tex1, Tex2;
-  sAutoPtr<Wz4Render> SlidePic[2];
-  int CurPhase;
+  struct SlideEntry
+  {
+    wOp *TexOp;
+    sAutoPtr<Texture2D> Tex;
+
+    sAutoPtr<Wz4Render> Pic, Siegmeister;
+  } *Entry[2];
 
   sAutoPtr<Rendertarget2D> CurRT;
   sAutoPtr<Rendertarget2D> NextRT;
@@ -237,7 +243,8 @@ public:
   sAutoPtr<Wz4Render> CurSlide;
   sAutoPtr<Wz4Render> NextSlide;
 
-  sF32 TransTime, TransDurMS, CurRenderTime, NextRenderTime;
+  sF32 TransTime, TransDurMS, CurRenderTime, NextRenderTime, SlideStartTime;
+  sBool Started;
 
   bMusicPlayer SoundPlayer;
 
@@ -258,7 +265,11 @@ public:
     NextSlide = 0;
     TransTime = -1.0f;
     CurRenderTime = NextRenderTime = 0.0f;
-    CurPhase = 0;
+    Started = sFALSE;
+    SlideStartTime = 0;
+
+    Entry[0] = new SlideEntry;
+    Entry[1] = new SlideEntry;
 
     new wDocument;
     sAddRoot(Doc);
@@ -274,6 +285,9 @@ public:
 
     sDelete(Server);
     sDelete(Web);
+
+    sDelete(Entry[0]);
+    sDelete(Entry[1]);
 
     sRemRoot(Doc);
     delete Painter;
@@ -305,28 +319,41 @@ public:
     return callop;
   }
 
-  void MakeNextSlide(sImageData &idata)
+  void MakeNextSlide(NewSlideData *ns)
   {
-    sTexture2D *tex = Tex1->Texture->CastTex2D();
-    tex->ReInit(idata.SizeX,idata.SizeY,idata.Format);
-    tex->LoadAllMipmaps(idata.Data);
+    SlideEntry *e = Entry[0];
 
-    NextSlide = SlidePic[CurPhase];
+    if (ns->ImgData)
+    {
+      sTexture2D *tex = e->Tex->Texture->CastTex2D();
+      tex->ReInit(ns->ImgData->SizeX,ns->ImgData->SizeY,ns->ImgData->Format);
+      tex->LoadAllMipmaps(ns->ImgData->Data);
+    }
 
-    sSwap(Tex1Op, Tex2Op);
-    sSwap(Tex1, Tex2);     
-    CurPhase = 1-CurPhase;
+    switch (ns->Type)
+    {
+    case IMAGE:
+      NextSlide = e->Pic;
+      break;
+    case SIEGMEISTER_BARS:
+    case SIEGMEISTER_WINNERS:
+      NextSlide = e->Siegmeister;
+      RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",e->Siegmeister);
+      node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
+      node->Fade = node->DoBlink?1:0;
+      node->Alpha=ns->SiegData->BarAlpha;
+      node->Color=ns->SiegData->BarColor;
+      node->BlinkColor1=ns->SiegData->BarBlinkColor1;
+      node->BlinkColor2=ns->SiegData->BarBlinkColor2;
+      node->Spread = MyConfig->BarAnimSpread;
+      node->Bars.Clear();
+      node->Bars.Copy(ns->SiegData->BarPositions);
+      break;
+    }
+
+    sSwap(Entry[0], Entry[1]);
   }
 
-  void MakeNextSlide(const sChar *filename)
-  {
-    
-    sImage img;
-    img.Load(filename);
-    sImageData idata(&img,sTEX_2D|sTEX_ARGB8888|sTEX_NOMIPMAPS);
-    MakeNextSlide(idata);
-   
-  }
 
   void SetChild(const sAutoPtr<Wz4Render> &node, const sAutoPtr<Wz4Render> &child, sF32 *time)
   {
@@ -365,6 +392,28 @@ public:
     SetRTRecursive(node->RootNode, rt, pass);
   }
 
+  template<class T> T* GetNodeRecursive(const sChar *classname, Wz4RenderNode *node)
+  {
+    if (!sCmpString(node->Op->Class->Name,classname))
+      return (T*)node;
+
+    Wz4RenderNode *child;
+    T *ret;
+    sFORALL(node->Childs,child)
+    {
+      ret = GetNodeRecursive<T>(classname, child);
+      if (ret) return ret;
+    }
+
+    return 0;
+  }
+
+  template<class T> T* GetNode(const sChar *classname, const sAutoPtr<Wz4Render> node)
+  {
+    if (!node) return 0;
+    return GetNodeRecursive<T>(classname, node->RootNode);
+  }
+
   void SetTransition(int i, sF32 duration=1.0f)
   {
     const NamedObject &no = Transitions[i];
@@ -375,6 +424,7 @@ public:
     TransTime = 0.0f;
     TransDurMS = 1000*duration;
     NextRenderTime = 0.0f;
+    Started = sFALSE;
   }
 
   void EndTransition()
@@ -383,6 +433,7 @@ public:
     CurRenderTime = NextRenderTime;
     NextSlide = 0;
     TransTime = -1.0f;
+    Started = sFALSE;
 
     SetRT(CurSlide, CurRT, 100);
     SetChild(CurRender,CurSlide,&CurRenderTime);
@@ -404,11 +455,9 @@ public:
     RootObj=(Wz4Render*)Doc->CalcOp(RootOp);
 
     // the big test
-    Tex1Op = Doc->FindStore(L"Tex1");
-    Tex2Op = Doc->FindStore(L"Tex2");
-    Tex1 = (Texture2D*)Doc->CalcOp(Tex1Op);
-    Tex2 = (Texture2D*)Doc->CalcOp(Tex2Op);
-
+    Entry[0]->TexOp = Doc->FindStore(L"Tex1");
+    Entry[1]->TexOp = Doc->FindStore(L"Tex2");
+    
     CurRT = (Rendertarget2D *)Doc->CalcOp(Doc->FindStore(L"CurRT"));
     NextRT = (Rendertarget2D *)Doc->CalcOp(Doc->FindStore(L"NextRT"));
 
@@ -432,11 +481,13 @@ public:
     RndTrans.Init(Transitions.GetCount());
 
     // load slide renderers
-    SlidePic[0] = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",Tex1Op));
-    SlidePic[1] = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",Tex2Op));
-
-    //MakeNextSlide(L"beamslide.png");
-    //EndTransition();
+    for (sInt i=0; i<2; i++)
+    {
+      SlideEntry *e = Entry[i];
+      e->Tex = (Texture2D*)Doc->CalcOp(e->TexOp);
+      e->Pic = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",e->TexOp));
+      e->Siegmeister = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_siegmeister",e->TexOp));
+    }
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
     //Web = new WebServer(PlMgr, MyConfig->HttpPort);
@@ -550,7 +601,9 @@ public:
         {
           if (TransTime>=0)
             EndTransition();
-          MakeNextSlide(*newslide->ImgData);
+
+          MakeNextSlide(newslide);
+
           if (newslide->TransitionTime>0)
           {
             if (newslide->TransitionId >= Transitions.GetCount())
@@ -563,6 +616,18 @@ public:
         }
         else sDPrintF(L"skipping faulty slide.\n");
         delete newslide;
+      }
+
+      // handle Siegmeister bar animation
+      RNSiegmeister *siegnode = GetNode<RNSiegmeister>(L"Siegmeister",CurSlide);
+      if (siegnode && !siegnode->DoBlink && Started)
+      {
+        siegnode->Fade = sMin(1.0f,(CurRenderTime-SlideStartTime)/MyConfig->BarAnimTime);
+        if (siegnode->Fade >= 1)
+        {
+          PlMgr.Next(sTRUE,sTRUE);
+          Started=sFALSE; // let's hope nobody presses space.
+        }
       }
 
       SetPaintInfo(PaintInfo);
@@ -663,6 +728,15 @@ public:
 
     switch(key)
     {
+
+    case ' ':
+      if (TransTime<0 && !Started)
+      {
+        Started=1;
+        SlideStartTime = CurRenderTime;
+      }
+      break;
+
     case sKEY_ESCAPE|sKEYQ_SHIFT:
     case sKEY_F4|sKEYQ_ALT:
       sExit();

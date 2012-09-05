@@ -41,6 +41,8 @@ public:
   Resolution DefaultResolution;
   sBool DefaultFullscreen;
   sArray<KeyEvent> Keys;
+  sF32 BarAnimTime;
+  sF32 BarAnimSpread;
 
   Config()
   {
@@ -49,6 +51,8 @@ public:
     DefaultFullscreen = sRELEASE;
     Port = 1234;
     HttpPort = 8080;
+    BarAnimTime = 9;
+    BarAnimSpread = 0.5;
   }
 
   sBool Read(const sChar *filename)
@@ -104,6 +108,10 @@ private:
         Port = Scan->ScanInt();
       else if (Scan->IfName(L"httpport"))
         HttpPort = Scan->ScanInt();
+      else if (Scan->IfName(L"bartime"))
+        BarAnimTime = sClamp(Scan->ScanFloat(),0.1f,100.0f);
+      else if (Scan->IfName(L"barspread"))
+        BarAnimSpread = sClamp(Scan->ScanFloat(),0.0f,1.0f);
       else
         Scan->Error(L"syntax error");
     }

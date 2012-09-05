@@ -1,0 +1,57 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4lib/poc_ops.hpp"
+}
+code
+{
+#include "wz4frlib/screens4fx.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+#include "wz4frlib/wz4_mtrl2_ops.hpp"
+#include "wz4lib/script.hpp" 
+}
+
+/****************************************************************************/
+/****************************************************************************/
+
+operator Wz4Render Siegmeister "Siegmeister" (?Texture2D)
+{
+  column = 1;
+
+  parameter
+  {
+    int Renderpass(-127..127);
+    int LightEnv(0..15);
+
+    anim float BlinkSpeed(0..10 step 0.1) = 1;
+
+    int "Aspect" AspNum(0..50) = 16;
+    nolabel int AspDen(0..50) = 9;
+    /*
+    float Scanlines(0..2000 step 1) = 480;
+    float ScanlineDarken(0..1 step 0.01) = 0.5;
+    */
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNSiegmeister *node = new RNSiegmeister();
+    node->ParaBase = node->Para = *para;
+    node->Texture = in0; sAddRef(in0);
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
+
+/****************************************************************************/
