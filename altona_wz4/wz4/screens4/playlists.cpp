@@ -386,8 +386,8 @@ void PlaylistMgr::Previous(sBool hard)
       else
         return;
     }
-    RawSeek(pl, slide, hard);
   } while (!sCmpStringI(pl->Items[slide]->Type,L"siegmeister_winners"));
+  RawSeek(pl, slide, hard);
 }
 
 

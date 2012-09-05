@@ -352,6 +352,7 @@ public:
     }
 
     sSwap(Entry[0], Entry[1]);
+    NextRenderTime = 0;
   }
 
 
@@ -423,7 +424,6 @@ public:
 
     TransTime = 0.0f;
     TransDurMS = 1000*duration;
-    NextRenderTime = 0.0f;
     Started = sFALSE;
   }
 
@@ -612,7 +612,10 @@ public:
               SetTransition(newslide->TransitionId,newslide->TransitionTime);
           }
           else
+          {
+            
             EndTransition();
+          }
         }
         else sDPrintF(L"skipping faulty slide.\n");
         delete newslide;

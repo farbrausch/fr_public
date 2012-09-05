@@ -25,14 +25,14 @@ RNSiegmeister::RNSiegmeister()
   Mtrl->TFlags[0] = sMTF_CLAMP|sMTF_UV0;
   
   Spread = 0.5;
-  Fade = 0.5;
+  Fade = 1;
   DoBlink = sTRUE;
   Color = 0xffffffff;
   BlinkColor1 = 0xffffffff;
   BlinkColor2 = 0xff000000;
   Alpha = 0.5;
   Bars.HintSize(16);
-  Bars.AddTail(sFRect(0.05,0.3,0.95,0.35));
+  Bars.AddTail(sFRect(0.05,0.3,0.95,0.4));
 
   Anim.Init(Wz4RenderType->Script);
 }
@@ -84,16 +84,18 @@ void RNSiegmeister::Prepare(Wz4RenderContext *ctx)
     sF32 phase = sFMod(brect.x1*10000,sPI2F);
     sF32 t = Fade + 0.25f*Spread*sFSin(phase)*(4*(-Fade*Fade+Fade));
     sF32 w = sClamp(t, 0.0f, brect.x1-brect.x0);
+    sF32 u0 = brect.x0;
+    sF32 u1 = brect.x1 = brect.x0+w;
 
-    brect.x1 = rect.x0+(brect.x0+w)*(rect.x1-rect.x0);
     brect.x0 = rect.x0+brect.x0*(rect.x1-rect.x0);
     brect.y0 = rect.y0+brect.y0*(rect.y1-rect.y0);
+    brect.x1 = rect.x0+brect.x1*(rect.x1-rect.x0);
     brect.y1 = rect.y0+brect.y1*(rect.y1-rect.y0);
         
-    (*vp++).Init(brect.x0,brect.y0,0.5,color,0,0);
-    (*vp++).Init(brect.x1,brect.y0,0.5,color,1,0);
-    (*vp++).Init(brect.x1,brect.y1,0.5,color,1,1);
-    (*vp++).Init(brect.x0,brect.y1,0.5,color,0,1);
+    (*vp++).Init(brect.x0,brect.y0,0.5,color,u0,0);
+    (*vp++).Init(brect.x1,brect.y0,0.5,color,u1,0);
+    (*vp++).Init(brect.x1,brect.y1,0.5,color,u1,1);
+    (*vp++).Init(brect.x0,brect.y1,0.5,color,u0,1);
   }
   Geo->EndLoadVB();
 }
