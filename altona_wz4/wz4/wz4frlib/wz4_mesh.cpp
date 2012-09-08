@@ -4231,6 +4231,98 @@ void Wz4Mesh::Mirror(sBool mx, sBool my, sBool mz, sInt selection, sInt mode)
 
 /****************************************************************************/
 
+
+void Wz4Mesh::TransformRange(sInt rangeMode, sInt mode, sInt selection, sVector2 direction, sVector2 axialRange, sVector31 scaleStart, sVector30 rotateStart, sVector31 translateStart,sVector31 scaleEnd, sVector30 rotateEnd, sVector31 translateEnd)
+{
+  Wz4MeshVertex *mv;
+  sMatrix34 mat0,matStart,matEnd,matt,matInvT;
+  sSRT srt;
+
+  // start matrix
+  srt.Scale = scaleStart;
+  srt.Rotate = rotateStart;
+  srt.Translate = translateStart;
+  srt.MakeMatrix(matStart);
+
+  // end matrix
+  srt.Scale = scaleEnd;
+  srt.Rotate = rotateEnd;
+  srt.Translate = translateEnd;
+  srt.MakeMatrix(matEnd);
+
+  // transformation matrix
+  matt.Init();
+  srt.Rotate = sVector30(direction.x, 0, direction.y);
+  srt.MakeMatrix(matt);
+
+  // clean matrix
+  mat0.Init();
+
+  // find min/max range
+  sF32 ymin,ymax;
+  if(rangeMode == 0)
+  {
+    // all mesh range
+    ymin =  1e+30f;
+    ymax = -1e+30f;
+
+    sFORALL(Vertices,mv)
+    {
+      if(logic(selection,mv->Select))
+      {
+        sF32 t = mv->Pos.x*matt.i.y + mv->Pos.y*matt.j.y + mv->Pos.z*matt.k.y;
+        ymin = sMin(ymin,t);
+        ymax = sMax(ymax,t);
+      }
+    }
+  }
+  else
+  {
+    // range defined by axialRange
+    ymin = axialRange.y;
+    ymax = axialRange.x;
+  }
+
+  sF32 yscale = 1.0f / (ymax - ymin);
+
+  sFORALL(Vertices,mv)
+  {
+    if(logic(selection,mv->Select))
+    {
+      sF32 t = (mv->Pos.x*matt.i.y + mv->Pos.y*matt.j.y + mv->Pos.z*matt.k.y - ymin) * yscale;
+
+      switch(mode)
+      {
+      case 1: // smooth
+        t = t * t * (3.0f - 2.0f * t);
+        break;
+
+      case 2: // tent
+        t = 1.0f - fabs(t - 0.5f) * 2.0f;
+        break;
+
+      case 3: // tent smooth
+        t = t * t * (16.0f + t * (16.0f * t - 32.0f));
+        break;
+      }
+
+      t = sFade(t,1.0f,0.0f);
+
+      mat0.Fade(t, matStart, matEnd);
+
+      matInvT = mat0;
+      matInvT.Invert3();
+      matInvT.Trans3();
+
+      mv->Transform(mat0, matInvT);
+    }
+  }
+
+  Flush();
+}
+
+/****************************************************************************/
+
 static sU32 GetWeldBucket(sInt x,sInt y,sInt z)
 {
   sU32 magic1 = 0x8da6b343; // one prime

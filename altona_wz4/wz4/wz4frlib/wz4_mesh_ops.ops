@@ -859,6 +859,68 @@ operator Wz4Mesh Transform(Wz4Mesh)
 
 /****************************************************************************/
 
+operator Wz4Mesh TransformRange(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput | passoutput;
+  parameter
+  {
+    flags Selection("all|none|selected|unselected")=0;
+    flags Mode("linear|smooth|tent|tent smooth")=0;
+    float2 Direction(-1024..1024 step 0.01)= { 0,0 };
+    float2 AxialRange(-1024..1024 step 0.01)= { 1,-1 };
+    flags RangeMode("auto|manual")=0;
+    group "Start";
+    float31 ScaleStart(0..1024 step 0.01) = { 1,1,1 };
+    float30 RotateStart(-1024..1024 step 0.001) = { 0,0,0 };
+    float31 TranslateStart(-1024..1024 step 0.01) = { 0,0,0 };
+    group "End";
+    float31 ScaleEnd(0..1024 step 0.01) = { 1,1,1 };
+    float30 RotateEnd(-1024..1024 step 0.001) = { 0,0,0 };
+    float31 TranslateEnd(-1024..1024 step 0.01) = { 0,0,0 };
+  }
+  code
+  {
+    out->TransformRange(para->RangeMode,para->Mode,para->Selection,para->Direction,para->AxialRange,
+                        para->ScaleStart,para->RotateStart,para->TranslateStart,
+                        para->ScaleEnd, para->RotateEnd, para->TranslateEnd);
+  }
+  handles
+  {
+    sMatrix34 mat;
+    sSRT srt;
+    srt.Rotate = sVector30(-para->Direction.x, 0, -para->Direction.y);
+    srt.MakeMatrix(mat);
+
+    sVector31 v[7],p;
+    bool zoff = true;
+    sF32 s = 0.2f;
+    sF32 o = para->AxialRange.y;
+
+    // pyramid
+    p.Init( 0,o-s, 0); v[0] = p*mat;
+    p.Init(-s, o,-s); v[1] = p*mat;
+    p.Init( s, o,-s); v[2] = p*mat;
+    p.Init( s, o, s); v[3] = p*mat;
+    p.Init(-s, o, s); v[4] = p*mat;
+    pi.Line3D(v[0],v[1],0,zoff);
+    pi.Line3D(v[0],v[2],0,zoff);
+    pi.Line3D(v[0],v[3],0,zoff);
+    pi.Line3D(v[0],v[4],0,zoff);
+    pi.Line3D(v[1],v[2],0,zoff);
+    pi.Line3D(v[2],v[3],0,zoff);
+    pi.Line3D(v[3],v[4],0,zoff);
+    pi.Line3D(v[4],v[1],0,zoff);
+
+    // axial range
+    p.Init( 0, para->AxialRange.x, 0); v[5] = p*mat;
+    p.Init( 0, para->AxialRange.y-s, 0); v[6] = p*mat;
+    pi.Line3D(v[5],v[6],0,zoff);
+  }
+}
+
+/****************************************************************************/
+
 operator Wz4Mesh Mirror(Wz4Mesh)
 {
   column = 1;
