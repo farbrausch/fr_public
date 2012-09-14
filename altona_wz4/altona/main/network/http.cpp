@@ -394,7 +394,7 @@ sBool sHTTPClient::Read(void *buffer, sDInt size, sDInt &read)
       ChunkLeft-=todo;
     }
 
-    ret=sTCPClientSocket::Read(b8,sMin(ChunkLeft,size),read2);
+    ret=sTCPClientSocket::Read(b8,sMin<sDInt>(ChunkLeft,size),read2);
     read+=read2;
     ChunkLeft-=read2;
     return sTRUE;

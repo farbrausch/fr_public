@@ -24,7 +24,7 @@ void RPCServer::Connection::write(const void* data, size_t size)
       buf = new Buffer;
       OutBuffers.AddTail(buf);
     }
-    sInt todo = sMin<sInt>(size, Buffer::SIZE-buf->Count);
+    sInt todo = (sInt)sMin<sDInt>(size, Buffer::SIZE-buf->Count);
     sCopyMem(buf->Data+buf->Count, dptr, todo);
     buf->Count += todo;
     dptr += todo;
@@ -77,7 +77,7 @@ void RPCServer::ThreadFunc(sThread *t)
       {
         sFORALL_LIST(Connections,conn) if (conn->Socket == reads[i])
         {
-          sInt read;
+          sDInt read;
           Buffer *buf = conn->InBuffers.IsEmpty()?0:conn->InBuffers.GetTail();
           if (!buf || buf->Count == Buffer::SIZE)
           {
@@ -96,7 +96,7 @@ void RPCServer::ThreadFunc(sThread *t)
           else
           {
             // add to in buffer
-            buf->Count+=read;
+            buf->Count+=(sInt)read;
 
             // seach for end marker
             const sU8 *patptr = (const sU8*)"\n\r\n\r";
@@ -144,8 +144,8 @@ void RPCServer::ThreadFunc(sThread *t)
           else
           {
             if (written<buf->Count)
-              sMoveMem(buf->Data, buf->Data+written, buf->Count-written);
-            buf->Count-=written;
+              sMoveMem(buf->Data, buf->Data+written, sInt(buf->Count-written));
+            buf->Count-=(sInt)written;
 
             if (!buf->Count)
             {
@@ -194,7 +194,7 @@ void RPCServer::OnMessage(Connection *conn, Buffer *lastbuf, const sU8 *lastptr)
   Buffer *buf;
   sFORALL_LIST(conn->InBuffers, buf)
     if (buf==lastbuf)
-      len += lastptr-buf->Data;
+      len += sInt(lastptr-buf->Data);
     else
       len += buf->Count;
 
