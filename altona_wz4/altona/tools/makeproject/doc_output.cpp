@@ -447,6 +447,7 @@ void Document::OutputXProject() // for VS2010 and higher
     else
       OutBuffer.PrintF(L"\t\t<IntDir>$(Configuration)_%s\\</IntDir>\r\n",platnames[p]);
 
+	  if (VS_Version==11) OutBuffer.PrintF(L"\t\t<PlatformToolset>v110</PlatformToolset>\r\n");
     OutBuffer.Print(L"\t</PropertyGroup>\r\n");
   }
   OutBuffer.Print(L"\r\n");

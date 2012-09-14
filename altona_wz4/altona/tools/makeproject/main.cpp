@@ -87,6 +87,14 @@ void sMain()
     Doc.VS_SolutionVersion = 11; 
   }
 
+	if(sCmpString(Doc.ConfigFile.VSVersion,L"2012")>=0)
+  {
+    Doc.VS_ProjExtension = L".vcxproj";
+    Doc.VS_Version = 11;
+    Doc.VS_ProjectVersion  = 10;
+    Doc.VS_SolutionVersion = 11; 
+  }
+
   Doc.IntermediatePath.RootPath[OmniPath::PT_SYSTEM] = Doc.ConfigFile.IntermediateRoot;
   Doc.IntermediatePath.RootPath[OmniPath::PT_SOLUTION] = Doc.ConfigFile.IntermediateRoot;
   SetTildeExpand(Doc.IntermediatePath.RootPath[OmniPath::PT_MAKEFILE],Doc.ConfigFile.IntermediateRoot);

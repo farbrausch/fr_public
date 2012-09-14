@@ -25,7 +25,7 @@
 #define sCONFIG_MP_TEMPLATES      L"altona/tools/makeproject/makeproject.txt"
 #define sCONFIG_CONFIGFILE        L"altona/altona_config.hpp"
 #define sCONFIG_TOOLBIN           L"C:/source/altona/altona/bin"
-#define sCONFIG_VSVERSION         L"2010"    // visual studio version, like "2005sp1", "2008" or "2010"
+#define sCONFIG_VSVERSION         L"2010"    // visual studio version, like "2005sp1", "2008" , "2010" or "2012"
 
 #define sCONFIG_MP_EXEPOSTFIX_CONFIG  0     // postfix configurationname to executable
 
