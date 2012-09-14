@@ -71,7 +71,7 @@ void RNSiegmeister::Prepare(Wz4RenderContext *ctx)
   if (arr>1) w/=arr; else h*=arr;
   
   sFRect rect(sx*(0.5f-w)+0.5f,sy*(0.5f-h)+0.5f,sx*(0.5f+w)+0.5f,sy*(0.5f+h)+0.5f);
-  sF32 time = ctx->GetBaseTime();
+  sF32 time = ctx->GetTime();
 
   sInt bars = Bars.GetCount();
   Geo->BeginLoadVB(4*bars,sGD_FRAME,&vp);
