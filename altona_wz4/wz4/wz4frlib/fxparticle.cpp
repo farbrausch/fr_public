@@ -36,6 +36,21 @@ static void InitSinTable()
   }
 }
 
+static sBool logic(sInt selflag,sF32 select)
+{
+  switch(selflag)
+  {
+  default:
+    return 1;
+  case 1:
+    return 0;
+  case 2:
+    return select>=0.5f;
+  case 3:
+    return select<=0.5f;
+  }
+}
+
 static inline sF32 FastRSqrt(sF32 x)
 {
   // TODO: use rsqrtss opcode
@@ -3375,10 +3390,13 @@ void RPFromVertex::Init(Wz4Mesh *mesh)
 
   sFORALL(mesh->Vertices, vp)
   {
-    if (rnd.Float(1)<=Para.Random)
+    if(logic(Para.Selection, vp->Select))
     {
-      Part *p = Parts.AddMany(1);
-      p->Pos.Init(vp->Pos.x, vp->Pos.y, vp->Pos.z);
+      if (rnd.Float(1)<=Para.Random)
+      {
+        Part *p = Parts.AddMany(1);
+        p->Pos.Init(vp->Pos.x, vp->Pos.y, vp->Pos.z);
+      }
     }
   }
 }
