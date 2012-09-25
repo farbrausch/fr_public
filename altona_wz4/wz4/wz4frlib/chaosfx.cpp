@@ -211,7 +211,7 @@ void RNPrint::Render(Wz4RenderContext *ctx)
 RNRibbons::RNRibbons()
 {
   Geo = new sGeometry;
-  Geo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatStandard);
+  Geo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatTangent);
   Mtrl = new sSimpleMaterial;
   Mtrl->Flags = sMTRL_CULLOFF|sMTRL_ZON|sMTRL_LIGHTING;
   Mtrl->Prepare(sVertexFormatStandard);
@@ -244,7 +244,7 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
   sMatrix34 mat;
   sF32 rx,ry,rz;
   sVector31 p;
-  sVertexStandard *vp;
+  sVertexTangent  *vp;
 
   sInt max = Para.Steps;
   const sF32 scale = 0.001f;
@@ -270,8 +270,14 @@ void RNRibbons::Prepare(Wz4RenderContext *ctx)
 
       p += mat.k * Para.Forward;
       vp->Init(p-mat.i*Para.Side,-mat.j,0.0f,i+(1/Para.Steps));
+      vp->tx = vp->nx * (vp->nx * p.x);
+      vp->ty = vp->ny * (vp->ny * p.y);
+      vp->tz = vp->nz * (vp->nz * p.z);
       vp++;
       vp->Init(p+mat.i*Para.Side,-mat.j,1.0f,i+(1/Para.Steps));
+      vp->tx = vp->nx * (vp->nx * p.x);
+      vp->ty = vp->ny * (vp->ny * p.y);
+      vp->tz = vp->nz * (vp->nz * p.z);
       vp++;
     }
   }
@@ -338,7 +344,7 @@ void RNRibbons::Render(Wz4RenderContext *ctx)
 RNRibbons2::RNRibbons2()
 {
   Geo = new sGeometry;
-  Geo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatStandard);
+  Geo->Init(sGF_TRILIST|sGF_INDEX32,sVertexFormatTangent);
   Mtrl = new sSimpleMaterial;
   Mtrl->Flags = sMTRL_CULLOFF|sMTRL_ZON|sMTRL_LIGHTING;
   Mtrl->Prepare(sVertexFormatStandard);
@@ -368,7 +374,7 @@ void RNRibbons2::Simulate(Wz4RenderContext *ctx)
 
 void RNRibbons2::Prepare(Wz4RenderContext *ctx)
 {
-  sVertexStandard *vp;
+  sVertexTangent *vp;
   sVector31 pos;
   sVector30 speed;
   sVector30 camdir,norm;
@@ -431,7 +437,13 @@ void RNRibbons2::Prepare(Wz4RenderContext *ctx)
       norm.Unit();
 
       vp[0].Init(pos-d0,norm,0.0f,j+(1/Para.Length));
+      vp->tx = vp->nx * (vp->nx * pos.x);
+      vp->ty = vp->ny * (vp->ny * pos.y);
+      vp->tz = vp->nz * (vp->nz * pos.z);
       vp[1].Init(pos+d0,norm,1.0f,j+(1/Para.Length));
+      vp->tx = vp->nx * (vp->nx * pos.x);
+      vp->ty = vp->ny * (vp->ny * pos.y);
+      vp->tz = vp->nz * (vp->nz * pos.z);
       vp+=2;
     }
   }
