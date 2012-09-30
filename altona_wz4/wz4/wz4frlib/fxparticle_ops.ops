@@ -229,8 +229,9 @@ operator Wz4Particles FromVertex(Wz4Mesh)
   column = 3;
   parameter
   {
-    float Random(0..1 step 0.01) = 1;
-    int RandomSeed(0..255);
+    flags Selection:2("all|none|selected|unselected")=0;
+    float Random:0(0..1 step 0.01) = 1;
+    int RandomSeed:1(0..255);
   }
   code
   {
