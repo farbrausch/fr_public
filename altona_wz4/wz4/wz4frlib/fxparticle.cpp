@@ -10,6 +10,7 @@
 #include "wz4frlib/fxparticle_shader.hpp"
 #include "wz4frlib/wz4_bsp.hpp"
 #include "base/graphics.hpp"
+#include "util/algorithms.hpp"
 
 /****************************************************************************/
 /****************************************************************************/
@@ -3379,8 +3380,17 @@ RPFromVertex::~RPFromVertex()
 {
 }
 
+// For sorting (to identify unique verts)
+static inline bool operator <(const sVector31 &a, const sVector31 &b)
+{
+  if (a.x != b.x) return a.x < b.x;
+  if (a.y != b.y) return a.y < b.y;
+  return a.z < b.z;
+}
+
 void RPFromVertex::Init(Wz4Mesh *mesh)
 {
+  sArray<sVector31> positions;
   Wz4MeshVertex * vp;
   Para = ParaBase;
   sRandom rnd;
@@ -3388,15 +3398,22 @@ void RPFromVertex::Init(Wz4Mesh *mesh)
 
   sVERIFY(mesh != 0);
 
+  // build list of all positions (including duplicates)
   sFORALL(mesh->Vertices, vp)
   {
     if(logic(Para.Selection, vp->Select))
+      positions.AddTail(vp->Pos);
+  }
+
+  // sort to identify unique particles
+  sIntroSort(sAll(positions));
+  for(sInt i=0; i < positions.GetCount(); i++)
+  {
+    if((i == 0 || positions[i] != positions[i-1]) && // haven't seen this one before
+      rnd.Float(1) <= Para.Random)
     {
-      if (rnd.Float(1)<=Para.Random)
-      {
-        Part *p = Parts.AddMany(1);
-        p->Pos.Init(vp->Pos.x, vp->Pos.y, vp->Pos.z);
-      }
+      Part *p = Parts.AddMany(1);
+      p->Pos = positions[i];
     }
   }
 }
