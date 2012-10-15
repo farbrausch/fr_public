@@ -447,7 +447,25 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
     anim float var2[4](-1024..1024 step 0.001) = 0;
     anim float var3[4](-1024..1024 step 0.001) = 0;
     anim float var4[4](-1024..1024 step 0.001) = 0;
+
+    if(input[ 3]) flags TexFilter1  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 4]) flags TexFilter2  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 5]) flags TexFilter3  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 6]) flags TexFilter4  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 7]) flags TexFilter5  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 8]) flags TexFilter6  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 9]) flags TexFilter7  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[10]) flags TexFilter8  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[11]) flags TexFilter9  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[12]) flags TexFilter10 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[13]) flags TexFilter11 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[14]) flags TexFilter12 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[15]) flags TexFilter13 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[16]) flags TexFilter14 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[17]) flags TexFilter15 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+
     group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+
     group "debug";
     action Shadercode(1);
     action FlushShaders(2);
@@ -472,7 +490,26 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
       if(inTex)
       {
         node->Mtrl->Texture[indexTexture] = inTex->Texture;
-        node->Mtrl->TFlags[indexTexture] = sMTF_LEVEL2 | sMTF_CLAMP | sMTF_EXTERN;
+        sInt tmpFilter = sMTF_TILE;
+        switch(indexTexture)
+        {
+          case 1:  tmpFilter = sConvertOldUvFlags(para->TexFilter1) ; break;
+          case 2:  tmpFilter = sConvertOldUvFlags(para->TexFilter2) ; break;
+          case 3:  tmpFilter = sConvertOldUvFlags(para->TexFilter3) ; break;
+          case 4:  tmpFilter = sConvertOldUvFlags(para->TexFilter4) ; break;
+          case 5:  tmpFilter = sConvertOldUvFlags(para->TexFilter5) ; break;
+          case 6:  tmpFilter = sConvertOldUvFlags(para->TexFilter6) ; break;
+          case 7:  tmpFilter = sConvertOldUvFlags(para->TexFilter7) ; break;
+          case 8:  tmpFilter = sConvertOldUvFlags(para->TexFilter8) ; break;
+          case 9:  tmpFilter = sConvertOldUvFlags(para->TexFilter9) ; break;
+          case 10: tmpFilter = sConvertOldUvFlags(para->TexFilter10); break;
+          case 11: tmpFilter = sConvertOldUvFlags(para->TexFilter11); break;
+          case 12: tmpFilter = sConvertOldUvFlags(para->TexFilter12); break;
+          case 13: tmpFilter = sConvertOldUvFlags(para->TexFilter13); break;
+          case 14: tmpFilter = sConvertOldUvFlags(para->TexFilter14); break;
+          case 15: tmpFilter = sConvertOldUvFlags(para->TexFilter15); break;
+        }
+        node->Mtrl->TFlags[indexTexture] = sMTF_LEVEL2 | tmpFilter | sMTF_EXTERN;
         inTex->AddRef();
         indexTexture++;
       }
