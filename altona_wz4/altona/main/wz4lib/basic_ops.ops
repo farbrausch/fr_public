@@ -83,6 +83,18 @@ operator TextObject Text()
   }
 }
 
+operator TextObject TextEx()
+{
+  parameter
+  {
+    overbox overlabel linenumber lines 20 string Text;
+  }
+  code
+  {
+    out->Text = cmd->Strings[0];
+  }
+}
+
 /*
 
 operator TextObject TextTest()
