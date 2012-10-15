@@ -432,3 +432,105 @@ operator Wz4Render ColorMath(Wz4Render)
 	out->AddChilds(cmd,para->Renderpass);
   }
 }
+
+/****************************************************************************/
+
+operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    flags Filter("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    anim float var0[4](-1024..1024 step 0.001) = 0;
+    anim float var1[4](-1024..1024 step 0.001) = 0;
+    anim float var2[4](-1024..1024 step 0.001) = 0;
+    anim float var3[4](-1024..1024 step 0.001) = 0;
+    anim float var4[4](-1024..1024 step 0.001) = 0;
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+    group "debug";
+    action Shadercode(1);
+    action FlushShaders(2);
+
+  }
+  code
+  {
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out; out->AddRef();
+    }
+
+    RNCustomIPP *node = new RNCustomIPP();
+    node->ParaBase = node->Para = *para;
+
+    sInt firstInTex = 3;    // first texture input position
+    sInt indexTexture = 1;  // current material texture index (start to 1; 0 is reserved to current view)
+    for(sInt i=firstInTex; i<cmd->InputCount || indexTexture<16; i++)
+    {
+      Texture2D *inTex = cmd->GetInput<Texture2D *>(i);
+      if(inTex)
+      {
+        node->Mtrl->Texture[indexTexture] = inTex->Texture;
+        node->Mtrl->TFlags[indexTexture] = sMTF_LEVEL2 | sMTF_CLAMP | sMTF_EXTERN;
+        inTex->AddRef();
+        indexTexture++;
+      }
+    }
+
+    node->Init();
+    node->Log.Clear();
+
+    // compile vertex shader
+    sShader *vs=node->CompileShader(sSTF_VERTEX|sSTF_HLSL23,in1->Text.Get());
+    if (!vs)
+    {
+      cmd->SetError(L"Vertex shader compile failed");
+      App->PopupText(node->Log.Get());
+      return 0;
+    }
+    else
+    {
+      node->Mtrl->VertexShader = vs;
+    }
+
+    // compile pixel shader
+    sShader *ps=node->CompileShader(sSTF_PIXEL|sSTF_HLSL23,in2->Text.Get());
+    if (!ps)
+    {
+      cmd->SetError(L"Pixel shader compile failed");
+      App->PopupText(node->Log.Get());
+      return 0;
+    }
+    else
+    {
+      node->Mtrl->PixelShader = ps;
+    }
+
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,0,1);
+  }
+  actions
+  {
+    if(code==1)
+    {
+      if(op->RefObj)
+      {
+        Wz4Render *r = (Wz4Render*) op->RefObj;
+        if(r)
+        {
+          RNCustomIPP *n = (RNCustomIPP*) r->RootNode;
+          if(n && n->Log.GetCount())
+            App->PopupText(n->Log.Get());
+        }
+      }
+      return 0;
+    }
+    if(code==2)
+    {
+      return 1;
+    }
+
+    return 0;
+  }
+}

@@ -1631,3 +1631,111 @@ void RNColorMath::Render(Wz4RenderContext *ctx)
 
 
 }
+
+/****************************************************************************/
+
+RNCustomIPP::RNCustomIPP()
+{
+  Anim.Init(Wz4RenderType->Script);
+  Mtrl = new Wz4IppCustom();
+  Mtrl->Flags = sMTRL_ZOFF|sMTRL_CULLOFF;
+}
+
+RNCustomIPP::~RNCustomIPP()
+{
+  delete Mtrl;
+}
+
+void RNCustomIPP::Init()
+{
+  Mtrl->TFlags[0] = sMTF_LEVEL2 | sConvertOldUvFlags(Para.Filter) | sMTF_EXTERN;
+  Mtrl->Prepare(sVertexFormatBasic);
+}
+
+#include "shadercomp\shadercomp.hpp"
+sShader *RNCustomIPP::CompileShader(sInt shadertype, const sChar *source)
+{
+  sString<16> profile;
+  switch (shadertype)
+  {
+    case sSTF_PIXEL|sSTF_HLSL23: profile=L"ps_3_0"; break;
+    case sSTF_VERTEX|sSTF_HLSL23: profile=L"vs_3_0"; break;
+    default: Log.PrintF(L"unknown shader type %x\n",shadertype); return 0;
+  }
+
+  sTextBuffer src2;
+  sTextBuffer error;
+  sU8 *data = 0;
+  sInt size = 0;
+  sShader *sh = 0;
+
+  src2.Print(L"uniform float4x4 mvp : register(c0);\n");
+  src2.Print(L"uniform float4x4 mv : register(c4);\n");
+  src2.Print(L"uniform float3 eye : register(c8);\n");
+
+  src2.Print(L"\n");
+  src2.Print(source);
+
+  if(sShaderCompileDX(src2.Get(),profile,L"main",data,size,sSCF_PREFER_CFLOW|sSCF_DONT_OPTIMIZE,&error))
+  {
+    Log.PrintF(L"dx: %q\n",error.Get());
+    Log.PrintListing(src2.Get());
+    Log.Print(L"/****************************************************************************/\n");
+#if sRENDERER==sRENDER_DX9
+    //sPrintShader(Log,(const sU32 *) data,sPSF_NOCOMMENTS);
+#endif
+    sh = sCreateShaderRaw(shadertype,data,size);
+  }
+  else
+  {
+    Log.PrintF(L"dx: %q\n",error.Get());
+    Log.PrintListing(src2.Get());
+    Log.Print(L"/****************************************************************************/\n");
+    sDPrint(Log.Get());
+  }
+  delete[] data;
+
+  return sh;
+}
+
+void RNCustomIPP::Simulate(Wz4RenderContext *ctx)
+{
+  Para = ParaBase;
+  Anim.Bind(ctx->Script,&Para);
+  SimulateCalc(ctx);
+  SimulateChilds(ctx);
+}
+
+void RNCustomIPP::Render(Wz4RenderContext *ctx)
+{
+  RenderChilds(ctx);
+
+  if((ctx->RenderMode & sRF_TARGET_MASK)==sRF_TARGET_MAIN)
+  {
+    sCBuffer<Wz4IppVSPara> cbv;
+    sCBuffer<Wz4IppCustomPara> cbp;
+
+    sTexture2D *src = sRTMan->ReadScreen();
+    sTexture2D *dest = sRTMan->WriteScreen();
+    sRTMan->SetTarget(dest);
+    ctx->IppHelper->GetTargetInfo(cbv.Data->mvp);
+    cbv.Data->mvp.Trans4();
+    cbv.Modify();
+
+    // bind gui parameters to shader
+    cbp.Data->var0.Init(Para.var0[0], Para.var0[1], Para.var0[2], Para.var0[3]);
+    cbp.Data->var1.Init(Para.var1[0], Para.var1[1], Para.var1[2], Para.var1[3]);
+    cbp.Data->var2.Init(Para.var2[0], Para.var2[1], Para.var2[2], Para.var2[3]);
+    cbp.Data->var3.Init(Para.var3[0], Para.var3[1], Para.var3[2], Para.var3[3]);
+    cbp.Data->var4.Init(Para.var4[0], Para.var4[1], Para.var4[2], Para.var4[3]);
+    cbp.Modify();
+
+    Mtrl->Texture[0] = src;
+    Mtrl->Set(&cbv,&cbp);
+    ctx->IppHelper->DrawQuad(dest,src);
+    Mtrl->Texture[0] = 0;
+
+    sRTMan->Release(src);
+    sRTMan->Release(dest);
+  }
+}
