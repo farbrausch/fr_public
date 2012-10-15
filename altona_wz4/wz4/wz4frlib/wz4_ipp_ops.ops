@@ -466,7 +466,7 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
 
     sInt firstInTex = 3;    // first texture input position
     sInt indexTexture = 1;  // current material texture index (start to 1; 0 is reserved to current view)
-    for(sInt i=firstInTex; i<cmd->InputCount || indexTexture<16; i++)
+    for(sInt i=firstInTex; i<cmd->InputCount && indexTexture<16; i++)
     {
       Texture2D *inTex = cmd->GetInput<Texture2D *>(i);
       if(inTex)
