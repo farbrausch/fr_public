@@ -442,12 +442,26 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
   {
     int Renderpass(-127..127);
     flags Filter("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
-    anim float var0[4](-1024..1024 step 0.001) = 0;
-    anim float var1[4](-1024..1024 step 0.001) = 0;
-    anim float var2[4](-1024..1024 step 0.001) = 0;
-    anim float var3[4](-1024..1024 step 0.001) = 0;
-    anim float var4[4](-1024..1024 step 0.001) = 0;
 
+    group "Debug";
+    action Shadercode(1);
+    action FlushShaders(2);
+
+    group "Vertex shader variables";
+    anim float vs_var0[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var1[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var2[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var3[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Pixel shader variables";
+    anim float ps_var0[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var1[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var2[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var3[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Texture filtering";
     if(input[ 3]) flags TexFilter1  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
     if(input[ 4]) flags TexFilter2  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
     if(input[ 5]) flags TexFilter3  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
@@ -465,22 +479,20 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
     if(input[17]) flags TexFilter15 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
 
     group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
-
-    group "debug";
-    action Shadercode(1);
-    action FlushShaders(2);
-
   }
   code
   {
+    RNCustomIPP *node = new RNCustomIPP();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,0,1);
+
     if(cmd->Op)
     {
       cmd->Op->RefObj->Release();
-      cmd->Op->RefObj = out; out->AddRef();
+      cmd->Op->RefObj = out;
+      out->AddRef();
     }
-
-    RNCustomIPP *node = new RNCustomIPP();
-    node->ParaBase = node->Para = *para;
 
     sInt firstInTex = 3;    // first texture input position
     sInt indexTexture = 1;  // current material texture index (start to 1; 0 is reserved to current view)
@@ -523,7 +535,6 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
     if (!vs)
     {
       cmd->SetError(L"Vertex shader compile failed");
-      App->PopupText(node->Log.Get());
       return 0;
     }
     else
@@ -536,16 +547,12 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
     if (!ps)
     {
       cmd->SetError(L"Pixel shader compile failed");
-      App->PopupText(node->Log.Get());
       return 0;
     }
     else
     {
       node->Mtrl->PixelShader = ps;
     }
-
-    out->RootNode = node;
-    out->AddChilds(cmd,para->Renderpass,0,1);
   }
   actions
   {
@@ -563,6 +570,7 @@ operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
       }
       return 0;
     }
+
     if(code==2)
     {
       return 1;

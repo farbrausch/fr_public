@@ -1653,6 +1653,7 @@ void RNCustomIPP::Init()
 }
 
 #include "shadercomp\shadercomp.hpp"
+#include "shadercomp\shaderdis.hpp"
 sShader *RNCustomIPP::CompileShader(sInt shadertype, const sChar *source)
 {
   sString<16> profile;
@@ -1682,7 +1683,7 @@ sShader *RNCustomIPP::CompileShader(sInt shadertype, const sChar *source)
     Log.PrintListing(src2.Get());
     Log.Print(L"/****************************************************************************/\n");
 #if sRENDERER==sRENDER_DX9
-    //sPrintShader(Log,(const sU32 *) data,sPSF_NOCOMMENTS);
+    sPrintShader(Log,(const sU32 *) data,sPSF_NOCOMMENTS);
 #endif
     sh = sCreateShaderRaw(shadertype,data,size);
   }
@@ -1712,22 +1713,39 @@ void RNCustomIPP::Render(Wz4RenderContext *ctx)
 
   if((ctx->RenderMode & sRF_TARGET_MASK)==sRF_TARGET_MAIN)
   {
-    sCBuffer<Wz4IppVSPara> cbv;
-    sCBuffer<Wz4IppCustomPara> cbp;
+    sCBuffer<Wz4IppVSCustomPara> cbv;
+    sCBuffer<Wz4IppPSCustomPara> cbp;
 
     sTexture2D *src = sRTMan->ReadScreen();
     sTexture2D *dest = sRTMan->WriteScreen();
     sRTMan->SetTarget(dest);
+
     ctx->IppHelper->GetTargetInfo(cbv.Data->mvp);
     cbv.Data->mvp.Trans4();
+    cbv.Data->mv = ctx->View.ModelView;
+    cbv.Data->mv.Trans4();
+    cbv.Data->eye = ctx->View.Camera.l;
+
+    cbp.Data->mvp = ctx->View.ModelScreen;
+    cbp.Data->mvp.Trans4();
+    cbp.Data->mv = ctx->View.ModelView;
+    cbp.Data->mv.Trans4();
+    cbp.Data->eye = ctx->View.Camera.l;
+
+     // bind gui parameters for vertex shader
+    cbv.Data->vs_var0.Init(Para.vs_var0[0], Para.vs_var0[1], Para.vs_var0[2], Para.vs_var0[3]);
+    cbv.Data->vs_var1.Init(Para.vs_var1[0], Para.vs_var1[1], Para.vs_var1[2], Para.vs_var1[3]);
+    cbv.Data->vs_var2.Init(Para.vs_var2[0], Para.vs_var2[1], Para.vs_var2[2], Para.vs_var3[3]);
+    cbv.Data->vs_var3.Init(Para.vs_var3[0], Para.vs_var3[1], Para.vs_var3[2], Para.vs_var3[3]);
+    cbv.Data->vs_var4.Init(Para.vs_var4[0], Para.vs_var4[1], Para.vs_var4[2], Para.vs_var4[3]);
     cbv.Modify();
 
-    // bind gui parameters to shader
-    cbp.Data->var0.Init(Para.var0[0], Para.var0[1], Para.var0[2], Para.var0[3]);
-    cbp.Data->var1.Init(Para.var1[0], Para.var1[1], Para.var1[2], Para.var1[3]);
-    cbp.Data->var2.Init(Para.var2[0], Para.var2[1], Para.var2[2], Para.var2[3]);
-    cbp.Data->var3.Init(Para.var3[0], Para.var3[1], Para.var3[2], Para.var3[3]);
-    cbp.Data->var4.Init(Para.var4[0], Para.var4[1], Para.var4[2], Para.var4[3]);
+    // bind gui parameters for pixel shader
+    cbp.Data->ps_var0.Init(Para.ps_var0[0], Para.ps_var0[1], Para.ps_var0[2], Para.ps_var0[3]);
+    cbp.Data->ps_var1.Init(Para.ps_var1[0], Para.ps_var1[1], Para.ps_var1[2], Para.ps_var1[3]);
+    cbp.Data->ps_var2.Init(Para.ps_var2[0], Para.ps_var2[1], Para.ps_var2[2], Para.ps_var2[3]);
+    cbp.Data->ps_var3.Init(Para.ps_var3[0], Para.ps_var3[1], Para.ps_var3[2], Para.ps_var3[3]);
+    cbp.Data->ps_var4.Init(Para.ps_var4[0], Para.ps_var4[1], Para.ps_var4[2], Para.ps_var4[3]);
     cbp.Modify();
 
     Mtrl->Texture[0] = src;
