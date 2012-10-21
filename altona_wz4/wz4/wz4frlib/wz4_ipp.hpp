@@ -291,5 +291,25 @@ public:
 
 /****************************************************************************/
 
+class RNCustomIPP : public Wz4RenderNode
+{
+public:
+  RNCustomIPP();
+  ~RNCustomIPP();
+  void Init();
+  sShader *CompileShader(sInt shadertype, const sChar *source);
+
+  Wz4RenderParaCustomIPP Para,ParaBase;
+  Wz4RenderAnimCustomIPP Anim;
+
+  void Simulate(Wz4RenderContext *);
+  void Render(Wz4RenderContext *);
+
+  sMaterial *Mtrl;
+  sTextBuffer Log;
+};
+
+/****************************************************************************/
+
 #endif // FILE_WZ4FRLIB_WZ4_IPP_HPP
 

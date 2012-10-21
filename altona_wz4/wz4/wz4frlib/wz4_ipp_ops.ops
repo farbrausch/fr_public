@@ -432,3 +432,150 @@ operator Wz4Render ColorMath(Wz4Render)
 	out->AddChilds(cmd,para->Renderpass);
   }
 }
+
+/****************************************************************************/
+
+operator Wz4Render CustomIPP(Wz4Render,TextObject,TextObject,*?Texture2D)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    flags Filter("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+
+    group "Debug";
+    action Shadercode(1);
+    action FlushShaders(2);
+
+    group "Vertex shader variables";
+    anim float vs_var0[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var1[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var2[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var3[4](-1024..1024 step 0.001) = 0;
+    anim float vs_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Pixel shader variables";
+    anim float ps_var0[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var1[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var2[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var3[4](-1024..1024 step 0.001) = 0;
+    anim float ps_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Texture filtering";
+    if(input[ 3]) flags TexFilter1  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 4]) flags TexFilter2  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 5]) flags TexFilter3  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 6]) flags TexFilter4  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 7]) flags TexFilter5  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 8]) flags TexFilter6  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 9]) flags TexFilter7  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[10]) flags TexFilter8  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[11]) flags TexFilter9  ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[12]) flags TexFilter10 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[13]) flags TexFilter11 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[14]) flags TexFilter12 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[15]) flags TexFilter13 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[16]) flags TexFilter14 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[17]) flags TexFilter15 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    RNCustomIPP *node = new RNCustomIPP();
+    node->ParaBase = node->Para = *para;
+    out->RootNode = node;
+    out->AddChilds(cmd,para->Renderpass,0,1);
+
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out;
+      out->AddRef();
+    }
+
+    sInt firstInTex = 3;    // first texture input position
+    sInt indexTexture = 1;  // current material texture index (start to 1; 0 is reserved to current view)
+    for(sInt i=firstInTex; i<cmd->InputCount && indexTexture<16; i++)
+    {
+      Texture2D *inTex = cmd->GetInput<Texture2D *>(i);
+      if(inTex)
+      {
+        node->Mtrl->Texture[indexTexture] = inTex->Texture;
+        sInt tmpFilter = sMTF_TILE;
+        switch(indexTexture)
+        {
+          case 1:  tmpFilter = sConvertOldUvFlags(para->TexFilter1) ; break;
+          case 2:  tmpFilter = sConvertOldUvFlags(para->TexFilter2) ; break;
+          case 3:  tmpFilter = sConvertOldUvFlags(para->TexFilter3) ; break;
+          case 4:  tmpFilter = sConvertOldUvFlags(para->TexFilter4) ; break;
+          case 5:  tmpFilter = sConvertOldUvFlags(para->TexFilter5) ; break;
+          case 6:  tmpFilter = sConvertOldUvFlags(para->TexFilter6) ; break;
+          case 7:  tmpFilter = sConvertOldUvFlags(para->TexFilter7) ; break;
+          case 8:  tmpFilter = sConvertOldUvFlags(para->TexFilter8) ; break;
+          case 9:  tmpFilter = sConvertOldUvFlags(para->TexFilter9) ; break;
+          case 10: tmpFilter = sConvertOldUvFlags(para->TexFilter10); break;
+          case 11: tmpFilter = sConvertOldUvFlags(para->TexFilter11); break;
+          case 12: tmpFilter = sConvertOldUvFlags(para->TexFilter12); break;
+          case 13: tmpFilter = sConvertOldUvFlags(para->TexFilter13); break;
+          case 14: tmpFilter = sConvertOldUvFlags(para->TexFilter14); break;
+          case 15: tmpFilter = sConvertOldUvFlags(para->TexFilter15); break;
+        }
+        node->Mtrl->TFlags[indexTexture] = sMTF_LEVEL2 | tmpFilter | sMTF_EXTERN;
+        inTex->AddRef();
+        indexTexture++;
+      }
+    }
+
+    node->Init();
+    node->Log.Clear();
+
+    // compile vertex shader
+    sShader *vs=node->CompileShader(sSTF_VERTEX|sSTF_HLSL23,in1->Text.Get());
+    if (!vs)
+    {
+      cmd->SetError(L"Vertex shader compile failed");
+      return 0;
+    }
+    else
+    {
+      node->Mtrl->VertexShader = vs;
+    }
+
+    // compile pixel shader
+    sShader *ps=node->CompileShader(sSTF_PIXEL|sSTF_HLSL23,in2->Text.Get());
+    if (!ps)
+    {
+      cmd->SetError(L"Pixel shader compile failed");
+      return 0;
+    }
+    else
+    {
+      node->Mtrl->PixelShader = ps;
+    }
+  }
+  actions
+  {
+    if(code==1)
+    {
+      if(op->RefObj)
+      {
+        Wz4Render *r = (Wz4Render*) op->RefObj;
+        if(r)
+        {
+          RNCustomIPP *n = (RNCustomIPP*) r->RootNode;
+          if(n && n->Log.GetCount())
+            App->PopupText(n->Log.Get());
+        }
+      }
+      return 0;
+    }
+
+    if(code==2)
+    {
+      return 1;
+    }
+
+    return 0;
+  }
+}
