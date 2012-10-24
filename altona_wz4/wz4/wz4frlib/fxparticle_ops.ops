@@ -847,7 +847,7 @@ operator Wz4Particles FromMesh(Wz4Mesh)
 
 /****************************************************************************/
 
-operator Wz4Particles Morph(*Wz4Mesh)
+operator Wz4Particles Morph(Wz4Mesh,Wz4Mesh)
 {
   tab = Wz4Render;
   column = 3;

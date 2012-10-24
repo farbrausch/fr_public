@@ -3502,7 +3502,6 @@ void RPMorph::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
   sRandomMT mt;
   mt.Seed(time);
 
-  sInt extra = 0;
   sInt rIndex = 0;
   sVector31 v;
 
@@ -3572,12 +3571,10 @@ void RPMorph::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
 
         pos.Fade(Para.Transition, v, shapeParts[1][i].Pos);
         pinfo.Parts[i].Init(pos,1.0f);
-        extra++;
       }
       else
       {
         pinfo.Parts[i].Init(sVector31(0),-1.0f);
-        extra--;
       }
     }
     else
@@ -3591,10 +3588,9 @@ void RPMorph::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
       else
       {
         pinfo.Parts[i].Init(sVector31(0),-1.0f);
-        extra--;
       }
     }
   }
 
-  pinfo.Used = max + extra;
+  pinfo.Used = max;
 }
