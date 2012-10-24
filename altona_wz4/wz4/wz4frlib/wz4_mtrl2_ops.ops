@@ -247,18 +247,18 @@ operator CustomMtrl CustomMaterial2 "CustomMaterial" (TextObject,TextObject,*?Te
     action FlushShaders(2);
 
     group "Vertex shader variables";
-    anim float vs_var0[4](-1024..1024 step 0.001) = 0;
-    anim float vs_var1[4](-1024..1024 step 0.001) = 0;
-    anim float vs_var2[4](-1024..1024 step 0.001) = 0;
-    anim float vs_var3[4](-1024..1024 step 0.001) = 0;
-    anim float vs_var4[4](-1024..1024 step 0.001) = 0;
+    float vs_var0[4](-1024..1024 step 0.001) = 0;
+    float vs_var1[4](-1024..1024 step 0.001) = 0;
+    float vs_var2[4](-1024..1024 step 0.001) = 0;
+    float vs_var3[4](-1024..1024 step 0.001) = 0;
+    float vs_var4[4](-1024..1024 step 0.001) = 0;
 
     group "Pixel shader variables";
-    anim float ps_var0[4](-1024..1024 step 0.001) = 0;
-    anim float ps_var1[4](-1024..1024 step 0.001) = 0;
-    anim float ps_var2[4](-1024..1024 step 0.001) = 0;
-    anim float ps_var3[4](-1024..1024 step 0.001) = 0;
-    anim float ps_var4[4](-1024..1024 step 0.001) = 0;
+    float ps_var0[4](-1024..1024 step 0.001) = 0;
+    float ps_var1[4](-1024..1024 step 0.001) = 0;
+    float ps_var2[4](-1024..1024 step 0.001) = 0;
+    float ps_var3[4](-1024..1024 step 0.001) = 0;
+    float ps_var4[4](-1024..1024 step 0.001) = 0;
 
     group "Texture filtering";
     if(input[ 2]) flags TexFilter0 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
