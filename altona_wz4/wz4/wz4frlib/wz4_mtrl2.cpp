@@ -1000,7 +1000,6 @@ void CustomMtrl::Set(sInt flags,sInt index,const sMatrix34CM *mat,sInt SkinMatCo
 {
   switch(flags & sRF_TARGET_MASK)
   {
- 
   case sRF_TARGET_MAIN:
     {
       sMatrix34 tmat,nmat;
@@ -1016,12 +1015,23 @@ void CustomMtrl::Set(sInt flags,sInt index,const sMatrix34CM *mat,sInt SkinMatCo
       cbv.Data->mv = view.ModelView;
       cbv.Data->mv.Trans4();
       cbv.Data->EyePos = view.Camera.l;
+      cbv.Data->vs_var0.Init(vs_var0[0],vs_var0[1],vs_var0[2],vs_var0[3]);
+      cbv.Data->vs_var1.Init(vs_var1[0],vs_var1[1],vs_var1[2],vs_var1[3]);
+      cbv.Data->vs_var2.Init(vs_var2[0],vs_var2[1],vs_var2[2],vs_var2[3]);
+      cbv.Data->vs_var3.Init(vs_var3[0],vs_var3[1],vs_var3[2],vs_var3[3]);
+      cbv.Data->vs_var4.Init(vs_var4[0],vs_var4[1],vs_var4[2],vs_var4[3]);
       cbv.Modify();
+
       cbp.Data->mvp = view.ModelScreen;
       cbp.Data->mvp.Trans4();
       cbp.Data->mv = view.ModelView;
       cbp.Data->mv.Trans4();
       cbp.Data->EyePos = view.Camera.l;
+      cbp.Data->ps_var0.Init(ps_var0[0],ps_var0[1],ps_var0[2],ps_var0[3]);
+      cbp.Data->ps_var1.Init(ps_var1[0],ps_var1[1],ps_var1[2],ps_var1[3]);
+      cbp.Data->ps_var2.Init(ps_var2[0],ps_var2[1],ps_var2[2],ps_var2[3]);
+      cbp.Data->ps_var3.Init(ps_var3[0],ps_var3[1],ps_var3[2],ps_var3[3]);
+      cbp.Data->ps_var4.Init(ps_var4[0],ps_var4[1],ps_var4[2],ps_var4[3]);
       cbp.Modify();
 
       for (sInt i=0; i<sMTRL_MAXTEX; i++)
@@ -1040,8 +1050,6 @@ void CustomMtrl::Set(sInt flags,sInt index,const sMatrix34CM *mat,sInt SkinMatCo
 
       Shader->Set(&cbv,&cbp);
     }
-
-       
     break;
   }
 }
@@ -1089,10 +1097,6 @@ void CustomMtrl::Prepare()
 
   *desc++ = sVF_POSITION|sVF_F3;
   *desc++ = sVF_NORMAL|sVF_F3;
-
-//  if(Tex[2] && !(Extras & 0x100))
-//    *desc++ = sVF_TANGENT|sVF_F3;
-//  if(Tex[0] || (Tex[2] && !(Extras & 0x100)))
   *desc++ = sVF_UV0|sVF_F2;
   *desc = 0;
   Format = sCreateVertexFormat(descdata);
@@ -1100,15 +1104,17 @@ void CustomMtrl::Prepare()
   sVERIFY(Shader);
   Shader->Flags = Flags;
   Shader->BlendColor = Blend;
-  Shader->TFlags[0] = TFlags[0];
-  Shader->TFlags[1] = TFlags[1];
-  Shader->TFlags[2] = TFlags[2];
+
+  for(sInt i=0; i<sMTRL_MAXTEX; i++)
+  {
+    Shader->TFlags[i] = TFlags[i];
+    if(Tex[i]) Shader->Texture[i] = Tex[i]->Texture;
+  }
+
 #if sRENDERER==sRENDER_DX9
-  Shader->TBind[2] = sMTB_VS|0;
+  Shader->TBind[15] = sMTB_VS|0;
 #endif
-  if(Tex[0]) Shader->Texture[0] = Tex[0]->Texture;
-  if(Tex[1]) Shader->Texture[1] = Tex[1]->Texture;
-  if(Tex[2]) Shader->Texture[2] = Tex[2]->Texture;
+
   if(AlphaTest!=7)
   {
     Shader->FuncFlags[sMFT_ALPHA] = AlphaTest;
