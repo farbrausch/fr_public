@@ -192,6 +192,7 @@ class Wz4TimelineCed : public wCustomEditor
     sInt Select;
     sInt Index;
     sInt Enable;
+    sInt Color;
 
     sInt DragStart;
     sInt DragLength;

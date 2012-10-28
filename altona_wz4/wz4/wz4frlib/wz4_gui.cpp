@@ -1661,6 +1661,7 @@ void Wz4TimelineCed::UpdateInfo()
           c->Select = 0;
           c->Name = s;
           c->Enable = para->Enable;
+          c->Color = para->Color;
 
           if(c->Start<tmin) tmin = c->Start;
           if(c->Start+c->Length>tmax) tmax = c->Start+c->Length;
@@ -1680,6 +1681,7 @@ void Wz4TimelineCed::UpdateInfo()
             c->Select = 0;
             c->Name = s;
             c->Enable = data->Enable && para->MasterEnable;
+            c->Color = data->Color;
             if(c->Start<tmin) tmin = c->Start;
             if(c->Start+c->Length>tmax) tmax = c->Start+c->Length;
           }
@@ -1781,6 +1783,7 @@ void Wz4TimelineCed::OnChangeOp()
   Update();
 }
 
+
 void Wz4TimelineCed::OnPaint2D(const sRect &client)
 {
   Client = client;
@@ -1830,7 +1833,39 @@ void Wz4TimelineCed::OnPaint2D(const sRect &client)
 
     if(clip->Enable)
     {
-      sGui->PropFont->SetColor(sGC_TEXT,clip->Select?sGC_LOW:sGC_BUTTON);
+      // white|red|yellow|green|cyan|blue|pink|gray
+      sU32 col = 0;
+      switch(clip->Color)
+      {
+        case 0: // white
+          col = 0xFFEFEFEF;
+          break;
+        case 1: // red
+          col = 0xFFFFAAAA;
+          break;
+        case 2: // yellow
+          col = 0xFFFFFF80;
+          break;
+        case 3: // green
+          col = 0xFF80FF80;
+          break;
+        case 4: // cyan
+          col = 0xFF80FFFF;
+          break;
+        case 5: // blue
+          col = 0xFF8080FF;
+          break;
+        case 6: // pink
+          col = 0xFFFF80FF;
+          break;
+        case 7: // gray
+        default:
+          col = 0xFFAAAAAA;
+          break;
+      }
+
+      sSetColor2D(sGC_MAX,col);
+      sGui->PropFont->SetColor(sGC_TEXT,clip->Select?sGC_PINK:sGC_MAX);
       sGui->PropFont->Print(sF2P_OPAQUE,r,clip->Name);
     }
     else
