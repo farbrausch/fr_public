@@ -1674,6 +1674,32 @@ sShader *RNCustomIPP::CompileShader(sInt shadertype, const sChar *source)
   src2.Print(L"uniform float4x4 mv : register(c4);\n");
   src2.Print(L"uniform float3 eye : register(c8);\n");
 
+  switch (shadertype)
+  {
+      // links to customIPP variables
+      // note : these definitions are not implanted (commented here) to give the possibility, in the shader code,
+      // to cast the float4 to another type at declaration or define another variable name, ex :
+      // uniform float4 ps_var0 : register(c9);   =>    uniform float2 myvar : register(c9);
+      // However, dispay these comments lets remember these statements (copy/past) in the debug shader code text field.
+
+    case sSTF_PIXEL|sSTF_HLSL23: profile=L"ps_3_0";
+      src2.Print(L"//uniform float4 ps_var0 : register(c9);     // link to ps_var0 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 ps_var1 : register(c10);    // link to ps_var1 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 ps_var2 : register(c11);    // link to ps_var2 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 ps_var3 : register(c12);    // link to ps_var3 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 ps_var4 : register(c13);    // link to ps_var4 (needs to be redefined)\n");
+      src2.Print(L"uniform float2 resolution : register(c14);   // screen resolution\n");
+      break;
+
+    case sSTF_VERTEX|sSTF_HLSL23: profile=L"vs_3_0";
+      src2.Print(L"//uniform float4 vs_var0 : register(c9);     // link to vs_var0 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 vs_var1 : register(c10);    // link to vs_var1 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 vs_var2 : register(c11);    // link to vs_var2 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 vs_var3 : register(c12);    // link to vs_var3 (needs to be redefined)\n");
+      src2.Print(L"//uniform float4 vs_var4 : register(c13);    // link to vs_var4 (needs to be redefined)\n");
+      break;
+  }
+
   src2.Print(L"\n");
   src2.Print(source);
 
@@ -1731,6 +1757,8 @@ void RNCustomIPP::Render(Wz4RenderContext *ctx)
     cbp.Data->mv = ctx->View.ModelView;
     cbp.Data->mv.Trans4();
     cbp.Data->eye = ctx->View.Camera.l;
+
+    cbp.Data->resolution.Init(ctx->ScreenX, ctx->ScreenY, 0, 0);
 
      // bind gui parameters for vertex shader
     cbv.Data->vs_var0.Init(Para.vs_var0[0], Para.vs_var0[1], Para.vs_var0[2], Para.vs_var0[3]);
