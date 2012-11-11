@@ -228,8 +228,160 @@ type CustomMtrl : Wz4Mtrl
 
 }
 
-operator CustomMtrl CustomMaterial(TextObject,TextObject)
+operator CustomMtrl CustomMaterial2 "CustomMaterial" (TextObject,TextObject,*?Texture2D)
 {
+  tab = Wz4Mtrl;
+  column = 0;
+  parameter
+  {
+    flags Flags("*0zoff|zread|zwrite|zon:*4Doublesided|Singlesided|Inverted:*7-|Light")=0x93;
+    continue flags Flags "ColorMask" ("*8-|MaskAlpha:*9-|MaskRed:*10-|MaskGreen:*11-|MaskBlue");
+    continue flags Flags "VertexColor" ("*12-|Light:*14-|Material:*24zrender|-");
+    flags Blend("solid|alpha premul|add|sub|mul|mul2|addsmooth|alpha plain");
+    layout flags AlphaTest ("|||inverted|on|||off")=7;
+    if(AlphaTest!=7)
+      nolabel int AlphaRef (0..255 step 1);
+
+    group "debug";
+    action Shadercode(1);
+    action FlushShaders(2);
+
+    group "Vertex shader variables";
+    float vs_var0[4](-1024..1024 step 0.001) = 0;
+    float vs_var1[4](-1024..1024 step 0.001) = 0;
+    float vs_var2[4](-1024..1024 step 0.001) = 0;
+    float vs_var3[4](-1024..1024 step 0.001) = 0;
+    float vs_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Pixel shader variables";
+    float ps_var0[4](-1024..1024 step 0.001) = 0;
+    float ps_var1[4](-1024..1024 step 0.001) = 0;
+    float ps_var2[4](-1024..1024 step 0.001) = 0;
+    float ps_var3[4](-1024..1024 step 0.001) = 0;
+    float ps_var4[4](-1024..1024 step 0.001) = 0;
+
+    group "Texture filtering";
+    if(input[ 2]) flags TexFilter0 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 3]) flags TexFilter1 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 4]) flags TexFilter2 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 5]) flags TexFilter3 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 6]) flags TexFilter4 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 7]) flags TexFilter5 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 8]) flags TexFilter6 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[ 9]) flags TexFilter7 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[10]) flags TexFilter8 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[11]) flags TexFilter9 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[12]) flags TexFilter10 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[13]) flags TexFilter11 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[14]) flags TexFilter12 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[15]) flags TexFilter13 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+    if(input[16]) flags TexFilter14 ("*0trilinear|aniso|point|bilinear:*4tile|clamp|mirror|border_black|border_white");
+  }
+
+  code
+  {
+    if(cmd->Op)
+    {
+      cmd->Op->RefObj->Release();
+      cmd->Op->RefObj = out; out->AddRef();
+    }
+
+    // copy vs parameters
+    sCopyMem(out->vs_var0, para->vs_var0, sizeof(para->vs_var0));
+    sCopyMem(out->vs_var1, para->vs_var1, sizeof(para->vs_var1));
+    sCopyMem(out->vs_var2, para->vs_var2, sizeof(para->vs_var2));
+    sCopyMem(out->vs_var3, para->vs_var3, sizeof(para->vs_var3));
+    sCopyMem(out->vs_var4, para->vs_var4, sizeof(para->vs_var4));
+
+    // copy ps parameters
+    sCopyMem(out->ps_var0, para->ps_var0, sizeof(para->ps_var0));
+    sCopyMem(out->ps_var1, para->ps_var1, sizeof(para->ps_var1));
+    sCopyMem(out->ps_var2, para->ps_var2, sizeof(para->ps_var2));
+    sCopyMem(out->ps_var3, para->ps_var3, sizeof(para->ps_var3));
+    sCopyMem(out->ps_var4, para->ps_var4, sizeof(para->ps_var4));
+
+    static sU32 blend[] = { 0,sMB_PMALPHA,sMB_ADD,sMB_SUB,sMB_MUL,sMB_MUL2,sMB_ADDSMOOTH,sMB_ALPHA };
+    sMatrix34 mat;
+    out->SetMtrl(para->Flags,blend[para->Blend]);
+
+    // init textures
+    sInt firstInTex = 2;      // first texture input position
+    sInt indexTexture = 0;    // current material texture index
+    for(sInt i=firstInTex; i<cmd->InputCount && indexTexture<15; i++)
+    {
+      Texture2D *inTex = cmd->GetInput<Texture2D *>(i);
+      if(inTex)
+      {
+        sInt tmpFilter = sMTF_TILE;
+        switch(indexTexture)
+        {
+          case 0: tmpFilter =  para->TexFilter0 ; break;
+          case 1: tmpFilter =  para->TexFilter1 ; break;
+          case 2: tmpFilter =  para->TexFilter2 ; break;
+          case 3: tmpFilter =  para->TexFilter3 ; break;
+          case 4: tmpFilter =  para->TexFilter4 ; break;
+          case 5: tmpFilter =  para->TexFilter5 ; break;
+          case 6: tmpFilter =  para->TexFilter6 ; break;
+          case 7: tmpFilter =  para->TexFilter7 ; break;
+          case 8: tmpFilter =  para->TexFilter8 ; break;
+          case 9: tmpFilter =  para->TexFilter9 ; break;
+          case 10: tmpFilter = para->TexFilter10; break;
+          case 11: tmpFilter = para->TexFilter11; break;
+          case 12: tmpFilter = para->TexFilter12; break;
+          case 13: tmpFilter = para->TexFilter13; break;
+          case 14: tmpFilter = para->TexFilter14; break;
+          //case 15: tmpFilter = para->TexFilter15; break;
+        }
+        out->SetTex(indexTexture, inTex, tmpFilter);
+        indexTexture++;
+      }
+    }
+
+    out->SetAlphaTest(para->AlphaTest,para->AlphaRef);
+    out->Log.Clear();
+
+    sShader *vs=out->CompileShader(sSTF_VERTEX|sSTF_HLSL23,in0->Text.Get());
+    if (!vs)
+    {
+      cmd->SetError(L"Vertex shader compile failed");
+      return 0;
+    }
+
+    sShader *ps=out->CompileShader(sSTF_PIXEL|sSTF_HLSL23,in1->Text.Get());
+    if (!ps)
+    {
+      cmd->SetError(L"Pixel shader compile failed");
+      return 0;
+    }
+
+    out->SetShader(vs,ps);
+    out->Prepare();
+  }
+
+  actions
+  {
+    if(code==1)
+    {
+      if(op->RefObj)
+      {
+        CustomMtrl *mtrl = (CustomMtrl*) op->RefObj;
+        if(mtrl && mtrl->Log.GetCount())
+          App->PopupText(mtrl->Log.Get());
+      }
+      return 0;
+    }
+    if(code==2)
+    {
+      return 1;
+    }
+
+    return 0;
+  }
+}
+
+operator CustomMtrl CustomMaterial "CustomMaterial (old)" (TextObject,TextObject)
+{
+  flags = hide|obsolete;
   tab = Wz4Mtrl;
   column = 0;
   parameter

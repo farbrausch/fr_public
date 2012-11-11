@@ -138,6 +138,18 @@ public:
   sBool SkipPhase(sInt flags, sInt lightenv);
 
   sTextBuffer Log;
+
+  sF32 vs_var0[4];
+  sF32 vs_var1[4];
+  sF32 vs_var2[4];
+  sF32 vs_var3[4];
+  sF32 vs_var4[4];
+
+  sF32 ps_var0[4];
+  sF32 ps_var1[4];
+  sF32 ps_var2[4];
+  sF32 ps_var3[4];
+  sF32 ps_var4[4];
 };
 
 /****************************************************************************/
