@@ -649,6 +649,7 @@ operator Wz4Render Clip (?*Wz4Render)
     anim flags Enable:7 ("Disable|Enable")=1;
     if(Flags&4)
       float LocalOffset(-0x10000..0x10000 step 0.25) = 0;
+    flags Color ("white|red|yellow|green|cyan|blue|pink|gray")=7;
 
     group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
   }
@@ -726,6 +727,7 @@ operator Wz4Render MultiClip (?*Wz4Render)
       float Time0(0..1 step 0.001) = 0;
       float Time1(0..1 step 0.001) = 1;
       flags Enable("disable|enable") = 1;
+      flags Color ("white|red|yellow|green|cyan|blue|pink|gray")=7;
     }
 
     group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
