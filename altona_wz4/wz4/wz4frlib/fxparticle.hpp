@@ -625,6 +625,31 @@ public:
 };
 
 /****************************************************************************/
+
+class RPMorph : public Wz4ParticleNode
+{
+ struct Part
+  {
+    sVector31 Pos;
+  };
+  sArray<Part> shapeParts[16];
+  sInt max;
+
+public:
+  RPMorph();
+  ~RPMorph();
+  void Init(sArray<Wz4Mesh*> meshArray);
+
+  Wz4ParticlesParaMorph Para,ParaBase;
+  Wz4ParticlesAnimMorph Anim;
+
+  void Simulate(Wz4RenderContext *ctx);
+  sInt GetPartCount();
+  sInt GetPartFlags();
+  void Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt);
+};
+
+/****************************************************************************/
 /****************************************************************************/
 
 #endif // FILE_WZ4FRLIB_FXPARTICLE_HPP

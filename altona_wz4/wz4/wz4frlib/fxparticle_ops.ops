@@ -846,4 +846,40 @@ operator Wz4Particles FromMesh(Wz4Mesh)
 }
 
 /****************************************************************************/
+
+operator Wz4Particles Morph(Wz4Mesh,Wz4Mesh)
+{
+  tab = Wz4Render;
+  column = 3;
+  parameter
+  {
+    anim float Transition(0..1 step 0.01) = 0;
+    anim float31 DirFactor (-1024..1024 step 0.01) = 0;
+    anim layout flags NewVertexPos ("random|firstindex|manual")=0;
+    if(NewVertexPos&2)
+    {
+      anim float31 BigBangOrigin (-1024..1024 step 0.001) = 0;
+      anim float31 BigBangDirFactor (-1024..1024 step 0.01) = 0;
+    }
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+  code
+  {
+    sInt nMesh = cmd->InputCount;
+    sArray<Wz4Mesh*> meshArray;
+    meshArray.AddMany(nMesh);
+    for(sInt i=0; i<nMesh; i++)
+    {
+      meshArray[i] = cmd->GetInput<Wz4Mesh *>(i);
+    }
+
+    RPMorph *node = new RPMorph();
+    node->ParaBase = node->Para = *para;
+    node->Init(meshArray);
+    out->RootNode = node;
+    out->AddCode(cmd);
+  }
+}
+
+/****************************************************************************/
 /****************************************************************************/

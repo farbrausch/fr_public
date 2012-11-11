@@ -3444,3 +3444,153 @@ void RPFromVertex::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
   }
   pinfo.Used = count;
 }
+
+/****************************************************************************/
+
+RPMorph::RPMorph()
+{
+  Anim.Init(Wz4RenderType->Script);
+  max = 0;
+}
+
+RPMorph::~RPMorph()
+{
+}
+
+void RPMorph::Init(sArray<Wz4Mesh*> meshArray)
+{
+  sArray<sVector31> positions;
+  Wz4MeshVertex * vp;
+  Wz4Mesh* meshTmp;
+  sInt meshIndex = 0;
+
+  sFORALL(meshArray, meshTmp)
+  {
+    sVERIFY(meshTmp != 0);
+
+    sFORALL(meshTmp->Vertices, vp)
+    {
+      Part *p = shapeParts[meshIndex].AddMany(1);
+      p->Pos.Init(vp->Pos.x, vp->Pos.y, vp->Pos.z);
+    }
+
+    max = sMax(meshTmp->Vertices.GetCount(),max);
+
+    meshIndex++;
+  }
+}
+
+sInt RPMorph::GetPartCount()
+{
+  return max;
+}
+
+sInt RPMorph::GetPartFlags()
+{
+  return 0;
+}
+
+void RPMorph::Simulate(Wz4RenderContext *ctx)
+{
+  Para = ParaBase;
+  Anim.Bind(ctx->Script,&Para);
+  SimulateCalc(ctx);
+}
+
+void RPMorph::Func(Wz4PartInfo &pinfo,sF32 time,sF32 dt)
+{
+  sRandomMT mt;
+  mt.Seed(time);
+
+  sInt rIndex = 0;
+  sVector31 v;
+
+  for(sInt i=0; i<max; i++)
+  {
+    sVector31 pos;
+
+    if(Para.Transition < 1.0f)
+    {
+      // transition is not yet achieved
+
+      if(i<shapeParts[0].GetCount() && i<shapeParts[1].GetCount())
+      {
+        v = shapeParts[0][i].Pos;
+
+        v.x += mt.Float(Para.DirFactor.x * Para.Transition);
+        v.y += mt.Float(Para.DirFactor.y * Para.Transition);
+        v.z += mt.Float(Para.DirFactor.z * Para.Transition);
+
+        pos.Fade(Para.Transition, v, shapeParts[1][i].Pos);
+        pinfo.Parts[i].Init(pos,1.0f);
+      }
+      else if(i<shapeParts[0].GetCount())
+      {
+        switch(Para.NewVertexPos)
+        {
+        case 0: // random index
+          rIndex = mt.Int(shapeParts[1].GetCount()-1);
+          v = shapeParts[1][rIndex].Pos;
+          break;
+
+        case 1: // first index
+          v = shapeParts[1][0].Pos;
+          break;
+
+        case 2: // manual position
+          v = Para.BigBangOrigin;
+          v.x += mt.Float(Para.BigBangDirFactor.x * Para.Transition);
+          v.y += mt.Float(Para.BigBangDirFactor.y * Para.Transition);
+          v.z += mt.Float(Para.BigBangDirFactor.z * Para.Transition);
+          break;
+        }
+
+        pos.Fade(Para.Transition, shapeParts[0][i].Pos, v);
+        pinfo.Parts[i].Init(pos,1.0f);
+      }
+      else if(Para.Transition > 0 && i<shapeParts[1].GetCount() && (shapeParts[0].GetCount() < shapeParts[1].GetCount()) )
+      {
+        switch(Para.NewVertexPos)
+        {
+        case 0: // random index
+          rIndex = mt.Int(shapeParts[0].GetCount()-1);
+          v = shapeParts[0][rIndex].Pos;
+          break;
+
+        case 1: // first index
+          v = shapeParts[0][0].Pos;
+          break;
+
+        case 2: // manual position
+          v = Para.BigBangOrigin;
+          v.x += mt.Float(Para.BigBangDirFactor.x * Para.Transition);
+          v.y += mt.Float(Para.BigBangDirFactor.y * Para.Transition);
+          v.z += mt.Float(Para.BigBangDirFactor.z * Para.Transition);
+          break;
+        }
+
+        pos.Fade(Para.Transition, v, shapeParts[1][i].Pos);
+        pinfo.Parts[i].Init(pos,1.0f);
+      }
+      else
+      {
+        pinfo.Parts[i].Init(sVector31(0),-1.0f);
+      }
+    }
+    else
+    {
+      // transition is achieved
+
+      if(i<shapeParts[1].GetCount())
+      {
+        pinfo.Parts[i].Init(shapeParts[1][i].Pos,1.0f);
+      }
+      else
+      {
+        pinfo.Parts[i].Init(sVector31(0),-1.0f);
+      }
+    }
+  }
+
+  pinfo.Used = max;
+}
