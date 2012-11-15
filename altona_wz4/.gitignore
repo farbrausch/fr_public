@@ -1,26 +1,10 @@
 # Build directories
-debug_dx9_Win32
-release_dx9_Win32
-stripped_dx9_Win32
-debug_dx11_Win32
-release_dx11_Win32
-stripped_dx11_Win32
-debug_blank_shell_Win32
-release_blank_shell_Win32
-stripped_blank_shell_Win32
-debug_dx9_x64
-release_dx9_x64
-stripped_dx9_x64
-debug_dx11_x64
-release_dx11_x64
-stripped_dx11_x64
-debug_blank_shell_x64
-release_blank_shell_x64
-stripped_blank_shell_x64
-release_linux_blank_shell
-Release
-Debug
-ipch
+debug*/
+release*/
+stripped*/
+Release/
+Debug/
+ipch/
 
 # File types
 *.sln
