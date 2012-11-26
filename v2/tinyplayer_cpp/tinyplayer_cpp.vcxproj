@@ -82,6 +82,7 @@
   <ItemGroup>
     <ClCompile Include="..\dsio_cpp.cpp" />
     <ClCompile Include="..\ronan.cpp" />
+    <ClCompile Include="..\scope.cpp" />
     <ClCompile Include="..\synth_core.cpp" />
     <ClCompile Include="..\tinyplayer\tinyplayer.cpp" />
     <ClCompile Include="..\v2mplayer.cpp" />

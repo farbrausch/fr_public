@@ -6,6 +6,8 @@
 #include <gl/GL.h>
 #include <vector>
 
+#pragma comment(lib, "opengl32.lib")
+
 static const int MAXSCOPES = 16;
 
 namespace
@@ -235,6 +237,11 @@ void scopeClose(const void *unique_id)
       scopes[i] = 0;
     }
   }
+}
+
+bool scopeIsOpen(const void *unique_id)
+{
+    return get_scope(unique_id) != 0;
 }
 
 void scopeSubmit(const void *unique_id, const float *data, int nsamples)

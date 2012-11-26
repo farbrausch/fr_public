@@ -996,7 +996,10 @@ struct V2Env
       COVER("EG dcy");
       val *= dcf;
       if (val <= sul)
+      {
+        val = sul;
         state = SUSTAIN;
+      }
       break;
 
     case SUSTAIN:
@@ -2386,11 +2389,11 @@ struct V2Reverb
         sF32 cur = 0.0f;
         for (sInt j=0; j < 4; j++)
         {
-          sF32 dv = combd[ch][j].fetch();
-          sF32 nv = gainc[j] * dv + ((j & 1) ? -in : in); // alternate phase on combs
-          combl[ch][j] += damp * (nv - combl[ch][j]);
-          combd[ch][j].feed(combl[ch][j]);
-          cur += combl[ch][j];
+          sF32 dv = gainc[j] * combd[ch][j].fetch();
+          sF32 nv = (j & 1) ? (dv - in) : (dv + in); // alternate phase on combs
+          sF32 lp = combl[ch][j] + damp * (nv - combl[ch][j]);
+          combd[ch][j].feed(lp);
+          cur += lp;
         }
 
         // serial allpass filters
@@ -2711,13 +2714,13 @@ struct V2Synth
     sInt sr_lfo = 800;
     sInt w = 800, h = 150;
 
-    //DEBUG_PLOT_OPEN(&voicesw[0].osc[0], "Voice 0 VCO 0", sr_plot, w, h);
-    //DEBUG_PLOT_OPEN(&voicesw[0].osc[1], "Voice 0 VCO 1", sr_plot, w, h);
-    //DEBUG_PLOT_OPEN(&voicesw[0].vcf[0], "Voice 0 VCF 0", sr_plot, w, h);
-    //DEBUG_PLOT_OPEN(&voicesw[0].env[0], "Voice 0 Env 0", sr_lfo, w, h);
-    //DEBUG_PLOT_OPEN(&voicesw[0].lfo[0], "Voice 0 LFO 0", sr_lfo, w, h);
-    DEBUG_PLOT_OPEN(&voicesw[0].dist, "Voice 0 Dist", sr_plot, w, h);
-    DEBUG_PLOT_OPEN(&voicesw[0], "Voice 0 final", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1].osc[0], "Voice 1 VCO 0", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1].osc[1], "Voice 1 VCO 1", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1].vcf[0], "Voice 1 VCF 0", sr_plot, w, h);
+    DEBUG_PLOT_OPEN(&voicesw[1].env[0], "Voice 1 Env 0", sr_lfo, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1].lfo[0], "Voice 1 LFO 0", sr_lfo, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1].dist, "Voice 1 Dist", sr_plot, w, h);
+    //DEBUG_PLOT_OPEN(&voicesw[1], "Voice 1 final", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0].dcf1, 0), "Chan 0 DCF1 L", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0].dcf1, 1), "Chan 0 DCF1 R", sr_plot, w, h);
     //DEBUG_PLOT_OPEN(DEBUG_PLOT_CHAN(&chansw[0], 0), "Channel 0 L", sr_plot, w, h);
