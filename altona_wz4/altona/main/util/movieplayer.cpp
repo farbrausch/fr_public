@@ -59,11 +59,3 @@ void sMoviePlayer::RenderToScreen(sBool zoom)
 
 /****************************************************************************/
 
-sMoviePlayer *sCreateMoviePlayer(const sChar *filename,sInt flags,sTextureBase *alphatex)
-{
-  // Altona doesn't have a movie player yet, sorry :(
-  return 0;
-}
-
-/****************************************************************************/
-

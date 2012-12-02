@@ -6,6 +6,7 @@ Release/
 Debug/
 ipch/
 
+
 # File types
 *.sln
 *.vcproj*
@@ -23,3 +24,7 @@ ipch/
 *.swp
 Makefile*
 !Makefile.linux.boot
+
+# stuff that shouldn't go into versioning
+private
+

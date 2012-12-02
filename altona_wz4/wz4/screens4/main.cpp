@@ -35,6 +35,16 @@ static sScreenMode ScreenMode;
 /****************************************************************************/
 /****************************************************************************/
 
+static int AppStartTime = 0;
+
+void LogTime()
+{
+	if (AppStartTime==0) AppStartTime = sGetTime();
+	sDPrintF(L"           %8.3f: ", (sGetTime()-AppStartTime)/1000.0f);
+}
+
+/****************************************************************************/
+
 void RegisterWZ4Classes()
 {
   for(sInt i=0;i<2;i++)
@@ -193,8 +203,6 @@ public:
   wOp *RootOp;
   sAutoPtr<Wz4Render> RootObj;
 
-  sBool HasMusic;
-
   sInt StartTime;
   sInt Time;
   sPainter *Painter;
@@ -250,6 +258,8 @@ public:
 
   MyApp()
   {
+	  AppStartTime = sGetTime();
+
     Loaded=sFALSE;
     StartTime=0;
     Time=0;
@@ -429,6 +439,7 @@ public:
 
   void EndTransition()
   {
+		LogTime(); sDPrintF(L"transition done\n");
     CurSlide = NextSlide;
     CurRenderTime = NextRenderTime;
     NextSlide = 0;
@@ -597,8 +608,10 @@ public:
 
       if (newslide)
       {
+			  LogTime();
         if (!newslide->Error)
         {
+					sDPrintF(L"displaying new slide (t%d)\n",newslide->TransitionId);
           if (TransTime>=0)
             EndTransition();
 
@@ -617,7 +630,7 @@ public:
             EndTransition();
           }
         }
-        else sDPrintF(L"skipping faulty slide.\n");
+        else sDPrintF(L"skipping faulty slide\n");
         delete newslide;
       }
 
