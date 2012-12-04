@@ -89,6 +89,8 @@ public:
   void Print(sInt fontid,sF32 x,sF32 y,sU32 col,const sChar *text,sInt len=-1,sF32 zoom=1.0f) { sBasicPainter::Print(fontid,x,y,col,text,len,zoom); }
   void SetPrint(sInt fontid,sU32 col,sF32 zoom,sU32 altcol=0xffffffff,sInt advance = 10);
   sPRINTING2(PrintF,sFormatStringBuffer buf=sFormatStringBase(classbuf,format);buf,Print0(arg1,arg2,classbuf);,sF32,sF32);
+
+	using sBasicPainter::Box;
 };
 
 /****************************************************************************/
