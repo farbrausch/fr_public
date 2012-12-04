@@ -17,6 +17,7 @@
 #undef WINVER
 #endif
 #define WINVER _WIN32_WINNT_WIN7
+#define WIN32_LEAN_AND_MEAN
 
 // This requires Windows SDK v7.0 
 // In case of trouble installing it (eg. with Visual C++ Express), check the following registry key:
@@ -27,6 +28,9 @@
 #if MF_SDK_VERSION < 2
 #error This source file requires Windows SDK Ver. 7.0 or higher!
 #endif
+
+#include <dsound.h>
+extern HWND sHWND; // lol windows
 
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -54,11 +58,203 @@ template<class Interface> class sFakeCOMObject : public Interface
     }
     return E_NOINTERFACE;
   }
-  
+
   // do I look like I care?
   unsigned long __stdcall AddRef() { return 1; } 
   unsigned long __stdcall Release(void) { return 1; }
 };
+
+class sMPSoundOutput
+{
+public:
+
+  sMPSoundOutput()
+  {
+    DS=0;
+    PrimBuffer=0;
+    Buffer=0;
+    Format = 0;
+    Playing = sFALSE;
+    Empty = sTRUE;
+  }
+
+  ~sMPSoundOutput()
+  {
+    Exit();
+  }
+
+  sBool Init(const WAVEFORMATEX *wf)
+  {
+    Format = wf;
+
+    if FAILED(DirectSoundCreate8(0,&DS,0))
+      return sFALSE;
+
+    if FAILED(DS->SetCooperativeLevel(sHWND,DSSCL_PRIORITY))
+      return sFALSE;
+
+    // set up some stuff while we're at it
+    BufferSize = sAlign(Format->nSamplesPerSec*LATENCY_MS/1000,16)*Format->nBlockAlign;
+    FillPos=0;
+    RefPos=0;
+    Playing = sFALSE;
+    Empty = sTRUE;
+
+    // set primary buffer format to prepare DirectSound for what's coming (may fail)
+    DSBUFFERDESC dsbd;
+    sSetMem(&dsbd,0,sizeof(dsbd));
+    dsbd.dwSize = sizeof(dsbd);
+    dsbd.dwFlags = DSBCAPS_PRIMARYBUFFER;
+    dsbd.dwBufferBytes = 0;
+    dsbd.lpwfxFormat = 0;
+    if SUCCEEDED(DS->CreateSoundBuffer(&dsbd,&PrimBuffer,0))
+    {
+      PrimBuffer->SetFormat(Format);
+    }
+
+    // create secondary buffer
+    sSetMem(&dsbd,0,sizeof(dsbd));
+    dsbd.dwSize = sizeof(dsbd);
+    dsbd.dwFlags = DSBCAPS_GLOBALFOCUS|DSBCAPS_STICKYFOCUS|
+      DSBCAPS_GETCURRENTPOSITION2|DSBCAPS_CTRLVOLUME;
+    dsbd.dwBufferBytes = BufferSize;
+    dsbd.lpwfxFormat = (WAVEFORMATEX*)Format;
+    if FAILED(DS->CreateSoundBuffer(&dsbd,&Buffer,0))
+      return sFALSE;
+
+    void *cptr1=0, *cptr2=0;
+    DWORD clen1=0, clen2=0;
+    Buffer->Lock(0,BufferSize,&cptr1,&clen1,&cptr2,&clen2,0);
+    if (clen1) sSetMem(cptr1,0,clen1);
+    if (clen2) sSetMem(cptr2,0,clen2);
+    Buffer->Unlock(cptr1,clen1,cptr2,clen2);
+
+    return sTRUE;
+  }
+
+  void Exit()
+  {
+    sRelease(Buffer);
+    sRelease(PrimBuffer);
+    sRelease(DS);
+    Format = 0;
+  }
+
+  void Lock() { ThreadLock.Lock(); }
+  void Unlock() { ThreadLock.Unlock(); }
+
+  void Reset()
+  {
+    Lock();
+    Buffer->Stop();
+    Buffer->SetCurrentPosition(0);
+    RefPos=0;
+    FillPos=0;
+    Empty=sTRUE;
+    Unlock();
+  }
+
+  void Stop()
+  {
+    Lock();
+    Buffer->Stop();
+    Playing = sFALSE;
+    Unlock();
+  }
+
+  void Play()
+  {
+    Lock();
+    Playing = sTRUE;
+    if (!Empty)
+      Buffer->Play(0,0,DSBPLAY_LOOPING);
+    Unlock();
+  }
+
+  void Push(const sU8 *data, sInt nBytes, sS64 timeStampSmp)
+  {
+    if (nBytes<=0) return;
+
+    //sDPrintF(L"p %d %d\n",FillPos/4,timeStampSmp);
+
+    sBool ret=sTRUE;
+    Lock();
+
+    RefPos = FillPos;
+    RefTimeStamp = timeStampSmp;
+
+    void *cptr1=0, *cptr2=0;
+    DWORD clen1=0, clen2=0;
+    Buffer->Lock(FillPos,nBytes,&cptr1,&clen1,&cptr2,&clen2,0);
+    if (clen1) sCopyMem(cptr1, data, clen1);
+    if (clen2) sCopyMem(cptr2, data+clen1, clen2);
+    Buffer->Unlock(cptr1,clen1,cptr2,clen2);
+
+    FillPos = (FillPos+nBytes)%BufferSize;
+    if (Empty)
+    {
+      Empty = sFALSE;
+      if (Playing)
+        Buffer->Play(0,0,DSBPLAY_LOOPING);
+    }
+
+    Unlock();
+  }
+
+  sF32 GetFill()
+  {
+    Lock();
+    DWORD playpos;
+    Buffer->GetCurrentPosition(&playpos,0);
+    sF32 fill = float((BufferSize+FillPos-playpos)%BufferSize)/float(BufferSize);
+    Unlock();
+    return fill<0.75?fill:fill-1;
+  }
+
+  sInt GetTimeMS()
+  {
+    Lock();
+    DWORD playpos;
+    Buffer->GetCurrentPosition(&playpos,0);
+    sInt advance = (BufferSize+playpos-RefPos)%BufferSize;
+    Unlock();
+    if (advance>=(BufferSize/4)) advance-=BufferSize;
+    return sMulDiv(RefTimeStamp+advance/Format->nBlockAlign,1000,Format->nSamplesPerSec);
+  }
+
+  sInt GetLatency() const { return BufferSize; }
+  sInt GetChannels() const { return Format->nChannels; }
+  sInt GetRate() const { return Format->nSamplesPerSec; }
+
+  void SetVolume(sF32 v) 
+  { 
+    sF32 db = DSBVOLUME_MIN;
+    if (v>0.001)
+      db = 2000.0f*sFLog(v)/sFLog(10);
+    Buffer->SetVolume(sClamp<LONG>(db,DSBVOLUME_MIN,DSBVOLUME_MAX));
+  }
+
+
+private:
+
+  static const int MAX_RENDERERS=8;
+  static const int LATENCY_MS = 500;
+
+  sThreadLock ThreadLock;
+
+  struct IDirectSound8 *DS;
+  struct IDirectSoundBuffer *PrimBuffer;
+  struct IDirectSoundBuffer *Buffer;
+  sInt BufferSize; // in bytes
+  sInt FillPos;
+  sInt RefPos;
+  sS64 RefTimeStamp; // in samples
+  sBool Playing;
+  sBool Empty;
+
+  const WAVEFORMATEX *Format;
+};
+
 
 
 class sMoviePlayerMF : public sMoviePlayer
@@ -89,9 +285,15 @@ public:
   sMaterial *Mtrl;
   sFRect UVR;
 
-  IMFSample *NextSample;
+  sMPSoundOutput *Audio;
+  IMFMediaType *AudioType;
+  WAVEFORMATEX *AudioFormat;
+  sBool GettingAudio;
+  sF32 Volume;
+
+  IMFSample *NextVideoSample;
   sInt CurSampleTime;  // negative: nothing decoded yet
-  sInt NextSampleTime; // only if NextSample!=0
+  sInt NextSampleTime; // only if NextVideoSample!=0
 
   sInt LastTime;
   sInt CurTime;
@@ -107,38 +309,69 @@ public:
 
     // called when a frame was decoded
     HRESULT STDMETHODCALLTYPE OnReadSample(HRESULT hrStatus, DWORD dwStreamIndex, DWORD dwStreamFlags,
-                                           LONGLONG llTimestamp, IMFSample *pSample)
+      LONGLONG llTimestamp, IMFSample *pSample)
     {
       if (SUCCEEDED(hrStatus) && pSample)
       {
-        Owner->NextSampleTime=llTimestamp/10000;
-        Owner->NextSample=pSample;
-        Owner->NextSample->AddRef();
+        IMFMediaType *type=0;
+        GUID typeguid;
+        Owner->SourceReader->GetCurrentMediaType(dwStreamIndex, &type);
+        type->GetGUID(MF_MT_MAJOR_TYPE,&typeguid);
+        sRelease(type);
+        if (typeguid == MFMediaType_Video)
+        {
+          Owner->NextSampleTime=llTimestamp/10000;
+          Owner->NextVideoSample=pSample;
+          Owner->NextVideoSample->AddRef();
+        }
+        else if (Owner->Audio)
+        {
+          BYTE *pAudioData = NULL;
+          IMFMediaBuffer *pBuffer = NULL;
+          DWORD cbBuffer = 0;
+          HRESULT hr;
+
+          hr = pSample->ConvertToContiguousBuffer(&pBuffer);
+          hr = pBuffer->Lock(&pAudioData, NULL, &cbBuffer);
+
+          sS64 audiotime = llTimestamp*(sS64)Owner->Audio->GetRate()/10000000L;
+          Owner->Audio->Push(pAudioData, cbBuffer, audiotime);
+
+          hr = pBuffer->Unlock();
+          sRelease(pBuffer);
+          Owner->GettingAudio = sFALSE;
+        }
+
+        if (Owner->Audio && !Owner->GettingAudio && Owner->Audio->GetFill()<0.5f)
+        {
+          Owner->DecodeNextAudio();
+        }
       }
       else
       {
+        Owner->GettingAudio = sFALSE;
         if (SUCCEEDED(hrStatus)) // end?
         {
           if (Owner->Flags & sMOF_LOOP)
             Owner->SeekTo=0;
           else
-            Owner->Playing=sFALSE;
+            Owner->Pause();
         }
         else
         {
           // pause on error
-          Owner->Playing=sFALSE;
+          Owner->Pause();
         }
       }
       return S_OK;
     }
-      
+
     // not used yet
     HRESULT STDMETHODCALLTYPE OnFlush(DWORD dwStreamIndex)
     {
       return S_OK;
     }
-        
+
     // not used yet
     HRESULT STDMETHODCALLTYPE OnEvent(DWORD dwStreamIndex, IMFMediaEvent *pEvent)
     {
@@ -153,11 +386,16 @@ public:
     State=ST_OFF;
     SourceReader = 0;
     VideoType = 0;
+    AudioType = 0;
+    AudioFormat = 0;
     Mtrl = 0;
     CB.Owner=this;
-    NextSample=0;
+    NextVideoSample=0;
     Playing=sFALSE;
     SeekTo=-1;
+    Audio = 0;
+    GettingAudio = sFALSE;
+    Volume = 1.0f;
   }
 
   ~sMoviePlayerMF() 
@@ -176,6 +414,7 @@ public:
   {
     if (Playing) SeekTo=0;
     Playing=sTRUE;
+    if (Audio) Audio->Play();
   }
 
   // returns if movie is (still) playing
@@ -187,7 +426,9 @@ public:
   // sets volume. parameter is linear between 0 and 1
   void SetVolume(sF32 volume)
   {
-    // someone should implement audio :)
+    Volume = sClamp(volume,0.0f,1.0f);
+    if (Audio)
+      Audio->SetVolume(volume);
   }
 
   // close and delete the player
@@ -207,6 +448,7 @@ public:
   { 
     SeekTo=sClamp(time,0.0f,Info.Length);
     Playing = sTRUE;
+    if (Audio) Audio->Play();
   }
 
   // returns information about the movie
@@ -232,6 +474,7 @@ public:
   void Pause()
   {
     Playing=sFALSE;
+    if (Audio) Audio->Stop();
   }
 
   // overrides movie's aspect ratio in case you know better
@@ -296,10 +539,22 @@ public:
   }
 
   // start decoding of next frame
-  void DecodeNext()
+  void DecodeNextVideo()
   {
-    sRelease(NextSample);
+    sRelease(NextVideoSample);
     HRESULT hr=SourceReader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM,0,0,0,0,0);
+    sVERIFY(SUCCEEDED(hr));
+  }
+
+  // start decoding of next frame
+  void DecodeNextAudio()
+  {
+    if (!Audio) return;
+    sVERIFY(!GettingAudio);
+
+    GettingAudio=true;
+    HRESULT hr=SourceReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM,0,0,0,0,0);
+
     sVERIFY(SUCCEEDED(hr));
   }
 
@@ -307,20 +562,21 @@ public:
   void KickOff()
   {
     CurSampleTime=-1;
-    DecodeNext();
+    DecodeNextVideo();
+    DecodeNextAudio();
   }
 
   // blit decoded sample into texture(s)
   void BlitSample()
   {
-    sVERIFY(NextSample);
-    
+    sVERIFY(NextVideoSample);
+
     DWORD bc=0;
-    NextSample->GetBufferCount(&bc);
+    NextVideoSample->GetBufferCount(&bc);
     sVERIFY(bc>=1);
 
     IMFMediaBuffer *buffer=0;
-    NextSample->GetBufferByIndex(0,&buffer);
+    NextVideoSample->GetBufferByIndex(0,&buffer);
     sVERIFY(buffer);
 
     BYTE *data;
@@ -357,7 +613,7 @@ public:
 
     buffer->Unlock();
     sRelease(buffer);
-    sRelease(NextSample);
+    sRelease(NextVideoSample);
   }
 
 
@@ -393,6 +649,7 @@ public:
       HRESULT hr=SourceReader->SetCurrentPosition(GUID_NULL,var);
       if (hr!=MF_E_INVALIDREQUEST)
       {
+        if (Audio) Audio->Reset();
         KickOff();
         LastTime=0;
         SeekTo=-1;
@@ -400,7 +657,7 @@ public:
     }
 
     // next frame arrived and time to display?
-    if (NextSample && (NextSampleTime<=CurTime || CurSampleTime<0))
+    if (NextVideoSample && (NextSampleTime<=CurTime || CurSampleTime<0))
     {
       BlitSample();
       if (CurSampleTime<0)
@@ -409,12 +666,17 @@ public:
         CurTime = NextSampleTime+(sInt)(250*(1.0/Info.FPS));
       }
       CurSampleTime=NextSampleTime;
-      if (SeekTo<0) DecodeNext();
+      if (SeekTo<0) DecodeNextVideo();
     }
 
     // advance time
     if (Playing && CurSampleTime>=0)
-      CurTime += time-LastTime;
+    {
+      if (Audio)
+        CurTime = Audio->GetTimeMS();
+      else
+        CurTime += time-LastTime;
+    }
     LastTime=time;
 
     uvrect=UVR;
@@ -451,15 +713,17 @@ public:
       return sFALSE;
     }
 
+    sBool hasAudio = !(Flags&sMOF_NOSOUND) && SUCCEEDED(hr=SourceReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM,TRUE));
+
     sLogF(L"movie",L"opening %s\n",Filename);
 
     static const GUID supported[] = 
     {
       MFVideoFormat_YV12,
       MFVideoFormat_RGB32,
-//      MFVideoFormat_IYUV,
-//      MFVideoFormat_YUY2,
-//      MFVideoFormat_UYVY,
+      //      MFVideoFormat_IYUV,
+      //      MFVideoFormat_YUY2,
+      //      MFVideoFormat_UYVY,
       GUID_NULL,
     };
 
@@ -507,6 +771,49 @@ public:
     Info.FPS = sF32(num)/sF32(den);
 
     RawStride=MFGetAttributeUINT32(VideoType,MF_MT_DEFAULT_STRIDE,0);
+
+    // determine audio format
+    if (hasAudio)
+    {
+      // find the first supported video format
+      hr = MFCreateMediaType(&AudioType);
+      sVERIFY(SUCCEEDED(hr));
+      hr = AudioType->SetGUID(MF_MT_MAJOR_TYPE,MFMediaType_Audio);
+      sVERIFY(SUCCEEDED(hr));
+      hr = AudioType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+
+      if (FAILED(hr=SourceReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, AudioType)))
+      {
+        sRelease(AudioType);
+        sLogF(L"movie",L"Non-PCM audio stream in %s (%08x)\n",Filename,(sU32)hr);
+        Audio = 0;
+        SourceReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM,FALSE);
+      }
+      else
+      {
+        sRelease(AudioType);
+        hr=SourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &AudioType);
+        sVERIFY(SUCCEEDED(hr));
+        UINT32 cbFormat;
+        hr = MFCreateWaveFormatExFromMFMediaType(AudioType, &AudioFormat, &cbFormat);
+        sVERIFY(SUCCEEDED(hr));
+        Audio = new sMPSoundOutput;
+        if (!Audio->Init(AudioFormat))
+        {
+          sLogF(L"movie",L"can't open audio out for %s (%08x)\n",Filename);
+          sDelete(Audio);
+          SourceReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM,FALSE);
+        }
+        if (Audio)
+        {
+          Audio->SetVolume(Volume);
+          if (Playing) Audio->Play();
+        }
+        GettingAudio = sFALSE;
+      }
+    }
+
+
 
     Info.Length=0;
     PROPVARIANT var;
@@ -565,7 +872,7 @@ public:
     KickOff();
     CurTime = (sInt)(250*(1.0/Info.FPS)); // a bit into the first frame to stabilize timing
   }
- 
+
 
   sBool Init(const sChar *filename, sInt flags, sTextureBase *alphatexture)
   {
@@ -591,11 +898,14 @@ public:
   {
     State=ST_OFF;
     Playing=0;
-    sRelease(NextSample);
+    if (AudioFormat) CoTaskMemFree(AudioFormat);
+    sRelease(NextVideoSample);
     sRelease(VideoType);
+    sRelease(AudioType);
     sRelease(SourceReader);
     if (Mtrl) for (sInt i=0; i<sMTRL_MAXTEX; i++) sDelete(Mtrl->Texture[i]);
     sDelete(Mtrl);
+    sDelete(Audio);
   }
 
 };
