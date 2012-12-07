@@ -48,6 +48,29 @@ public:
   void Render(Wz4RenderContext *ctx);
 };
 
+
+class RNCustomFullscreen2D : public Wz4RenderNode
+{
+  sGeometry *Geo;
+  sMaterial *DummyMtrl;
+
+public:
+  RNCustomFullscreen2D();
+  ~RNCustomFullscreen2D();
+
+  sMaterial *Material;
+  sFRect    UVRect;
+  sF32      Aspect;
+
+  Wz4RenderParaCustom2DFS ParaBase,Para;
+  Wz4RenderAnimCustom2DFS Anim;
+
+  void Init();
+  void Simulate(Wz4RenderContext *ctx);
+  void Prepare(Wz4RenderContext *ctx);
+  void Render(Wz4RenderContext *ctx);
+};
+
 /****************************************************************************/
 
 #endif // FILE_WZ4FRLIB_SCREENS4FX_HPP

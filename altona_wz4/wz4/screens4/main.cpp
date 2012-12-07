@@ -236,8 +236,16 @@ public:
     wOp *TexOp;
     sAutoPtr<Texture2D> Tex;
 
-    sAutoPtr<Wz4Render> Pic, Siegmeister;
+    sAutoPtr<Wz4Render> Pic, Siegmeister, CustomFS;
+
+    sMoviePlayer* Movie;
+
+    SlideEntry() : TexOp(0), Movie(0) {}
+    ~SlideEntry() { sRelease(Movie); }
+
   } *Entry[2];
+
+  const sChar *CurId;
 
   sAutoPtr<Rendertarget2D> CurRT;
   sAutoPtr<Rendertarget2D> NextRT;
@@ -277,6 +285,7 @@ public:
     CurRenderTime = NextRenderTime = 0.0f;
     Started = sFALSE;
     SlideStartTime = 0;
+    CurId = 0;
 
     Entry[0] = new SlideEntry;
     Entry[1] = new SlideEntry;
@@ -347,22 +356,41 @@ public:
       break;
     case SIEGMEISTER_BARS:
     case SIEGMEISTER_WINNERS:
-      NextSlide = e->Siegmeister;
-      RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",e->Siegmeister);
-      node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
-      node->Fade = node->DoBlink?1:0;
-      node->Alpha=ns->SiegData->BarAlpha;
-      node->Color=ns->SiegData->BarColor;
-      node->BlinkColor1=ns->SiegData->BarBlinkColor1;
-      node->BlinkColor2=ns->SiegData->BarBlinkColor2;
-      node->Spread = MyConfig->BarAnimSpread;
-      node->Bars.Clear();
-      node->Bars.Copy(ns->SiegData->BarPositions);
-      break;
+      {
+        NextSlide = e->Siegmeister;
+        RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",e->Siegmeister);
+        node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
+        node->Fade = node->DoBlink?1:0;
+        node->Alpha=ns->SiegData->BarAlpha;
+        node->Color=ns->SiegData->BarColor;
+        node->BlinkColor1=ns->SiegData->BarBlinkColor1;
+        node->BlinkColor2=ns->SiegData->BarBlinkColor2;
+        node->Spread = MyConfig->BarAnimSpread;
+        node->Bars.Clear();
+        node->Bars.Copy(ns->SiegData->BarPositions);
+      } break;
+    case VIDEO:
+      {
+        NextSlide = e->CustomFS;
+        sRelease(e->Movie);
+        e->Movie = ns->Movie;
+        ns->Movie = 0; // claim ownership
+
+        RNCustomFullscreen2D *node = GetNode<RNCustomFullscreen2D>(L"Custom2DFS", e->CustomFS);
+        sFRect uvr;
+        node->Material = e->Movie->GetFrame(uvr);
+        sMovieInfo mi = e->Movie->GetInfo();
+        node->Aspect = mi.Aspect;
+        node->UVRect = uvr;
+
+        e->Movie->SetVolume(0);
+        e->Movie->Play();
+      }
     }
 
     sSwap(Entry[0], Entry[1]);
     NextRenderTime = 0;
+    CurId = ns->Id;
   }
 
 
@@ -450,6 +478,10 @@ public:
     SetChild(CurRender,CurSlide,&CurRenderTime);
     SetChild(NextRender,0,0);
     SetChild(Main,CurShow,0);
+
+    sRelease(Entry[0]->Movie);
+    if (Entry[1]->Movie)
+      Entry[1]->Movie->SetVolume(MyConfig->MovieVolume);
   }
 
   void Load()
@@ -498,6 +530,7 @@ public:
       e->Tex = (Texture2D*)Doc->CalcOp(e->TexOp);
       e->Pic = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",e->TexOp));
       e->Siegmeister = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_siegmeister",e->TexOp));
+      e->CustomFS = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_video", 0));
     }
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
@@ -604,7 +637,27 @@ public:
         Time = newtime;
       }
 
-      NewSlideData *newslide = PlMgr.OnFrame(tdelta/1000.0f);
+      // check for slide end condition
+      const sChar *doneId = 0;
+      sBool doneHard = sFALSE;
+      {
+        // siegmeister animation ended?
+        RNSiegmeister *siegnode = GetNode<RNSiegmeister>(L"Siegmeister",CurSlide);
+        if (siegnode && !siegnode->DoBlink && siegnode->Fade >= 1)
+        {
+          doneId = CurId;
+          doneHard = sTRUE;
+        }
+      }
+      {
+        // current movie player ended?
+        if (TransTime<00 && Entry[1]->Movie && !Entry[1]->Movie->IsPlaying())
+        {
+          doneId = CurId;
+        }
+      }
+
+      NewSlideData *newslide = PlMgr.OnFrame(tdelta/1000.0f, doneId, doneHard);
 
       if (newslide)
       {
@@ -639,11 +692,20 @@ public:
       if (siegnode && !siegnode->DoBlink && Started)
       {
         siegnode->Fade = sMin(1.0f,(CurRenderTime-SlideStartTime)/MyConfig->BarAnimTime);
-        if (siegnode->Fade >= 1)
-        {
-          PlMgr.Next(sTRUE,sTRUE);
-          Started=sFALSE; // let's hope nobody presses space.
-        }
+        
+      }
+
+      // handle movie players.
+      // If this breaks, we'll need to update the Material in the node once per frame
+      if (Entry[1]->Movie)
+      {
+        sFRect uvr;
+        Entry[1]->Movie->GetFrame(uvr);
+      }
+      if (Entry[0]->Movie && TransTime>=0)
+      {
+        sFRect uvr;
+        Entry[0]->Movie->GetFrame(uvr);
       }
 
       SetPaintInfo(PaintInfo);
@@ -685,6 +747,13 @@ public:
         TransTime += tdelta/TransDurMS;
         if (TransTime>=1.0f)
           EndTransition();
+        else
+        {
+          if (Entry[0]->Movie)
+            Entry[0]->Movie->SetVolume(MyConfig->MovieVolume*sFSqrt(1.0f-TransTime));
+          if (Entry[1]->Movie)
+            Entry[1]->Movie->SetVolume(MyConfig->MovieVolume*sFSqrt(TransTime));
+        }
       }
       CurRenderTime += tdelta/1000.0f;
       NextRenderTime += tdelta/1000.0f;

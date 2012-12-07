@@ -54,4 +54,27 @@ operator Wz4Render Siegmeister "Siegmeister" (?Texture2D)
   }
 }
 
+operator Wz4Render Custom2DFS "Screens4 Fullscreen" (?Texture2D)
+{
+  column = 1;
+
+  parameter
+  {
+    int Renderpass(-127..127);
+    anim color Color ("rgba") = 0xffffffff;
+	flags Flags("letterbox|crop");
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNCustomFullscreen2D *node = new RNCustomFullscreen2D();
+    node->ParaBase = node->Para = *para;
+    node->Init();
+
+    out->RootNode = node;
+    out->AddCode(cmd,para->Renderpass);
+  }
+}
 /****************************************************************************/

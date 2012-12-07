@@ -11,6 +11,7 @@
 #include "base/types.hpp"
 #include "base/types2.hpp"
 #include "util/image.hpp"
+#include "util/movieplayer.hpp"
 
 /****************************************************************************/
 
@@ -156,6 +157,7 @@ enum SlideType
   IMAGE,
   SIEGMEISTER_BARS,
   SIEGMEISTER_WINNERS,
+  VIDEO,
 };
 
 class SiegmeisterData
@@ -177,11 +179,13 @@ public:
 
   sImageData *ImgData;
   SiegmeisterData *SiegData;
+  sMoviePlayer *Movie;
 
+  const sChar *Id;
   sBool Error;
 
-  NewSlideData() : ImgData(0), SiegData(0) {}
-  ~NewSlideData() { delete ImgData; delete SiegData; }
+  NewSlideData() : ImgData(0), SiegData(0), Movie(0), Id(0) {}
+  ~NewSlideData() { delete ImgData; delete SiegData; sRelease(Movie); }
 };
 
 class PlaylistMgr
@@ -207,7 +211,7 @@ public:
   void Next(sBool hard, sBool force);
   void Previous(sBool hard);
 
-  NewSlideData* OnFrame(sF32 delta);
+  NewSlideData* OnFrame(sF32 delta, const sChar *doneId, sBool doneHard);
   sBool OnInput(const sInput2Event &ev);
 
 private:

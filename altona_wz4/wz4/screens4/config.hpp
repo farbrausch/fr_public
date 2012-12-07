@@ -43,6 +43,7 @@ public:
   sArray<KeyEvent> Keys;
   sF32 BarAnimTime;
   sF32 BarAnimSpread;
+  sF32 MovieVolume; 
 
   Config()
   {
@@ -53,6 +54,7 @@ public:
     HttpPort = 8080;
     BarAnimTime = 9;
     BarAnimSpread = 0.5;
+    MovieVolume = 1.0;
   }
 
   sBool Read(const sChar *filename)
@@ -112,6 +114,8 @@ private:
         BarAnimTime = sClamp(Scan->ScanFloat(),0.1f,100.0f);
       else if (Scan->IfName(L"barspread"))
         BarAnimSpread = sClamp(Scan->ScanFloat(),0.0f,1.0f);
+      else if (Scan->IfName(L"movievolume"))
+        MovieVolume = sFPow(10.0f,sClamp(Scan->ScanFloat(),-100.0f,12.0f)/20.0f);
       else
         Scan->Error(L"syntax error");
     }

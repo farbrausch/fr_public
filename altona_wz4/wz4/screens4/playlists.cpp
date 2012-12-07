@@ -241,15 +241,21 @@ void PlaylistMgr::AddPlaylist(Playlist *newpl)
   PlCacheEvent.Signal();
 }
 
-NewSlideData* PlaylistMgr::OnFrame(sF32 delta)
+NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHard)
 {
   sScopeLock lock(&Lock);
+
+  sString<64> curId = CurrentPl ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
 
   // auto advance
   if (CurrentSwitchTime>0 && (Time-CurrentSwitchTime)>=CurrentDuration)
   {
     CurrentSwitchTime = 0;
     Next(sFALSE, sTRUE);
+  }
+  else if (doneId != 0 && !sCmpString(doneId,curId))
+  {
+    Next(doneHard, sTRUE);
   }
 
   Time += delta;
@@ -678,14 +684,29 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
 
 			LogTime(); sDPrintF(L"preparing %s\n",item->Path);
 
+      /*
+      // TEST for video player as long as Partymeister doesn't give us mp4 files
+      if (!sCmpString(item->ID,L"70_7041"))
+      {
+        item->Path=L"c:\\test\\yay.mp4";
+        item->Type=L"Video";
+        item->MyAsset->CacheStatus = Asset::CACHED;
+        item->MyAsset->Path = item->Path;
+        item->TransitionDuration = 0.5f;
+        item->ManualAdvance = sFALSE;
+      }
+      */
+
       nsd = new NewSlideData;
-      nsd->ImgData = 0;
       nsd->Error = sFALSE;
+      nsd->Id = item->ID;
       nsd->TransitionId = item->TransitionId;
       nsd->TransitionTime = SwitchHard ? 0 : item->TransitionDuration;
 
       if (!sCmpStringI(item->Type,L"Image"))
         nsd->Type = IMAGE;
+      else if (!sCmpStringI(item->Type,L"Video"))
+        nsd->Type = VIDEO;
       else if (!sCmpStringI(item->Type,L"siegmeister_bars"))
       {
         nsd->Type = SIEGMEISTER_BARS;
@@ -696,7 +717,11 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
         nsd->TransitionTime = 0;
       }
       else
+	    {
         nsd->Type = UNKNOWN;
+		    nsd->Error = sTRUE;
+		    LogTime(); sDPrintF(L"WARNING: got unknown slide type '%s'\n",item->Type);
+	    }
 
       myAsset = item->MyAsset;
       myAsset->AddRef();
@@ -719,41 +744,84 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
 
     // ok, let's just hope any NOTCACHED asset will eventually...
     sInt nccount = 0;
-    while (myAsset->CacheStatus == Asset::NOTCACHED && nccount++<200)
+    while (myAsset->CacheStatus == Asset::NOTCACHED && nccount++<400)
       sSleep(5);
    
     if (myAsset->CacheStatus == Asset::CACHED)
     {
       sString<sMAXPATH> filename;
       MakeFilename(filename,myAsset->Path,AssetDir);
-      sFile *f = sCreateFile(filename);
-      sU8 *ptr = f->MapAll();
+      if (!sCheckFile(filename)) filename=myAsset->Path;
 
-      // TODO: support several asset types
-      sImage img;
-      sInt size = (sInt)f->GetSize();
-      if (img.LoadPNG(ptr,size))
+      switch (nsd->Type)
       {
-        img.PMAlpha();
-        nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
-      }
-      else
-      {
-        // if the internal image loader fails, try the Windows one
-        sImage *img2 = sLoadImageWin32(f);
-        if (img2)
+      case IMAGE: case SIEGMEISTER_BARS: case SIEGMEISTER_WINNERS:
         {
-          img2->PMAlpha();
-          nsd->ImgData = new sImageData(img2,sTEX_2D|sTEX_ARGB8888);
-          delete img2;
-        }
-        else
+          sFile *f = sCreateFile(filename);
+          if (!f)
+          {
+            nsd->Error=sTRUE;
+            return;
+          }
+          sU8 *ptr = f->MapAll();
+          sImage img;
+          sInt size = (sInt)f->GetSize();
+          if (img.LoadPNG(ptr,size))
+          {
+            img.PMAlpha();
+            nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
+          }
+          else
+          {
+            // if the internal image loader fails, try the Windows one
+            sImage *img2 = sLoadImageWin32(f);
+            if (img2)
+            {
+              img2->PMAlpha();
+              nsd->ImgData = new sImageData(img2,sTEX_2D|sTEX_ARGB8888);
+              delete img2;
+            }
+            else
+            {
+              sDPrintF(L"Error loading %s\n",myAsset->Path);
+              nsd->Error = sTRUE;
+            }
+          }
+          delete f;
+        } break;
+      case VIDEO:
         {
-          sDPrintF(L"Error loading %s\n",myAsset->Path);
-          nsd->Error = sTRUE;
-        }
+          nsd->Movie = sCreateMoviePlayer(filename,sMOF_DONTSTART|(item->Mute?sMOF_NOSOUND:0));
+          if (nsd->Movie)
+          {
+            // wait for first frame to be fully decoded
+            sFRect uvr;
+            if (nsd->Movie->GetInfo().XSize<0)
+            {
+              nsd->Error = sTRUE;
+              sRelease(nsd->Movie);
+            }
+            else 
+            {
+              while (nsd->Movie->GetInfo().XSize==0 || uvr.SizeX()==0)
+              {
+                sSleep(5);
+                nsd->Movie->GetFrame(uvr);
+              }
+            }
+          }
+          else
+          {
+            nsd->Error = sTRUE;
+          }
+        } break;
       }
-      delete f;
+    }
+    else
+    {
+      LogTime();
+      sDPrintF(L"prepare: cache failed");
+      nsd->Error=sTRUE;
     }
    
 
