@@ -2493,6 +2493,8 @@ void sInit(sInt flags,sInt xs,sInt ys)
     }
   }
 
+  sSystemFlags = flags;
+
   // is external window present?
   //if((flags & sISF_2D) || sCOMMANDLINE==0)    // don't create window if we don't need one!
   {                                             // some commandline tools (like converteng) need d3d and therefore a window
@@ -2523,32 +2525,25 @@ void sInit(sInt flags,sInt xs,sInt ys)
 
       // Create the application's window
 
-      if(flags&sISF_FULLSCREEN)
-      {
-        sHWND = CreateWindowW(L"ALTONA",caption,
-          WS_POPUP,
-          CW_USEDEFAULT,CW_USEDEFAULT,xs,ys,
-          0,0,wc.hInstance,0);
-      }
-      else
-      {
-        RECT r2;
-        r2.left = r2.top = 0;
-        r2.right = xs; 
-        r2.bottom = ys;
-        AdjustWindowRect(&r2,WS_OVERLAPPEDWINDOW,FALSE);
+      sU32 style = WS_OVERLAPPEDWINDOW; //WS_OVERLAPPED|WS_CAPTION|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_SYSMENU;
 
-        sHWND = CreateWindowW(L"ALTONA",caption,
-          WS_OVERLAPPEDWINDOW,
-          CW_USEDEFAULT,CW_USEDEFAULT,r2.right-r2.left,r2.bottom-r2.top,
-          0,0,wc.hInstance,0);
-      }
+    
+      RECT r2;
+      r2.left = r2.top = 0;
+      r2.right = xs; 
+      r2.bottom = ys;
+      AdjustWindowRect(&r2,style,FALSE);
+       
+      sHWND = CreateWindowW(L"ALTONA",caption,
+        style,
+        CW_USEDEFAULT,CW_USEDEFAULT,r2.right-r2.left,r2.bottom-r2.top,
+        0,0,wc.hInstance,0);
+    
       if(sCOMMANDLINE==0)                   // don't show window for commandline tools
         ShowWindow(sHWND,SW_SHOWDEFAULT);
     }
   }
 
-  sSystemFlags = flags;
   if(flags & sISF_3D)
     InitGFX(flags,xs,ys);
   else
