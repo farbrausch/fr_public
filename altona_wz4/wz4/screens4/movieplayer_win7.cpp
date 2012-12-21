@@ -589,6 +589,11 @@ public:
       // was probably padded to 16 lines (h.264 limitation)
       sInt stride = RawStride?RawStride:Info.XSize;
       sInt extralines = ((size*2/3)/stride)-Info.YSize;
+      if (extralines>0)
+      {
+        stride = sAlign(stride,16); // actually, the stride we get from MF is a lie.
+        extralines = ((size*2/3)/stride)-Info.YSize;
+      }
 
       // copy to y,v,u texture
       sTexture2D *ytex=Mtrl->Texture[0]->CastTex2D();

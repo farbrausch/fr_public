@@ -261,9 +261,28 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
   Time += delta;
 
   NewSlideData *nsd = PreparedSlide;
-  PreparedSlide = 0;
+
+  if (nsd && nsd->Type == VIDEO)
+  {
+    // wait for first frame to be fully decoded. must be in rendering thread, thus here.
+    if (nsd->Movie->GetInfo().XSize<0)
+    {
+      nsd->Error = sTRUE;
+      sRelease(nsd->Movie);
+    }
+    else 
+    {
+      sFRect uvr;
+      nsd->Movie->GetFrame(uvr);
+      if (nsd->Movie->GetInfo().XSize==0 || uvr.SizeX()==0)
+        nsd = 0;
+    }
+  }
+
   if (nsd)
   {
+    PreparedSlide = 0;
+
     // prepare auto advance
     if (CurrentDuration>0)
       CurrentSwitchTime = Time;
@@ -794,21 +813,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
           nsd->Movie = sCreateMoviePlayer(filename,sMOF_DONTSTART|(item->Mute?sMOF_NOSOUND:0));
           if (nsd->Movie)
           {
-            // wait for first frame to be fully decoded
-            sFRect uvr;
-            if (nsd->Movie->GetInfo().XSize<0)
-            {
-              nsd->Error = sTRUE;
-              sRelease(nsd->Movie);
-            }
-            else 
-            {
-              while (nsd->Movie->GetInfo().XSize==0 || uvr.SizeX()==0)
-              {
-                sSleep(5);
-                nsd->Movie->GetFrame(uvr);
-              }
-            }
+            
           }
           else
           {
