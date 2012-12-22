@@ -170,9 +170,12 @@ public:
     for (i=0; x>=Weights[i] && i<n; i++) x-=Weights[i];
 
     // update model
-    for (int j=0; j<n; j++) Weights[j]++;
-    Total+=n-Weights[i];
-    Weights[i]=0;
+    if (Weights.GetCount()>1)
+    {
+      for (int j=0; j<n; j++) Weights[j]++;
+      Total+=n-Weights[i];
+      Weights[i]=0;
+    }
 
     return i;  
   }
