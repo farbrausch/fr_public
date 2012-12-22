@@ -229,14 +229,72 @@ public:
   sArray<NamedObject> Transitions;
   sRandomMarkov RndTrans;
 
-  wClass *CallClass;
+  static wClass *CallClass;
+
+  struct RenderList
+  {
+    sArray<sAutoPtr<Wz4Render>*> List;
+    sRandomMarkov *Random;
+    sBool MyRandom;
+
+    sAutoPtr<Wz4Render> GetNext()
+    {
+      return *(List[Random->Get()]);
+    }
+
+    void Init(const sChar *prefix, const sChar *type, wOp *input, sRandomMarkov *random)
+    {
+      do
+      {
+        if (!prefix || !prefix[0]) prefix=L"slide";
+
+        sString<64> realprefix = prefix;
+        sAppendString(realprefix, L"_");
+        sAppendString(realprefix,type);
+
+        int len = sGetStringLen(realprefix);
+        wOp *op;
+        sFORALL(Doc->Stores, op)
+        {
+          if (!sCmpStringILen(realprefix,op->Name,len))
+          {
+            List.AddTail(new sAutoPtr<Wz4Render>((Wz4Render*)Doc->CalcOp(MakeCall(op->Name,input))));
+          }
+        }
+        if (!sCmpString(prefix,L"slide")) break;
+        prefix = 0;
+      } while (List.IsEmpty());
+
+      if (random)
+        Random = random;
+      else
+      {
+        Random = new sRandomMarkov(List.GetCount());
+        MyRandom = sTRUE;
+      }
+      
+    }
+
+    RenderList()
+    {
+      MyRandom = sFALSE;
+      Random = 0;
+    }
+
+    ~RenderList()
+    {
+      sDeleteAll(List);
+      if (MyRandom)
+        sDelete(Random);
+    }
+  };
 
   struct SlideEntry
   {
     wOp *TexOp;
     sAutoPtr<Texture2D> Tex;
 
-    sAutoPtr<Wz4Render> Pic, Siegmeister, CustomFS;
+    RenderList Pic, Siegmeister, CustomFS;
 
     sMoviePlayer* Movie;
 
@@ -321,7 +379,7 @@ public:
   }
 
 
-  wOp *MakeCall(const sChar *name, wOp *input)
+  static wOp *MakeCall(const sChar *name, wOp *input)
   {
     if (!CallClass)
       CallClass = Doc->FindClass(L"Call",L"AnyType");
@@ -352,13 +410,13 @@ public:
     switch (ns->Type)
     {
     case IMAGE:
-      NextSlide = e->Pic;
+      NextSlide = e->Pic.GetNext();
       break;
     case SIEGMEISTER_BARS:
     case SIEGMEISTER_WINNERS:
       {
-        NextSlide = e->Siegmeister;
-        RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",e->Siegmeister);
+        NextSlide = e->Siegmeister.GetNext();
+        RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",NextSlide);
         node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
         node->Fade = node->DoBlink?1:0;
         node->Alpha=ns->SiegData->BarAlpha;
@@ -371,12 +429,12 @@ public:
       } break;
     case VIDEO:
       {
-        NextSlide = e->CustomFS;
+        NextSlide = e->CustomFS.GetNext();
         sRelease(e->Movie);
         e->Movie = ns->Movie;
         ns->Movie = 0; // claim ownership
 
-        RNCustomFullscreen2D *node = GetNode<RNCustomFullscreen2D>(L"Custom2DFS", e->CustomFS);
+        RNCustomFullscreen2D *node = GetNode<RNCustomFullscreen2D>(L"Custom2DFS", NextSlide);
         sFRect uvr;
         node->Material = e->Movie->GetFrame(uvr);
         sMovieInfo mi = e->Movie->GetInfo();
@@ -527,10 +585,11 @@ public:
     for (sInt i=0; i<2; i++)
     {
       SlideEntry *e = Entry[i];
+      SlideEntry *e0 = i?Entry[0]:0;
       e->Tex = (Texture2D*)Doc->CalcOp(e->TexOp);
-      e->Pic = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_pic",e->TexOp));
-      e->Siegmeister = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_siegmeister",e->TexOp));
-      e->CustomFS = (Wz4Render*)Doc->CalcOp(MakeCall(L"slide_video", 0));
+      e->Pic.Init(MyConfig->SlidePrefix, L"pic", e->TexOp, e0 ? e0->Pic.Random : 0);
+      e->Siegmeister.Init(MyConfig->SlidePrefix, L"siegmeister", e->TexOp, e0 ? e0->Siegmeister.Random : 0);
+      e->CustomFS.Init(MyConfig->SlidePrefix, L"video", 0, e0 ? e0->CustomFS.Random : 0);
     }
 
     Server = new RPCServer(PlMgr, MyConfig->Port);
@@ -843,6 +902,7 @@ public:
   }
 } *App2=0;
 
+wClass *MyApp::CallClass = 0;
 
 extern void sCollector(sBool exit=sFALSE);
 

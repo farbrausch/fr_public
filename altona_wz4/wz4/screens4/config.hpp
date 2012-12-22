@@ -44,6 +44,7 @@ public:
   sF32 BarAnimTime;
   sF32 BarAnimSpread;
   sF32 MovieVolume; 
+  sPoolString SlidePrefix;
 
   Config()
   {
@@ -55,6 +56,7 @@ public:
     BarAnimTime = 9;
     BarAnimSpread = 0.5;
     MovieVolume = 1.0;
+    SlidePrefix = L"slide";
   }
 
   sBool Read(const sChar *filename)
@@ -116,6 +118,8 @@ private:
         BarAnimSpread = sClamp(Scan->ScanFloat(),0.0f,1.0f);
       else if (Scan->IfName(L"movievolume"))
         MovieVolume = sFPow(10.0f,sClamp(Scan->ScanFloat(),-100.0f,12.0f)/20.0f);
+      else if (Scan->IfName(L"slideprefix"))
+        Scan->ScanString(SlidePrefix);
       else
         Scan->Error(L"syntax error");
     }
