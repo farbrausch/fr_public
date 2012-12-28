@@ -562,8 +562,8 @@ public:
   void KickOff()
   {
     CurSampleTime=-1;
-    DecodeNextVideo();
     DecodeNextAudio();
+    DecodeNextVideo();
   }
 
   // blit decoded sample into texture(s)

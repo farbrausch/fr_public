@@ -233,7 +233,7 @@ private:
   PlayPosition CurrentPos, LastLoopPos;
   Playlist *CurrentPl;
   sInt CurrentPlTime;
-  sF64 CurrentDuration, CurrentSwitchTime;
+  sF64 CurrentDuration, CurrentSwitchTime, CurrentSlideTime;
   sBool SwitchHard;
   NewSlideData * volatile PreparedSlide;
 

@@ -99,7 +99,7 @@ PlaylistMgr::PlaylistMgr()
 
   // initialize the miscallanea
   Assets.HintSize(1024);
-  CurrentDuration = CurrentSwitchTime = 0;
+  CurrentDuration = CurrentSwitchTime = CurrentSlideTime = 0;
   CurrentPl = 0;
   SwitchHard = sFALSE;
   PreparedSlide = 0;
@@ -243,26 +243,37 @@ void PlaylistMgr::AddPlaylist(Playlist *newpl)
 
 NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHard)
 {
-  sScopeLock lock(&Lock);
-
-  sString<64> curId = CurrentPl ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
-
-  // auto advance
-  if (CurrentSwitchTime>0 && (Time-CurrentSwitchTime)>=CurrentDuration)
   {
-    CurrentSwitchTime = 0;
-    Next(sFALSE, sTRUE);
-  }
-  else if (doneId != 0 && !sCmpString(doneId,curId))
-  {
-    Next(doneHard, sTRUE);
-  }
+    sScopeLock lock(&Lock);
 
-  Time += delta;
+    sString<64> curId = CurrentPl ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
+
+    // refresh next slide
+    if (CurrentSlideTime>0 && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
+    {
+      PlaylistItem *next =  CurrentPl->Items[(CurrentPos.SlideNo+1)%CurrentPl->Items.GetCount()];
+      next->MyAsset->AddRef();
+      RefreshList.AddHead(next->MyAsset);
+      CurrentSlideTime = 0;
+    }
+
+    // auto advance
+    if (CurrentSwitchTime>0 && (Time-CurrentSwitchTime)>=CurrentDuration)
+    {
+      CurrentSwitchTime = 0;
+      Next(sFALSE, sTRUE);
+    }
+    else if (doneId != 0 && !sCmpString(doneId,curId))
+    {
+      Next(doneHard, sTRUE);
+    }
+
+    Time += delta;
+  }
 
   NewSlideData *nsd = PreparedSlide;
 
-  if (nsd && nsd->Type == VIDEO)
+  if (nsd && nsd->Type == VIDEO && !nsd->Error)
   {
     // wait for first frame to be fully decoded. must be in rendering thread, thus here.
     if (nsd->Movie->GetInfo().XSize<0)
@@ -282,6 +293,7 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
   if (nsd)
   {
     PreparedSlide = 0;
+    CurrentSlideTime = Time;
 
     // prepare auto advance
     if (CurrentDuration>0)
@@ -634,9 +646,8 @@ void PlaylistMgr::AssetThreadFunc(sThread *t)
       if (code>=400) // error :(
       {
         LogTime(); sDPrintF(L"ERROR: refreshing %s resulted in %d\n",toRefresh->Path, code);
-        sDeleteFile(filename);
-        sDeleteFile(metafilename);
-        toRefresh->CacheStatus = Asset::INVALID;
+        if (toRefresh->CacheStatus == Asset::NOTCACHED)
+          toRefresh->CacheStatus = Asset::INVALID;
       }
       else if (code == 304) // already cached \o/
       {
@@ -645,7 +656,11 @@ void PlaylistMgr::AssetThreadFunc(sThread *t)
       }
       else if (code == 200) // not cached or updated, download
       {
-        sFile *file = sCreateFile(filename,sFA_WRITE);
+        sString<sMAXPATH> downloadfilename;
+        downloadfilename = filename;
+        sAppendString(downloadfilename,L".tmp");
+
+        sFile *file = sCreateFile(downloadfilename,sFA_WRITE);
         sBool error = sFALSE;
 
         for (;;)
@@ -661,15 +676,19 @@ void PlaylistMgr::AssetThreadFunc(sThread *t)
         if (error)
         {
           LogTime(); sDPrintF(L"ERROR: download of %s failed\n",toRefresh->Path);
-          toRefresh->CacheStatus = Asset::INVALID;
-          sDeleteFile(filename);
-          sDeleteFile(metafilename);
+          if (toRefresh->CacheStatus == Asset::NOTCACHED)
+            toRefresh->CacheStatus = Asset::INVALID;
+          sDeleteFile(downloadfilename);
         }
         else
         {
           LogTime(); sDPrintF(L"downloaded %s\n",toRefresh->Path);
-          toRefresh->CacheStatus = Asset::CACHED;
-          toRefresh->Meta.ETag = client.GetETag();
+          {
+            sScopeLock lock(&Lock);
+            sRenameFile(downloadfilename, filename, sTRUE);
+            toRefresh->CacheStatus = Asset::CACHED;
+            toRefresh->Meta.ETag = client.GetETag();
+          }
           if (toRefresh->Meta.ETag==L"")
 					{ LogTime(); sDPrintF(L"WARNING: no Etag!\n"); }
           sSaveObject(metafilename,&toRefresh->Meta);

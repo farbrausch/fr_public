@@ -7,9 +7,13 @@ defaults
   bartime 5					// length of siegmeister bar animation in seconds
   barspread 0.5				// "spread" of siegmeister bars (aka surprise factor), 0..1
   movievolume -3			// volume for playing movies in dB
-  //resolution 640,360		// if missing, use desktop resolution
+  resolution 640,360		// if missing, use desktop resolution
   fullscreen 0				// fullscreen (0 or 1)
+
   slideprefix "tum12slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
+
+  mididevice  -1            // used midi device; (-1 means all)
+  midichannel 1             // midi channel for sending events (1..16)
 }
 
 // available commands:
@@ -28,4 +32,8 @@ keys
   SHIFT F5: resolution 1280,720,50
   SHIFT F6: resolution 1280,720,60
   SHIFT F11: togglefullscreen
+
+  // MIDI triggers
+  F1: sendmidinote 60,127,1.0  // sendmidinote: <note>,<velocity>,<duration in seconds>
+  F2: sendmidinote 62,127,2.0  
 }

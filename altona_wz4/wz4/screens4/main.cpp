@@ -6,6 +6,8 @@
 /**************************************************************************+*/
 
 #include "base/types.hpp"
+#include "base/devices.hpp"
+
 #include "util/painter.hpp"
 #include "util/taskscheduler.hpp"
 #include "extra/blobheap.hpp"
@@ -655,6 +657,41 @@ public:
     }
   }
 
+  sArray<Config::Note> ActiveMidiNotes;
+
+  void SendMidiEvent(sInt ev, sInt v1, sInt v2)
+  {
+    sInt start = MyConfig->MidiDevice; if (start==-1) start=0;
+    sInt end = MyConfig->MidiDevice+1; if (end==0) end=100;
+    for (int i=start; i<end && sMidiHandler->GetDeviceName(sTRUE,i); i++)
+      sMidiHandler->Output(i,ev|(MyConfig->MidiChannel-1),v1,v2);
+  }
+
+  void SendMidiNote(const Config::Note &note)
+  {
+    ActiveMidiNotes.HintSize(100);
+    ActiveMidiNotes.AddTail(note);
+    SendMidiEvent(0x90,note.Pitch,note.Velocity);
+  }
+
+  void ProcessMidiNotes(sInt tdelta)
+  {
+    sF32 delta = tdelta/1000.0f;
+    for (int i=0; i<ActiveMidiNotes.GetCount(); )
+    {
+      if (ActiveMidiNotes[i].Duration<=delta)
+      {
+        SendMidiEvent(0x80,ActiveMidiNotes[i].Pitch,0);
+        ActiveMidiNotes.RemAt(i);
+      }
+      else
+      {
+        ActiveMidiNotes[i].Duration-=delta;
+        i++;
+      }
+    }
+  }
+
   void OnPaint3D()
   {
     sSetTarget(sTargetPara(sST_CLEARALL,0));
@@ -698,6 +735,9 @@ public:
         tdelta = newtime-Time;
         Time = newtime;
       }
+
+      // stuff...
+      ProcessMidiNotes(tdelta);
 
       // check for slide end condition
       const sChar *doneId = 0;
@@ -854,24 +894,35 @@ public:
     if(key & sKEYQ_ALT ) key |= sKEYQ_ALT;
 
     Config::KeyEvent *kev;
+    sBool handled = sFALSE;
     sFORALL(MyConfig->Keys,kev) if (key == kev->Key) switch (kev->Type)
     {
     case Config::PLAYSOUND:
       SoundPlayer.Init(kev->ParaStr);
       SoundPlayer.Play();
-      return;
+      handled = sTRUE;
+      break;
     case Config::STOPSOUND:
       SoundPlayer.Exit();
-      return;
+      handled = sTRUE;
+      break;
     case Config::FULLSCREEN:
       ScreenMode.Flags ^= sSM_FULLSCREEN;
       sSetScreenMode(ScreenMode);
-      return;
+      handled = sTRUE;
+      break;
     case Config::SETRESOLUTION:
       SetupScreenMode(kev->ParaRes,ScreenMode.Flags&sSM_FULLSCREEN);
       sSetScreenMode(ScreenMode);
-      return;
+      handled = sTRUE;
+      break;
+    case Config::MIDINOTE:
+      SendMidiNote(kev->ParaNote);
+      handled = sTRUE;
+      break;
     }
+
+    if (handled) return;
 
     switch(key)
     {
@@ -941,6 +992,7 @@ static void sExitSts()
 void sMain()
 {
   sAddSubsystem(L"StealingTaskScheduler (wz4player style)",0x80,0,sExitSts);
+  sAddMidi(sTRUE, sTRUE);
 
   sGetMemHandler(sAMF_HEAP)->MakeThreadSafe();
 
