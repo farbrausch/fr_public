@@ -13,7 +13,7 @@
 #include "base/system.hpp"
 #include <windows.h>
 
-static sBool sMidiLog;
+static sBool sMidiLog, sMidiOnlyPhys;
 
 /****************************************************************************/
 /****************************************************************************/
@@ -127,12 +127,11 @@ sMidiHandlerWin::sMidiHandlerWin()
     MMRESULT r = midiInOpen(&hnd,i,(DWORD_PTR)sMidiInProc,n,CALLBACK_FUNCTION);
     if(r==MMSYSERR_NOERROR)
     {
-
-      in = In.AddMany(1);
-      str.PrintF(L"(%d)",n);
       if(midiInGetDevCapsW(i,&caps,sizeof(caps))==MMSYSERR_NOERROR)
         str = caps.szPname;
 
+      in = In.AddMany(1);
+      str.PrintF(L"(%d)",n);
       in->Name = str;
       in->Handle = hnd;
 
@@ -152,11 +151,14 @@ sMidiHandlerWin::sMidiHandlerWin()
     MMRESULT r = midiOutOpen(&hnd,i,(DWORD_PTR)sMidiOutProc,n,CALLBACK_FUNCTION);
     if(r==MMSYSERR_NOERROR)
     {
-      out = Out.AddMany(1);
-      str.PrintF(L"(%d)",n);
       if(midiOutGetDevCapsW(i,&caps,sizeof(caps))==MMSYSERR_NOERROR)
         str = caps.szPname;
 
+      if (sMidiOnlyPhys && caps.wTechnology != MOD_MIDIPORT)
+        continue;
+
+      out = Out.AddMany(1);
+      str.PrintF(L"(%d)",n);
       out->Name = str;
       out->Handle = hnd;
 
@@ -225,9 +227,10 @@ void sExitMidi()
 }
 
 
-void sAddMidi(sBool logging)
+void sAddMidi(sBool logging, sBool onlyPhysical)
 {
   sMidiLog = logging;
+  sMidiOnlyPhys = onlyPhysical;
   sAddSubsystem(L"midi",0x81,sInitMidi,sExitMidi);
 }
 

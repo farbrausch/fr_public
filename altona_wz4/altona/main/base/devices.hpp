@@ -12,7 +12,7 @@
 
 /****************************************************************************/
 
-void sAddMidi(sBool logging=0);
+void sAddMidi(sBool logging=0, sBool onlyPhysical=0);
 
 
 struct sMidiEvent
