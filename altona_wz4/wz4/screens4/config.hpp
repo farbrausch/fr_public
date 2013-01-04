@@ -52,6 +52,7 @@ public:
   sF32 BarAnimSpread;
   sF32 MovieVolume; 
   sPoolString SlidePrefix;
+  sPoolString TransPrefix;
 
   sInt MidiDevice;
   sInt MidiChannel;
@@ -67,6 +68,7 @@ public:
     BarAnimSpread = 0.5;
     MovieVolume = 1.0;
     SlidePrefix = L"slide";
+    TransPrefix = L"trans";
     MidiDevice = -1;
     MidiChannel = 1;
   }
@@ -141,6 +143,8 @@ private:
         MovieVolume = sFPow(10.0f,sClamp(Scan->ScanFloat(),-100.0f,12.0f)/20.0f);
       else if (Scan->IfName(L"slideprefix"))
         Scan->ScanString(SlidePrefix);
+      else if (Scan->IfName(L"transprefix"))
+        Scan->ScanString(TransPrefix);
       else if (Scan->IfName(L"mididevice"))
         MidiDevice = Scan->ScanInt();
       else if (Scan->IfName(L"midichannel"))

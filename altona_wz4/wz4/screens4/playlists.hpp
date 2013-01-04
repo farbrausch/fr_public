@@ -178,6 +178,8 @@ public:
   sF32 TransitionTime;
 
   sImageData *ImgData;
+  sBool ImgOpaque;
+
   SiegmeisterData *SiegData;
   sMoviePlayer *Movie;
 

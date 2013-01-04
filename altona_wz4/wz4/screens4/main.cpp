@@ -138,6 +138,7 @@ public:
   ~sAutoPtr() { sRelease(ptr); }
   T* operator -> () const { return ptr; }
   operator T*() const { return ptr; }
+  bool IsNull() const { return ptr==0; }
 
 private:
   T* ptr;
@@ -244,6 +245,7 @@ public:
 
     sAutoPtr<Wz4Render> GetNext()
     {
+      if (List.IsEmpty()) return 0;
       return *(List[Random->Get()]);
     }
 
@@ -299,7 +301,7 @@ public:
     wOp *TexOp;
     sAutoPtr<Texture2D> Tex;
 
-    RenderList Pic, Siegmeister, CustomFS;
+    RenderList Pic, OpaquePic, Siegmeister, CustomFS;
 
     sMoviePlayer* Movie;
 
@@ -415,7 +417,14 @@ public:
     switch (ns->Type)
     {
     case IMAGE:
-      NextSlide = e->Pic.GetNext();
+      if (ns->ImgOpaque)
+      {
+        NextSlide = e->OpaquePic.GetNext();
+        if (NextSlide.IsNull())
+          NextSlide = e->Pic.GetNext();
+      }
+      else
+        NextSlide = e->Pic.GetNext();
       break;
     case SIEGMEISTER_BARS:
     case SIEGMEISTER_WINNERS:
@@ -574,12 +583,16 @@ public:
 
     // load transitions
     wOp *op;
+    sString<64> tp = MyConfig->TransPrefix;
+    sAppendString(tp,L"_");
+    sInt tplen = sGetStringLen(tp);
     sFORALL(Doc->Stores,op)
     {
-      if (!sCmpStringILen(op->Name,L"trans_",6))
+     
+      if (!sCmpStringILen(op->Name,tp,tplen))
       {
         NamedObject no;
-        no.Name = op->Name+6;
+        no.Name = op->Name+tplen;
         no.Obj = (Wz4Render*)Doc->CalcOp(op);
         Transitions.AddTail(no);
       }
@@ -593,6 +606,7 @@ public:
       SlideEntry *e0 = i?Entry[0]:0;
       e->Tex = (Texture2D*)Doc->CalcOp(e->TexOp);
       e->Pic.Init(MyConfig->SlidePrefix, L"pic", e->TexOp, e0 ? e0->Pic.Random : 0);
+      e->OpaquePic.Init(MyConfig->SlidePrefix, L"opaquepic", e->TexOp, e0 ? e0->OpaquePic.Random : 0);
       e->Siegmeister.Init(MyConfig->SlidePrefix, L"siegmeister", e->TexOp, e0 ? e0->Siegmeister.Random : 0);
       e->CustomFS.Init(MyConfig->SlidePrefix, L"video", 0, e0 ? e0->CustomFS.Random : 0);
     }

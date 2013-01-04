@@ -807,6 +807,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
           if (img.LoadPNG(ptr,size))
           {
             img.PMAlpha();
+            nsd->ImgOpaque = !img.HasAlpha();
             nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
           }
           else
@@ -816,6 +817,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
             if (img2)
             {
               img2->PMAlpha();
+              nsd->ImgOpaque = !img.HasAlpha();
               nsd->ImgData = new sImageData(img2,sTEX_2D|sTEX_ARGB8888);
               delete img2;
             }
