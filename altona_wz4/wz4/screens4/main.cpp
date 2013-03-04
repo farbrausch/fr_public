@@ -684,7 +684,8 @@ public:
   void SendMidiNote(const Config::Note &note)
   {
     ActiveMidiNotes.HintSize(100);
-    ActiveMidiNotes.AddTail(note);
+    if (note.Duration>0)
+      ActiveMidiNotes.AddTail(note);
     SendMidiEvent(0x90,note.Pitch,note.Velocity);
   }
 

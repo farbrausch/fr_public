@@ -53,7 +53,7 @@ public:
     Exit();
   }
 
-  sBool Init(sInt rate, sInt channels)
+  sBool Init(bRenderer *r, sInt rate, sInt channels)
   {
 #ifndef KSDATAFORMAT_SUBTYPE_PCM
 		const static GUID KSDATAFORMAT_SUBTYPE_PCM = {0x00000001,0x0000,0x0010,{0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71}};
@@ -110,6 +110,7 @@ public:
 
     // now that everything seemed to work, let's switch over to the rendering thread
     Renderers.HintSize(8);
+    Renderers.AddTail(r);
     Thread = new sThread(ThreadProxy,1,0,this);
     return sTRUE;
   }
@@ -124,19 +125,6 @@ public:
     Renderers.Reset();
   }
 
-  void Register(bRenderer* r)
-  {
-    Lock();
-    Renderers.AddTail(r);
-    Unlock();
-  }
-
-  void Unregister(bRenderer* r)
-  {
-    Lock();
-    Renderers.RemOrder(r);
-    Unlock();
-  }
 
   void Lock() { ThreadLock.Lock(); }
   void Unlock() { ThreadLock.Unlock(); }
@@ -170,11 +158,12 @@ private:
     void *cptr1, *cptr2;
     DWORD clen1, clen2;
 
-    // clear and start the buffer
+    // fill and start the buffer
     Lock();
+    Render(BufferSize);
     hr=Buffer->Lock(0,BufferSize*BytesPerSample,&cptr1,&clen1,&cptr2,&clen2,0);
-    if (clen1) sSetMem(cptr1,0,clen1);
-    if (clen2) sSetMem(cptr2,0,clen2);
+    if (clen1) ClipTo(cptr1,RenderBuffer,clen1/BytesPerSample);
+    if (clen2) ClipTo(cptr2,RenderBuffer+Channels*(clen1/BytesPerSample),clen2/BytesPerSample);
     Buffer->Unlock(cptr1,clen1,cptr2,clen2);
     hr=Buffer->Play(0,0,DSBPLAY_LOOPING);
     Unlock();
@@ -194,13 +183,8 @@ private:
       if (todo>=32)
       {
         // render
-        sSetMem(RenderBuffer,0,4*Channels*todo);
-        bRenderer *r;
-        sFORALL(Renderers,r)
-        {
-          r->Render(RenderBuffer,todo);
-        }
-
+        Render(todo);
+       
         // convert to 16bit and clip to DSound buffer
         hr=Buffer->Lock(BytesPerSample*LastPlayPos,BytesPerSample*todo,&cptr1,&clen1,&cptr2,&clen2,0);
         if (clen1) ClipTo(cptr1,RenderBuffer,clen1/BytesPerSample);
@@ -217,6 +201,16 @@ private:
     Unlock();
 
     sDPrintF(L"sound thread end\n");
+  }
+
+  void Render(sInt todo)
+  {
+    sSetMem(RenderBuffer,0,4*Channels*todo);
+    bRenderer *r;
+    sFORALL(Renderers,r)
+    {
+      r->Render(RenderBuffer,todo);
+    }
   }
 
   void ClipTo(void *dest, sF32 *src, sInt samples)
@@ -401,8 +395,7 @@ struct bMusicPlayer::VerySecret : protected bRenderer
       sDelete(File);
     }
 
-    Output.Init(VorbisInfo.sample_rate,VorbisInfo.channels);
-    Output.Register(this);
+    Output.Init(this, VorbisInfo.sample_rate,VorbisInfo.channels);
   }
 
 
@@ -433,7 +426,6 @@ struct bMusicPlayer::VerySecret : protected bRenderer
   {
     if (!Buffer) return;
 
-    Output.Unregister(this);
     Output.Exit();
 
     if (Vorbis)
