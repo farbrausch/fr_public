@@ -57,6 +57,8 @@ public:
   sInt MidiDevice;
   sInt MidiChannel;
 
+  sPoolString PngOut;
+
   Config()
   {
     Scan=0;
@@ -71,6 +73,7 @@ public:
     TransPrefix = L"trans";
     MidiDevice = -1;
     MidiChannel = 1;
+    PngOut = L"";
   }
 
   sBool Read(const sChar *filename)
@@ -149,6 +152,8 @@ private:
         MidiDevice = Scan->ScanInt();
       else if (Scan->IfName(L"midichannel"))
         MidiChannel = sClamp(Scan->ScanInt(),1,16);
+      else if (Scan->IfName(L"pngout"))
+        Scan->ScanString(PngOut);
       else
         Scan->Error(L"syntax error");
     }

@@ -186,7 +186,7 @@ PlaylistMgr::~PlaylistMgr()
 
   sRelease(CurrentPl);
   delete PreparedSlide;
-
+  
 }
 
 // Adds new play list to pool (takes ownership of pl)
@@ -638,12 +638,18 @@ void PlaylistMgr::AssetThreadFunc(sThread *t)
       // send HTTP request...
       sHTTPClient client;
       client.SetETag(toRefresh->Meta.ETag);
-      client.Connect(toRefresh->Path);
+      sBool result = client.Connect(toRefresh->Path);
 
       // .. and interpret response.
       int code; 
       client.GetStatus(code);
-      if (code>=400) // error :(
+      if (!result)
+      {
+        LogTime(); sDPrintF(L"ERROR: connection failed refreshing %s\n",toRefresh->Path);
+        if (toRefresh->CacheStatus == Asset::NOTCACHED)
+          toRefresh->CacheStatus = Asset::INVALID;
+      }
+      else if (code>=400) // error :(
       {
         LogTime(); sDPrintF(L"ERROR: refreshing %s resulted in %d\n",toRefresh->Path, code);
         if (toRefresh->CacheStatus == Asset::NOTCACHED)
@@ -802,24 +808,28 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
             return;
           }
           sU8 *ptr = f->MapAll();
-          sImage img;
+
+          sImage *img = new sImage();
+
           sInt size = (sInt)f->GetSize();
-          if (img.LoadPNG(ptr,size))
+          if (img->LoadPNG(ptr,size))
           {
-            img.PMAlpha();
-            nsd->ImgOpaque = !img.HasAlpha();
-            nsd->ImgData = new sImageData(&img,sTEX_2D|sTEX_ARGB8888);
+            img->PMAlpha();
+            nsd->ImgOpaque = !img->HasAlpha();
+            nsd->ImgData = new sImageData(img,sTEX_2D|sTEX_ARGB8888);
+            nsd->OrgImage = img;
           }
           else
           {
             // if the internal image loader fails, try the Windows one
-            sImage *img2 = sLoadImageWin32(f);
-            if (img2)
+            delete img;
+            img = sLoadImageWin32(f);
+            if (img)
             {
-              img2->PMAlpha();
-              nsd->ImgOpaque = !img.HasAlpha();
-              nsd->ImgData = new sImageData(img2,sTEX_2D|sTEX_ARGB8888);
-              delete img2;
+              img->PMAlpha();
+              nsd->ImgOpaque = !img->HasAlpha();
+              nsd->ImgData = new sImageData(img,sTEX_2D|sTEX_ARGB8888);
+              nsd->OrgImage = img;
             }
             else
             {

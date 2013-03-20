@@ -329,6 +329,12 @@ public:
 
   bMusicPlayer SoundPlayer;
 
+  sImage *ImageOut;
+  sThreadLock *ImageOutLock;
+
+  sThread *PngOutThread;
+  sThreadEvent *PngOutEvent;
+
   MyApp()
   {
 	  AppStartTime = sGetTime();
@@ -351,6 +357,8 @@ public:
     Started = sFALSE;
     SlideStartTime = 0;
     CurId = 0;
+    ImageOut = 0;
+    ImageOutLock = new sThreadLock();
 
     Entry[0] = new SlideEntry;
     Entry[1] = new SlideEntry;
@@ -362,10 +370,29 @@ public:
     Server = 0;
     Web = 0;
     Rnd.Seed(sGetRandomSeed());
+
+    if (MyConfig->PngOut != L"")
+      PngOutThread = new sThread(PngOutProxy, -1, 0, this);
+    else
+      PngOutThread = 0;
+    PngOutEvent = new sThreadEvent();
   }
 
   ~MyApp()
   {
+    ImageOutLock->Lock();
+    sDelete(ImageOut);
+    ImageOutLock->Unlock();
+    if (PngOutThread)
+    {
+      PngOutThread->Terminate();
+      PngOutEvent->Signal();
+      sDelete(PngOutThread);
+    }
+    sDelete(PngOutEvent);
+
+    sDelete(ImageOutLock);
+    sDelete(ImageOut);
 
     sDelete(Server);
     sDelete(Web);
@@ -412,6 +439,15 @@ public:
       sTexture2D *tex = e->Tex->Texture->CastTex2D();
       tex->ReInit(ns->ImgData->SizeX,ns->ImgData->SizeY,ns->ImgData->Format);
       tex->LoadAllMipmaps(ns->ImgData->Data);
+    }
+
+    if (ns->OrgImage && MyConfig->PngOut != L"")
+    {
+      ImageOutLock->Lock();
+      sDelete(ImageOut);
+      ImageOut = ns->OrgImage;
+      ns->OrgImage = 0;
+      ImageOutLock->Unlock();
     }
 
     switch (ns->Type)
@@ -554,6 +590,8 @@ public:
     sRelease(Entry[0]->Movie);
     if (Entry[1]->Movie)
       Entry[1]->Movie->SetVolume(MyConfig->MovieVolume);
+
+    PngOutEvent->Signal();
   }
 
   void Load()
@@ -969,28 +1007,35 @@ public:
 
     }
   }
+
+  static void PngOutProxy(sThread *t, void *obj)
+  {
+    ((MyApp*)obj)->PngOutFunc(t);
+  }
+
+  void PngOutFunc(sThread *t)
+  {
+    while (t->CheckTerminate())
+    {
+      sImage *img;
+      PngOutEvent->Wait();
+      ImageOutLock->Lock();
+      img = ImageOut;
+      ImageOut = 0;
+      ImageOutLock->Unlock();
+
+      if (img)
+        img->SavePNG(MyConfig->PngOut);
+
+      delete img;
+    }
+  }
+
 } *App2=0;
 
 wClass *MyApp::CallClass = 0;
 
 extern void sCollector(sBool exit=sFALSE);
-
-
-static sBool LoadOptions(const sChar *filename, wDocOptions &options)
-{
-  sFile *f=sCreateFile(filename);
-  if (!f) return sFALSE;
-
-  sReader r;
-  r.Begin(f);
-
-  wDocument::SerializeOptions(r,options);
-  sBool ret=r.End();
-
-  delete f;
-  return ret;
-}
-
 
 /****************************************************************************/
 /****************************************************************************/

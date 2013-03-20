@@ -179,6 +179,7 @@ public:
 
   sImageData *ImgData;
   sBool ImgOpaque;
+  sImage *OrgImage;
 
   SiegmeisterData *SiegData;
   sMoviePlayer *Movie;
@@ -186,8 +187,8 @@ public:
   const sChar *Id;
   sBool Error;
 
-  NewSlideData() : ImgData(0), SiegData(0), Movie(0), Id(0) {}
-  ~NewSlideData() { delete ImgData; delete SiegData; sRelease(Movie); }
+  NewSlideData() : ImgData(0), SiegData(0), Movie(0), Id(0), OrgImage(0) {}
+  ~NewSlideData() { delete ImgData; delete OrgImage; delete SiegData; sRelease(Movie); }
 };
 
 class PlaylistMgr
