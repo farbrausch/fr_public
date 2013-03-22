@@ -104,6 +104,7 @@ PlaylistMgr::PlaylistMgr()
   SwitchHard = sFALSE;
   PreparedSlide = 0;
   Time = 1.0; // one second phase shift into the future to hide the TARDIS
+  CurRefreshing = 0;
 
   // load all cached playlists
   sArray<sDirEntry> dir;
@@ -124,6 +125,7 @@ PlaylistMgr::PlaylistMgr()
         it->MyAsset->AddRef();
         if (it->MyAsset->CacheStatus == Asset::NOTCACHED)
         {
+          sScopeLock lock(&Lock);
           RefreshList.AddTail(it->MyAsset);
           it->MyAsset->AddRef();
         }
@@ -251,10 +253,18 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
     // refresh next slide
     if (CurrentSlideTime>0 && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
     {
+      PlaylistItem *current =  CurrentPl->Items[CurrentPos.SlideNo%CurrentPl->Items.GetCount()];
       PlaylistItem *next =  CurrentPl->Items[(CurrentPos.SlideNo+1)%CurrentPl->Items.GetCount()];
-      next->MyAsset->AddRef();
-      RefreshList.AddHead(next->MyAsset);
-      CurrentSlideTime = 0;
+      if (sCmpStringI(next->Type,L"video"))
+      {
+        if (!next->MyAsset->RefreshNode.IsValid())
+        {
+          next->MyAsset->AddRef();
+          RefreshList.AddHead(next->MyAsset);
+        }
+
+        CurrentSlideTime = 0;
+      }
     }
 
     // auto advance
@@ -501,8 +511,11 @@ void PlaylistMgr::RefreshAssets(Playlist *pl)
     it->MyAsset->CacheStatus = Asset::NOTCACHED;
     {
       sScopeLock lock(&Lock);
-      it->MyAsset->AddRef();
-      RefreshList.AddTail(it->MyAsset);
+      if (!it->MyAsset->RefreshNode.IsValid())
+      {
+        it->MyAsset->AddRef();
+        RefreshList.AddTail(it->MyAsset);
+      }
     }
   }
   pl->Release();
@@ -610,100 +623,102 @@ void PlaylistMgr::PlCacheThreadFunc(sThread *t)
 
 void PlaylistMgr::AssetThreadFunc(sThread *t)
 {
-  Asset *toRefresh = 0;
-
   static const int DLSIZE = 524288;
   sU8 *dlBuffer = new sU8[DLSIZE];
 
   while (t->CheckTerminate())
   {
-    if (RefreshList.IsEmpty() && !AssetEvent.Wait(100))
-      continue;
+    Asset *toRefresh = 0;
 
     // find asset to refresh
     {
       sScopeLock lock(&Lock);
-      if (!toRefresh) toRefresh = RefreshList.RemHead();
+      if (!RefreshList.IsEmpty())
+        toRefresh = RefreshList.RemHead();
     }
 
-    if (toRefresh)
+    if (!toRefresh)
     {
-			LogTime(); sDPrintF(L"refreshing %s\n",toRefresh->Path);
-
-      sString<sMAXPATH> filename, metafilename;
-      MakeFilename(filename,toRefresh->Path,AssetDir);
-      metafilename = filename;
-      sAppendString(metafilename,L".meta");
-
-      // send HTTP request...
-      sHTTPClient client;
-      client.SetETag(toRefresh->Meta.ETag);
-      sBool result = client.Connect(toRefresh->Path);
-
-      // .. and interpret response.
-      int code; 
-      client.GetStatus(code);
-      if (!result)
-      {
-        LogTime(); sDPrintF(L"ERROR: connection failed refreshing %s\n",toRefresh->Path);
-        if (toRefresh->CacheStatus == Asset::NOTCACHED)
-          toRefresh->CacheStatus = Asset::INVALID;
-      }
-      else if (code>=400) // error :(
-      {
-        LogTime(); sDPrintF(L"ERROR: refreshing %s resulted in %d\n",toRefresh->Path, code);
-        if (toRefresh->CacheStatus == Asset::NOTCACHED)
-          toRefresh->CacheStatus = Asset::INVALID;
-      }
-      else if (code == 304) // already cached \o/
-      {
-        //LogTime(); sDPrintF(L"%s already cached\n",toRefresh->Path);
-        toRefresh->CacheStatus = Asset::CACHED;
-      }
-      else if (code == 200) // not cached or updated, download
-      {
-        sString<sMAXPATH> downloadfilename;
-        downloadfilename = filename;
-        sAppendString(downloadfilename,L".tmp");
-
-        sFile *file = sCreateFile(downloadfilename,sFA_WRITE);
-        sBool error = sFALSE;
-
-        for (;;)
-        {
-          sDInt read;
-          error = !client.Read(dlBuffer,DLSIZE,read);
-          if (error || read==0)
-            break;
-          file->Write(dlBuffer,read);
-        }
-
-        delete file;
-        if (error)
-        {
-          LogTime(); sDPrintF(L"ERROR: download of %s failed\n",toRefresh->Path);
-          if (toRefresh->CacheStatus == Asset::NOTCACHED)
-            toRefresh->CacheStatus = Asset::INVALID;
-          sDeleteFile(downloadfilename);
-        }
-        else
-        {
-          LogTime(); sDPrintF(L"downloaded %s\n",toRefresh->Path);
-          {
-            sScopeLock lock(&Lock);
-            sRenameFile(downloadfilename, filename, sTRUE);
-            toRefresh->CacheStatus = Asset::CACHED;
-            toRefresh->Meta.ETag = client.GetETag();
-          }
-          if (toRefresh->Meta.ETag==L"")
-					{ LogTime(); sDPrintF(L"WARNING: no Etag!\n"); }
-          sSaveObject(metafilename,&toRefresh->Meta);
-        }
-      }
-
-      sRelease(toRefresh);
-			
+      AssetEvent.Wait(100);
+      continue;
     }
+
+    CurRefreshing = toRefresh;
+		LogTime(); sDPrintF(L"refreshing %s\n",toRefresh->Path);
+
+    sString<sMAXPATH> filename, metafilename;
+    MakeFilename(filename,toRefresh->Path,AssetDir);
+    metafilename = filename;
+    sAppendString(metafilename,L".meta");
+
+    // send HTTP request...
+    sHTTPClient client;
+    client.SetETag(toRefresh->Meta.ETag);
+    sBool result = client.Connect(toRefresh->Path);
+
+    // .. and interpret response.
+    int code; 
+    client.GetStatus(code);
+    if (!result)
+    {
+      LogTime(); sDPrintF(L"ERROR: connection failed refreshing %s\n",toRefresh->Path);
+      if (toRefresh->CacheStatus == Asset::NOTCACHED)
+        toRefresh->CacheStatus = Asset::INVALID;
+    }
+    else if (code>=400) // error :(
+    {
+      LogTime(); sDPrintF(L"ERROR: refreshing %s resulted in %d\n",toRefresh->Path, code);
+      if (toRefresh->CacheStatus == Asset::NOTCACHED)
+        toRefresh->CacheStatus = Asset::INVALID;
+    }
+    else if (code == 304) // already cached \o/
+    {
+      //LogTime(); sDPrintF(L"%s already cached\n",toRefresh->Path);
+      toRefresh->CacheStatus = Asset::CACHED;
+    }
+    else if (code == 200) // not cached or updated, download
+    {
+      sString<sMAXPATH> downloadfilename;
+      downloadfilename = filename;
+      sAppendString(downloadfilename,L".tmp");
+
+      sFile *file = sCreateFile(downloadfilename,sFA_WRITE);
+      sBool error = sFALSE;
+
+      for (;;)
+      {
+        sDInt read;
+        error = !client.Read(dlBuffer,DLSIZE,read);
+        if (error || read==0)
+          break;
+        file->Write(dlBuffer,read);
+      }
+
+      delete file;
+      if (error)
+      {
+        LogTime(); sDPrintF(L"ERROR: download of %s failed\n",toRefresh->Path);
+        if (toRefresh->CacheStatus == Asset::NOTCACHED)
+          toRefresh->CacheStatus = Asset::INVALID;
+        sDeleteFile(downloadfilename);
+      }
+      else
+      {
+        LogTime(); sDPrintF(L"downloaded %s\n",toRefresh->Path);
+        {
+          sScopeLock lock(&Lock);
+          sRenameFile(downloadfilename, filename, sTRUE);
+          toRefresh->CacheStatus = Asset::CACHED;
+          toRefresh->Meta.ETag = client.GetETag();
+        }
+        if (toRefresh->Meta.ETag==L"")
+				{ LogTime(); sDPrintF(L"WARNING: no Etag!\n"); }
+        sSaveObject(metafilename,&toRefresh->Meta);
+      }
+    }
+
+    sRelease(toRefresh);
+    CurRefreshing = 0;
   }
 
   delete[] dlBuffer;
@@ -788,7 +803,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
 
     // ok, let's just hope any NOTCACHED asset will eventually...
     sInt nccount = 0;
-    while (myAsset->CacheStatus == Asset::NOTCACHED && nccount++<400)
+    while (myAsset->CacheStatus == Asset::NOTCACHED && (myAsset==CurRefreshing || nccount++<400))
       sSleep(5);
    
     if (myAsset->CacheStatus == Asset::CACHED)

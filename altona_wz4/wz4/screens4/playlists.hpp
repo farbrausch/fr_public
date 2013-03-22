@@ -231,6 +231,7 @@ private:
 
   sArray<Asset*> Assets;
   sDList<Asset, &Asset::RefreshNode> RefreshList;
+  volatile Asset* CurRefreshing;
 
   sF64 Time;
   PlayPosition CurrentPos, LastLoopPos;
