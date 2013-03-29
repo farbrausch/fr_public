@@ -223,6 +223,8 @@ sImage *sLoadImageWin32(sFile *file)
         sDelete(img);
       }
     }
+
+    DeleteObject(hbmp);
   }
 
   delete gdibitmap;

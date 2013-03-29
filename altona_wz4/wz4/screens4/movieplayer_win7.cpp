@@ -288,7 +288,7 @@ public:
   sMPSoundOutput *Audio;
   IMFMediaType *AudioType;
   WAVEFORMATEX *AudioFormat;
-  sBool GettingAudio;
+  volatile sBool GettingAudio;
   sF32 Volume;
 
   IMFSample *NextVideoSample;
@@ -350,14 +350,14 @@ public:
       else
       {
         Owner->GettingAudio = sFALSE;
-        if (SUCCEEDED(hrStatus)) // end?
+        if (SUCCEEDED(hrStatus) && (dwStreamFlags & MF_SOURCE_READERF_ENDOFSTREAM)) // end?
         {
           if (Owner->Flags & sMOF_LOOP)
             Owner->SeekTo=0;
           else
             Owner->Pause();
         }
-        else
+        else if (FAILED(hrStatus) || (dwStreamFlags & MF_SOURCE_READERF_ERROR))
         {
           // pause on error
           Owner->Pause();
