@@ -852,11 +852,11 @@ void RNSprites::Prepare(Wz4RenderContext *ctx)
     fo = 1-fi;
   sF32 fii = 0;
   sF32 foi = 0;
-  if(fi>0.01f)
+  if(fi>0.0001f)
     fii = 1/fi;
   else 
     fi = 0; 
-  if(fo>0.01f)
+  if(fo>0.0001f)
     foi = 1/fo;
   else 
     fo = 0;
@@ -873,16 +873,19 @@ void RNSprites::Prepare(Wz4RenderContext *ctx)
     t = sMod(part->Time,1);
     sF32 tt = 1;
     sF32 s = part->SizeRand;
+    sF32 fade = 1;
     if(t<fi)
     {
       tt = t*fii;
-      s *= (ga+tt*gb+tt*tt*gc+tt*tt*tt*gd);
+      fade = (ga+tt*gb+tt*tt*gc+tt*tt*tt*gd);
     }
     else if(1-t<fo)
     {
       tt = (1-t)*foi;
-      s *= (ga+tt*gb+tt*tt*gc+tt*tt*tt*gd);
+      fade  = (ga+tt*gb+tt*tt*gc+tt*tt*tt*gd);
     }
+    if (Para.FadeType == 0)
+      s*=fade;
     vp1->sx = sx*s;
     vp1->sy = sy*s;
     vp1->u1 = t;
@@ -901,7 +904,10 @@ void RNSprites::Prepare(Wz4RenderContext *ctx)
     vp1->uvrect = UVRects[texanim+part->Group*uvcounti];
 
     vp1->fade = part->DistFade;
-    vp1->Color = part->Color;
+    if (Para.FadeType == 1)
+      vp1->Color = sColorFade(0,part->Color,fade);
+    else
+      vp1->Color = part->Color;
 
     vp1++;
   }
