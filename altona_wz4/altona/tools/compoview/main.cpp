@@ -18,6 +18,7 @@
 #include "base/windows.hpp"
 #include "util/image.hpp"
 #include "util/shaders.hpp"
+#include "image_win.hpp"
 
 #define VERSION 1
 #define REVISION 2
@@ -459,7 +460,12 @@ void MyApp::GoImage(sInt id)
   ImageId = id;
   sDelete(TexOld);
   TexOld = Tex;
-  Tex = sLoadTexture2D(&Entries[ImageId]->Image,sTEX_2D|sTEX_ARGB8888|sTEX_NOMIPMAPS);
+  sU32 flags = sTEX_2D|sTEX_ARGB8888;
+  sInt sx, sy;
+  sGetScreenSize(sx,sy);
+  sImage *img = &Entries[ImageId]->Image;
+  if (img->SizeX <= sx && img->SizeY <= sy) flags |= sTEX_NOMIPMAPS;
+  Tex = sLoadTexture2D(img,flags);
   GeoPosOld = GeoPos;
 
   ImageX = (sF32)(Tex->SizeX);
@@ -496,7 +502,10 @@ void MyApp::LoadOne()
       ent = new Entry;
       sDPrintF(L"load %q\n",de->Name);
       if(!ent->Image.Load(de->Name))
-        sFatal(L"failed to load %q.\ntry to convert this image to a PNG with standard settings",de->Name);
+      {
+        if (!sLoadImageWin32(de->Name, ent->Image))
+          sFatal(L"failed to load %q.\ntry to convert this image to a PNG with standard settings",de->Name);
+      }
       ent->Name = de->Name;
       ent->Texture = 0;
       Entries.AddTail(ent);

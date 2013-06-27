@@ -19,5 +19,6 @@ depend "altona/main/base";
 depend "altona/main/util";
 
 file "main.?pp";
+file "image_win.?pp";
 file "compoview.mp.txt";
 file "readme.txt";
