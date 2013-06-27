@@ -10,13 +10,14 @@ defaults
   resolution 640,360		// if missing, use desktop resolution
   fullscreen 0				// fullscreen (0 or 1)
 
-  //slideprefix "tum12slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
+  //slideprefix "rvn13slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
   //slideprefix "besoffen"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
   //transprefix "kotz"
+  //defaulttype  "good1"
 
   mididevice  -1            // used midi device; (-1 means all)
   midichannel 1             // midi channel for sending events (1..16)
-
+  
   //pngout "c:\test\frame.png" // save current slide as png to this path
 }
 

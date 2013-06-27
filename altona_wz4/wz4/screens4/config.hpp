@@ -53,6 +53,7 @@ public:
   sF32 MovieVolume; 
   sPoolString SlidePrefix;
   sPoolString TransPrefix;
+  sPoolString DefaultType;
 
   sInt MidiDevice;
   sInt MidiChannel;
@@ -71,6 +72,7 @@ public:
     MovieVolume = 1.0;
     SlidePrefix = L"slide";
     TransPrefix = L"trans";
+    DefaultType = L"";
     MidiDevice = -1;
     MidiChannel = 1;
     PngOut = L"";
@@ -148,6 +150,8 @@ private:
         Scan->ScanString(SlidePrefix);
       else if (Scan->IfName(L"transprefix"))
         Scan->ScanString(TransPrefix);
+      else if (Scan->IfName(L"defaulttype"))
+        Scan->ScanString(DefaultType);
       else if (Scan->IfName(L"mididevice"))
         MidiDevice = Scan->ScanInt();
       else if (Scan->IfName(L"midichannel"))

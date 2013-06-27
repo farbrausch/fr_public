@@ -78,6 +78,7 @@ void RNSiegmeister::Prepare(Wz4RenderContext *ctx)
   for (sInt i=0; i<bars; i++)
   {
     sFRect brect = Bars[i];
+    brect.Move(0,0.05f);
     sU32 color = (DoBlink && i<3) ? sColorFade(BlinkColor1,BlinkColor2,0.5f*sFCos(Para.BlinkSpeed*time)+0.5f) : Color;
     color = sColorFade(0,color,Alpha);
         

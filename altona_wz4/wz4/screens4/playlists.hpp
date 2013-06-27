@@ -68,12 +68,14 @@ public:
   sString<64> ID;
   sString<64> Type;
   sString<256> Path;
+  sString<64> SlideType; // chooses certain renderer
 
   sF32 Duration;
   sInt TransitionId;
   sF32 TransitionDuration;
   sBool ManualAdvance;
   sBool Mute;
+  sInt MidiNote;
 
   sString<10> BarColor, BarBlinkColor1, BarBlinkColor2;
   sF32 BarAlpha;
@@ -176,6 +178,7 @@ public:
   SlideType Type;
   sInt TransitionId;
   sF32 TransitionTime;
+  sInt MidiNote;
 
   sImageData *ImgData;
   sBool ImgOpaque;
@@ -187,7 +190,9 @@ public:
   const sChar *Id;
   sBool Error;
 
-  NewSlideData() : ImgData(0), SiegData(0), Movie(0), Id(0), OrgImage(0) {}
+  const sChar *RenderType;
+
+  NewSlideData() : ImgData(0), SiegData(0), Movie(0), Id(0), OrgImage(0), RenderType(0) {}
   ~NewSlideData() { delete ImgData; delete OrgImage; delete SiegData; sRelease(Movie); }
 };
 

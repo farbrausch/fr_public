@@ -239,14 +239,51 @@ public:
 
   struct RenderList
   {
-    sArray<sAutoPtr<Wz4Render>*> List;
+
+    struct Entry
+    {
+      sString<256> Name;
+      sAutoPtr<Wz4Render> * Ptr;
+      sInt Temp;
+    };
+
+    sArray<Entry> List;
     sRandomMarkov *Random;
     sBool MyRandom;
 
-    sAutoPtr<Wz4Render> GetNext()
+    sAutoPtr<Wz4Render> GetNext(const sChar *prefix)
     {
       if (List.IsEmpty()) return 0;
-      return *(List[Random->Get()]);
+
+      if (prefix==0 || !prefix[0])
+        return *(List[Random->Get()].Ptr);
+
+      // find slides for prefix
+      int plen = sGetStringLen(prefix);
+      int count = List.GetCount();
+      int good = 0;
+      for (int i=0; i<count; i++)
+      {
+        List[i].Temp = sCmpStringILen(List[i].Name,prefix,plen)?0:1;
+        good += List[i].Temp;
+      }
+
+      // none found? try default, and if that doesn't work, random
+      if (good==0)
+      {
+        if (prefix != MyConfig->DefaultType)
+          return GetNext(MyConfig->DefaultType);
+        else // already default? well.
+          return GetNext(0);
+      }
+
+      // now use the random until you get one that's ok to use
+      for (;;)
+      {
+        int rnd = Random->Get();
+        if (List[rnd].Temp)
+          return *(List[rnd].Ptr);
+      }
     }
 
     void Init(const sChar *prefix, const sChar *type, wOp *input, sRandomMarkov *random)
@@ -265,7 +302,12 @@ public:
         {
           if (!sCmpStringILen(realprefix,op->Name,len))
           {
-            List.AddTail(new sAutoPtr<Wz4Render>((Wz4Render*)Doc->CalcOp(MakeCall(op->Name,input))));
+            Entry e;
+            e.Ptr = new sAutoPtr<Wz4Render>((Wz4Render*)Doc->CalcOp(MakeCall(op->Name,input)));
+            const sChar *rawname = ((const sChar *)op->Name)+len;
+            if (rawname[0]=='_') rawname++;
+            e.Name = rawname;
+            List.AddTail(e);
           }
         }
         if (!sCmpString(prefix,L"slide")) break;
@@ -290,7 +332,9 @@ public:
 
     ~RenderList()
     {
-      sDeleteAll(List);
+      for (int i=0; i<List.GetCount(); i++)
+        delete List[i].Ptr;
+      List.Clear();
       if (MyRandom)
         sDelete(Random);
     }
@@ -455,17 +499,17 @@ public:
     case IMAGE:
       if (ns->ImgOpaque)
       {
-        NextSlide = e->OpaquePic.GetNext();
+        NextSlide = e->OpaquePic.GetNext(ns->RenderType);
         if (NextSlide.IsNull())
-          NextSlide = e->Pic.GetNext();
+          NextSlide = e->Pic.GetNext(ns->RenderType);
       }
       else
-        NextSlide = e->Pic.GetNext();
+        NextSlide = e->Pic.GetNext(ns->RenderType);
       break;
     case SIEGMEISTER_BARS:
     case SIEGMEISTER_WINNERS:
       {
-        NextSlide = e->Siegmeister.GetNext();
+        NextSlide = e->Siegmeister.GetNext(ns->RenderType);
         RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",NextSlide);
         node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
         node->Fade = node->DoBlink?1:0;
@@ -479,7 +523,7 @@ public:
       } break;
     case VIDEO:
       {
-        NextSlide = e->CustomFS.GetNext();
+        NextSlide = e->CustomFS.GetNext(ns->RenderType);
         sRelease(e->Movie);
         e->Movie = ns->Movie;
         ns->Movie = 0; // claim ownership
@@ -592,6 +636,8 @@ public:
       Entry[1]->Movie->SetVolume(MyConfig->MovieVolume);
 
     PngOutEvent->Signal();
+
+    //sMemMark(false);
   }
 
   void Load()
@@ -713,6 +759,7 @@ public:
 
   void SendMidiEvent(sInt ev, sInt v1, sInt v2)
   {
+    sDPrintF(L"send midi %s %s %s\n", ev, v1, v2);
     sInt start = MyConfig->MidiDevice; if (start==-1) start=0;
     sInt end = MyConfig->MidiDevice+1; if (end==0) end=100;
     for (int i=start; i<end && sMidiHandler->GetDeviceName(sTRUE,i); i++)
@@ -806,7 +853,7 @@ public:
       }
       {
         // current movie player ended?
-        if (TransTime<00 && Entry[1]->Movie && !Entry[1]->Movie->IsPlaying())
+        if (TransTime<0 && Entry[1]->Movie && !Entry[1]->Movie->IsPlaying())
         {
           doneId = CurId;
         }
@@ -831,6 +878,15 @@ public:
               SetTransition(RndTrans.Get(),newslide->TransitionTime);
             else
               SetTransition(newslide->TransitionId,newslide->TransitionTime);
+
+            if (newslide->MidiNote>0 && CurRenderTime > 5)
+            {
+              Config::Note note;
+              note.Pitch = newslide->MidiNote;
+              note.Velocity = 127;
+              note.Duration = 1.0f;
+              SendMidiNote(note);
+            }
           }
           else
           {
@@ -1055,6 +1111,7 @@ void sMain()
   sAddMidi(sTRUE, sTRUE);
 
   sGetMemHandler(sAMF_HEAP)->MakeThreadSafe();
+  sGetMemHandler(sAMF_HEAP)->IncludeInSnapshot = sTRUE;
 
   sArray<sDirEntry> dirlist;
   sString<1024> wintitle;

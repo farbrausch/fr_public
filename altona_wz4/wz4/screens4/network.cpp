@@ -351,11 +351,13 @@ sBool RPCServer::SetPlaylist(xml_node &in)
     pi->ID = item.attribute(L"name").as_string();
     pi->Type = item.attribute(L"type").as_string();
     pi->Path = item.child(L"path").text().as_string();
+    pi->SlideType = item.child(L"slide_type").text().as_string();
     pi->Duration = item.child(L"duration").text().as_float();
     pi->TransitionId = item.child(L"transition").text().as_int();
     pi->TransitionDuration = item.child(L"transition").attribute(L"duration").as_int()/1000.0f;
     pi->ManualAdvance = item.child(L"manual_advance").text().as_int();
     pi->Mute = item.child(L"mute").text().as_int();
+    pi->MidiNote = item.child(L"midi").text().as_int();
 
     xml_node sieg = item.child(L"siegmeister");
     pi->BarColor = sieg.child(L"bar_color").text().as_string();

@@ -18,12 +18,13 @@ extern void LogTime();
 
 template<class streamer> void PlaylistItem::Serialize_(streamer &s)
 {
-  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,1);
+  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,2);
   if (version>0)
   {
     s | ID | Type | Path;
     s | Duration | TransitionId | TransitionDuration | ManualAdvance | Mute;
-    
+    if (version>=2) s | SlideType | MidiNote;
+
     s | BarColor | BarBlinkColor1 | BarBlinkColor2 | BarAlpha;
     s.ArrayAll(BarPositions);
   }
@@ -761,6 +762,8 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       nsd->Id = item->ID;
       nsd->TransitionId = item->TransitionId;
       nsd->TransitionTime = SwitchHard ? 0 : item->TransitionDuration;
+      nsd->RenderType = item->SlideType;
+      nsd->MidiNote = item->MidiNote;
 
       if (!sCmpStringI(item->Type,L"Image"))
         nsd->Type = IMAGE;
