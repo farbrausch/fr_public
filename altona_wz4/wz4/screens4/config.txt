@@ -12,8 +12,8 @@ defaults
 
   //slideprefix "rvn13slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
   //slideprefix "besoffen"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
-  //transprefix "kotz"
-  //defaulttype  "good1"
+  //transprefix "kotz"      // prefix of transition renderer ops in the wz4 file (fallback is "trans")
+  //defaulttype  "good1"    // default slide type (fallback is using random)
 
   mididevice  -1            // used midi device; (-1 means all)
   midichannel 1             // midi channel for sending events (1..16)
@@ -31,7 +31,7 @@ defaults
 keys
 {
   ESC: stopsound
-  F1: playsound "sounds/announce.ogg"
+  F1: playsound "sounds/announce.ogg"  // playsound accepts only Ogg Vorbis files!
   F2: playsound "sounds/compo.ogg"
   
   SHIFT F5: resolution 1280,720,50
