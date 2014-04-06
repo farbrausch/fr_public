@@ -144,6 +144,13 @@ folder "tron"
   file "tADF.?pp";
 }
 
+folder "kb"
+{
+  file "kbfx.?pp";
+  file "kbfx_ops.ops";
+  file "kbfx_shader.asc";
+}
+
 folder "screens4"
 {
   file "screens4_ops.ops";
@@ -195,4 +202,7 @@ folder "_generated"
   file nonew "tron_shader.?pp";  
 
   file nonew "screens4_ops.?pp";
+
+  file nonew "kbfx_ops.?pp";
+  file nonew "kbfx_shader.?pp";
 }
