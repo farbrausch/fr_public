@@ -64,6 +64,9 @@ template<class Interface> class sFakeCOMObject : public Interface
   unsigned long __stdcall Release(void) { return 1; }
 };
 
+static void InitMF();
+
+
 class sMPSoundOutput
 {
 public:
@@ -919,28 +922,55 @@ public:
 
 sMoviePlayer * sCreateMoviePlayer(const sChar *filename, sInt flags, sTextureBase *alphatexture)
 {
+  InitMF();
   sMoviePlayerMF *mp = new sMoviePlayerMF;
   if (mp && !mp->Init(filename,flags,alphatexture)) sDelete(mp);
   return mp;
 }
 
 static HANDLE AvTaskHandle=INVALID_HANDLE_VALUE;
+static bool MFActive = 0;
 
 static void InitMF()
 {
-  // while we're at it, let the scheduler know we're doing something important :)
-  DWORD taskindex=0;
-  AvTaskHandle=AvSetMmThreadCharacteristics(L"Playback",&taskindex);
-
-  MFStartup(MF_VERSION);
+  if (!MFActive)
+  {
+    MFStartup(MF_VERSION);
+    MFActive = sTRUE;
+  }
 }
 
 static void ExitMF()
 {
+  if (MFActive)
+  {
+    MFShutdown();
+    MFActive = sFALSE;
+  }
+}
+
+static void DeviceLostHook(void*)
+{
+  ExitMF();
+}
+
+static void InitMFSys()
+{
+  // while we're at it, let the scheduler know we're doing something important :)
+  DWORD taskindex = 0;
+  AvTaskHandle = AvSetMmThreadCharacteristics(L"Playback", &taskindex);
+
+  sGraphicsLostHook->Add(DeviceLostHook);
+  InitMF();
+}
+
+static void ExitMFSys()
+{
+  sGraphicsLostHook->Rem(DeviceLostHook);
+  ExitMF();
+
   if (AvTaskHandle != INVALID_HANDLE_VALUE)
     AvRevertMmThreadCharacteristics(AvTaskHandle);
-
-  MFShutdown();
 }
 
 sADDSUBSYSTEM(MediaFoundation,0xe0,InitMF,ExitMF);
