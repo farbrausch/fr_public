@@ -1,0 +1,5 @@
+utf8 config_txt "Config.txt";
+utf8 plist_txt "Info.plist.txt";
+utf8 osxplist_txt "OsxInfo.plist.txt";
+utf8 androidmanifest_txt "AndroidManifest.txt";
+

@@ -1,0 +1,16 @@
+license bsd2; 
+project "ComputeMesh"
+{
+    depend "Base";
+    depend "Util";
+
+    config "debug_dx11_win32";
+    config "dfast_dx11_win32";
+    config "optim_dx11_win32";
+    config "final_dx11_win32";
+
+    file "Main.?pp";
+    file "mp.txt";
+    file "Shader.asc";
+    file nonew "Shader.hpp";
+}

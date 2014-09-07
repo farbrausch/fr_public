@@ -1,0 +1,25 @@
+license bsd2; 
+project "FontToy"
+{
+    depend "Base";
+    depend "Util";
+    depend "Gui";
+
+    config "debug_dx9_win32";
+    config "dfast_dx9_win32";
+    config "optim_dx9_win32";
+    config "final_dx9_win32";
+    config "debug_dx11_win32";
+    config "dfast_dx11_win32";
+    config "optim_dx11_win32";
+    config "final_dx11_win32";
+    config "debug_gl2_win32";
+    config "dfast_gl2_win32";
+    config "optim_gl2_win32";
+    config "final_gl2_win32";
+
+    file "Main.?pp";
+    file "Gui.?pp";
+
+    file "mp.txt";
+}

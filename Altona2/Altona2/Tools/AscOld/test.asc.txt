@@ -1,0 +1,59 @@
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2010 Dierk Ohlerich, all rights reserved                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+
+
+mtrl ImageIconShader
+{
+  float4 pos          : ia2vs         : POSITION;
+  lowp float4 color   : ia2vs         : COLOR;
+  lowp float4 color2  :         vs2ps : COLOR;
+  mediump float2 uv   : ia2vs         : TEXCOORD0;
+  mediump float2 uv0  :         vs2ps : TEXCOORD0;
+  mediump float2 uv1  :         vs2ps : TEXCOORD1;
+  float4 r            : ps2om         : SV_Target;
+  float4 tpos         : vs2rs         : SV_Position;
+	
+  Texture2D tex0 : ps(0);
+  SamplerState sam0 : ps(0);
+  Texture2D tex1 : ps(1);
+  SamplerState sam1 : ps(1);
+
+  cbuffer cbvs : vs(0) : register(0)
+  {
+    row_major float4x4 MS2SS;
+  };
+  
+  vs
+  {
+    tpos = mul(MS2SS,pos);
+    uv1 = uv;//*(170.0/256.0);
+    mediump float2 uv_ = uv*1.20+(0.5-0.5*1.20);
+    mediump float2 uvc = color.xy;
+    uv0 = uv_*(170.0/1024.0) + uvc*(170.0/1024.0/16.0*255.0);
+    color2.w = color.w;
+    color2.xyz = float3(160.0/255.0,180.0/255.0,172.0/255.0)*(1-color.w);
+  }
+  ps
+  {
+/*
+    lowp float4 image = tex0.Sample(sam0,uv0);
+    lowp float4 frame = tex1.Sample(sam1,uv1);
+
+    lowp float4 m; 
+
+    m.xyz = image.xyz*frame.yyy+frame.xxx;
+    m.xyz = m.xyz * color2.w + color2.xyz;
+    m.w = frame.w;    
+    r = m;
+*/
+    lowp float4 image = tex0.Sample(sam0,uv0);
+    lowp float4 frame = tex1.Sample(sam1,uv1).xyyz;
+    r.xyz = image.xyz * frame.xyz * color2.www + color2.xyz;
+    r.w = frame.w;
+  }
+}
+

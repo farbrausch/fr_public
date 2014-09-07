@@ -1,0 +1,23 @@
+license bsd2; 
+project "AscOld"
+{
+    depend "base";
+    depend "util";
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+
+    file "Main.?pp";
+    file "Doc.?pp";
+    file "Asc.?pp";
+    file "AscParse.cpp";
+    file "AscDump.cpp";
+    file "AscOut.cpp";
+    file "mp.txt";
+
+    file nonew "Test.asc.txt";
+    file nonew "Test.log.txt";
+    file nonew "Test.cpp" options "*" { exclude; };
+    file nonew "Test.hpp";
+}

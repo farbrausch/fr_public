@@ -1,0 +1,17 @@
+license bsd2; 
+project "pointsprites"
+{
+    depend "base";
+    depend "util";
+
+    config "debug_dx11_win32";
+    config "dfast_dx11_win32";
+    config "optim_dx11_win32";
+    config "final_dx11_win32";
+
+    file "main.cpp";
+    file "main.hpp";
+    file "mp.txt";
+    file "shader.asc";
+    file nonew "shader.hpp";
+}

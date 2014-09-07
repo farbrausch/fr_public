@@ -1,0 +1,8 @@
+utf8 test_txt "test.txt";
+
+inline test2_txt @
+k fajdsf sdaf 
+sfsöadl jfklsadjf sad
+fdöl jsakdfk lasd
+@;
+

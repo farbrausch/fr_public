@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="incbin"
+	Version="8,00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="incbin"
+			DisplayName="incbin"
+			CommandLine="incbin $(InputFileName) -out=$(IntDir)\$(InputName).obj"
+			Outputs="$(IntDir)\$(InputName).obj"
+			FileExtensions="*.incbin"
+			ExecutionDescription="incbin $(InputFileName) -out=$(IntDir)\$(InputName).obj"
+			ShowOnlyRuleProperties="false"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

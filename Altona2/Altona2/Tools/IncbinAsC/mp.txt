@@ -1,0 +1,17 @@
+license bsd2; 
+project "IncbinAsC"
+{
+    depend "Base";
+    depend "Util";
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+    config "debug_null_shell_osx";
+    config "dfast_null_shell_osx";
+    config "optim_null_shell_osx";
+    config "final_null_shell_osx";
+    file "Main.?pp";
+    file "mp.txt";
+    file nonew "Test.txt";
+}

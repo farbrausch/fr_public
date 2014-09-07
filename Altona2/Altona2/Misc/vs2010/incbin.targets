@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema
+      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName
+      Include="incbin">
+      <Targets>_incbin</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+  <UsingTask
+    TaskName="incbin"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+  <Target
+    Name="_incbin"
+    BeforeTargets="$(incbinBeforeTargets)"
+    AfterTargets="$(incbinAfterTargets)"
+    Condition="'@(incbin)' != ''"
+    DependsOnTargets="$(incbinDependsOn);ComputeincbinOutput"
+    Outputs="@(incbin-&gt;Metadata('Outputs')-&gt;Distinct())"
+    Inputs="@(incbin);%(incbin.AdditionalDependencies);$(MSBuildProjectFile)">
+    <ItemGroup
+      Condition="'@(SelectedFiles)' != ''">
+      <incbin
+        Remove="@(incbin)"
+        Condition="'%(Identity)' != '@(SelectedFiles)'" />
+    </ItemGroup>
+    <ItemGroup>
+      <incbin_tlog
+        Include="%(incbin.Outputs)"
+        Condition="'%(incbin.Outputs)' != '' and '%(incbin.ExcludedFromBuild)' != 'true'">
+        <Source>@(incbin, '|')</Source>
+      </incbin_tlog>
+    </ItemGroup>
+    <Message
+      Importance="High"
+      Text="%(incbin.ExecutionDescription)" />
+    <WriteLinesToFile
+      Condition="'@(incbin_tlog)' != '' and '%(incbin_tlog.ExcludedFromBuild)' != 'true'"
+      File="$(IntDir)$(ProjectName).write.1.tlog"
+      Lines="^%(incbin_tlog.Source);@(incbin_tlog-&gt;'%(Fullpath)')" />
+    <incbin
+      Condition="'@(incbin)' != '' and '%(incbin.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(incbin.CommandLineTemplate)"
+      ObjectFileName="%(incbin.ObjectFileName)"
+      AdditionalOptions="%(incbin.AdditionalOptions)"
+      Inputs="@(incbin)" />
+  </Target>
+  <PropertyGroup>
+    <ComputeLinkInputsTargets>
+            $(ComputeLinkInputsTargets);
+            ComputeincbinOutput;
+          </ComputeLinkInputsTargets>
+    <ComputeLibInputsTargets>
+            $(ComputeLibInputsTargets);
+            ComputeincbinOutput;
+          </ComputeLibInputsTargets>
+  </PropertyGroup>
+  <Target
+    Name="ComputeincbinOutput"
+    Condition="'@(incbin)' != ''">
+    <ItemGroup>
+      <incbinDirsToMake
+        Condition="'@(incbin)' != '' and '%(incbin.ExcludedFromBuild)' != 'true'"
+        Include="%(incbin.Outputs)" />
+      <Link
+        Include="%(incbinDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <Lib
+        Include="%(incbinDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <ImpLib
+        Include="%(incbinDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+    </ItemGroup>
+    <MakeDir
+      Directories="@(incbinDirsToMake-&gt;'%(RootDir)%(Directory)')" />
+  </Target>
+</Project>

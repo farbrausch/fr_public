@@ -1,0 +1,12 @@
+license bsd2; 
+project "Sort"
+{
+    depend "Base";
+
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+
+    file "Main.cpp";
+}

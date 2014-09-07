@@ -1,0 +1,17 @@
+license bsd2; 
+project "unicodce"
+{
+    depend "base";
+
+    config "debug_null_shell_win32";
+    config "optim_null_shell_win32";
+
+    config "debug_null_shell_linux";
+    config "optim_null_shell_linux";
+
+    config "debug_null_shell_osx";
+    config "optim_null_shell_osx";
+
+    file "main.cpp";
+    file "mp.txt";
+}

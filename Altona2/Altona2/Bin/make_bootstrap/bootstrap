@@ -1,0 +1,22 @@
+make
+makeproject -r=`echo ~/source/altona2` -build=make -platform=linux
+
+cd ~/source/altona2/Altona2/Tools/Incbin
+make clean
+make CONFIG=debug_null_shell_linux
+cp final_null_shell_linux/Incbin.out ~/bin/incbin
+
+cd ~/source/altona2/Altona2/Tools/Asc
+make clean
+make CONFIG=debug_null_shell_linux
+cp final_null_shell_linux/Asc.out ~/bin/asc
+
+cd ~/source/altona2/Altona2/Tools/MakeProject
+make clean
+make CONFIG=debug_null_shell_linux
+cp final_null_shell_linux/MakeProject.out ~/bin/makeproject
+
+cd ~/source/altona2/Altona2/Bin/make_bootstrap
+
+
+

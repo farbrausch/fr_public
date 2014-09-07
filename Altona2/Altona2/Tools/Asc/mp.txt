@@ -1,0 +1,35 @@
+// commandline for testing:
+// -i=test.asc.txt -h=test.hpp -cpp=test.cpp -d=test.log.txt -p=dx9
+
+license bsd2; 
+project "Asc"
+{
+    depend "Base";
+    depend "Util";
+
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+
+    config "debug_null_shell_osx";
+    config "dfast_null_shell_osx";
+    config "optim_null_shell_osx";
+    config "final_null_shell_osx";
+
+    file "Main.?pp";
+    file "Doc.?pp";
+    file "Asc.cpp";
+    file "Hlsl.cpp";
+    file "Glsl.cpp";
+    file "mp.txt";
+
+    folder "Test"
+    {
+        file "Test.asc.txt";
+        file nonew "Test.log.txt";
+        file nonew "Test.cpp" options "*" { exclude; };
+        file nonew "Test.hpp";
+        file nonew "Test.o.asm";
+    }
+}

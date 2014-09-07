@@ -1,0 +1,335 @@
+/****************************************************************************/
+/***                                                                      ***/
+/***   (C) 2012-2013 Dierk Ohlerich, all rights reserved                  ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+material TestShader
+{
+    struct ia2vs
+    {
+        float3 msPos : Position;
+        float3 msNorm : Normal;
+        inject ia2vs;
+    }
+
+    struct vs2ps
+    {
+        lowp float4 Color;
+        inject vs2ps;
+    }
+
+    struct vs2rs
+    {
+        float4 ssPos : PositionT;
+    }
+
+    struct ps2om
+    {
+        float4 Target : Target;
+    }
+
+    vs
+    {
+        Buffer<float4> Instances : Slot0;
+
+        cbuffer vs0 : Vs0
+        {
+            row_major float4x4 MS2SS;
+            float Test;
+
+            inject VSConst;
+        }
+
+        func void main(in ia2vs i,out vs2ps o,out vs2rs r)
+        {
+            uint index = 0;
+            float4x4 mat = float4x4(Instances[index*3+0],Instances[index*3+1],Instances[index*3+2],float4(0,0,0,1));
+            r.ssPos = 0.0;
+    //        r.ssPos = i.msPos.xyz1 * MS2SS;
+            r.ssPos = MS2SS * i.msPos.xyz1;
+            o.Color = 1.0;
+            inject ILight;
+            inject VS;
+        }
+    }
+
+    ps
+    {
+        TexSam2D tex0 : Slot0;
+
+        func void main(in vs2ps i, out ps2om r)
+        {
+            r.Target = i.Color;
+            inject IColor;
+        }
+    }
+
+    module Light
+    {
+        inject VSConst
+        {
+            float3 LDir;
+        }
+        inject ILight
+        {
+            lowp float l = (LDir**i.msNorm)+0.125;
+            o.Color *= l;
+        }
+    }
+
+    module UV0
+    {
+        once;
+        inject ia2vs
+        {
+            float2 Uv : Tex0;
+        }
+        inject vs2ps
+        {
+            mediump float2 Uv;
+        }
+        inject VS
+        {
+            o.Uv = i.Uv;
+        }
+    }
+
+    module TexMul
+    {
+        cond TexAdd;
+        cond TexSwizzle { Off, Alpha, Monochrome };
+        depend UV0;
+        inject IColor
+        {
+            float4 t = tex0.Sample(i.Uv);
+
+            cif(TexSwizzle.Alpha)
+                t = t.wwww;
+            cif(TexSwizzle.Monochrome)
+                t = t.xxx1;
+            cif(TexAdd)
+                r.Target += t;
+            else
+                r.Target *= t;
+        }
+    }
+
+    use TexMul;
+    use Light;
+}
+    
+
+virtual material Skeleton
+{
+    struct ia2vs
+    {
+        inject ia2vs;
+    }
+    struct vs2ps
+    {
+        inject vs2ps;
+    }
+    struct vs2rs
+    {
+        float4 ssPos : PositionT;
+    }
+    struct ps2om
+    {
+        float4 Target : Target;
+    }
+
+    vs
+    {
+        cbuffer vs0 : Vs0
+        {
+            row_major float4x4 MS2SS;
+            inject VSConst;
+        }
+
+        func void main(in ia2vs i,out vs2ps o,out vs2rs r)
+        {
+            inject VSTransform;
+            inject VS;
+            float4 ocol = 1.0;
+            inject VSColor;
+            inject Light;
+            inject VSEnd;
+        }
+    }
+
+    ps
+    {
+        TexSam2D tex0 : Slot0;
+
+        func void main(in vs2ps i, out ps2om r)
+        {
+            float4 ocol = 1.0;
+            inject PSColor;
+            r.Target = ocol;
+        }
+    }
+
+    module Pxyz
+    {
+        once;
+        inject ia2vs
+        {
+            float3 pos : Position;
+        }
+        inject VS
+        {
+            r.ssPos = MS2SS*i.pos.xyz1;
+        }
+    }
+    module Pxyzw
+    {
+        once;
+        inject ia2vs
+        {
+            float4 posw : Position;  
+        }
+        inject VS
+        {
+            r.ssPos = MS2SS*i.posw;
+        }
+    }
+    module vs2psColor
+    {
+        once;
+        inject vs2ps
+        {
+            lowp float4 color : Color0;
+        }
+        inject VSEnd
+        {
+            o.color = ocol;
+        }
+    }
+
+    module PCol
+    {
+        once;
+        depend vs2psColor;
+        inject ia2vs
+        {
+            lowp float4 color : Color0;
+        }
+        inject VSColor
+        {
+            ocol *= i.color;
+        }
+        inject PSColor
+        {
+            ocol *= i.color;
+        }
+    }
+    module psUv0
+    {
+        once;
+        inject ia2vs
+        {
+            mediump float2 uv0 : Tex0;
+        }
+        inject vs2ps
+        {
+            mediump float2 uv0;
+        }
+        inject VS
+        {
+            o.uv0 = i.uv0;
+        }
+    }
+    module psTex0
+    {
+        once;
+        depend psUv0;
+    }
+
+    module TexOn
+    {
+        once;
+        depend psTex0;
+        inject PSColor
+        {
+            ocol *= tex0.Sample(i.uv0);
+        }
+    }
+
+    module TexAlpha
+    {
+        once;
+        depend psTex0;
+        inject PSColor
+        {
+            ocol.w *= tex0.Sample(i.uv0).w;
+        }
+    }
+
+    module TexMono
+    {
+        once;
+        depend psTex0;
+        inject PSColor
+        {
+            ocol.xyz *= tex0.Sample(i.uv0).x;
+        }
+    }
+
+    module TexRed
+    {
+        once;
+        depend psTex0;
+        inject PSColor
+        {
+            ocol *= tex0.Sample(i.uv0).x;
+        }
+    }
+}
+
+material sFixedShaderFlat : Skeleton
+{
+    varbool PCol;
+    var PTex { Off=0,On=TexOn,AlphaOnly=TexAlpha,Monochrome=TexMono,RedAlpha=TexRed };
+    varbool PW ? Pxyzw : Pxyz;
+}
+
+
+material sFixedShaderLight : Skeleton
+{
+
+    module Light
+    {
+        inject VSConst
+        {
+            float4 LightDirX;
+            float4 LightDirY;
+            float4 LightDirZ;
+            float4 LightColR;
+            float4 LightColG;
+            float4 LightColB;
+            float3 Ambient;
+        }
+        inject ia2vs
+        {
+            lowp float3 Normal : Normal;
+        }
+        inject Light
+        {
+            float4 l;
+            l = LightDirX*i.Normal.xxxx
+                + LightDirY*i.Normal.yyyy
+                + LightDirZ*i.Normal.zzzz;
+            l = max(l,0.0);
+
+            ocol.x *= dot(LightColR,l);
+            ocol.y *= dot(LightColG,l);
+            ocol.z *= dot(LightColB,l);
+        }
+    }
+    use Pxyz;
+    use Light;
+    varbool PCol;
+    var PTex { Off=0,On=TexOn,AlphaOnly=TexAlpha,Monochrome=TexMono,RedAlpha=TexRed };
+}
+

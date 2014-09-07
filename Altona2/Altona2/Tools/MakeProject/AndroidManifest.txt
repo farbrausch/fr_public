@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BEGIN_INCLUDE(manifest) -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.farbrausch.$(PROJECT)"
+        android:versionCode="1"
+        android:versionName="1.0">
+
+    <!-- This is the platform API where NativeActivity was introduced. -->
+    <uses-sdk android:minSdkVersion="14" />
+    <uses-sdk android:targetSdkVersion="14" />
+    <uses-feature android:glEsVersion="0x00020000"/>
+
+
+  <!-- This .apk has no Java code itself, so set hasCode to false. -->
+    <application android:label="$(PROJECT)" android:hasCode="false">
+
+        <!-- Our activity is the built-in NativeActivity framework class.
+             This will take care of integrating with our NDK code. -->
+        <activity android:name="android.app.NativeActivity"
+                android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+                android:label="$(PROJECT)"
+                android:screenOrientation="landscape">
+            <!-- Tell NativeActivity the name of or .so -->
+            <meta-data android:name="android.app.lib_name"
+                    android:value="$(PROJECT)" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest> 
+<!-- END_INCLUDE(manifest) -->

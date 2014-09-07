@@ -1,0 +1,45 @@
+license bsd2; 
+library "Base"
+{
+    alias "Base";
+
+    file "Base.hpp";
+    file "Containers.?pp";
+    file nonew "FixedShader.hpp";
+    file "FixedShader.asc" options "*Null*" { exclude; };
+    file "Graphics.?pp";
+    file "Machine.?pp";
+    file "Math.?pp";
+    file "mp.txt";
+    file "Perfmon.?pp";
+    file "Serialize.?pp";
+    file "String.?pp";
+    file "System.?pp";
+    file "SystemPrivate.hpp";
+    file "Types.?pp";
+    file "Types2.?pp";
+    file "Wintab.cpp";
+    file "Wintab.h";
+//  file "Obsolete.hpp";
+  
+    folder "System"
+    {
+        file "SystemIos.mm" options "!*Ios" { exclude; };
+        file "SystemIos.hpp" options "!*Ios" { exclude; };
+        file "SystemLinux.cpp" options "!*Linux" { exclude; };
+        file "SystemAndroid.cpp" options "!*Android" { exclude; };
+        file "SystemOsx.mm" options "!*Osx" { exclude; };
+        file "SystemOsx.hpp" options "!*Osx" { exclude; };
+        file "SystemWin.?pp" options "!*Win32" { exclude; };
+        file "SystemPosix.?pp";
+    }
+    folder "Graphics"
+    {
+        file "GraphicsDx9.?pp" options "!*Dx9*" { exclude; };
+        file "GraphicsDx11.?pp" options "!*Dx11*" { exclude; };
+        file "GraphicsGl2.?pp" options "!*Gl*" { exclude; };
+        file "GraphicsGlew.?pp" options "!*Gl*" { exclude; };
+        file "GraphicsNull.?pp" options "!*Null*" { exclude; };
+        file "DxShaderCompiler.?pp" options "!*Win32" { exclude; };
+    }
+}

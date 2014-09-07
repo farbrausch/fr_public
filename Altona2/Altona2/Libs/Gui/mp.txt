@@ -1,0 +1,37 @@
+license bsd2; 
+library "Gui"
+{
+    alias "Gui";
+
+    file "mp.txt";
+
+    folder "System"
+    {
+        file "Gui.hpp";
+        file "Manager.?pp";
+        file "Window.?pp";
+        file "Style.?pp";   // the old system
+//        file "SkinParser.?pp";   // the new system
+//        file "Skin.?pp";
+//        file "Classic.skin";
+//        file "Incbin.incbin" depend "classic.skin";
+        file "Helpers.?pp";
+    }
+    folder "Windows"
+    { 
+        file "Buttons.?pp";
+        file "Frames.?pp";
+        file "Borders.?pp";
+        file "Text.?pp";
+        file "List.?pp";
+        file "Dialog.?pp";
+        file "Image.?pp";
+        file "File.?pp";
+        file "3d.?pp";
+    }
+    folder "Styles"
+    {
+        file "StyleSmall.?pp";
+        file "StyleFlat.?pp";    
+    }
+}

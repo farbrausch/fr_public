@@ -1,0 +1,12 @@
+license bsd2; 
+library "Asl"
+{
+    alias "Asl";
+    file "Asl.?pp";
+    file "Parser.?pp";
+    file "Tree.?pp";
+    file "Transform.?pp";
+    file "mp.txt";
+    file "Module.?pp";
+}
+

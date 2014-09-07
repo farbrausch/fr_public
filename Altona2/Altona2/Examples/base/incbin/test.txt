@@ -1,0 +1,26 @@
+Maxwell's equations are a set of partial differential equations that, 
+together with the Lorentz force law, form the foundation of classical 
+electrodynamics, classical optics, and electric circuits. These in 
+turn underlie modern electrical and communications technologies.
+
+Maxwell's equations have two major variants. The "microscopic" set 
+of Maxwell's equations uses total charge and total current including 
+the difficult-to-calculate atomic level charges and currents in 
+materials. The "macroscopic" set of Maxwell's equations defines two 
+new auxiliary fields that can sidestep having to know these 'atomic' 
+sized charges and currents.
+
+Maxwell's equations are named after the Scottish physicist and 
+mathematician James Clerk Maxwell, since in an early form they are 
+all found in a four-part paper, "On Physical Lines of Force," which 
+he published between 1861 and 1862. The mathematical form of the 
+Lorentz force law also appeared in this paper.
+
+It is often useful to write Maxwell's equations in other forms; 
+these representations are still formally termed "Maxwell's equations". 
+A relativistic formulation in terms of covariant field tensors is 
+used in special relativity, while, in quantum mechanics, a version 
+based on the electric and magnetic potentials is preferred.
+
+(c) wikipedia
+http://en.wikipedia.org/wiki/Maxwell%27s_equations

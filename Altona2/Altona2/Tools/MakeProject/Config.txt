@@ -1,0 +1,1219 @@
+/****************************************************************************/
+/***                                                                      ***/
+/***   Altona2 (c) Dierk Ohlerich 2010                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Windows                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options win32
+{
+	group vs2013 "ClCompile"
+    {
+        item "PrecompiledHeader" = "";
+        item "WarningLevel" = "Level3";
+        item "PreprocessorDefinitions" += "WIN32;sDEFINE_ALTONA2;$(library?_LIB;:)";
+        item "AdditionalIncludeDirectories" = "$(rootpath);";
+    }
+    group vs2013 "Link"
+    {
+        item "SubSystem" = "Windows";
+        item "GenerateDebugInformation" = "true";
+        item "AdditionalDependencies" = "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;";
+    }
+    group vs2013 "*PropertyGroup"
+    {
+        item "OutDir" = "\\$(SolutionDir)\\$(Configuration)_\\$(Platform)\\";
+        item "IntDir" = "\\$(Configuration)_\\$(Platform)\\";
+		item "ExecutablePath" = "$(rootpath)/Altona2/Bin/winx86;\\$(ExecutablePath)";
+    }
+    group vs2013 "incbin"
+    {
+        item x86 "Message" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj";
+        item x86 "Command" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj";
+        item x64 "Message" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -x64";
+        item x64 "Command" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -x64";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj";
+    }
+    group vs2013 "asc"
+    {
+//        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+//        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null -x64";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj";
+    }
+    group vs2013 "ops"
+    {
+        item "Message" = "wz5ops -i=%(Filename)%(Extension) -c=%(FileName).ops.cpp -h=%(Filename).ops.hpp";
+        item "Command" = "wz5ops -i=%(Filename)%(Extension) -c=%(FileName).ops.cpp -h=%(Filename).ops.hpp";
+        item "Outputs" = "%(Filename).ops.cpp; %(Filename).ops.hpp";
+        item "LinkObjects" = "false";
+    }
+    group vs2013 "para"
+    {
+        item "Message" = "SpOps %(Filename)%(Extension)";
+        item "Command" = "SpOps %(Filename)%(Extension)";
+        item "Outputs" = "%(Filename)%(Extension).cpp; %(Filename)%(Extension).hpp";
+        item "LinkObjects" = "false";
+    }
+    group vs2013 "packfile"
+    {
+        item "Message" = "packfile -i=%(Filename)%(Extension) -o=%(FileName).pak";
+        item "Command" = "packfile -i=%(Filename)%(Extension) -o=%(FileName).pak";
+        item "Outputs" = "%(Filename).pak";
+    }
+  
+  
+    group vs2012 "ClCompile"
+    {
+        item "PrecompiledHeader" = "";
+        item "WarningLevel" = "Level3";
+        item "PreprocessorDefinitions" += "WIN32;sDEFINE_ALTONA2;$(library?_LIB;:)";
+        item "AdditionalIncludeDirectories" = "$(rootpath);";
+    }
+    group vs2012 "Link"
+    {
+        item "SubSystem" = "Windows";
+        item "GenerateDebugInformation" = "true";
+        item "AdditionalDependencies" = "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;";
+    }
+    group vs2012 "*PropertyGroup"
+    {
+        item "OutDir" = "\\$(SolutionDir)\\$(Configuration)_\\$(Platform)\\";
+        item "IntDir" = "\\$(Configuration)_\\$(Platform)\\";
+		item "ExecutablePath" = "$(rootpath)/Altona2/Bin/winx86;\\$(ExecutablePath)";
+    }
+    group vs2012 "incbin"
+    {
+        item x86 "Message" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj";
+        item x86 "Command" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj";
+        item x64 "Message" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -x64";
+        item x64 "Command" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -x64";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj";
+    }
+    group vs2012 "asc"
+    {
+//        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+//        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)%(Filename).obj -h=%(Filename).hpp -p=null -x64";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj";
+    }
+    group vs2012 "ops"
+    {
+        item "Message" = "wz5ops -i=%(Filename)%(Extension) -c=%(FileName).ops.cpp -h=%(Filename).ops.hpp";
+        item "Command" = "wz5ops -i=%(Filename)%(Extension) -c=%(FileName).ops.cpp -h=%(Filename).ops.hpp";
+        item "Outputs" = "%(Filename).ops.cpp; %(Filename).ops.hpp";
+        item "LinkObjects" = "false";
+    }
+    group vs2012 "para"
+    {
+        item "Message" = "SpOps %(Filename)%(Extension)";
+        item "Command" = "SpOps %(Filename)%(Extension)";
+        item "Outputs" = "%(Filename)%(Extension).cpp; %(Filename)%(Extension).hpp";
+        item "LinkObjects" = "false";
+    }
+    group vs2012 "packfile"
+    {
+        item "Message" = "packfile -i=%(Filename)%(Extension) -o=%(FileName).pak";
+        item "Command" = "packfile -i=%(Filename)%(Extension) -o=%(FileName).pak";
+        item "Outputs" = "%(Filename).pak";
+    }
+  
+  
+    group vs2010 "ClCompile"
+    {
+        item "PrecompiledHeader" = "";
+        item "WarningLevel" = "Level3";
+        item "PreprocessorDefinitions" += "WIN32;sDEFINE_ALTONA2;$(library?_LIB;:)";
+        item "AdditionalIncludeDirectories" = "$(rootpath);\\$(DXSDK_DIR)include;";
+    }
+    group vs2010 "Link"
+    {
+        item "SubSystem" = "Windows";
+        item "GenerateDebugInformation" = "true";
+        item "AdditionalDependencies" = "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;";
+    }
+    group vs2010 "incbin"
+    {
+        item "Message" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/%(Filename).obj";
+        item "Command" = "incbin2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/%(Filename).obj";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj";
+        item "ObjectFileName>" = "\\$(OutDir)/%(Filename).obj";
+    }
+    group vs2010 "asc"
+    {
+        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=null";
+        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=null";
+        item "Outputs" = "\\$(OutDir)/%(Filename).obj;%(Filename).hpp";
+        item "ObjectFileName" = "\\$(OutDir)/%(Filename).obj";
+    }
+  
+    group vs2008 ""
+    {
+        item "OutputDirectory" = "\\$(SolutionDir)\\$(ConfigurationName)_Win32";
+        item "IntermediateDirectory" = "\\$(ConfigurationName)_Win32";
+        item "ConfigurationType" = "$(library?4:1)";
+        item "CharacterSet" = "1";
+    }
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" = "WIN32;sDEFINE_ALTONA2;_WINDOWS;$(library?_LIB;:)";
+        item "AdditionalIncludeDirectories" = "$(rootpath);\\$(DXSDK_DIR)include;";
+        item "Optimization" = "3"; 
+        item "InlineFunctionExpansion" = "2";
+        item "EnableIntrinsicFunctions" = "true";
+        item "EnableEnhancedInstructionSet" = "2";
+        item "FloatingPointModel" = "2";
+        item "OmitFramePointers" = "true";
+        item "RuntimeLibrary" = "0";
+        item "UsePrecompiledHeader" = "0";
+        item "WarningLevel" = "3";
+        item "DebugInformationFormat" = "3";
+        item "ExceptionHandling" = "0";
+        item "BufferSecurityCheck" = "false";
+        item "EnableFunctionLevelLinking" = "true";
+        item "StringPooling" = "true";
+        item "RuntimeTypeInfo" = "false";
+        item "DefaultCharIsUnsigned" = "true";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "AdditionalDependencies" = "user32.lib gdi32.lib ole32.lib winmm.lib comdlg32.lib";
+        item "AdditionalDependencies" += " dsound.lib dinput8.lib dxguid.lib xinput.lib";
+
+        item "LinkIncremental" = "1";
+        item "GenerateDebugInformation" = "true";
+        item "SubSystem" = "2";
+        item "LargeAddressAware" = "2";
+        item "OptimizeReferences" = "2";
+        item "EnableCOMDATFolding" = "2";
+        item "GenerateManifest" = "false";  
+    }
+    group vs2008 "incbin"
+    {
+        item "Description" = "incbin2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj";
+        item "CommandLine" = "incbin2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj";
+        item "Outputs" = "\\$(OutDir)/\\$(InputName).obj";
+    }
+    group vs2008 "packfile"
+    {
+        item "Description" = "packfile -i=\\$(InputFileName) -o=\\$(InputDir)\\$(InputName).pak";
+        item "CommandLine" = "packfile -i=\\$(InputFileName) -o=\\$(InputDir)\\$(InputName).pak";
+        item "Outputs" = "\\$(InputDir)\\$(InputName).pak";
+    }
+    group vs2008 "asc"
+    {
+        item "Description" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=null";
+        item "CommandLine" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=null";
+        item "Outputs" = "\\$(OutDir)/\\$(InputName).obj; \\$(InputName).hpp";
+    }
+    group vs2008 "ops"
+    {
+        item "Description" = "wz5ops -i=\\$(InputFileName) -c=\\$(InputName).ops.cpp -h=\\$(InputName).ops.hpp";
+        item "CommandLine" = "wz5ops -i=\\$(InputFileName) -c=\\$(InputName).ops.cpp -h=\\$(InputName).ops.hpp";
+        item "Outputs" = "\\$(InputName).ops.cpp; \\$(InputName).ops.hpp";
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Linux                                                              ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options linux
+{
+    group make ""
+    {
+        item "cflags" += " -std=c++11 -I $(root) -DsDEFINE_LINUX -DsDEFINE_ALTONA2 -funsigned-char";
+        item "libs" += " -lrt";
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Android                                                            ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options android
+{
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -std=gnu++11 -DsDEFINE_ANDROID -DsDEFINE_ALTONA2 -DsDEFINE_PLAYER -funsigned-char ";
+        item "APP_LDFLAGS" += " -llog -landroid -lEGL -lOpenSLES ";
+    }
+    group ndk "General"
+    {
+        item "NDK_TOOLCHAIN_VERSION" = "4.7";
+        item "APP_PLATFORM" = "android-14";
+        item "APP_ABI" += " armeabi armeabi-v7a ";
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   OSX                                                                ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options osx
+{
+    group xcode4 ""
+    {
+        item "Frameworks" = "AppKit Cocoa CoreData Foundation QuartzCore OpenGL AudioUnit ";
+    }
+    group xcode4 "PBXProject"
+    {
+        item "ARCHS" = "\\$(ARCHS_STANDARD_64_BIT)";
+        item "CLANG_CXX_LANGUAGE_STANDARD" = "c++0x";
+        item "GCC_C_LANGUAGE_STANDARD" = "c11";
+        item "GCC_PREPROCESSOR_DEFINITIONS" = "sDEFINE_OSX sDEFINE_LLVM sDEFINE_ALTONA2 ";
+        item "USER_HEADER_SEARCH_PATHS" = "$(rootpath)";
+        item "GCC_SYMBOLS_PRIVATE_EXTERN" = "NO";       // *** only debug???
+        item "GCC_VERSION" = "com.apple.compilers.llvm.clang.1_0";
+        item "GCC_WARN_64_TO_32_BIT_CONVERSION" = "YES";
+        item "GCC_WARN_ABOUT_RETURN_TYPE" = "YES";
+        item "GCC_WARN_UNUSED_VARIABLE" = "YES";
+        item "MACOSX_DEPLOYMENT_TARGET" = "10.7";
+        item "ONLY_ACTIVE_ARCH" = "YES";                // *** only debug ???
+        item "SDKROOT" = "macosx";
+    }
+  
+    group xcode4 "PBXNativeTarget"
+    {
+        item "ALWAYS_SEARCH_USER_PATHS" = "NO";
+        item "GCC_ENABLE_OBJC_EXCEPTIONS" = "YES";
+        item "GCC_CHAR_IS_UNSIGNED_CHAR" = "YES";
+        item "CLANG_CXX_LANGUAGE_STANDARD" = "c++0x";
+        item "GCC_C_LANGUAGE_STANDARD" = "c11";
+        item "INFOPLIST_FILE" = "$(solutiondir)/osx.info.plist";
+        item "PRODUCT_NAME" = "\\$(TARGET_NAME)";
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   IOS                                                                ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options ios
+{
+    group xcode4 ""
+    {
+        item "Frameworks" = "UIKit Foundation CoreGraphics QuartzCore OpenGLES AudioToolbox CoreAudio ";
+    }
+    group xcode4 "PBXProject"
+    {
+        item "ARCHS" = "\\$(ARCHS_UNIVERSAL_IPHONE_OS)";
+        item "CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+        item "GCC_C_LANGUAGE_STANDARD" = "c11";
+        item "CLANG_CXX_LANGUAGE_STANDARD" = "c++0x";    
+        item "GCC_PREPROCESSOR_DEFINITIONS" = "sDEFINE_IOS sDEFINE_LLVM sDEFINE_ALTONA2 sDEFINE_PLAYER ";
+        item "USER_HEADER_SEARCH_PATHS" = "$(rootpath)";
+        item "GCC_SYMBOLS_PRIVATE_EXTERN" = "NO";       // *** only debug???
+        item "GCC_WARN_64_TO_32_BIT_CONVERSION" = "YES";
+        item "GCC_WARN_ABOUT_RETURN_TYPE" = "YES";
+        item "GCC_WARN_UNUSED_VARIABLE" = "YES";
+        item "IPHONEOS_DEPLOYMENT_TARGET" = "4.3";
+//        item "ONLY_ACTIVE_ARCH" = "YES";                // *** only debug ???
+        item "SDKROOT" = "iphoneos";
+        item "TARGETED_DEVICE_FAMILY" = "1,2";
+    }
+  
+    group xcode4 "PBXNativeTarget"
+    {
+        item "ALWAYS_SEARCH_USER_PATHS" = "NO";
+        item "GCC_ENABLE_OBJC_EXCEPTIONS" = "YES";
+        item "PRODUCT_NAME" = "\\$(TARGET_NAME)";
+        item "GCC_THUMB_SUPPORT[arch=armv6]" = "";
+        item "INFOPLIST_FILE" = "$(solutiondir)/ios.info.plist";
+        item "GCC_VERSION" = "com.apple.compilers.llvm.clang.1_0";
+        item "WRAPPER_EXTENSION" = "app";
+        item "GCC_CHAR_IS_UNSIGNED_CHAR" = "YES";
+        item "CLANG_CXX_LANGUAGE_STANDARD" = "c++0x";
+//        item "VALIDATE_PRODUCT" = "YES";
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   debug - dfast - optim - final                                      ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options debug
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O0;sDEFINE_DEBUG;_DEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+        item "RuntimeLibrary" = "MultiThreadedDebug";
+    }
+    group vs2013 "Link"
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O0;sDEFINE_DEBUG;_DEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+        item "RuntimeLibrary" = "MultiThreadedDebug";
+    }
+    group vs2012 "Link"
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+  
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O0;sDEFINE_DEBUG;_DEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+    }
+    group vs2010 "Link"
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+   
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O0;sDEFINE_DEBUG;_DEBUG;";
+        item "Optimization" = "0";
+        item "EnableIntrinsicFunctions" = "false";
+        item "OmitFramePointers" = "false";
+        item "MinimalRebuild" = "true";
+        item "BasicRuntimeChecks" = "3";
+        item "RuntimeLibrary" = "1";
+        item "DebugInformationFormat" = "4";
+        item "BufferSecurityCheck" = "true";
+        item "InlineFunctionExpansion" = "0";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "LinkIncremental" = "2";
+        item "OptimizeReferences" = "0";
+        item "GenerateDebugInformation" = "true";
+        item "EnableCOMDATFolding" = "0";
+    }
+
+    group make ""
+    {
+        item "cflags" += " -g -DsDEFINE_MEMDEBUG -DsDEFINE_O0 -DsDEFINE_DEBUG";
+    }
+
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -g -DsDEFINE_MEMDEBUG -DsDEFINE_O0 -DsDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_OPTIMIZATION_LEVEL" = "0";
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "DEBUG sDEFINE_MEMDEBUG sDEFINE_O0 sDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+options debug_ios
+{
+    group xcode4 "PBXProject"
+    {
+        item "GCC_OPTIMIZATION_LEVEL" = "0";
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "DEBUG sDEFINE_MEMDEBUG sDEFINE_O0 sDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+/****************************************************************************/
+
+options dfast
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O1;sDEFINE_DEBUG;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreadedDebug";
+    }
+    group vs2013 "Link" 
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O1;sDEFINE_DEBUG;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreadedDebug";
+    }
+    group vs2012 "Link" 
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O1;sDEFINE_DEBUG;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "Disabled";
+        item "IntrinsicFunctions" = "true";
+    }
+    group vs2010 "Link" 
+    {
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+   
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O1;sDEFINE_DEBUG;NDEBUG;";
+        item "Optimization" = "4";
+        item "EnableIntrinsicFunctions" = "true";
+        item "OmitFramePointers" = "true";
+        item "MinimalRebuild" = "false";
+        item "BasicRuntimeChecks" = "0";
+        item "RuntimeLibrary" = "1";
+        item "UsePrecompiledHeader" = "0";
+        item "WarningLevel" = "3";
+        item "DebugInformationFormat" = "4";
+        item "BufferSecurityCheck" = "true";
+        item "InlineFunctionExpansion" = "0";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "LinkIncremental" = "2";
+        item "GenerateDebugInformation" = "true";
+        item "OptimizeReferences" = "0";
+        item "EnableCOMDATFolding" = "0";
+    }
+  
+    group make ""
+    {
+        item "cflags" += " -g -O1 -DsDEFINE_MEMDEBUG -DsDEFINE_O1 -DsDEFINE_DEBUG";
+    }
+
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -g -O1 -DsDEFINE_MEMDEBUG -DsDEFINE_O1 -DsDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_OPTIMIZATION_LEVEL" = "0";
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "DEBUG sDEFINE_MEMDEBUG sDEFINE_O1 sDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+options dfast_ios
+{
+    group xcode4 "PBXProject"
+    {
+        item "GCC_OPTIMIZATION_LEVEL" = "0";
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "DEBUG sDEFINE_MEMDEBUG sDEFINE_O1 sDEFINE_DEBUG ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+/****************************************************************************/
+
+options optim
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O2;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreaded";
+    }
+    group vs2013 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+    group vs2013 "*PropertyGroup"
+    {
+        item "LinkIncremental" = "false";
+    }
+  
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O2;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreaded";
+    }
+    group vs2012 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+    group vs2012 "*PropertyGroup"
+    {
+        item "LinkIncremental" = "false";
+    }
+  
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O2;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+    }
+    group vs2010 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+  
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_MEMDEBUG;sDEFINE_O2;NDEBUG";
+    }
+
+    group make ""
+    {
+        item "cflags" += " -O3 -DsDEFINE_MEMDEBUG sDEFINE_O2";
+    }
+
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -O3 -DsDEFINE_MEMDEBUG -DsDEFINE_O2 ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_MEMDEBUG sDEFINE_O2 ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+
+options optim_ios
+{
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_MEMDEBUG sDEFINE_O2 ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "NO";
+        item "GCC_DYNAMIC_NO_PIC" = "NO";
+    }
+}
+
+/****************************************************************************/
+
+options final
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_FINAL;sDEFINE_O3;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreaded";
+    }
+    group vs2013 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "GenerateDebugInformation" = "false";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+    group vs2013 "*PropertyGroup"
+    {
+        item "LinkIncremental" = "false";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_FINAL;sDEFINE_O3;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+        item "RuntimeLibrary" = "MultiThreaded";
+    }
+    group vs2012 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "GenerateDebugInformation" = "false";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+    group vs2012 "*PropertyGroup"
+    {
+        item "LinkIncremental" = "false";
+    }
+
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_FINAL;sDEFINE_O3;NDEBUG;%(PreprocessorDefinitions);";
+        item "Optimization" = "MaxSpeed";
+        item "DebugInformationFormat" = "ProgramDatabase";
+        item "BasicRuntimeChecks" = "Default";
+        item "FunctionLevelLinking" = "true";
+        item "IntrinsicFunctions" = "true";
+    }
+    group vs2010 "Link"
+    {
+        item "EnableCOMDATFolding" = "true";
+        item "OptimizeReferences" = "true";
+        item "GenerateDebugInformation" = "false";
+        item "AdditionalDependencies" += "%(AdditionalDependencies)";
+    }
+
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_FINAL;sDEFINE_O3;NDEBUG;";
+    }
+
+    group make ""
+    {
+        item "cflags" += " -O3 -DsDEFINE_FINAL -DsDEFINE_O3 ";
+    }
+
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -O3 -DsDEFINE_FINAL -DsDEFINE_O3 ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_FINAL sDEFINE_O3 ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "YES";
+        item "DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+        item "GCC_WARN_UNUSED_VALUE" = "NO";        // assertions throw away value in stripped builds
+    }
+}
+
+options final_ios
+{
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_FINAL sDEFINE_O3 ";
+    }
+
+    group xcode4 "PBXNativeTarget"
+    {
+        item "COPY_PHASE_STRIP" = "YES";
+        item "DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+        item "GCC_WARN_UNUSED_VALUE" = "NO";        // assertions throw away value in stripped builds
+    }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Addons                                                             ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+options shell
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "_CONSOLE;sDEFINE_SHELL;";
+    }
+    group vs2013 "Link"
+    {
+        item "SubSystem" = "Console";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "_CONSOLE;sDEFINE_SHELL;";
+    }
+    group vs2012 "Link"
+    {
+        item "SubSystem" = "Console";
+    }
+
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "_CONSOLE;sDEFINE_SHELL;";
+    }
+    group vs2010 "Link"
+    {
+        item "SubSystem" = "Console";
+    }
+
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "_CONSOLE;sDEFINE_SHELL;";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "SubSystem" = "1";
+    }
+
+    group make ""
+    {
+        item "cflags" += " -DsDEFINE_SHELL";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_OPTIMIZATION_LEVEL" = "0";
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_SHELL ";
+    }
+}
+
+/****************************************************************************/
+
+options player
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_PLAYER;";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_PLAYER;";
+    }
+
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_PLAYER;";
+    }
+
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_PLAYER;";
+    }
+
+    group make ""
+    {
+        item "cflags" += " -DsDEFINE_PLAYER";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_PLAYER ";
+    }
+}
+
+/****************************************************************************/
+
+options dx9
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX9;";
+    }
+    group vs2013 "Link"
+    {
+        item "AdditionalDependencies" += "d3d9.lib;";
+    }
+    group vs2013 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9 -x64";
+    }
+  
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX9;";
+    }
+    group vs2012 "Link"
+    {
+        item "AdditionalDependencies" += "d3d9.lib;";
+    }
+    group vs2012 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9 -x64";
+    }
+  
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX9;";
+    }
+    group vs2010 "Link"
+    {
+        item "AdditionalDependencies" += "d3d9.lib;";
+    }
+    group vs2010 "asc"
+    {
+        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx9";
+    }
+  
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX9;";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "AdditionalDependencies" += " d3d9.lib";
+    }
+    group vs2008 "asc"
+    {
+        item "Description" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=dx9";
+        item "CommandLine" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=dx9";
+    }
+
+    group make ""
+    {
+        item "renderer" = "dx9";
+    }
+}
+
+options dx11
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX11;";
+    }
+    group vs2013 "Link"
+    {
+        item "AdditionalDependencies" += "d3d11.lib;dxgi.lib;";
+    }
+    group vs2013 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11 -x64";
+    }
+  
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX11;";
+    }
+    group vs2012 "Link"
+    {
+        item "AdditionalDependencies" += "d3d11.lib;dxgi.lib;";
+    }
+    group vs2012 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11 -x64";
+    }
+  
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX11;";
+    }
+    group vs2010 "Link"
+    {
+        item "AdditionalDependencies" += "d3d11.lib;dxgi.lib;";
+    }
+    group vs2010 "asc"
+    {
+        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=dx11";
+    }
+  
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_DX11;";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "AdditionalDependencies" += " d3d11.lib dxgi.lib";
+    }
+    group vs2008 "asc"
+    {
+        item "Description" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=dx11";
+        item "CommandLine" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=dx11";
+    }
+
+    group make ""
+    {
+        item "renderer" = "dx11";
+    }
+}
+
+options gl2
+{
+    group vs2013 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_GL2;";
+    }
+    group vs2013 "Link"
+    {
+        item "AdditionalDependencies" += "opengl32.lib;";
+    }
+    group vs2013 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2 -x64";
+    }
+
+    group vs2012 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_GL2;";
+    }
+    group vs2012 "Link"
+    {
+        item "AdditionalDependencies" += "opengl32.lib;";
+    }
+    group vs2012 "asc"
+    {
+        item x86 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+        item x86 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+        item x64 "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2 -x64";
+        item x64 "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2 -x64";
+    }
+
+    group vs2010 "ClCompile"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_GL2;";
+    }
+    group vs2010 "Link"
+    {
+        item "AdditionalDependencies" += "opengl32.lib;";
+    }
+    group vs2010 "asc"
+    {
+        item "Message" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+        item "Command" = "asc2 -i=%(Filename)%(Extension) -o=\\$(OutDir)/\\%(Filename).obj -h=%(Filename).hpp -p=gl2";
+    }
+  
+    group vs2008 "VCCLCompilerTool"
+    {
+        item "PreprocessorDefinitions" += "sDEFINE_GL2;";
+    }
+    group vs2008 "VCLinkerTool"
+    {
+        item "AdditionalDependencies" += " opengl32.lib";
+    }
+    group vs2008 "asc"
+    {
+        item "Description" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=gl2";
+        item "CommandLine" = "asc2 -i=\\$(InputFileName) -o=\\$(OutDir)/\\$(InputName).obj -h=\\$(InputName).hpp -p=gl2";
+    }
+    
+    group make ""
+    {
+        item "cflags" += " -DsDEFINE_GL2";
+        item "renderer" = "gl2";
+        item "libs" += " -lX11 -lGL -lGLU -lXxf86vm";
+    }
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_GL2 ";
+    }
+}
+
+options gles2
+{
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -DsDEFINE_GLES2 ";
+        item "APP_LDFLAGS" += " -lGLESv2 ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += "sDEFINE_GLES2 ";
+    }
+}
+
+options null
+{
+    group make ""
+    {
+        item "renderer" = "null";
+    }
+}
+
+options nosetup
+{
+    group ndk ""
+    {
+        item "APP_CPPFLAGS" += " -DsDEFINE_NOSETUP ";
+    }
+
+    group xcode4 "PBXProject"
+    {
+        item "GCC_PREPROCESSOR_DEFINITIONS" += " sDEFINE_NOSETUP ";
+    }
+}
+
+/****************************************************************************/
+
+// put debug/optim/.. last in right side
+// labels have the most important info first: debug and graphics driver.
+
+platform win32
+{
+    combine "debug_null_win32" = win32 + null + debug;
+    combine "dfast_null_win32" = win32 + null + dfast;
+    combine "optim_null_win32" = win32 + null + optim;
+    combine "final_null_win32" = win32 + null + final;
+
+    combine "debug_null_shell_win32" = win32 + null + shell + debug;
+    combine "dfast_null_shell_win32" = win32 + null + shell + dfast;
+    combine "optim_null_shell_win32" = win32 + null + shell + optim;
+    combine "final_null_shell_win32" = win32 + null + shell + final;
+
+    combine "debug_dx9_win32" = win32 + dx9 + debug;
+    combine "dfast_dx9_win32" = win32 + dx9 + dfast;
+    combine "optim_dx9_win32" = win32 + dx9 + optim;
+    combine "final_dx9_win32" = win32 + dx9 + final;
+
+    combine "debug_dx11_win32" = win32 + dx11 + debug;
+    combine "dfast_dx11_win32" = win32 + dx11 + dfast;
+    combine "optim_dx11_win32" = win32 + dx11 + optim;
+    combine "final_dx11_win32" = win32 + dx11 + final;
+
+    combine "debug_dx11_player_win32" = win32 + dx11 + player + debug;
+    combine "dfast_dx11_player_win32" = win32 + dx11 + player + dfast;
+    combine "optim_dx11_player_win32" = win32 + dx11 + player + optim;
+    combine "final_dx11_player_win32" = win32 + dx11 + player + final;
+
+    combine "debug_gl2_win32" = win32 + gl2 + debug;
+    combine "dfast_gl2_win32" = win32 + gl2 + dfast;
+    combine "optim_gl2_win32" = win32 + gl2 + optim;
+    combine "final_gl2_win32" = win32 + gl2 + final;
+
+    combine "debug_gl2_player_win32" = win32 + gl2 + player + debug;
+    combine "dfast_gl2_player_win32" = win32 + gl2 + player + dfast;
+    combine "optim_gl2_player_win32" = win32 + gl2 + player + optim;
+    combine "final_gl2_player_win32" = win32 + gl2 + player + final;
+}
+
+platform linux
+{
+    combine "debug_null_shell_linux" = linux + shell + null + debug;
+    combine "dfast_null_shell_linux" = linux + shell + null + dfast;
+    combine "optim_null_shell_linux" = linux + shell + null + optim;
+    combine "final_null_shell_linux" = linux + shell + null + final;
+
+    combine "debug_gl2_linux" = linux + gl2 + debug;
+    combine "dfast_gl2_linux" = linux + gl2 + dfast;
+    combine "optim_gl2_linux" = linux + gl2 + optim;
+    combine "final_gl2_linux" = linux + gl2 + final;
+}
+
+platform android
+{
+    combine "debug_gles2_android" = android + gles2 + debug;
+    combine "dfast_gles2_android" = android + gles2 + dfast;
+    combine "optim_gles2_android" = android + gles2 + optim;
+    combine "final_gles2_android" = android + gles2 + final;
+
+    combine "debug_gles2_nosetup_android" = android + nosetup + gles2 + debug;
+    combine "dfast_gles2_nosetup_android" = android + nosetup + gles2 + dfast;
+    combine "optim_gles2_nosetup_android" = android + nosetup + gles2 + optim;
+    combine "final_gles2_nosetup_android" = android + nosetup + gles2 + final;
+}
+
+platform osx
+{
+    combine "debug_null_shell_osx" = osx + shell + null + debug;
+    combine "dfast_null_shell_osx" = osx + shell + null + dfast;
+    combine "optim_null_shell_osx" = osx + shell + null + optim;
+    combine "final_null_shell_osx" = osx + shell + null + final;
+
+    combine "debug_gl2_osx" = osx + gl2 + debug;
+    combine "dfast_gl2_osx" = osx + gl2 + dfast;
+    combine "optim_gl2_osx" = osx + gl2 + optim;
+    combine "final_gl2_osx" = osx + gl2 + final;
+
+    combine "debug_gl2_nosetup_osx" = osx + nosetup + gl2 + debug;
+    combine "dfast_gl2_nosetup_osx" = osx + nosetup + gl2 + dfast;
+    combine "optim_gl2_nosetup_osx" = osx + nosetup + gl2 + optim;
+    combine "final_gl2_nosetup_osx" = osx + nosetup + gl2 + final;
+}
+
+platform ios
+{
+    combine "debug_gles2_ios" = ios + gles2 + debug_ios;
+    combine "dfast_gles2_ios" = ios + gles2 + dfast_ios;
+    combine "optim_gles2_ios" = ios + gles2 + optim_ios;
+    combine "final_gles2_ios" = ios + gles2 + final_ios;
+
+    combine "debug_gles2_nosetup_ios" = ios + nosetup + gles2 + debug_ios;
+    combine "dfast_gles2_nosetup_ios" = ios + nosetup + gles2 + dfast_ios;
+    combine "optim_gles2_nosetup_ios" = ios + nosetup + gles2 + optim_ios;
+    combine "final_gles2_nosetup_ios" = ios + nosetup + gles2 + final_ios;
+}
+
+/****************************************************************************/
+
+license chaos   // first license is default!
+{
+    text = "(C) 2012-2014 Dierk Ohlerich, all rights reserved";
+}
+
+license ventuz
+{
+    text = "(C) 2012-2014 Ventuz Technologies GmbH, all rights reserved";
+}
+
+license bsd2
+{
+    text = "(C) 2012-2014 Dierk Ohlerich et al., all rights reserved.\n\nReleased under BSD 2 clause license, see LICENSE.TXT";
+}
+
+license visarity
+{
+    text = "(C) 2012-2014 Visarity Technologies PVT LTD, all rights reserved";
+}

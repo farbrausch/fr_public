@@ -1,0 +1,34 @@
+license bsd2; 
+project "No_Asc"
+{
+    depend "base";
+    depend "util";
+
+    config "debug_null_win32";
+    config "optim_null_win32";
+
+    config "debug_dx9_win32";
+    config "optim_dx9_win32";
+
+    config "debug_dx11_win32";
+    config "optim_dx11_win32";
+
+    config "debug_gl2_win32";
+    config "optim_gl2_win32";
+
+    config "debug_gl2_linux";
+    config "optim_gl2_linux";
+
+    config "debug_gl2_osx";
+    config "optim_gl2_osx";
+
+    config "debug_gles2_ios";
+    config "optim_gles2_ios";
+
+    config "debug_gles2_android";
+    config "optim_gles2_android";
+
+    file "main.cpp";
+    file "main.hpp";
+    file "mp.txt";
+}

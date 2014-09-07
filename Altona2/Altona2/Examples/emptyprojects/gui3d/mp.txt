@@ -1,0 +1,30 @@
+license bsd2; 
+project "gui3d"
+{
+    depend "base";
+    depend "util";
+    depend "gui";
+
+    config "debug_dx9_win32";
+    config "dfast_dx9_win32";
+    config "optim_dx9_win32";
+    config "final_dx9_win32";
+    config "debug_dx11_win32";
+    config "dfast_dx11_win32";
+    config "optim_dx11_win32";
+    config "final_dx11_win32";
+    config "debug_gl2_win32";
+    config "dfast_gl2_win32";
+    config "optim_gl2_win32";
+    config "final_gl2_win32";
+
+
+
+    file "main.?pp";
+    file "gui.?pp";
+    file "doc.?pp";
+    file "shaders.asc" options "*_null_*" { exclude; };
+    file nonew "shaders.hpp";
+
+    file "mp.txt";
+}

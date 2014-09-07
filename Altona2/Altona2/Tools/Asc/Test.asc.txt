@@ -1,0 +1,207 @@
+
+
+mtrl TempleShader 
+{
+    struct ia2vs
+    {
+        float3 pos : POSITION;
+        float2 uv : TEXCOORD0;
+    };
+
+    struct vs2ps
+    {
+        float2 uv : TEXCOORD0;
+    };
+
+    cbuffer cbvs : vs(0) : register(0)
+    {
+        row_major float4x4 mat;
+    };
+
+    cbuffer cbps : ps(0) : register(0)
+    {
+        float2 iResolution;
+        float3 iMouse;
+        float iGlobalTime;
+    };
+
+    // hlsl3
+  
+    vs hlsl3
+    {
+        void main(in ia2vs i,out vs2ps o,out float4 tpos : POSITION)
+        {
+            tpos = mul(mat,float4(i.pos,1));
+            o.uv = i.uv;
+        }
+    };
+
+    ps hlsl3
+    {
+        int Iterations=14;
+        float detail=.00002;
+        float Scale=2.;
+
+        float3 lightdir=normalize(float3(0.,-0.3,-1.));
+
+        float de(float3 pos)
+        {
+            float3 p = fmod(abs(pos),1.0);
+            p.y = pos.y;
+            return (length(p-0.5)-0.25)*0.2;
+        }
+        float de2(float3 pos) {
+            float hitfloor=0.;
+            float3 p=pos;
+            p.xz=abs(.5-fmod(abs(pos.xz),1.))+.01;
+            float DEfactor=1.;
+            float ot=1000.;
+            for (int i=0; i<Iterations; i++) {
+                p = abs(p)-float3(0.,2.,0.);  
+                float r2 = dot(p, p);
+                ot = min(ot,abs(length(p)));
+                float sc=Scale/clamp(r2,0.4,1.);
+                p*=sc; 
+                DEfactor*=sc;
+                p = p - float3(0.5,1.,0.5);
+            }
+            float fl=pos.y-3.013;
+            float d=min(fl,length(p)/DEfactor-.0005);
+            d=min(d,-pos.y+3.9);
+            if (abs(d-fl)<.0001) hitfloor=1.;
+            return d;
+        }
+
+
+
+        float3 normal(float3 p,float det) {
+            float3 e = float3(0.0,det,0.0);
+
+            return normalize(float3(
+                de(p+e.yxx)-de(p-e.yxx),
+                de(p+e.xyx)-de(p-e.xyx),
+                de(p+e.xxy)-de(p-e.xxy)
+                )
+                );	
+        }
+
+        float shadow(float3 pos, float3 sdir,float det) {
+            float totalDist =2.0*det, sh=1.;
+            for (int steps=0; steps<30; steps++) {
+                if (totalDist<1.) {
+                    float3 p = pos - totalDist * sdir;
+                    float dist = de(p)*1.5;
+                    if (dist < detail)  sh=0.;
+                    totalDist += max(0.05,dist);
+                }
+            }
+            return max(0.,sh);	
+        }
+
+        float calcAO(  float3 pos,  float3 nor ) {
+        float aodet=detail*80.;
+        float totao = 0.0;
+        float sca = 10.0;
+        for( int aoi=0; aoi<5; aoi++ ) {
+            float hr = aodet + aodet*float(aoi*aoi);
+            float3 aopos =  nor * hr + pos;
+            float dd = de( aopos );
+            totao += -(dd-hr)*sca;
+            sca *= 0.75;
+        }
+        return clamp( 1.0 - 5.0*totao, 0.0, 1.0 );
+        }
+
+
+
+        float kset(float3 p) {
+            p=abs(.5-frac(p*20.));
+            float es, l=es=0.;
+            for (int i=0;i<13;i++) {
+                float pl=l;
+                l=length(p);
+                p=abs(p)/dot(p,p)-.5;
+                es+=exp(-1./abs(l-pl));
+            }
+            return es;	
+        }
+
+        float3 light(in float3 p, in float3 dir,float det) {
+            float hf=0.0;
+            float3 n=normal(p,det);
+            float sh=min(1.,shadow(p, lightdir,det)+hf);
+            //float sh=1.;
+            float ao=calcAO(p,n);
+            float diff=max(0.,dot(lightdir,-n))*sh*1.3;
+            float amb=max(0.2,dot(dir,-n))*.4;
+            float3 r = reflect(lightdir,n);
+            float spec=pow(max(0.,dot(dir,-r))*sh,10.)*(.5+ao*.5);
+            float k=kset(p)*.18; 
+            float3 col=lerp(float3(k*1.1,k*k*1.3,k*k*k),float3(k,k,k),.45)*2.0;
+            col=col*ao*(amb*float3(.9,.85,1.)+diff*float3(1.,.9,.9))+spec*float3(1,.9,.5)*.7;	
+            return col;
+        }
+
+
+        float3 raymarch(in float3 from, in float3 dir) 
+        {
+            float t=iGlobalTime;
+            float2 lig=float2(sin(t*2.)*.6,cos(t)*.25-.25);
+            float fog,glow,d=1.;
+            totdist=glow=fog=0.;
+            float3 p, col=float3(0,0,0);
+            float ref=0.;
+            float det = 0;
+            float steps;
+            for (int i=0; i<130; i++) {
+                if (d>det && totdist<3.5) {
+                    p=from+totdist*dir;
+                    d=de(p);
+                    det=detail*(1.+totdist*55.);
+                    totdist+=d; 
+                    glow+=max(0.,.02-d)*exp(-totdist);
+                    steps++;
+                }
+            }
+            //glow/=steps;
+            float l=pow(max(0.,dot(normalize(-dir),normalize(lightdir))),10.);
+            float3 backg=float3(.8,.85,1.)*.25*(2.-l)+float3(1.,.9,.65)*l*.4;
+            float hf=0;//hitfloor;
+            if (d<det) {
+                col=light(p-det*dir*1.5, dir,det); 
+                if (hf>0.5) col*=float3(1.,.85,.8)*.6;
+                col*=min(1.2,.5+totdist*totdist*1.5);
+                col = lerp(col, backg, 1.0-exp(-1.3*pow(totdist,1.3)));
+            } else { 
+                col=backg;
+            }
+            col+=glow*float3(1.,.9,.8)*.34;
+            col+=float3(1,.8,.6)*pow(l,3.)*.5;
+            return col; 
+        }
+
+        void main(vs2ps i,out result : COLOR) 
+        {
+            float2 uv = i.uv0*2-1;
+            uv.y *= -1;
+            uv.y*=iResolution.y/iResolution.x;
+            float2 mouse=0;//(iMouse.xy/iResolution.xy-.5);
+            float t=iGlobalTime*.15;
+            float t2=iGlobalTime*.015;
+            float y=(cos(iGlobalTime*.1)+1.);
+            mouse=float2(sin(t2*2.),cos(t2)+.3)*.15*(.5+y)*min(1.,t2*.1);
+            uv+=mouse*1.5;
+            uv.y-=.1;
+            //uv+=(texture2D(iChannel1,float2(iGlobalTime*.15)).xy-.5)*max(0.,h)*7.;
+            float3 from=float3(0.1,0.54+y*.1,-2.+iGlobalTime*.05);
+            float3 dir=normalize(float3(uv*.85,1.));
+            float3 color=raymarch(from,dir); 
+            //col*=length(clamp((.6-pow(abs(uv2),float2(3.))),float2(0.),float2(1.)));
+            color*=float3(1.,.94,.87);
+            color=pow(color,1.2);
+            color=lerp(length(color),color,.85)*.95;
+            color+=float3(1,.85,.7)*pow(max(0.,.3-length(uv-float2(0.,.03)))/.3,1.5)*.65;
+            result = float4(color,1.);
+        }
+    };
+}

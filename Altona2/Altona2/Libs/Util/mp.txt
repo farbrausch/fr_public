@@ -1,0 +1,25 @@
+license bsd2; 
+library "Util"
+{
+    alias "Util";
+    file "Scanner.?pp";
+    file "DebugPainter.?pp";
+    file "Autosave.?pp";
+    file "Painter.?pp";
+    file "GraphicsHelper.?pp";
+    file "Image.?pp";
+    file "mp.txt";
+    file "SampleMixer.?pp";
+    file "TextureFont.?pp";
+    file "UtilShaders.asc";
+    file nonew "UtilShaders.hpp";
+    file "Config.?pp";
+    file "Compression.?pp";
+    file "IconManager.?pp";
+
+    file "StbImage.c";
+    file "StbVorbis.c";
+    file "StbImageWrite.h";
+    file "StbDxt.h";
+}
+

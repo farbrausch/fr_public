@@ -1,0 +1,32 @@
+license bsd2; 
+project "MakeProject"
+{
+    depend "Base";
+    depend "Util";
+  
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+
+    config "debug_null_shell_osx";
+    config "dfast_null_shell_osx";
+    config "optim_null_shell_osx";
+    config "final_null_shell_osx";
+
+    file "Main.?pp";
+    file "Doc.?pp";
+    file "DocVs2012.cpp";
+    file "DocVs2010.cpp";
+    file "DocVs2008.cpp";
+    file "DocMake.cpp";
+    file "DocNdk.cpp";
+    file "DocXcode4.cpp";
+    file "mp.txt";
+    file "Config.txt";
+    file "Info.plist.txt";
+    file "OsxInfo.plist.txt";
+    file "AndroidManifest.txt";
+
+    file "Incbin.incbin" depend "config.txt";
+}

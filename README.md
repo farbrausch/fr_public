@@ -25,28 +25,30 @@ this code, but if you want to, we see no reason to keep you.
 
 So what do we have in here? Here's the basic directory structure:
 
-	altona_wz4/           - Altona and Werkkzeug4. Our most recent code foundation and tool.
-		altona/             - The framework libraries (includes base Werkkzeug4 GUI).
-		wz4/                - Wz4FRlib (demo ops) and Wz4Player.
-	genthree/             - GenThree. Used for Candytron and nothing else.
- 		data/               - Candytron data files.
-  	kkrunchy/             - kkrunchy 0.23alpha code (latest we could find)
-  	kkrunchy_k7/          - kkrunchy_k7 0.23a4/asm07 (most recent version)
-  	ktg/                  - OpenKTG texture generator. See below.
-  	lekktor/              - May summon Eldritch Abominations. Handle with care.
-  	RG2/                  - RauschGenerator 2. Used for several 64k intros.
-    	dopplerdefekt/      - data files for fr-029: dopplerdefekt
-    	einschlag/          - data files for fr-022: ein.schlag
-    	flybye/             - data files for fr-013: flybye
-    	welcome_to/         - data files for fr-024: welcome to...
-  	v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
-  	werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
-    	data/               - Source data for kkrieger and some test projects.
-    		debris/           - Source data for fr-041: debris.
-    		theta/            - Source data for fr-038: theta.
-    	w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
-    	wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
-  	werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
+  altona_wz4/           - Altona and Werkkzeug4. Our most recent code foundation and tool.
+    altona/             - The framework libraries (includes base Werkkzeug4 GUI).
+    wz4/                - Wz4FRlib (demo ops) and Wz4Player.
+  altona2/              - successor of altona
+    altona2/            - The framework libraries (Werkkzeug5 is not yet released)
+  genthree/             - GenThree. Used for Candytron and nothing else.
+    data/               - Candytron data files.
+  kkrunchy/             - kkrunchy 0.23alpha code (latest we could find)
+  kkrunchy_k7/          - kkrunchy_k7 0.23a4/asm07 (most recent version)
+  ktg/                  - OpenKTG texture generator. See below.
+  lekktor/              - May summon Eldritch Abominations. Handle with care.
+  RG2/                  - RauschGenerator 2. Used for several 64k intros.
+    dopplerdefekt/      - data files for fr-029: dopplerdefekt
+    einschlag/          - data files for fr-022: ein.schlag
+    flybye/             - data files for fr-013: flybye
+    welcome_to/         - data files for fr-024: welcome to...
+  v2/                   - V2 synthesizer system. Used for all our intros, kkrieger and debris.
+  werkkzeug3/           - Werkkzeug3. Used for tons of demos and intros.
+    data/               - Source data for kkrieger and some test projects.
+      debris/           - Source data for fr-041: debris.
+      theta/            - Source data for fr-038: theta.
+    w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
+    wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
+  werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
 
 So, here's the sightseeing tips:
 
@@ -93,6 +95,9 @@ Contributors (in alphabetical order):
 * Leonard "paniq" Ritter: V2, theta.
 * Bastian "Tron" Zuehlke: werkkzeug3, werkkzeug4
 
+Both altona_wz5 and altona2 contain various of the stb_??? libraries from Sean
+Barret, nothings.org.
 
 Have fun!
 (released April 2012)
+(updated October 2014 for Altona2)

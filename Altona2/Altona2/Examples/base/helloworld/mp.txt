@@ -1,0 +1,16 @@
+license bsd2; 
+project "helloworld"
+{
+    depend "base";
+
+    config "debug_null_shell_win32";
+    config "dfast_null_shell_win32";
+    config "optim_null_shell_win32";
+    config "final_null_shell_win32";
+
+    config "debug_null_shell_osx";
+    config "final_null_shell_osx";
+
+    file "main.cpp";
+    file "mp.txt";
+}
