@@ -36,7 +36,7 @@ MainWindow::MainWindow()
     sEnableAltonaConfig();
 
     CustomPath = sGetConfigPath();
-    UseCustomPath = (sCmpStringP(CustomPath,UserPath)!=0);
+    UseCustomPath = (sCmpStringP(CustomPath,UserPath)!=0) && CustomPath[0]!=0;
     const char *style = sGetConfigString("GuiStyle");
     if(style==0) style = "";
 
