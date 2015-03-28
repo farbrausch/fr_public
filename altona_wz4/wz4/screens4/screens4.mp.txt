@@ -60,6 +60,7 @@ file "playlists.?pp";
 file "config.hpp";
 file "image_win.?pp";
 file "movieplayer_win7.cpp";
+file "webview.?pp";
 
 
 

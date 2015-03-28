@@ -13,17 +13,17 @@
 
 extern void LogTime();
 
-
 /****************************************************************************/
 
 template<class streamer> void PlaylistItem::Serialize_(streamer &s)
 {
-  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,2);
+  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,3);
   if (version>0)
   {
     s | ID | Type | Path;
     s | Duration | TransitionId | TransitionDuration | ManualAdvance | Mute;
     if (version>=2) s | SlideType | MidiNote;
+    if (version >= 3) s | Cached;
 
     s | BarColor | BarBlinkColor1 | BarBlinkColor2 | BarAlpha;
     s.ArrayAll(BarPositions);
@@ -122,7 +122,7 @@ PlaylistMgr::PlaylistMgr()
       PlaylistItem *it;
       sFORALL(pl->Items, it)
       {
-        it->MyAsset = GetAsset(it->Path);
+        it->MyAsset = GetAsset(it->Path, it->Cached);
         it->MyAsset->AddRef();
         if (it->MyAsset->CacheStatus == Asset::NOTCACHED)
         {
@@ -284,21 +284,43 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
 
   NewSlideData *nsd = PreparedSlide;
 
-  if (nsd && nsd->Type == VIDEO && !nsd->Error)
+  if (nsd && !nsd->Error)
   {
-    // wait for first frame to be fully decoded. must be in rendering thread, thus here.
-    if (nsd->Movie->GetInfo().XSize<0)
-    {
-      nsd->Error = sTRUE;
-      sRelease(nsd->Movie);
-    }
-    else 
-    {
-      sFRect uvr;
-      nsd->Movie->GetFrame(uvr);
-      if (nsd->Movie->GetInfo().XSize==0 || uvr.SizeX()==0)
-        nsd = 0;
-    }
+      switch (nsd->Type)
+      {
+      case VIDEO:
+      {
+          // wait for first frame to be fully decoded. must be in rendering thread, thus here.
+          if (nsd->Movie->GetInfo().XSize<0)
+          {
+              nsd->Error = sTRUE;
+              sRelease(nsd->Movie);
+          }
+          else
+          {
+              sFRect uvr;
+              nsd->Movie->GetFrame(uvr);
+              if (nsd->Movie->GetInfo().XSize == 0 || uvr.SizeX() == 0)
+                  nsd = 0;
+          }
+      } break;
+      case WEB:
+      {
+          // wait for web page to be rendered
+          if (nsd->Web->Error)
+          {
+              nsd->Error = sTRUE;
+              sRelease(nsd->Web);
+          }
+          else
+          {
+              sFRect uvr;
+              nsd->Web->GetFrame(uvr);
+              if (uvr.SizeX() == 0)
+                  nsd = 0;
+          }
+      } break;
+      }
   }
 
   if (nsd)
@@ -470,7 +492,7 @@ sInt PlaylistMgr::GetItem(Playlist *pl, const sChar *id)
   return -1;
 }
 
-Asset *PlaylistMgr::GetAsset(const sChar *path)
+Asset *PlaylistMgr::GetAsset(const sChar *path, sBool cache)
 {
   sScopeLock lock(&Lock);
   Asset *found = sFind(Assets, &Asset::Path, path);
@@ -478,20 +500,26 @@ Asset *PlaylistMgr::GetAsset(const sChar *path)
   {
     found = new Asset;
     found->Path = path;
-    found->CacheStatus = Asset::NOTCACHED;
 
-    // check cache files for existence
-    sString<sMAXPATH> filename, metafilename;
-    MakeFilename(filename,found->Path,AssetDir);
-    metafilename = filename;
-    sAppendString(metafilename,L".meta");
-    if (sCheckFile(filename))
+    if (cache)
     {
-      if (sLoadObject(metafilename,&found->Meta))
-      {
-        found->CacheStatus = Asset::CACHED;
-      }
+        found->CacheStatus = Asset::NOTCACHED;
+
+        // check cache files for existence
+        sString<sMAXPATH> filename, metafilename;
+        MakeFilename(filename, found->Path, AssetDir);
+        metafilename = filename;
+        sAppendString(metafilename, L".meta");
+        if (sCheckFile(filename))
+        {
+            if (sLoadObject(metafilename, &found->Meta))
+            {
+                found->CacheStatus = Asset::CACHED;
+            }
+        }
     }
+    else
+        found->CacheStatus = Asset::ONLINE;
 
     Assets.AddTail(found);
   }
@@ -506,17 +534,21 @@ void PlaylistMgr::RefreshAssets(Playlist *pl)
   {
     if (!it->MyAsset)
     {
-      it->MyAsset = GetAsset(it->Path);
+      it->MyAsset = GetAsset(it->Path, it->Cached);
       it->MyAsset->AddRef();
     }
-    it->MyAsset->CacheStatus = Asset::NOTCACHED;
+
+    if (it->MyAsset->CacheStatus != Asset::ONLINE)
     {
-      sScopeLock lock(&Lock);
-      if (!it->MyAsset->RefreshNode.IsValid())
-      {
-        it->MyAsset->AddRef();
-        RefreshList.AddTail(it->MyAsset);
-      }
+        it->MyAsset->CacheStatus = Asset::NOTCACHED;
+        {
+            sScopeLock lock(&Lock);
+            if (!it->MyAsset->RefreshNode.IsValid())
+            {
+                it->MyAsset->AddRef();
+                RefreshList.AddTail(it->MyAsset);
+            }
+        }
     }
   }
   pl->Release();
@@ -638,7 +670,7 @@ void PlaylistMgr::AssetThreadFunc(sThread *t)
         toRefresh = RefreshList.RemHead();
     }
 
-    if (!toRefresh)
+    if (!toRefresh || toRefresh->CacheStatus == Asset::ONLINE)
     {
       AssetEvent.Wait(100);
       continue;
@@ -742,7 +774,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       if (!CurrentPl) continue;
       item = CurrentPl->Items[CurrentPos.SlideNo];
 
-			LogTime(); sDPrintF(L"preparing %s\n",item->Path);
+      LogTime(); sDPrintF(L"preparing %s\n",item->Path);
 
       /*
       // TEST for video player as long as Partymeister doesn't give us mp4 files
@@ -757,6 +789,21 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       }
       */
 
+      if (!sCmpString(item->ID, L"89_3376"))
+      {
+          item->Path = L"http://pouet.net/";
+          //item->Path = L"http://2015.revision-party.net/";
+          //item->Path = L"http://www.creativebloq.com/css3/animation-with-css3-712437";
+          //item->Path = L"http://twitter.com/kebby";
+          item->Type = L"Web";
+          item->MyAsset->CacheStatus = Asset::ONLINE;
+          item->MyAsset->Path = item->Path;
+          item->Duration = 10;
+          item->TransitionId = 255;
+          item->TransitionDuration = 2.0f;
+          item->ManualAdvance = sFALSE;
+      }
+
       nsd = new NewSlideData;
       nsd->Error = sFALSE;
       nsd->Id = item->ID;
@@ -769,7 +816,9 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
         nsd->Type = IMAGE;
       else if (!sCmpStringI(item->Type,L"Video"))
         nsd->Type = VIDEO;
-      else if (!sCmpStringI(item->Type,L"siegmeister_bars"))
+      else if (!sCmpStringI(item->Type, L"Web"))
+          nsd->Type = WEB;
+      else if (!sCmpStringI(item->Type, L"siegmeister_bars"))
       {
         nsd->Type = SIEGMEISTER_BARS;
       }
@@ -870,6 +919,28 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
           }
         } break;
       }
+    }
+    else if (myAsset->CacheStatus == Asset::ONLINE)
+    {
+        switch (nsd->Type)
+        {
+        case WEB:
+        {
+            sInt w, h;
+            sGetScreenSize(w, h);
+            nsd->Web = new WebView(myAsset->Path, w, h);
+            /*
+            if (nsd->Movie)
+            {
+
+            }
+            else
+            {
+                nsd->Error = sTRUE;
+            }
+            */
+        } break;
+        }
     }
     else
     {
