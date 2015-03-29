@@ -7,16 +7,18 @@ defaults
   bartime 5					// length of siegmeister bar animation in seconds
   barspread 0.5				// "spread" of siegmeister bars (aka surprise factor), 0..1
   movievolume -3			// volume for playing movies in dB
-  resolution 640,360		// if missing, use desktop resolution
-  fullscreen 0				// fullscreen (0 or 1)
+  resolution 1280, 720		// if missing, use desktop resolution
+  //fullscreen 1				// fullscreen (0 or 1)
 
-  //slideprefix "rvn13slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
+  //slideprefix "rvn14slide"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
   //slideprefix "besoffen"	// prefix of slide renderer ops in the wz4 file (fallback is "slide")
   //transprefix "kotz"      // prefix of transition renderer ops in the wz4 file (fallback is "trans")
   //defaulttype  "good1"    // default slide type (fallback is using random)
 
   mididevice  -1            // used midi device; (-1 means all)
   midichannel 1             // midi channel for sending events (1..16)
+
+  lockwhendimmed 1          // don't change slide when dimmed
   
   //pngout "c:\test\frame.png" // save current slide as png to this path
 }
@@ -33,9 +35,10 @@ keys
   ESC: stopsound
   F1: playsound "sounds/announce.ogg"  // playsound accepts only Ogg Vorbis files!
   F2: playsound "sounds/compo.ogg"
+  SPACE: toggledim
   
-  SHIFT F5: resolution 1280,720,50
-  SHIFT F6: resolution 1280,720,60
+  SHIFT F5: resolution 1920,1080,50
+  SHIFT F6: resolution 1920,1080,60
   SHIFT F11: togglefullscreen
 
   // MIDI triggers

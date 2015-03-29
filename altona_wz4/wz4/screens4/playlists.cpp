@@ -106,6 +106,7 @@ PlaylistMgr::PlaylistMgr()
   PreparedSlide = 0;
   Time = 1.0; // one second phase shift into the future to hide the TARDIS
   CurRefreshing = 0;
+  Locked = sFALSE;
 
   // load all cached playlists
   sArray<sDirEntry> dir;
@@ -557,6 +558,9 @@ void PlaylistMgr::RefreshAssets(Playlist *pl)
 
 void PlaylistMgr::RawSeek(Playlist *pl, sInt slide, sBool hard)
 {
+  if (Locked)
+    return;
+
   sScopeLock lock(&Lock);
 
   SwitchHard = hard;
@@ -789,20 +793,22 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
       }
       */
 
+      /*
       if (!sCmpString(item->ID, L"89_3376"))
       {
-          item->Path = L"http://pouet.net/";
+          item->Path = L"https://developer.cdn.mozilla.net/media/uploads/demos/s/u/sumantro/3dd07ab8f2a0ddd932babd86e442771c/geek-monkey-studios_1427572961_demo_package/index.html";
           //item->Path = L"http://2015.revision-party.net/";
           //item->Path = L"http://www.creativebloq.com/css3/animation-with-css3-712437";
           //item->Path = L"http://twitter.com/kebby";
           item->Type = L"Web";
           item->MyAsset->CacheStatus = Asset::ONLINE;
           item->MyAsset->Path = item->Path;
-          item->Duration = 10;
+          item->Duration = 60;
           item->TransitionId = 255;
           item->TransitionDuration = 2.0f;
           item->ManualAdvance = sFALSE;
       }
+      */
 
       nsd = new NewSlideData;
       nsd->Error = sFALSE;

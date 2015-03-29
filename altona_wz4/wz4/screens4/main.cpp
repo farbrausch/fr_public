@@ -369,12 +369,14 @@ public:
   sAutoPtr<Wz4Render> NextRender;
   sAutoPtr<Wz4Render> CurRender;
   sAutoPtr<Wz4Render> Main;
+  sAutoPtr<Wz4Render> Dimmer;
 
   sAutoPtr<Wz4Render> CurSlide;
   sAutoPtr<Wz4Render> NextSlide;
 
-  sF32 TransTime, TransDurMS, CurRenderTime, NextRenderTime, SlideStartTime;
+  sF32 TransTime, TransDurMS, CurRenderTime, NextRenderTime, SlideStartTime, DimTime;
   sBool Started;
+  sBool Dimmed;
 
   bMusicPlayer SoundPlayer;
 
@@ -404,6 +406,7 @@ public:
     TransTime = -1.0f;
     CurRenderTime = NextRenderTime = 0.0f;
     Started = sFALSE;
+    Dimmed = sFALSE;
     SlideStartTime = 0;
     CurId = 0;
     ImageOut = 0;
@@ -683,6 +686,11 @@ public:
     CurRender = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"CurRender"));
     NextRender = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"NextRender"));
     Main = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"Main"));
+    Dimmer = (Wz4Render*)Doc->CalcOp(Doc->FindStore(L"Dimmer"));
+    if (Dimmer)
+    {
+        ((RNAdd*)Dimmer->RootNode)->TimeOverride = &DimTime;
+    }
 
     // load transitions
     wOp *op;
@@ -969,9 +977,23 @@ public:
       }
       PaintInfo.CamOverride = 0;
 
+      // handle dimming
+      if (Dimmed)
+      {
+        DimTime = sMin<sF32>(DimTime + tdelta / 1000.0f, 1);
+        PlMgr.Locked = MyConfig->LockWhenDimmed;
+      }
+      else
+      {
+        DimTime = sMax<sF32>(DimTime - tdelta / 1000.0f, 0);
+        PlMgr.Locked = sFALSE;
+      }
+
+      // paint!
       DoPaint(RootObj,PaintInfo);
       FramesRendered++;
 
+      // handle transitions
       if (TransTime>=0)
       {
         TransTime += tdelta/TransDurMS;
@@ -1046,6 +1068,10 @@ public:
       break;
     case Config::MIDINOTE:
       SendMidiNote(kev->ParaNote);
+      handled = sTRUE;
+      break;
+    case Config::DIM:
+      Dimmed = !Dimmed;
       handled = sTRUE;
       break;
     }

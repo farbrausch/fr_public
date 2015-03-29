@@ -228,6 +228,8 @@ public:
   NewSlideData* OnFrame(sF32 delta, const sChar *doneId, sBool doneHard);
   sBool OnInput(const sInput2Event &ev);
 
+  sBool Locked;
+
 private:
 
   const sChar *CacheDir;

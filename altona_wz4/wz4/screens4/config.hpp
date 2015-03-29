@@ -31,7 +31,7 @@ public:
 
   enum EventType
   {
-    PLAYSOUND, STOPSOUND, SETRESOLUTION, FULLSCREEN, MIDINOTE
+    PLAYSOUND, STOPSOUND, SETRESOLUTION, FULLSCREEN, MIDINOTE, DIM
   };
 
   struct KeyEvent
@@ -54,6 +54,7 @@ public:
   sPoolString SlidePrefix;
   sPoolString TransPrefix;
   sPoolString DefaultType;
+  sBool LockWhenDimmed;
 
   sInt MidiDevice;
   sInt MidiChannel;
@@ -76,6 +77,7 @@ public:
     MidiDevice = -1;
     MidiChannel = 1;
     PngOut = L"";
+    LockWhenDimmed = sFALSE;
   }
 
   sBool Read(const sChar *filename)
@@ -158,6 +160,8 @@ private:
         MidiChannel = sClamp(Scan->ScanInt(),1,16);
       else if (Scan->IfName(L"pngout"))
         Scan->ScanString(PngOut);
+      else if (Scan->IfName(L"lockwhendimmed"))
+        LockWhenDimmed = Scan->ScanInt();
       else
         Scan->Error(L"syntax error");
     }
@@ -206,6 +210,7 @@ private:
         else if(Scan->Name == L"ESC")         key = sKEY_ESCAPE;
         else if(Scan->Name == L"PAUSE")       key = sKEY_PAUSE;
         else if(Scan->Name == L"MENU")        key = sKEY_WINM;
+        else if(Scan->Name == L"SPACE")      key = ' ';
 
         else if(Scan->Name == L"F1") key = sKEY_F1;
         else if(Scan->Name == L"F2") key = sKEY_F2;
@@ -253,6 +258,10 @@ private:
       else if (Scan->IfName(L"togglefullscreen"))
       {
         ev.Type = FULLSCREEN;
+      }
+      else if (Scan->IfName(L"toggledim"))
+      {
+        ev.Type = DIM;
       }
       else if (Scan->IfName(L"sendmidinote"))
       {
