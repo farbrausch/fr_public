@@ -86,11 +86,12 @@ sBool Wz4Mesh::LoadOBJ(const sChar *filename)
     {
       sInt verts[4];
       sInt vcount=0;
-      while (scan.Token==sTOK_INT && vcount<4)
+      while ((scan.Token==sTOK_INT || scan.Token=='-') && vcount<4)
       {
-        sInt pindex=scan.ScanInt()-1;
+        sInt pindex = scan.IfToken('-') ? positions.GetCount() - scan.ScanInt() : scan.ScanInt() - 1;
         sInt tindex=-1;
         sInt nindex=-1;
+          
         if (pindex<0 || pindex>=positions.GetCount())
         {
           scan.Error(L"invalid vtx index");
@@ -98,9 +99,9 @@ sBool Wz4Mesh::LoadOBJ(const sChar *filename)
         }
         if (scan.IfToken(L'/'))
         {
-          if (scan.Token==sTOK_INT)
+          if (scan.Token==sTOK_INT || scan.Token=='-')
           {
-            tindex=scan.ScanInt()-1;
+            tindex = scan.IfToken('-') ? uvs.GetCount() - scan.ScanInt() : scan.ScanInt() - 1;
             if (tindex<0 || tindex>=uvs.GetCount())
             {
               scan.Error(L"invalid texcoord index");
@@ -109,7 +110,7 @@ sBool Wz4Mesh::LoadOBJ(const sChar *filename)
           }
           if (scan.IfToken(L'/'))
           {
-            nindex=scan.ScanInt()-1;
+            nindex = scan.IfToken('-') ? normals.GetCount() - scan.ScanInt() : scan.ScanInt() - 1;
             if (nindex<0 || nindex>=normals.GetCount())
             {
               scan.Error(L"invalid normal index");
