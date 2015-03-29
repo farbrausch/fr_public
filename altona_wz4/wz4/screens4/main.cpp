@@ -23,6 +23,7 @@
 #include "vorbisplayer.hpp"
 #include "network.hpp"
 #include "playlists.hpp"
+#include "webview.hpp"
 
 #include "network/netdebug.hpp"
 
@@ -124,6 +125,9 @@ static void SetupScreenMode(Config::Resolution resolution, sBool fullscreen)
   }
   */
 }
+
+/****************************************************************************/
+/****************************************************************************/
 
 /****************************************************************************/
 /****************************************************************************/
@@ -348,9 +352,10 @@ public:
     RenderList Pic, OpaquePic, Siegmeister, CustomFS;
 
     sMoviePlayer* Movie;
+    WebView* Web;
 
-    SlideEntry() : TexOp(0), Movie(0) {}
-    ~SlideEntry() { sRelease(Movie); }
+    SlideEntry() : TexOp(0), Movie(0), Web(0) {}
+    ~SlideEntry() { sRelease(Movie); sRelease(Web); }
 
   } *Entry[2];
 
@@ -497,32 +502,32 @@ public:
     switch (ns->Type)
     {
     case IMAGE:
-      if (ns->ImgOpaque)
-      {
-        NextSlide = e->OpaquePic.GetNext(ns->RenderType);
-        if (NextSlide.IsNull())
-          NextSlide = e->Pic.GetNext(ns->RenderType);
-      }
-      else
-        NextSlide = e->Pic.GetNext(ns->RenderType);
-      break;
+        if (ns->ImgOpaque)
+        {
+            NextSlide = e->OpaquePic.GetNext(ns->RenderType);
+            if (NextSlide.IsNull())
+                NextSlide = e->Pic.GetNext(ns->RenderType);
+        }
+        else
+            NextSlide = e->Pic.GetNext(ns->RenderType);
+        break;
     case SIEGMEISTER_BARS:
     case SIEGMEISTER_WINNERS:
-      {
+    {
         NextSlide = e->Siegmeister.GetNext(ns->RenderType);
-        RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister",NextSlide);
+        RNSiegmeister *node = GetNode<RNSiegmeister>(L"Siegmeister", NextSlide);
         node->DoBlink = (ns->Type == SIEGMEISTER_WINNERS);
-        node->Fade = node->DoBlink?1:0;
-        node->Alpha=ns->SiegData->BarAlpha;
-        node->Color=ns->SiegData->BarColor;
-        node->BlinkColor1=ns->SiegData->BarBlinkColor1;
-        node->BlinkColor2=ns->SiegData->BarBlinkColor2;
+        node->Fade = node->DoBlink ? 1 : 0;
+        node->Alpha = ns->SiegData->BarAlpha;
+        node->Color = ns->SiegData->BarColor;
+        node->BlinkColor1 = ns->SiegData->BarBlinkColor1;
+        node->BlinkColor2 = ns->SiegData->BarBlinkColor2;
         node->Spread = MyConfig->BarAnimSpread;
         node->Bars.Clear();
         node->Bars.Copy(ns->SiegData->BarPositions);
-      } break;
+    } break;
     case VIDEO:
-      {
+    {
         NextSlide = e->CustomFS.GetNext(ns->RenderType);
         sRelease(e->Movie);
         e->Movie = ns->Movie;
@@ -537,7 +542,20 @@ public:
 
         e->Movie->SetVolume(0);
         e->Movie->Play();
-      }
+    } break;
+    case WEB:
+    {
+        NextSlide = e->CustomFS.GetNext(ns->RenderType);
+        sRelease(e->Web);
+        e->Web = ns->Web;
+        ns->Web = 0;
+
+        RNCustomFullscreen2D *node = GetNode<RNCustomFullscreen2D>(L"Custom2DFS", NextSlide);
+        sFRect uvr;
+        node->Material = e->Web->GetFrame(uvr);
+        node->Aspect = e->Web->GetAspect();
+        node->UVRect = uvr;
+    } break;
     }
 
     sSwap(Entry[0], Entry[1]);
@@ -632,6 +650,7 @@ public:
     SetChild(Main,CurShow,0);
 
     sRelease(Entry[0]->Movie);
+    sRelease(Entry[0]->Web);
     if (Entry[1]->Movie)
       Entry[1]->Movie->SetVolume(MyConfig->MovieVolume);
 
@@ -1109,6 +1128,7 @@ void sMain()
 {
   sAddSubsystem(L"StealingTaskScheduler (wz4player style)",0x80,0,sExitSts);
   sAddMidi(sTRUE, sTRUE);
+  AddWebView();
 
   sGetMemHandler(sAMF_HEAP)->MakeThreadSafe();
   sGetMemHandler(sAMF_HEAP)->IncludeInSnapshot = sTRUE;

@@ -64,6 +64,7 @@ void RegisterWZ4Classes()
     sREGOPS(pdf,1);
 
     sREGOPS(screens4,1);
+    sREGOPS(kbfx, 1);
   }
 
   Doc->FindType(L"Scene")->Secondary = 1;

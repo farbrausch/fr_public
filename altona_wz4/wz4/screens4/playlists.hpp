@@ -8,10 +8,13 @@
 #ifndef FILE_SCREENS4_PLAYLISTS_HPP
 #define FILE_SCREENS4_PLAYLISTS_HPP
 
+
 #include "base/types.hpp"
 #include "base/types2.hpp"
 #include "util/image.hpp"
 #include "util/movieplayer.hpp"
+#include "webview.hpp"
+
 
 /****************************************************************************/
 
@@ -53,7 +56,7 @@ public:
   
   AssetMetaData Meta;
 
-  enum { INVALID, NOTCACHED, CACHED, } volatile CacheStatus;
+  enum { INVALID, ONLINE, NOTCACHED, CACHED, } volatile CacheStatus;
 
   sDNode RefreshNode;
 
@@ -69,6 +72,7 @@ public:
   sString<64> Type;
   sString<256> Path;
   sString<64> SlideType; // chooses certain renderer
+  sBool Cached;
 
   sF32 Duration;
   sInt TransitionId;
@@ -160,6 +164,7 @@ enum SlideType
   SIEGMEISTER_BARS,
   SIEGMEISTER_WINNERS,
   VIDEO,
+  WEB,
 };
 
 class SiegmeisterData
@@ -186,6 +191,7 @@ public:
 
   SiegmeisterData *SiegData;
   sMoviePlayer *Movie;
+  WebView *Web;
 
   const sChar *Id;
   sBool Error;
@@ -250,7 +256,7 @@ private:
   sInt GetItem(Playlist *pl, const sChar *id);
 
   void RefreshAssets(Playlist *pl);
-  Asset *GetAsset(const sChar *path);
+  Asset *GetAsset(const sChar *path, sBool cache);
 
   void RawSeek(Playlist *pl, sInt slide, sBool hard);
   void PrepareNextSlide();

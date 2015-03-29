@@ -1,0 +1,41 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+header
+{
+#include "wz4frlib/wz4_demo2.hpp"
+#include "wz4frlib/wz4_demo2_ops.hpp"
+}
+code
+{
+#include "wz4frlib/wz4_ipp.hpp"
+#include "wz4frlib/kbfx.hpp"
+
+}
+
+
+operator Wz4Render VideoDistort(Wz4Render)
+{
+    column = 4;
+    parameter
+    {
+        int Renderpass(-127..127);
+
+        float KeyFrameInterval(0.1..100 step 0.1) = 2;
+        float Chance(0..1 step 0.01) = 0.5;
+
+        group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+    }
+
+    code
+    {
+        RNVideoDistort *node = new RNVideoDistort();
+        node->ParaBase = node->Para = *para;
+        out->RootNode = node;
+        out->AddChilds(cmd, para->Renderpass);
+    }
+}
