@@ -85,6 +85,9 @@ public:
   sF32 BarAlpha;
   sArray<sFRect> BarPositions;
 
+  sString<256> CallbackUrl;
+  sF32 CallbackDelay;
+
   void Serialize(sReader &r) { Serialize_(r); }
   void Serialize(sWriter &w) { Serialize_(w); }
 
@@ -239,8 +242,8 @@ private:
   sDList<Playlist,&Playlist::Node> Playlists;
 
   sThreadLock Lock;
-  sThreadEvent PlCacheEvent, AssetEvent, PrepareEvent;
-  sThread *PlCacheThread, *AssetThread, *PrepareThread;
+  sThreadEvent PlCacheEvent, AssetEvent, PrepareEvent, CallbackEvent;
+  sThread *PlCacheThread, *AssetThread, *PrepareThread, *CallbackThread;
 
   sArray<Asset*> Assets;
   sDList<Asset, &Asset::RefreshNode> RefreshList;
@@ -252,6 +255,8 @@ private:
   sInt CurrentPlTime;
   sF64 CurrentDuration, CurrentSwitchTime, CurrentSlideTime;
   sBool SwitchHard;
+  sBool CallbackTriggered, RefreshTriggered;
+  const sChar *CallbackToCall;
   NewSlideData * volatile PreparedSlide;
 
   Playlist *GetPlaylist(const sChar *id);
@@ -278,9 +283,15 @@ private:
     ((PlaylistMgr*)obj)->PrepareThreadFunc(t);
   }
 
+  static void CallbackThreadProxy(sThread *t, void *obj)
+  {
+	  ((PlaylistMgr*)obj)->CallbackThreadFunc(t);
+  }
+
   void PlCacheThreadFunc(sThread *t);
   void AssetThreadFunc(sThread *t);
   void PrepareThreadFunc(sThread *t); 
+  void CallbackThreadFunc(sThread *t);
 
   static void MakeFilename(const sStringDesc& buffer, const sChar *id, const sChar *path, const sChar *ext=L"");
 

@@ -17,13 +17,14 @@ extern void LogTime();
 
 template<class streamer> void PlaylistItem::Serialize_(streamer &s)
 {
-  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,3);
+  sInt version = s.Header(sSerId::Werkkzeug4+0x6401,4);
   if (version>0)
   {
     s | ID | Type | Path;
     s | Duration | TransitionId | TransitionDuration | ManualAdvance | Mute;
     if (version>=2) s | SlideType | MidiNote;
     if (version >= 3) s | Cached;
+	if (version >= 4) s | CallbackUrl | CallbackDelay;
 
     s | BarColor | BarBlinkColor1 | BarBlinkColor2 | BarAlpha;
     s.ArrayAll(BarPositions);
@@ -103,6 +104,9 @@ PlaylistMgr::PlaylistMgr()
   CurrentDuration = CurrentSwitchTime = CurrentSlideTime = 0;
   CurrentPl = 0;
   SwitchHard = sFALSE;
+  CallbackTriggered = sFALSE;
+  RefreshTriggered = sFALSE;
+  CallbackToCall = 0;
   PreparedSlide = 0;
   Time = 1.0; // one second phase shift into the future to hide the TARDIS
   CurRefreshing = 0;
@@ -168,6 +172,7 @@ PlaylistMgr::PlaylistMgr()
   PlCacheThread = new sThread(PlCacheThreadProxy, -1, 0, this);
   AssetThread = new sThread(AssetThreadProxy, -1, 0, this);
   PrepareThread = new sThread(PrepareThreadProxy, -1, 0, this);
+  CallbackThread = new sThread(CallbackThreadProxy, -1, 0, this);
 }
 
 PlaylistMgr::~PlaylistMgr()
@@ -181,6 +186,9 @@ PlaylistMgr::~PlaylistMgr()
   PrepareThread->Terminate();
   PrepareEvent.Signal();
   delete PrepareThread;
+  CallbackThread->Terminate();
+  CallbackEvent.Signal();
+  delete CallbackThread;
   while (!Playlists.IsEmpty())
     Playlists.RemHead()->Release();
 
@@ -189,8 +197,7 @@ PlaylistMgr::~PlaylistMgr()
   sReleaseAll(Assets);
 
   sRelease(CurrentPl);
-  delete PreparedSlide;
-  
+  delete PreparedSlide;  
 }
 
 // Adds new play list to pool (takes ownership of pl)
@@ -253,7 +260,7 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
     sString<64> curId = CurrentPl ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
 
     // refresh next slide
-    if (CurrentSlideTime>0 && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
+    if (!RefreshTriggered && CurrentPl && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
     {
       PlaylistItem *current =  CurrentPl->Items[CurrentPos.SlideNo%CurrentPl->Items.GetCount()];
       PlaylistItem *next =  CurrentPl->Items[(CurrentPos.SlideNo+1)%CurrentPl->Items.GetCount()];
@@ -264,10 +271,20 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
           next->MyAsset->AddRef();
           RefreshList.AddHead(next->MyAsset);
         }
-
-        CurrentSlideTime = 0;
       }
+	  RefreshTriggered = sTRUE;
     }
+
+	// slide callbacks
+	if (!CallbackTriggered && CurrentPl &&
+		!CurrentPl->Items[CurrentPos.SlideNo]->CallbackUrl.IsEmpty() &&
+		(Time - CurrentSlideTime) > CurrentPl->Items[CurrentPos.SlideNo]->CallbackDelay)
+	{
+		LogTime(); sDPrintF(L"Calling slide callback\n");
+		CallbackToCall = CurrentPl->Items[CurrentPos.SlideNo]->CallbackUrl;
+		CallbackEvent.Signal();
+		CallbackTriggered = sTRUE;
+	}
 
     // auto advance
     if (CurrentSwitchTime>0 && (Time-CurrentSwitchTime)>=CurrentDuration)
@@ -328,6 +345,8 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
   {
     PreparedSlide = 0;
     CurrentSlideTime = Time;
+	CallbackTriggered = sFALSE;
+	RefreshTriggered = sFALSE;
 
     // prepare auto advance
     if (CurrentDuration>0)
@@ -967,3 +986,36 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
   }
 }
 
+void PlaylistMgr::CallbackThreadFunc(sThread *t)
+{
+	while (t->CheckTerminate())
+	{
+		const sChar *toCall = CallbackToCall;
+		CallbackToCall = 0;
+		if (!toCall)
+		{
+			CallbackEvent.Wait(100);
+			continue;
+		}
+
+		LogTime(); sDPrintF(L"Calling %s\n", toCall);
+
+		// send HTTP request...
+		sHTTPClient client;
+		sBool result = client.Connect(toCall);
+
+		// .. and interpret response.
+		int code;
+		client.GetStatus(code);
+		if (!result)
+		{
+			LogTime(); sDPrintF(L"ERROR: connection failed calling %s\n", toCall);
+		}
+		else if (code >= 400) // error :(
+		{
+			LogTime(); sDPrintF(L"ERROR: calling %s resulted in %d\n", toCall, code);
+		}
+
+		client.Disconnect();
+	}
+}

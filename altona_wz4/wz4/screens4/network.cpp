@@ -359,6 +359,8 @@ sBool RPCServer::SetPlaylist(xml_node &in)
     pi->Mute = item.child(L"mute").text().as_int();
     pi->MidiNote = item.child(L"midi").text().as_int();
     pi->Cached = sCmpStringI(item.attribute(L"type").as_string(),L"web") ? sTRUE : sFALSE;
+	pi->CallbackUrl = item.child(L"callback").text().as_string();
+	pi->CallbackDelay = item.child(L"callback").attribute(L"delay").as_float();
 
     xml_node sieg = item.child(L"siegmeister");
     pi->BarColor = sieg.child(L"bar_color").text().as_string();
