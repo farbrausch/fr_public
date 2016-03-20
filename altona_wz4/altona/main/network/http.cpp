@@ -344,6 +344,13 @@ sBool sHTTPClient::Read(void *buffer, sDInt size, sDInt &read)
       sDInt csize = 0;
       sBool ok = 0;
      
+	  // kill CRLF at end of last chunk
+	  if (Fill >= 2 && Buffer[0] == '\r' && Buffer[1] == '\n')
+	  {
+		  sCopyMem(Buffer, Buffer + 2, Fill - 2);
+		  Fill -= 2;
+	  }
+
       // try to find chunk size at buffer start
       while (sIsHex(Buffer[bpos]) && bpos<Fill) 
       {

@@ -1196,11 +1196,11 @@ void sMain()
       dirlist.Clear();
     }
 
-    if (!pakname.IsEmpty())
-    {
-      PackFile = new sDemoPackFile(pakname);
-      sAddFileHandler(PackFile);
-    }
+    //if (!pakname.IsEmpty())
+    //{
+    //  PackFile = new sDemoPackFile(pakname);
+    //  sAddFileHandler(PackFile);
+    //}
   }
 
   // find fitting wz4 file
