@@ -260,7 +260,7 @@ sBool sHTTPClient::Connect(const sChar *url, ConnMethod method)
       Fill-=llen;
       const sChar *lp=temp; 
 
-      // parse line
+	  // parse line
       if (!RetCode) // "HTTP/x.y ###" first!
       {
         if (sCmpMem(lp,L"HTTP/1.",7)) goto headererr;
@@ -268,19 +268,28 @@ sBool sHTTPClient::Connect(const sChar *url, ConnMethod method)
         if (!sScanInt(lp,RetCode)) goto headererr;
         // not interested in the rest
       }
-      else if (sScanMatch(lp,L"Content-Length: "))
-      {
-        if (!sScanInt(lp,Size)) goto headererr;
-      }
-      else if (sScanMatch(lp,L"Etag: "))
-      {
-        ETag = lp;
-      }
-      else if (sScanMatch(lp,L"Transfer-Encoding: chunked"))
-      {
-        ChunkLeft = 0;
-      }
-      
+	  else
+	  {
+		  for (sChar *lp2 = (sChar*)lp; *lp2 && *lp2 != ':'; lp2++)
+			  *lp2 = sLowerChar(*lp2);
+
+		  if (sScanMatch(lp, L"content-length: "))
+		  {
+			  if (!sScanInt(lp, Size)) goto headererr;
+		  }
+		  else if (sScanMatch(lp, L"etag: "))
+		  {
+			  ETag = lp;
+		  }
+		  else if (sScanMatch(lp, L"transfer-encoding: "))
+		  {
+			  for (sChar *lp2 = (sChar*)lp; *lp2; lp2++)
+				  *lp2 = sLowerChar(*lp2);
+
+			  if (sScanMatch(lp, L"chunked"))			  
+				ChunkLeft = 0;
+		  }
+	  }      
     }
 
     if (!llen) 
