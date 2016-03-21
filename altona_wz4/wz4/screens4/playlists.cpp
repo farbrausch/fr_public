@@ -34,11 +34,13 @@ template<class streamer> void PlaylistItem::Serialize_(streamer &s)
 
 template<class streamer> void Playlist::Serialize_(streamer &s)
 {
-  sInt version = s.Header(sSerId::Werkkzeug4+0x6402,1);
+  sInt version = s.Header(sSerId::Werkkzeug4+0x6402,2);
   if (version>0)
   {
     s | ID | CallbackUrl | Timestamp | Loop;
     s | LastPlayedItem;
+		if (version >= 2)
+			s | CallbacksOn;
     s.ArrayAllPtr(Items);
   }
   s.Footer();
@@ -111,6 +113,7 @@ PlaylistMgr::PlaylistMgr()
   Time = 1.0; // one second phase shift into the future to hide the TARDIS
   CurRefreshing = 0;
   Locked = sFALSE;
+	CallbacksOn = sFALSE;
 
   // load all cached playlists
   sArray<sDirEntry> dir;
@@ -276,7 +279,7 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
     }
 
 	// slide callbacks
-	if (!CallbackTriggered && CurrentPl &&
+	if (CallbacksOn && !CallbackTriggered && CurrentPl && CurrentPl->CallbacksOn &&
 		!CurrentPl->Items[CurrentPos.SlideNo]->CallbackUrl.IsEmpty() &&
 		(Time - CurrentSlideTime) > CurrentPl->Items[CurrentPos.SlideNo]->CallbackDelay)
 	{

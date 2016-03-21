@@ -20,6 +20,8 @@ defaults
 
   lockwhendimmed 1          // don't change slide when dimmed
   
+  callbacks 0               // send per-slide callbacks back to PM
+  
   //pngout "c:\test\frame.png" // save current slide as png to this path
 }
 
@@ -35,7 +37,7 @@ keys
   ESC: stopsound
   F1: playsound "sounds/announce.ogg"  // playsound accepts only Ogg Vorbis files!
   F2: playsound "sounds/compo.ogg"
-  SPACE: toggledim
+  TAB: toggledim
   
   SHIFT F5: resolution 1920,1080,50
   SHIFT F6: resolution 1920,1080,60

@@ -55,6 +55,7 @@ public:
   sPoolString TransPrefix;
   sPoolString DefaultType;
   sBool LockWhenDimmed;
+  sBool Callbacks;
 
   sInt MidiDevice;
   sInt MidiChannel;
@@ -78,6 +79,7 @@ public:
     MidiChannel = 1;
     PngOut = L"";
     LockWhenDimmed = sFALSE;
+		Callbacks = sFALSE;
   }
 
   sBool Read(const sChar *filename)
@@ -162,7 +164,9 @@ private:
         Scan->ScanString(PngOut);
       else if (Scan->IfName(L"lockwhendimmed"))
         LockWhenDimmed = Scan->ScanInt();
-      else
+			else if (Scan->IfName(L"callbacks"))
+			  Callbacks = Scan->ScanInt();
+	  else
         Scan->Error(L"syntax error");
     }
   }

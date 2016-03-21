@@ -428,6 +428,8 @@ public:
     else
       PngOutThread = 0;
     PngOutEvent = new sThreadEvent();
+
+		PlMgr.CallbacksOn = MyConfig->Callbacks;
   }
 
   ~MyApp()

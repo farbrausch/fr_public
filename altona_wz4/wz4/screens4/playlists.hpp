@@ -109,6 +109,7 @@ public:
   sString<256> CallbackUrl;
   sU32 Timestamp;
   sBool Loop;
+	sBool CallbacksOn;
 
   sInt LastPlayedItem;
 
@@ -121,6 +122,7 @@ public:
   {
     Dirty = sTRUE;
     Loop = sTRUE;
+		CallbacksOn = sFALSE;
     LastPlayedItem = 0;
   }
 
@@ -232,6 +234,7 @@ public:
   sBool OnInput(const sInput2Event &ev);
 
   sBool Locked;
+	sBool CallbacksOn;
 
 private:
 

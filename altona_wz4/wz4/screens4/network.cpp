@@ -307,6 +307,7 @@ sBool RPCServer::GetPlaylists(Connection *conn, xml_node &in, xml_node &out)
     plnode.append_child(L"name").text() = pl->ID;
     plnode.append_child(L"playing").text() = (curPl == (const sChar*)pl->ID);
     plnode.append_child(L"timestamp").text() = pl->Timestamp;
+		plnode.append_child(L"callbacks").text() = pl->CallbacksOn && PlMgr.CallbacksOn;
     PlaylistItem *it;
     sFORALL(pl->Items,it)
     {
@@ -341,8 +342,10 @@ sBool RPCServer::SetPlaylist(xml_node &in)
       pl->CallbackUrl = para.text().as_string();
     else if (!sCmpStringI(name, L"timestamp"))
       pl->Timestamp = para.text().as_uint();
-    else if (!sCmpStringI(name, L"loop"))
-      pl->Loop = para.text().as_int();
+		else if (!sCmpStringI(name, L"loop"))
+			pl->Loop = para.text().as_int();
+		else if (!sCmpStringI(name, L"callbacks_active"))
+			pl->CallbacksOn = para.text().as_int();
   }
 
   for (xml_node item = in.child(L"data").child(L"item"); item; item=item.next_sibling(L"item"))
