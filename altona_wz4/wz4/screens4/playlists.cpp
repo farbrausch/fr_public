@@ -223,6 +223,7 @@ void PlaylistMgr::AddPlaylist(Playlist *newpl)
         if (newpl->Timestamp <= pl->Timestamp && newpl->Items.GetCount() == pl->Items.GetCount())
         {
           LogTime(); sDPrintF(L"-> already in cache\n");
+          pl->CallbacksOn = newpl->CallbacksOn;
           RefreshAssets(pl);
           return;
         }

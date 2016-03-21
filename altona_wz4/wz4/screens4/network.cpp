@@ -307,7 +307,7 @@ sBool RPCServer::GetPlaylists(Connection *conn, xml_node &in, xml_node &out)
     plnode.append_child(L"name").text() = pl->ID;
     plnode.append_child(L"playing").text() = (curPl == (const sChar*)pl->ID);
     plnode.append_child(L"timestamp").text() = pl->Timestamp;
-		plnode.append_child(L"callbacks").text() = pl->CallbacksOn && PlMgr.CallbacksOn;
+		plnode.append_child(L"callbacks").text() = (int)(pl->CallbacksOn && PlMgr.CallbacksOn);
     PlaylistItem *it;
     sFORALL(pl->Items,it)
     {
