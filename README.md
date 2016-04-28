@@ -25,6 +25,7 @@ this code, but if you want to, we see no reason to keep you.
 
 So what do we have in here? Here's the basic directory structure:
 
+```
   altona_wz4/           - Altona and Werkkzeug4. Our most recent code foundation and tool.
     altona/             - The framework libraries (includes base Werkkzeug4 GUI).
     wz4/                - Wz4FRlib (demo ops) and Wz4Player.
@@ -49,6 +50,7 @@ So what do we have in here? Here's the basic directory structure:
     w3texlib/           - Werkkzeug 3 texture lib. Used for fr-033.
     wz_mobile/          - Werkkzeug Mobile. Never got used for anything.
   werkkzeug3_kkrieger/  - kkrieger branch. Game mode in here might work. :)
+```
 
 So, here's the sightseeing tips:
 
