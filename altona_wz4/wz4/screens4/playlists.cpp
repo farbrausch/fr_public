@@ -106,8 +106,8 @@ PlaylistMgr::PlaylistMgr()
   CurrentDuration = CurrentSwitchTime = CurrentSlideTime = 0;
   CurrentPl = 0;
   SwitchHard = sFALSE;
-  CallbackTriggered = sFALSE;
-  RefreshTriggered = sFALSE;
+  CallbackTriggered = sTRUE;
+  RefreshTriggered = sTRUE;
   CallbackToCall = 0;
   PreparedSlide = 0;
   Time = 1.0; // one second phase shift into the future to hide the TARDIS
@@ -157,7 +157,7 @@ PlaylistMgr::PlaylistMgr()
     sString<sMAXPATH> fn = CacheDir; sAppendString(fn, L"CurrentPos");
     sLoadObject<PlayPosition>(fn,&CurrentPos);
     Playlist *pl = GetPlaylist(CurrentPos.PlaylistId);
-    if (pl)
+    if (pl && pl->Items.GetCount()>0)
     {
       CurrentPos.SlideNo = sClamp(CurrentPos.SlideNo,0,pl->Items.GetCount()-1);
       Seek(CurrentPos.PlaylistId, pl->Items[CurrentPos.SlideNo]->ID, sTRUE);
@@ -224,6 +224,7 @@ void PlaylistMgr::AddPlaylist(Playlist *newpl)
         {
           LogTime(); sDPrintF(L"-> already in cache\n");
           pl->CallbacksOn = newpl->CallbacksOn;
+          sRelease(newpl);
           RefreshAssets(pl);
           return;
         }
@@ -261,10 +262,11 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
   {
     sScopeLock lock(&Lock);
 
-    sString<64> curId = CurrentPl ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
+    bool valid = CurrentPl && CurrentPl->Items.GetCount()>0 && CurrentPos.SlideNo >= 0;
+    sString<64> curId =  valid ? CurrentPl->Items[CurrentPos.SlideNo]->ID : L"";
 
     // refresh next slide
-    if (!RefreshTriggered && CurrentPl && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
+    if (!RefreshTriggered && valid && (Time-CurrentSlideTime)>=CurrentPl->Items[CurrentPos.SlideNo]->TransitionDuration+0.2f)
     {
       PlaylistItem *current =  CurrentPl->Items[CurrentPos.SlideNo%CurrentPl->Items.GetCount()];
       PlaylistItem *next =  CurrentPl->Items[(CurrentPos.SlideNo+1)%CurrentPl->Items.GetCount()];
@@ -280,7 +282,7 @@ NewSlideData* PlaylistMgr::OnFrame(sF32 delta, const sChar *doneId, sBool doneHa
     }
 
 	// slide callbacks
-	if (CallbacksOn && !CallbackTriggered && CurrentPl && CurrentPl->CallbacksOn &&
+	if (CallbacksOn && !CallbackTriggered && valid && CurrentPl->CallbacksOn &&
 		!CurrentPl->Items[CurrentPos.SlideNo]->CallbackUrl.IsEmpty() &&
 		(Time - CurrentSlideTime) > CurrentPl->Items[CurrentPos.SlideNo]->CallbackDelay)
 	{
@@ -427,7 +429,7 @@ void PlaylistMgr::GetCurrentPos(const sStringDesc &pl, const sStringDesc &slide)
 {
   sScopeLock lock(&Lock);
   sCopyString(pl, CurrentPos.PlaylistId);
-  if (CurrentPl)
+  if (CurrentPl && CurrentPos.SlideNo>=0)
     sCopyString(slide, CurrentPl->Items[CurrentPos.SlideNo]->ID);
 }
 
@@ -462,6 +464,8 @@ void PlaylistMgr::Next(sBool hard, sBool force)
         if (!pl) return;
         slide = LastLoopPos.SlideNo;
       }
+      if (slide < 0)
+        return;
     }
   } while (!force && !sCmpStringI(pl->Items[slide]->Type,L"siegmeister_winners"));
   RawSeek(pl, slide, hard);
@@ -480,7 +484,8 @@ void PlaylistMgr::Previous(sBool hard)
     {
       if (pl->Loop)
         slide = pl->Items.GetCount()-1;
-      else
+
+      if (slide<0)
         return;
     }
   } while (!sCmpStringI(pl->Items[slide]->Type,L"siegmeister_winners"));
@@ -581,7 +586,7 @@ void PlaylistMgr::RefreshAssets(Playlist *pl)
 
 void PlaylistMgr::RawSeek(Playlist *pl, sInt slide, sBool hard)
 {
-  if (Locked)
+  if (Locked || !pl || slide < 0)
     return;
 
   sScopeLock lock(&Lock);
@@ -601,7 +606,7 @@ void PlaylistMgr::RawSeek(Playlist *pl, sInt slide, sBool hard)
   CurrentPlTime = pl->Timestamp;
   sAddRef(CurrentPl);
 
-  if (CurrentPl)
+  if (CurrentPl && CurrentPl->Items.GetCount()>0)
   {
     CurrentPos.PlaylistId = CurrentPl->ID;
     CurrentPos.SlideNo = sClamp(slide,0,pl->Items.GetCount()-1);
@@ -616,8 +621,8 @@ void PlaylistMgr::RawSeek(Playlist *pl, sInt slide, sBool hard)
   CurrentPos.Dirty = sTRUE;
   PlCacheEvent.Signal();
 
-  PlaylistItem *item = pl->Items[CurrentPos.SlideNo];
-  CurrentDuration = item->ManualAdvance ? 0 : item->Duration+item->TransitionDuration;
+  PlaylistItem *item = pl->Items.GetCount() > 0 ? pl->Items[CurrentPos.SlideNo] : 0;
+  CurrentDuration = !item || item->ManualAdvance ? 0 : item->Duration+item->TransitionDuration;
   CurrentSwitchTime = 0;
 
   PrepareEvent.Signal();
@@ -798,7 +803,7 @@ void PlaylistMgr::PrepareThreadFunc(sThread *t)
     Asset *myAsset;
     {
       sScopeLock lock(&Lock);
-      if (!CurrentPl) continue;
+      if (!CurrentPl || CurrentPl->Items.GetCount()==0) continue;
       item = CurrentPl->Items[CurrentPos.SlideNo];
 
       LogTime(); sDPrintF(L"preparing %s\n",item->Path);

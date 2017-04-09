@@ -314,7 +314,7 @@ sBool RPCServer::GetPlaylists(Connection *conn, xml_node &in, xml_node &out)
       xml_node item = plnode.append_child(L"slide");
       item.append_child(L"id").text() = it->ID;
     }
-    if (pl->LastPlayedItem >=0)
+    if (pl->LastPlayedItem >=0 && pl->LastPlayedItem < pl->Items.GetCount())
     {
       plnode.append_child(L"current_slide").text() = pl->Items[pl->LastPlayedItem]->ID;
     }
