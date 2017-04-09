@@ -114,6 +114,8 @@ public:
   sBool CheckWriteError() const { return TransferError&2; }
   sBool CheckError() const { return TransferError; }
   void ClearErrorFlags() { TransferError=0; }
+
+  virtual ~sTCPSocket();
 protected:
 
   friend class sTCPClientSocket;
@@ -124,7 +126,6 @@ protected:
   sInt TransferError;
 
   sTCPSocket();
-  virtual ~sTCPSocket();
 };
 
 /****************************************************************************/

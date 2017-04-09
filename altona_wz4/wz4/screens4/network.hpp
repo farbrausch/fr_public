@@ -58,7 +58,7 @@ class RPCServer
 
     ~Connection()
     {
-      if (Socket) Socket->Disconnect();
+      sDelete(Socket);
       sDeleteAll(InBuffers);
       sDeleteAll(OutBuffers);
     }

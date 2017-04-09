@@ -37,6 +37,8 @@
 
 #if sPLATFORM==sPLAT_WINDOWS
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include <winsock2.h>
 #pragma comment (lib,"ws2_32.lib")
 
