@@ -46,5 +46,61 @@ public:
 
 /****************************************************************************/
 
+class RNBlockTransition : public Wz4RenderNode
+{
+  sMaterial *Mtrl;
+  sGeometry *Geo;
+
+  sF32 LastTime;
+  sRandomKISS Rnd;
+  
+  struct Block
+  {
+    sInt Index;
+    sInt SrcIndex;
+    sU32 Color;
+  };
+
+  sArray<Block> Blocks;
+  
+public:
+  RNBlockTransition();
+  ~RNBlockTransition();
+
+  Wz4RenderParaBlockTransition Para, ParaBase;
+  Wz4RenderAnimBlockTransition Anim;
+
+  void Init();
+  void Simulate(Wz4RenderContext *);
+  void Render(Wz4RenderContext *);
+
+  Texture2D *Texture;
+};
+
+/****************************************************************************/
+
+class RNGlitch2D : public Wz4RenderNode
+{
+  sMaterial *Mtrl;
+  sGeometry *Geo;
+
+  sF32 LastTime;
+  sRandomKISS Rnd;
+
+public:
+  RNGlitch2D();
+  ~RNGlitch2D();
+
+  Wz4RenderParaGlitch2D Para, ParaBase;
+  Wz4RenderAnimGlitch2D Anim;
+
+  void Init();
+  void Simulate(Wz4RenderContext *);
+  void Render(Wz4RenderContext *);
+
+  Texture2D *Texture;
+};
+
+/****************************************************************************/
 #endif // FILE_WZ4FRLIB_KBFX_HPP
 

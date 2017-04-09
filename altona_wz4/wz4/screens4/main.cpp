@@ -71,6 +71,7 @@ void RegisterWZ4Classes()
     sREGOPS(fxparticle,0);
     sREGOPS(wz4_modmtrl,0);
     sREGOPS(wz4_modmtrlmod,0);
+    sREGOPS(kbfx, 0);
 
     sREGOPS(fr062,0);   // the cube
     sREGOPS(fr063_chaos,0);   // chaos+tron

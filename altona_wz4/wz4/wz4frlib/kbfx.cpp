@@ -189,3 +189,237 @@ void RNVideoDistort::AddGlitch(int gx, int gy)
 
 /****************************************************************************/
 
+RNBlockTransition::RNBlockTransition()
+{  
+  Anim.Init(Wz4RenderType->Script);
+  Mtrl = 0;
+  Geo = 0;
+  Texture = 0;
+  LastTime = 0;
+}
+
+RNBlockTransition::~RNBlockTransition()
+{
+  sRelease(Texture);
+  delete Mtrl;
+  delete Geo;
+}
+
+void RNBlockTransition::Init()
+{
+  Geo = new sGeometry(sGF_QUADLIST, sVertexFormatSingle);
+
+  Mtrl = new BlockTransMtrl();
+  Mtrl->Flags = sMTRL_ZOFF | sMTRL_CULLOFF;
+  Mtrl->TFlags[0] = sMTF_LEVEL2 | sMTF_CLAMP | sMTF_EXTERN;
+  if (Texture) Mtrl->Texture[0] = Texture->Texture;
+  Mtrl->Prepare(sVertexFormatSingle);
+}
+
+void RNBlockTransition::Simulate(Wz4RenderContext *ctx)
+{
+  Para = ParaBase;
+  Anim.Bind(ctx->Script, &Para);
+  SimulateCalc(ctx);
+  SimulateChilds(ctx);
+}
+
+void RNBlockTransition::Render(Wz4RenderContext *ctx)
+{
+  if ((ctx->RenderMode & sRF_TARGET_MASK) == sRF_TARGET_MAIN)
+  {
+    sViewport view;
+    view.Orthogonal = sVO_PIXELS;
+    view.SetTargetCurrent();
+    view.Prepare();
+
+    int GS = Para.BlockSize;
+    int gridx = (view.Target.SizeX() + GS - 1) / GS;
+    int gridy = (view.Target.SizeY() + GS - 1) / GS;
+    int gridn = gridx*gridy;
+
+    Blocks.Clear();
+    Blocks.HintSize(gridn);
+    sF32 stepu = (sF32)GS / (sF32)view.Target.SizeX();
+    sF32 stepv = (sF32)GS / (sF32)view.Target.SizeY();
+
+    Rnd.Seed((sU32)Para.Seed);
+
+    int n = 0;
+    while (n < gridn)
+    {
+      int w = Para.StreakSize + Rnd.Int(Para.StreakDeviate+1) - Para.StreakDeviate / 2;
+      bool yo = Rnd.Float(1) <= Para.Chance;
+      int srcdev = (Rnd.Int(2 * Para.SrcDeviate + 1) - Para.SrcDeviate);
+
+      w = sMin(w, gridn - n);
+      if (w <= 0) continue;
+
+      if (yo)
+      {
+        for (int i = 0; i < w; i++)
+        {
+          Block b;
+          b.Color = 0xffffffff;
+          b.Index = n + i;
+          b.SrcIndex = n + i + srcdev;
+          Blocks.AddTail(b);
+        }
+      }
+
+      n += w;
+    }
+      
+    if (Blocks.IsEmpty())
+      return;
+
+    sGraphicsCaps caps;
+    sGetGraphicsCaps(caps);
+    sF32 xy = caps.XYOffset;
+    sF32 uv = caps.UVOffset;
+
+    sCBuffer<BlockTransVSPara> cbv;
+    cbv.Data->mvp = view.ModelScreen;
+    
+    Mtrl->Set(&cbv);
+
+    sVertexSingle *vp, *ovp;
+    Geo->BeginLoadVB(4 * gridn, sGD_STREAM, &vp);
+    ovp = vp;
+
+    for (int i = 0; i < Blocks.GetCount(); i++)
+    {
+      sInt index = Blocks[i].Index % gridn;
+      sInt srcindex = Blocks[i].SrcIndex % gridn;
+      sU32 col = Blocks[i].Color;
+
+      sInt gx = srcindex % gridx;
+      sInt gy = srcindex / gridx;
+
+      sF32 u0 = gx * stepu + uv;
+      sF32 v0 = gy * stepv + uv;
+      sF32 u1 = u0 + stepu;
+      sF32 v1 = v0 + stepv;
+
+      sF32 sx = GS*(index % gridx) + xy;
+      sF32 sy = GS*(index / gridx) + xy;
+
+      vp++->Init(sx, sy, 0, col, u0, v0);
+      vp++->Init(sx + GS, sy, 0, col, u1, v0);
+      vp++->Init(sx + GS, sy + GS, 0, col, u1, v1);
+      vp++->Init(sx, sy + GS, 0, col, u0, v1);
+    }
+
+    Geo->EndLoadVB(vp - ovp);
+    Geo->Draw();
+  }
+}
+
+
+
+/****************************************************************************/
+
+RNGlitch2D::RNGlitch2D()
+{
+  Anim.Init(Wz4RenderType->Script);
+  Mtrl = 0;
+  Geo = 0;
+  Texture = 0;
+  LastTime = 0;
+}
+
+RNGlitch2D::~RNGlitch2D()
+{
+  sRelease(Texture);
+  delete Mtrl;
+  delete Geo;
+}
+
+void RNGlitch2D::Init()
+{
+  Geo = new sGeometry(sGF_QUADLIST, sVertexFormatDouble);
+
+  Mtrl = new Glitch2DMtrl();
+  Mtrl->Flags = sMTRL_ZOFF | sMTRL_CULLOFF;
+  Mtrl->TFlags[0] = sMTF_LEVEL2 | sMTF_TILE | sMTF_EXTERN;
+  if (Texture) Mtrl->Texture[0] = Texture->Texture;
+  Mtrl->Prepare(sVertexFormatDouble);
+}
+
+void RNGlitch2D::Simulate(Wz4RenderContext *ctx)
+{
+  Para = ParaBase;
+  Anim.Bind(ctx->Script, &Para);
+  SimulateCalc(ctx);
+  SimulateChilds(ctx);
+}
+
+void RNGlitch2D::Render(Wz4RenderContext *ctx)
+{
+  if ((ctx->RenderMode & sRF_TARGET_MASK) == sRF_TARGET_MAIN)
+  {
+    sViewport view;
+    view.Orthogonal = sVO_PIXELS;
+    view.SetTargetCurrent();
+    view.Prepare();
+
+    int GS = Para.LineSize;
+    int gridy = (view.Target.SizeY() + GS - 1) / GS;
+
+    Rnd.Seed((sU32)Para.Seed);
+
+    sGraphicsCaps caps;
+    sGetGraphicsCaps(caps);
+    sF32 xy = caps.XYOffset;
+    sF32 uv = caps.UVOffset;
+    sF32 stepv = (sF32)GS / (sF32)view.Target.SizeY();
+
+    sCBuffer<BlockTransVSPara> cbv;
+    cbv.Data->mvp = view.ModelScreen;
+
+    Mtrl->Set(&cbv);
+    
+    sVertexDouble *vp, *ovp;
+    Geo->BeginLoadVB(4 * gridy, sGD_STREAM, &vp);
+    ovp = vp;
+
+    float x0 = xy;
+    float x1 = x0 + view.Target.SizeX();
+
+
+    for (int i = 0; i < gridy; i++)
+    {
+      bool yo = Rnd.Float(1) <= Para.Chance;
+      sF32 xdev = Rnd.FloatSigned(1);
+
+      sU32 col = 0xffffffff;
+      sF32 u0 = uv;
+      sF32 v0 = i * stepv + uv;
+      sF32 sy = GS* i + xy;
+      float t2u = 0;
+
+      if (yo)
+      {
+        u0 += Para.ShiftX * xdev;
+        v0 += Para.ShiftY * xdev;
+        t2u += Para.ShiftRGB * xdev;
+      }
+
+      sF32 u1 = u0 + 1;
+      sF32 v1 = v0 + stepv;
+
+      vp++->Init(x0, sy, 0, col, u0, v0, t2u, 0);
+      vp++->Init(x1, sy, 0, col, u1, v0, t2u, 0);
+      vp++->Init(x1, sy + GS, 0, col, u1, v1, t2u, 0);
+      vp++->Init(x0, sy + GS, 0, col, u0, v1, t2u, 0);
+    }
+
+    Geo->EndLoadVB(vp - ovp);
+    Geo->Draw();
+ 
+  }
+}
+
+
+
+/****************************************************************************/

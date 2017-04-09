@@ -37,5 +37,68 @@ operator Wz4Render VideoDistort(Wz4Render)
         node->ParaBase = node->Para = *para;
         out->RootNode = node;
         out->AddChilds(cmd, para->Renderpass);
+        out->AddCode(cmd, para->Renderpass);
     }
+}
+
+
+operator Wz4Render BlockTransition(Texture2D)
+{
+    column = 4;
+    parameter
+    {
+        int Renderpass(-127..127);
+
+		anim int BlockSize(1..256) = 16;
+		anim int StreakSize(1..2000) = 200;
+		anim int StreakDeviate(0..1000) = 100;
+		anim int SrcDeviate(0..100) = 2;
+
+		anim int Seed;
+
+        anim float Chance(0..1 step 0.01) = 0.5;
+
+        group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+    }
+
+    code
+    {
+        RNBlockTransition *node = new RNBlockTransition();
+        node->ParaBase = node->Para = *para;
+		node->Texture = in0; in0->AddRef();
+		node->Init();
+        out->RootNode = node;
+        out->AddCode(cmd, para->Renderpass);
+    }
+}
+
+operator Wz4Render Glitch2D(Texture2D)
+{
+  column = 4;
+  parameter
+  {
+    int Renderpass(-127..127);
+    
+    anim int Seed;
+
+    anim int LineSize(1..1000) = 8; 
+    anim float Chance(0..1 step 0.01) = 0.5;
+
+    anim float ShiftX(0..1 step 0.01) = 0.1;
+    anim float ShiftY(0..1 step 0.01) = 0;
+    anim float ShiftRGB(0..1 step 0.01) = 0.01;
+
+    group "Animation Script"; overbox overlabel linenumber lines 5 string Script;
+  }
+
+  code
+  {
+    RNGlitch2D *node = new RNGlitch2D();
+    node->ParaBase = node->Para = *para;
+    node->Texture = in0; in0->AddRef();
+    node->Init();
+    out->RootNode = node;
+    out->AddCode(cmd, para->Renderpass);
+
+  }
 }

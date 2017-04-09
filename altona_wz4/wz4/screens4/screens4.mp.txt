@@ -53,6 +53,7 @@ folder "3rdparty"
 }
 
 file "screens4.mp.txt";
+file "config.txt";
 file "main.cpp";
 file "vorbisplayer.?pp";
 file "network.?pp";
