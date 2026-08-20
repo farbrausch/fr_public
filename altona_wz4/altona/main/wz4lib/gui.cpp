@@ -30,6 +30,8 @@ extern "C" const sChar8 WireTXT[];
 
 /****************************************************************************/
 
+#include <string.h>
+#include <math.h>
 #define STB_VORBIS_NO_CRT
 #define STB_VORBIS_NO_PUSHDATA_API
 #define STB_VORBIS_NO_FAST_SCALED_FLOAT
@@ -38,7 +40,8 @@ extern "C" const sChar8 WireTXT[];
 #define assert(x) sVERIFY(x)
 #define alloca(x) sALLOCSTACK(sU8,x)
 
-static void qsort ( void * base, size_t num, size_t size, int ( * comparator ) ( const void *, const void * ) )
+#define qsort stb_vorbis_qsort
+static void stb_vorbis_qsort ( void * base, size_t num, size_t size, int ( * comparator ) ( const void *, const void * ) )
 {
   // qsort is used by stb_vorbis only at init time, so a really slow bubble sort is enough
   sBool doit;

@@ -796,7 +796,9 @@ void sGetCurrentDir(const sStringDesc &str)
 
 void sGetTempDir(const sStringDesc &str)
 {
-  sCopyString(str,"/tmp");
+  // callers append a leaf directly ("%swz4file.txt"), so this has to end in a
+  // separator like the windows version does.
+  sCopyString(str,"/tmp/");
 }
 
 sBool sMakeDir(const sChar *name)

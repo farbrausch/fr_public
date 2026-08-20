@@ -279,7 +279,7 @@ void sPrintNewShaderCode(sTextBuffer &CPP,const sChar *name,const sChar *size,Ne
   {
     CPP.PrintF(L"#elif sRENDERER==sRENDER_DX9\n");
     CPP.PrintF(L"  return sCreateShaderRaw(%s|sSTF_HLSL23,(const sU8 *)%s,%s);\n",st,name,size);
-    if(sCONFIG_SDK_CG && !PcOnly)
+    if(!PcOnly)
     {
       CPP.PrintF(L"#elif sRENDERER==sRENDER_OGL2\n");
       CPP.PrintF(L"  return sCreateShaderRaw(%s|sSTF_NVIDIA,(const sU8 *)%s,%s);\n",st,name,size);

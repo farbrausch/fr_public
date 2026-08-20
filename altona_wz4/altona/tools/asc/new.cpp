@@ -119,6 +119,14 @@ sBool Compiler::Process(NewCode *code,NewShader *ns,sTextBuffer *errors)
       ok &= sShaderCompileCG(ASC->Out.Get(),prof,L"main",code->GLSLCode,code->GLSLSize,ns->CompileFlags,errors);
 #endif
     }
+    else if(!ns->AscSource.IsEmpty())
+    {
+      ASC->Output(ns->ShaderType | sSTF_CG,sRENDER_OGL2);
+      sInt len = sGetStringLen(ASC->Out.Get());
+      code->GLSLSize = len+1;
+      code->GLSLCode = new sU8[code->GLSLSize];
+      sCopyString((sChar8 *)code->GLSLCode,ASC->Out.Get(),code->GLSLSize);
+    }
   }
 
   // done

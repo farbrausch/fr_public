@@ -106,7 +106,7 @@ public:
 
 class RPSPH : public Wz4ParticleNode
 {
-  friend static void InterT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
+  friend void InterT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
   void Hash();
   void Inter(sInt n0,sInt n1);
   void Physics();

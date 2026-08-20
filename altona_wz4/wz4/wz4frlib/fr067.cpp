@@ -58,7 +58,7 @@ void RNFR067_IsoSplash::Simulate(Wz4RenderContext *ctx)
   SimulateChilds(ctx);
 }
 
-static void MarchIsoTS(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
+void MarchIsoTS(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
 {
   ((RNFR067_IsoSplash *)data)->MarchTask(thread,start,count);
 }

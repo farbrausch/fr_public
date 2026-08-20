@@ -11,7 +11,7 @@
 #include "base/types.hpp"
 #include "wz4frlib/tADF.hpp"
 #include "util/taskscheduler.hpp"
-#include "Wz4frlib/Wz4_mesh.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
 #include "wz4frlib/fr063_tron_shader.hpp"
 #include "fr063_tron_ops.hpp"
 //#include "../wz4tronlib/adf.hpp"
