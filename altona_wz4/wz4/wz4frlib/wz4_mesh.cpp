@@ -6641,7 +6641,7 @@ void Wz4Mesh::MakeText(const sChar *text,const sChar *font,sF32 height,sF32 extr
   sFatal(L"Wz4Mesh::MakeText() only for windows...");
 }
 
-void Wz4Mesh::MakePath(const sChar *path,sF32 extrude,sF32 maxErr,sInt flags)
+void Wz4Mesh::MakePath(const sChar *path,sF32 extrude,sF32 maxErr,sF32 weldThreshold,sInt flags)
 {
   sFatal(L"Wz4Mesh::MakePath() only for windows...");
 }

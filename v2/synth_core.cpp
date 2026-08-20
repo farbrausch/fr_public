@@ -243,15 +243,19 @@ static inline sF32 lerp(sF32 a, sF32 b, sF32 t)
 // DEBUG
 #include <stdarg.h>
 #include <stdio.h>
+#if defined(_WIN32)
 extern "C" void __stdcall OutputDebugStringA(const char *what);
+#endif
 static void dprintf(const char *fmt, ...)
 {
   char buf[256];
   va_list arg;
   va_start(arg, fmt);
-  vsprintf_s(buf, fmt, arg);
+  vsnprintf(buf, sizeof(buf), fmt, arg);
   va_end(arg);
+#if defined(_WIN32)
   OutputDebugStringA(buf);
+#endif
 }
 
 // --------------------------------------------------------------------------
@@ -2151,7 +2155,7 @@ struct V2Comp
     case MODE_OFF:  mode = MODE_BIT_OFF; break;
     case MODE_PEAK: mode = MODE_BIT_PEAK | MODE_BIT_ON; break;
     case MODE_RMS:  mode = MODE_BIT_RMS | MODE_BIT_ON; break;
-    default:        assert(false);
+    default:        mode = MODE_BIT_OFF; break;
     }
 
     if (para->stereo != 0.0f)
@@ -2678,7 +2682,7 @@ struct V2Synth
     // Ahem, so this is somewhat dubious, but we don't use
     // virtual functions or anything so it should be fine. Ahem.
     // Look away please :)
-    memset(this, 0, sizeof(this));
+    memset(this, 0, sizeof(*this));
 
     // set sampling rate
     this->samplerate = samplerate;

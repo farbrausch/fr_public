@@ -29,6 +29,7 @@ class IppHelper2
 
   sF32 XYOffset;
   sF32 UVOffset;
+  sBool FlipRTV;
 
   void BlurLine(sTexture2D *dest,sTexture2D *src,sF32 radius,sF32 radiusy,sF32 amp);
 public:

@@ -758,10 +758,12 @@ static void sINLINE func(const sVector31 &v,sVector4 &pot,const funcinfo &fi)
   
   _MM_TRANSPOSE4_PS(nx,ny,nz,po);
   __m128 r = _mm_add_ps(_mm_add_ps(_mm_add_ps(nx,ny),nz),po);
-  n.x = r.m128_f32[0];
-  n.y = r.m128_f32[1];
-  n.z = r.m128_f32[2];
-  p = r.m128_f32[3];
+  sF32 r_f32[4];
+  _mm_storeu_ps(r_f32, r);
+  n.x = r_f32[0];
+  n.y = r_f32[1];
+  n.z = r_f32[2];
+  p = r_f32[3];
 
   if(p==0)
     n.Init(0,0,0);
@@ -827,20 +829,9 @@ void MarchingCubes::RenderCell(GeoBuffer *gb,Container *con)
 
     for(sInt i=0;i<(pn+3)/4;i++)
     {
-      fi.parts4[i4].x.m128_f32[0] = p[0].x;
-      fi.parts4[i4].x.m128_f32[1] = p[1].x;
-      fi.parts4[i4].x.m128_f32[2] = p[2].x;
-      fi.parts4[i4].x.m128_f32[3] = p[3].x;
-
-      fi.parts4[i4].y.m128_f32[0] = p[0].y;
-      fi.parts4[i4].y.m128_f32[1] = p[1].y;
-      fi.parts4[i4].y.m128_f32[2] = p[2].y;
-      fi.parts4[i4].y.m128_f32[3] = p[3].y;
-
-      fi.parts4[i4].z.m128_f32[0] = p[0].z;
-      fi.parts4[i4].z.m128_f32[1] = p[1].z;
-      fi.parts4[i4].z.m128_f32[2] = p[2].z;
-      fi.parts4[i4].z.m128_f32[3] = p[3].z;
+      fi.parts4[i4].x = _mm_set_ps(p[3].x, p[2].x, p[1].x, p[0].x);
+      fi.parts4[i4].y = _mm_set_ps(p[3].y, p[2].y, p[1].y, p[0].y);
+      fi.parts4[i4].z = _mm_set_ps(p[3].z, p[2].z, p[1].z, p[0].z);
 
       p+=4;
       i4++;
@@ -1397,10 +1388,12 @@ void MarchingCubesHelper::March(const fieldtype *pot,sF32 scale,sVector31 tpos,s
         sBool cz = pz.w<=iso;
         */
         __m128 cmp = _mm_cmple_ps(_mm_set_ps(pz.w,py.w,px.w,p0.w),_mm_set1_ps(iso));
-        sU32 c0 = cmp.m128_u32[0];
-        sU32 cx = cmp.m128_u32[1];
-        sU32 cy = cmp.m128_u32[2];
-        sU32 cz = cmp.m128_u32[3];
+        sU32 cmp_u32[4];
+        _mm_storeu_si128((__m128i*)cmp_u32, _mm_castps_si128(cmp));
+        sU32 c0 = cmp_u32[0];
+        sU32 cx = cmp_u32[1];
+        sU32 cy = cmp_u32[2];
+        sU32 cz = cmp_u32[3];
 
         sVector31 v = sVector30(x,y,z) * spos + tpos;
 

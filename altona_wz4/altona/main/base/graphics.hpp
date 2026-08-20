@@ -593,6 +593,7 @@ struct sGraphicsCaps
   sInt ShaderProfile;             // sSTFP_??? | sSTF_???
   sF32 UVOffset;                  // for exact pixel addressing, offset uv's by this. either  0.0 (dx11) or  0.0 (dx9).  
   sF32 XYOffset;                  // for exact pixel addressing, offset pos  by this. either  0.0 (dx11) or -0.5 (dx9).  
+  sBool RTUpsideDown;             // opengl rasterises into a texture from the bottom up, so the first row of a rendertarget holds the bottom of the picture and sampling it back needs v mirrored. 0 on direct3d.
   sString<64> AdapterName;        // friendly name for graphics adapter
 };
 
@@ -728,7 +729,7 @@ struct sVertexFormatHandle : public sVertexFormatHandlePrivate
   friend sVertexFormatHandle *sCreateVertexFormat(const sU32 *discriptor);
   friend void sDestroyAllVertexFormats();
   friend void sStreamVertexFormat(sWriter &, const sVertexFormatHandle *vhandle);
-  friend void sFlushVertexFormat(sBool flush,void *user=0);
+  friend void sFlushVertexFormat(sBool flush,void *user);
   friend class sGeometry;
 
   struct OGLDecl
@@ -945,6 +946,7 @@ enum sShaderTypeFlag
   sSTF_HLSL23   = 0x0100,           // hlsl shader model 2 and 3
   sSTF_GLSL     = 0x0200,           // vertex_shader / fragment_shader
   sSTF_CG       = 0x0900,
+  sSTF_NVIDIA   = sSTF_CG,
   sSTF_HLSL45   = 0x0a00,           // hlsl shader model 4 and 5
   
   // kind
@@ -2046,9 +2048,7 @@ public:
   sF32 LodBias[sMTRL_MAXTEX];               // mipmap lod bias. this interface is not final, it does not get saved!
 
   // end of sMaterialRS
-#if sRENDERER==sRENDER_DX9 || sRENDERER==sRENDER_DX11                  // my console friends get angry if i make the material structure any larger...
   sU16 TBind[sMTRL_MAXTEX];                 // sMTB_?? flags. to which shader and stage is the texture to be mapped?
-#endif
 };
 
 enum sMaterialFlags

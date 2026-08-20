@@ -14,7 +14,7 @@
 #include "base/types.hpp"
 #include "wz4lib/doc.hpp"
 #include "wz4lib/basic.hpp"
-#include "wz4frlib/wz4_demo.hpp"
+#include "wz4frlib/wz4_demo2.hpp"
 #include "wz4frlib/wz4_ssao_shader.hpp"
 
 /****************************************************************************/

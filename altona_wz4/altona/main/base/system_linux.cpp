@@ -1,3 +1,16 @@
+#ifdef __APPLE__
+#include <alloca.h>
+#define lseek64 lseek
+#define open64 open
+#define stat64 stat
+#define fstat64 fstat
+#define mmap64 mmap
+#define ftruncate64 ftruncate
+#define pthread_yield sched_yield
+#ifndef strdupa
+#define strdupa(s) ({ const char *__s = (s); size_t __len = strlen(__s) + 1; char *__p = (char *)alloca(__len); (char *)memcpy(__p, __s, __len); })
+#endif
+#endif
 /*+**************************************************************************/
 /***                                                                      ***/
 /***   This file is distributed under a BSD license.                      ***/
@@ -25,7 +38,19 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#ifdef __APPLE__
+struct js_event {
+  unsigned int time;
+  short value;
+  unsigned char type;
+  unsigned char number;
+};
+#define JS_EVENT_BUTTON 0x01
+#define JS_EVENT_AXIS   0x02
+#define JS_EVENT_INIT   0x80
+#else
 #include <linux/joystick.h>
+#endif
 #include <dirent.h>
 #include <fnmatch.h>
 
@@ -44,7 +69,7 @@
 
 extern void sCollector(sBool exit=sFALSE);
 
-#if !sCOMMANDLINE
+#if !sCOMMANDLINE && !defined(__APPLE__)
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #undef Status // goddamnit!
@@ -93,13 +118,40 @@ static sInt ErrorCode = 0;
 
 void sLinuxFromWide(char *dest,const sChar *src,int size)
 {
-  sInt len = sGetStringLen(src);
-  sU32 *convBuffer = sALLOCSTACK(sU32,len+1);
-  for(sInt i=0;i<=len;i++) // fake-wchar16-to-wchar32 (argh!)
-    convBuffer[i] = src[i];
-  
-  wcstombs(dest,(wchar_t *)convBuffer,size);
-  dest[size-1] = 0;
+  if(size <= 0) return;
+  int d = 0;
+  int s = 0;
+  while(src[s] && d < size - 4)
+  {
+    sU32 c = (sU16)src[s++];
+    if(c >= 0xd800 && c <= 0xdbff && (sU16)src[s] >= 0xdc00 && (sU16)src[s] <= 0xdfff)
+    {
+      c = 0x10000 + ((c & 0x3ff) << 10) + ((sU16)src[s++] & 0x3ff);
+    }
+    if(c < 0x80)
+    {
+      dest[d++] = (char)c;
+    }
+    else if(c < 0x800)
+    {
+      dest[d++] = (char)(0xc0 | (c >> 6));
+      dest[d++] = (char)(0x80 | (c & 0x3f));
+    }
+    else if(c < 0x10000)
+    {
+      dest[d++] = (char)(0xe0 | (c >> 12));
+      dest[d++] = (char)(0x80 | ((c >> 6) & 0x3f));
+      dest[d++] = (char)(0x80 | (c & 0x3f));
+    }
+    else
+    {
+      dest[d++] = (char)(0xf0 | (c >> 18));
+      dest[d++] = (char)(0x80 | ((c >> 12) & 0x3f));
+      dest[d++] = (char)(0x80 | ((c >> 6) & 0x3f));
+      dest[d++] = (char)(0x80 | (c & 0x3f));
+    }
+  }
+  dest[d] = 0;
 }
 
 template<class T> static inline void sLinuxFromWide(T &dest,const sChar *str)
@@ -113,43 +165,29 @@ char *sLinuxFromWide(const sChar *str)
   sThreadContext *ctx = sGetThreadContext();
   char *buffer = (char *) &ctx->PrintBuffer[0];
   sLinuxFromWide(buffer,str,sizeof(ctx->PrintBuffer));
-  
   return buffer;
 }
 
-// Includes home directory matching
 static void FromWideFileName(char *dest,const sChar *src,int size)
 {
-  if(src[0] == L'~' && src[1] == L'/') // home directory expansion
+  if(size <= 0) return;
+  if(src[0] == L'~' && src[1] == L'/')
   {
-    // could do this using wordexp or glob; but I only want to do a minimum amount of
-    // postprocessing on filenames so there's no need to start using escape codes...
     char *homedir = getenv("HOME");
     if(homedir)
     {
-      int len = sMin<int>(strlen(homedir),size);
+      int len = sMin<int>(strlen(homedir),size-1);
       memcpy(dest,homedir,len);
       dest += len;
-      src++; // skip the tilde
+      src++;
       size -= len;
     }
-    else
-      sDPrintF(L"warning: $HOME not set during filename tilde expansion, not sure what to do!\n");
   }
-  
-  sLinuxFromWide(dest,src,size); // transform the rest
-  
-  // if the filename contains backslashes, replace them by slashes
-  mbstate_t state;
-  memset(&state,0,sizeof(state));
-  
-  int len = 0;
-  while((len = mbrlen(dest,MB_CUR_MAX,&state)) > 0)
+  sLinuxFromWide(dest,src,size);
+  for(int i=0;dest[i];i++)
   {
-    if(len==1 && *dest=='\\')
-      *dest = '/';
-    
-    dest += len;
+    if(dest[i] == '\\')
+      dest[i] = '/';
   }
 }
 
@@ -158,7 +196,6 @@ template<class T> static inline void FromWideFileName(T &dest,const sChar *str)
   FromWideFileName(dest,str,sizeof(dest));
 }
 
-// Careful with this, result is overwritten on next call, sDPrintF etc!!!
 static char *FromWideFileName(const sChar *str)
 {
   sThreadContext *ctx = sGetThreadContext();
@@ -170,13 +207,52 @@ static char *FromWideFileName(const sChar *str)
 
 void sLinuxToWide(sChar *dest,const char *src,int size)
 {
-  sU32 *convBuffer = sALLOCSTACK(sU32,size);
-  size_t nconv = mbstowcs((wchar_t *)convBuffer,src,size);
-  if(nconv == (size_t) -1) nconv = 0;
-  
-  for(size_t i=0;i!=nconv;i++) // fake-wchar32-to-wchar16
-    dest[i]=convBuffer[i];
-  dest[sMin<sInt>(nconv,size-1)] = 0;
+  if(size <= 0) return;
+  int d = 0;
+  int s = 0;
+  while(src[s] && d < size - 2)
+  {
+    sU8 c = (sU8)src[s++];
+    sU32 codepoint = 0;
+    if(c < 0x80)
+    {
+      codepoint = c;
+    }
+    else if((c & 0xe0) == 0xc0)
+    {
+      codepoint = (c & 0x1f) << 6;
+      if(src[s]) codepoint |= ((sU8)src[s++] & 0x3f);
+    }
+    else if((c & 0xf0) == 0xe0)
+    {
+      codepoint = (c & 0x0f) << 12;
+      if(src[s]) codepoint |= (((sU8)src[s++] & 0x3f) << 6);
+      if(src[s]) codepoint |= ((sU8)src[s++] & 0x3f);
+    }
+    else if((c & 0xf8) == 0xf0)
+    {
+      codepoint = (c & 0x07) << 18;
+      if(src[s]) codepoint |= (((sU8)src[s++] & 0x3f) << 12);
+      if(src[s]) codepoint |= (((sU8)src[s++] & 0x3f) << 6);
+      if(src[s]) codepoint |= ((sU8)src[s++] & 0x3f);
+    }
+    else
+    {
+      codepoint = c;
+    }
+    
+    if(codepoint < 0x10000)
+    {
+      dest[d++] = (sChar)codepoint;
+    }
+    else
+    {
+      codepoint -= 0x10000;
+      dest[d++] = (sChar)(0xd800 + (codepoint >> 10));
+      dest[d++] = (sChar)(0xdc00 + (codepoint & 0x3ff));
+    }
+  }
+  dest[d] = 0;
 }
 
 template<class T> static inline void sLinuxToWide(T &dest,const char *src)
@@ -244,7 +320,7 @@ void sCDECL sFatalImpl(const sChar *str)
   sPrint(str);
   sPrint(sTXT("\n"));
 
-  exit(1);
+  abort();
 }
 
 static int sDebugFile = -1;
@@ -546,7 +622,9 @@ sFile *sRootFileHandler::Create(const sChar *name,sFileAccess access)
   int fd = -1;
   static const sChar *mode[] =  {  0,L"read",L"readrandom",L"write",L"writeappend",L"readwrite"  };
   
-  const char *u8name = FromWideFileName(name);
+  char u8name_buf[1024];
+  FromWideFileName(u8name_buf, name, sizeof(u8name_buf));
+  const char *u8name = u8name_buf;
   
   switch(access)
   {
@@ -796,7 +874,9 @@ void sGetCurrentDir(const sStringDesc &str)
 
 void sGetTempDir(const sStringDesc &str)
 {
-  sCopyString(str,"/tmp");
+  // callers append a leaf directly ("%swz4file.txt"), so this has to end in a
+  // separator like the windows version does.
+  sCopyString(str,"/tmp/");
 }
 
 sBool sMakeDir(const sChar *name)
@@ -973,7 +1053,7 @@ sThread *sGetCurrentThread()
 
 sInt sGetCurrentThreadId()
 {
-  return pthread_self();
+  return (sInt)(sPtr)pthread_self();
 }
 
 /****************************************************************************/
@@ -1016,14 +1096,14 @@ void * sSTDCALL sThreadTrunk_pthread(void *ptr)
   while (!th->ThreadId)
    sSleep(10);
 
-  sU64 self = pthread_self();
+  pthread_t self = pthread_self();
   sLogF(L"sys",L"New sThread started. 0x%x, id is 0x%x\n", self, th->ThreadId);
 
-  sVERIFY( pthread_equal( self, th->ThreadId ) );
+  sVERIFY( pthread_equal( self, *(pthread_t*)th->ThreadHandle ) );
 
   th->Code(th,th->Userdata);
 
-#if !sCOMMANDLINE
+#if !sCOMMANDLINE && !defined(__APPLE__)
   // clean up X display handle if we hold one
   if(sXDisplayTls)
   {
@@ -1057,7 +1137,7 @@ sThread::sThread(void (*code)(sThread *,void *),sInt pri,sInt stacksize,void *us
   int result = pthread_create((pthread_t*)ThreadHandle, sNULL, sThreadTrunk_pthread, this);
   sVERIFY(result==0);
 
-  ThreadId = *(pthread_t*)ThreadHandle;
+  ThreadId = (sU64)(sPtr)*(pthread_t*)ThreadHandle;
 
 // clone(sThreadTrunk, StackMemory + stacksize - 1,  CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM|CLONE_THREAD ,this);
 
@@ -1341,6 +1421,7 @@ static void sPollInput(sThread *thread, void *data)
   }
 }
 
+#if !defined(__APPLE__)
 static void sInitInput()
 {
 #if !sCOMMANDLINE
@@ -2096,6 +2177,8 @@ sADDSUBSYSTEM(LinuxJoypad,0xa1,sInitLinuxJoypad,sExitLinuxJoypad);
 
 #endif
 
+#endif // !defined(__APPLE__)
+
 /****************************************************************************/
 /***                                                                      ***/
 /***   Platform Dependend Memory Code                                     ***/
@@ -2181,6 +2264,13 @@ void sExitMem1()
 
 /****************************************************************************/
 
+static sChar sCommandLine[2048];
+
+const sChar *sGetCommandLine()
+{
+  return sCommandLine;
+}
+
 int main(int argc, char **argv)
 { 
   setlocale(LC_ALL,"");
@@ -2203,20 +2293,20 @@ int main(int argc, char **argv)
   sInitMem0();
   sInitGetTime();
 
-  sChar commandLine[2048];
-  
-  // create a commandline
-  commandLine[0] = 0;
+  // create a commandline. sGetCommandLine() hands it back verbatim later --
+  // wz4player reads argv[0] out of it to find its own .pak -- so it has to
+  // outlive this function.
+  sCommandLine[0] = 0;
   for (sInt i=0; i<argc; i++)
   {
     sChar buffer[2048];
     sLinuxToWide(buffer,argv[i]);
     //sCopyString(buffer,argv[i],sCOUNTOF(buffer));
-    sAppendString(commandLine,buffer,sCOUNTOF(commandLine));
-    sAppendString(commandLine,L" ",sCOUNTOF(commandLine));
+    sAppendString(sCommandLine,buffer,sCOUNTOF(sCommandLine));
+    sAppendString(sCommandLine,L" ",sCOUNTOF(sCommandLine));
   }
   
-  sParseCmdLine(commandLine);
+  sParseCmdLine(sCommandLine);
 
   // ignore brogen pipe signal
   signal(SIGPIPE, SIG_IGN);
@@ -2232,7 +2322,12 @@ int main(int argc, char **argv)
   sSetRunlevel(0x80);
   sMain();
   
+#ifdef __APPLE__
+  extern void sRunMacApp();
+  sRunMacApp();
+#else
   sXMessageLoop();
+#endif
   
   sSetRunlevel(0x00);
   sDelete(sFrameHook);

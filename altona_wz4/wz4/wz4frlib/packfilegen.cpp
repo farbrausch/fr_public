@@ -328,7 +328,7 @@ namespace
     sF32 RealGammaLen(sInt i,sU32 value);
     sF32 EncodeGamma(sInt i,sU32 value);
 
-    sF32 __forceinline GammaLen(sInt i,sU32 value)
+    sFORCEINLINE sF32 GammaLen(sInt i,sU32 value)
     {
       if(value<256)
         return GammaLens[i][value];
@@ -2159,8 +2159,15 @@ namespace
         len += DecodeGamma(Gamma1Model);
         compSize = len;
 
+        // upstream wrote "*dst++ = dst[-offs]", which reads and modifies dst
+        // without a sequence point between the two. Splitting it has to keep
+        // the increment inside the loop -- the whole point is to copy len
+        // bytes, one at a time, so that overlapping matches replicate.
         while(len--)
-          *dst++ = dst[-offs];
+        {
+          *dst = dst[-offs];
+          dst++;
+        }
         break;
       }
 
@@ -2207,6 +2214,9 @@ void sCreateDemoPackFile(const sChar *packfilename, const sArray<sPackFileCreate
   }
 
   sInt stringsize = 0;
+  sInt offset = 0;
+  sInt string = 0;
+  sFile *hnd = 0;
 
   log.PrintF(L"packfile content for %s (in order of appearance):\n",packfilename);
   log.Print(L"-----------------------------------------------------------------------------------------------\n");
@@ -2286,7 +2296,6 @@ void sCreateDemoPackFile(const sChar *packfilename, const sArray<sPackFileCreate
 
   // start
 
-  sFile *hnd;
   hnd = sCreateFile(packfilename,sFA_WRITE);
   if(hnd==0)
   {
@@ -2296,8 +2305,8 @@ void sCreateDemoPackFile(const sChar *packfilename, const sArray<sPackFileCreate
 
   // header
 
-  sInt offset = 16 + files.GetCount()*20 + sAlign(stringsize,16);
-  sInt string = 16 + files.GetCount()*20;
+  offset = 16 + files.GetCount()*20 + sAlign(stringsize,16);
+  string = 16 + files.GetCount()*20;
 
   sU32 data[5];
   data[0] = 0xdeadbeef;

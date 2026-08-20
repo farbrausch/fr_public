@@ -26,19 +26,16 @@ namespace
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 	{
 		// performs 64bit (nexttime-time)*usecs/td2 and a 32.32bit addition to smpldelta:smplrem
-		__asm {
-			mov eax, [nexttime]
-			sub eax, [time]
-			mov ebx, [usecs]
-			mul ebx
-			mov ebx, [td2]
-			div ebx
-			mov ecx, [smplrem]
-			add [ecx], edx
-			adc eax, 0
-			mov ecx, [smpldelta]
-			mov [ecx], eax
-		}
+		// (nexttime-time)*usecs/td2, keeping the division remainder across
+		// calls so the tick length does not drift. Was 32 bit x86 asm.
+		const sU64 prod = sU64(nexttime-time)*usecs;
+		sU32 quot = sU32(prod/td2);
+		const sU32 rem = sU32(prod%td2);
+		const sU64 remsum = sU64(*smplrem)+rem;
+		if(remsum>0xffffffffULL)
+			quot++;
+		*smplrem = sU32(remsum);
+		*smpldelta = quot;
 	}
 }
 
@@ -310,17 +307,8 @@ void V2MPlayer::Play(sU32 a_time)
 	Reset();
 
 	m_base.valid=sFALSE;
-	sU32 destsmpl, cursmpl=0;
-	__asm
-	{
-		mov  ecx, this
-		mov	 eax, [a_time]
-		mov  ebx, [ecx + m_samplerate]
-		imul ebx
-		mov  ebx, [ecx + m_tpc]
-		idiv ebx
-		mov  [destsmpl], eax
-	}
+	sU32 destsmpl = sU32((sU64(a_time)*m_samplerate)/m_tpc);
+	sU32 cursmpl=0;
 
 	m_state.state=PlayerState::PLAYING;
 	m_state.smpldelta=0;
@@ -352,17 +340,8 @@ void V2MPlayer::Stop(sU32 a_fadetime)
 
 	if (a_fadetime)
 	{
-		sU32 ftsmpls;
-		__asm
-		{
-			mov  ecx, this
-			mov	 eax, [a_fadetime]
-			mov  ebx, [ecx + m_samplerate]
-			imul ebx
-			mov  ebx, [ecx + m_tpc]
-			idiv ebx
-			mov  [ftsmpls], eax
-		}
+		sU32 ftsmpls = sU32((sU64(a_fadetime)*m_samplerate)/m_tpc);
+		if(ftsmpls==0) ftsmpls=1;
 		m_fadedelta=m_fadeval/ftsmpls;
 	}
 	else
@@ -406,13 +385,7 @@ void V2MPlayer::Render(sF32 *a_buffer, sU32 a_len, sBool a_add)
 	{
     if (!a_add)
     {
-		  __asm {
-			  mov edi, [a_buffer]
-			  mov ecx, [a_len]
-			  shl ecx, 1
-			  xor eax, eax
-			  rep stosd
-		  }
+		  sSetMem(a_buffer,0,a_len*2*sizeof(sF32));
     }
 	}
 	else

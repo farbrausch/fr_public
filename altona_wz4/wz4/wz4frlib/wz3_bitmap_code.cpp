@@ -8,7 +8,11 @@
 #include "wz4frlib/wz3_bitmap_code.hpp"
 #include "wz4frlib/wz3_bitmap_ops.hpp"
 #include "genvector.hpp"
+#if defined(__ARM_NEON) || defined(__aarch64__)
+#include "base/sse2neon.h"
+#else
 #include <emmintrin.h>
+#endif
 
 /****************************************************************************/
 

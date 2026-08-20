@@ -18,7 +18,7 @@
 
 class RNFR067_IsoSplash : public Wz4RenderNode
 {
-  friend static void MarchIsoTS(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
+  friend void MarchIsoTS(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
 
   enum IsoEnum
   {

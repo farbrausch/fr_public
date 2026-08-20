@@ -186,7 +186,7 @@ void RNTrembleMesh::Render(Wz4RenderContext *ctx)
   sFORALL(Matrices,mat)
   {
     m0 = mt*sMatrix34(*mat);
-    Mesh->Render(ctx->RenderMode,Para.LightEnv,&sMatrix34CM(m0),0,ctx->Frustum);
+    sMatrix34CM m0cm(m0); Mesh->Render(ctx->RenderMode,Para.LightEnv,&m0cm,0,ctx->Frustum);
   }
 }
 

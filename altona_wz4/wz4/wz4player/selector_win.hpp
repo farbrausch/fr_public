@@ -9,10 +9,10 @@
 #define FILE_SCREENMODE_SELECTOR_WIN_HPP
 
 #include "base/types.hpp"
-
-#if sPLATFORM==sPLAT_WINDOWS
-
 #include "base/graphics.hpp"
+
+// The dialog itself is win32, but its two structs are the player's only way to
+// say "run at this resolution", so they have to exist on every platform.
 
 /****************************************************************************/
 
@@ -51,9 +51,8 @@ struct bSelectorResult
   sInt HiddenPart;      // -1 = none, 0..n
 };
 
+// Fills in `result` and returns sTRUE to start the demo, sFALSE to quit.
 sBool bOpenSelector(const bSelectorSetup &setup, bSelectorResult &result);
-
-#endif
 
 /****************************************************************************/
 

@@ -61,42 +61,37 @@ sBool sScannerSourceFile::Load(const sChar *filename)
   if(!File)
     return 0;
 
+  CharsLeftInFile = File->GetSize();
+  if(CharsLeftInFile <= 0)
+    return 0;
+
   ScanBuffer = new sChar[sScanner::BufferSize+1];
   ScanBuffer[sScanner::BufferSize] = 0;
 
-  // handles big and little endian
-
-  union
-  {
-    sChar header;
-    sChar8 headerbytes[2];
-  } u;
-
-  if(!File->Read(&u.header,2))
+  sU8 bom[2] = {0, 0};
+  if(!File->Read(bom,2))
     return 0;
 
-  CharsLeftInFile = File->GetSize();
-  switch(u.header)
+  sU16 header = bom[0] | (bom[1] << 8);
+  if(header == 0xfeff)
   {
-  case 0xfeff:      // file endian == cpu endian
-    CharsLeftInFile = CharsLeftInFile/2-1;
+    CharsLeftInFile = CharsLeftInFile/2 - 1;
     UnicodeConversion = 0;
     ScanPtr = ScanBuffer + sScanner::BufferSize;
-    break;
-
-  case 0xfffe:      // file endian != cpu endian
-    CharsLeftInFile = CharsLeftInFile/2-1;
+  }
+  else if(header == 0xfffe)
+  {
+    CharsLeftInFile = CharsLeftInFile/2 - 1;
     UnicodeConversion = 2;
     ScanPtr = ScanBuffer + sScanner::BufferSize;
-    break;
-
-  default:          // 8bit -> 16 bit
+  }
+  else
+  {
     UnicodeConversion = 1;
     ScanPtr = ScanBuffer + sScanner::BufferSize - 2;
-    ScanBuffer[sScanner::BufferSize-2] = u.headerbytes[0];
-    ScanBuffer[sScanner::BufferSize-1] = u.headerbytes[1];
+    ScanBuffer[sScanner::BufferSize-2] = bom[0];
+    ScanBuffer[sScanner::BufferSize-1] = bom[1];
     CharsLeftInFile -= 2;
-    break;
   }
   
   Filename = filename;
@@ -140,11 +135,11 @@ sBool sScannerSourceFile::Refill()
         break;
       case 1:   // 8bit -> 16bit (or whatever a widechar on this system is)
         {
-          sChar8 *ascii = (sChar8 *) dest;
-          ascii+=loadchars * (sizeof(sChar)-1);
+          sU8 *ascii = new sU8[loadchars];
           ok = File->Read(ascii,loadchars);
           for(sInt i=0;i<loadchars;i++)
-            *dest++ = (*ascii++)&0xff;
+            *dest++ = ascii[i];
+          delete[] ascii;
         }
         break;
       case 2:   // swap endian
@@ -269,13 +264,14 @@ void sScanner::AddToken(const sChar *name,sInt token)
   tok.Length = sGetStringLen(name);
 
   sBool IsName = 1;
-  if(!sIsLetter(*name++))
+  const sChar *p = name;
+  if(!sIsLetter(*p++))
     IsName=0;
-  while(*name && IsName)
+  while(*p && IsName)
   {
-    if(!sIsLetter(*name) && !sIsDigit(*name))
+    if(!sIsLetter(*p) && !sIsDigit(*p))
       IsName = 0;
-    name++;
+    p++;
   }
 
   if(IsName)
@@ -352,7 +348,7 @@ sInt sScanner::Error0(const sChar *name)
     if(!(Flags & sSF_QUIET))
     {
       if(sCONFIG_OPTION_SHELL)
-        sPrintErrorF(ErrorMsg);
+        sPrintError((const sChar *)ErrorMsg);
       else
         sDPrintF(ErrorMsg);
     }
@@ -371,7 +367,7 @@ sInt sScanner::Warn0(const sChar *name)
   if(!(Flags & sSF_QUIET))
   {
     if(sCONFIG_OPTION_SHELL)
-      sPrintWarningF(ErrorMsg);
+      sPrintWarning((const sChar *)ErrorMsg);
     else
       sDPrintF(ErrorMsg);
   }

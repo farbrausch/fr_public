@@ -18,6 +18,8 @@
 #include "selector_win.hpp"
 #include "vorbisplayer.hpp"
 
+#include <stdlib.h>                    // getenv, for the debug switches below
+
 /****************************************************************************/
 
 static sDemoPackFile *PackFile=0;
@@ -26,6 +28,112 @@ static sDemoPackFile *PackFile=0;
 
 /****************************************************************************/
 /****************************************************************************/
+
+/****************************************************************************/
+
+// Projects record absolute paths from the machine they were authored on
+// ("C:/svn/farbrausch/easterparty/data/song.ogg"), and every one of them has
+// moved since. When such a path does not open, retry it against the directory
+// the .wz4 was actually loaded from: first by swapping the recorded project
+// root for the real one, then by just looking for the file's own name, next to
+// the project and in its data folder.
+
+static sBool ResolveProjectFile(const sChar *name,const sChar *wz4name,const sStringDesc &out)
+{
+  sCopyString(out,name);
+  if(sCheckFile(name))
+    return sTRUE;
+
+  sString<sMAXPATH> here;
+  sExtractPath(wz4name,here);
+
+  // "<recorded root>/rest" -> "<here>/rest"
+
+  const sChar *root = Doc ? (const sChar *)Doc->DocOptions.ProjectPath : 0;
+  if(root && *root)
+  {
+    sString<sMAXPATH> a(name), b(root);
+    for(sChar *s=a;*s;s++) if(*s=='\\') *s='/';
+    for(sChar *s=b;*s;s++) if(*s=='\\') *s='/';
+    sInt len = sGetStringLen(b);
+    while(len>0 && b[len-1]=='/') len--;
+
+    if(sCmpStringILen(a,b,len)==0 && a[len]=='/')
+    {
+      sCopyString(out,here);
+      sAppendPath(out,(const sChar *)a+len+1);
+      if(sCheckFile(out.Buffer))
+        return sTRUE;
+    }
+  }
+
+  // just the file name, in the project directory and in its data folder
+
+  const sChar *leaf = sFindFileWithoutPath(name);
+  static const sChar *where[] = { L"", L"data" };
+  for(sInt i=0;i<sCOUNTOF(where);i++)
+  {
+    sCopyString(out,here);
+    if(where[i][0]) sAppendPath(out,where[i]);
+    sAppendPath(out,leaf);
+    if(sCheckFile(out.Buffer))
+      return sTRUE;
+  }
+
+  sCopyString(out,name);
+  return sFALSE;
+}
+
+/****************************************************************************/
+
+// Ops record file names the same way, and one that does not open fails its
+// whole operator tree: fr-062 imports "C:/svn/farbrausch/fr-062/txt_fr.wz4tex"
+// for the text overlays, which is sitting right next to the project here, and
+// losing it left the demo with no root object at all -- a black screen for its
+// whole four minutes. Hooking the lookup above into the file system fixes
+// every op at once instead of one Import at a time.
+//
+// Handlers are asked newest first, so this one is offered every open. It only
+// answers for a name that does not open as it stands, and steps aside (Busy)
+// while it looks, so the plain file handler serves the ones that do.
+
+static sString<sMAXPATH> ProjectFileName;
+
+class ProjectFileHandler : public sFileHandler
+{
+  sBool Busy;
+
+  sBool Resolve(const sChar *name,const sStringDesc &out)
+  {
+    if(Busy) return sFALSE;
+    Busy = 1;
+    sBool found = ResolveProjectFile(name,ProjectFileName,out);
+    Busy = 0;
+    return found && sCmpString(out.Buffer,name)!=0;
+  }
+
+public:
+  ProjectFileHandler() { Busy = 0; }
+
+  sFile *Create(const sChar *name,sFileAccess access)
+  {
+    sString<sMAXPATH> path;
+    if((access!=sFA_READ && access!=sFA_READRANDOM) || !Resolve(name,path))
+      return 0;
+
+    sLogF(L"file",L"<%s> is gone, reading <%s> instead\n",name,(const sChar *)path);
+    Busy = 1;
+    sFile *file = sCreateFile(path,access);
+    Busy = 0;
+    return file;
+  }
+
+  sBool Exists(const sChar *name)
+  {
+    sString<sMAXPATH> path;
+    return Resolve(name,path);
+  }
+};
 
 void RegisterWZ4Classes()
 {
@@ -113,6 +221,13 @@ static sInt SkipSampleCount = 0;
 
 void ProgressProxy(sInt done,sInt max);
 
+
+// Called "App" originally, but wz4lib's editor gui owns a global of that name
+// (MainWindow *App) and the player links the whole library. It is also defined
+// at the end of this class while its own member functions already reach
+// through it, so it has to be announced up here.
+class MyApp;
+extern MyApp *Player;
 
 class MyApp : public sApp
 {
@@ -231,7 +346,11 @@ public:
     // load music
     if (!Doc->DocOptions.MusicFile.IsEmpty())
     {
-      MusicPlayer.Init(Doc->DocOptions.MusicFile);
+      sString<sMAXPATH> song;
+      if(!ResolveProjectFile(Doc->DocOptions.MusicFile,WZ4Name,song))
+        sLogF(L"file",L"no music: <%s> is not next to the project either\n",
+          (const sChar *)Doc->DocOptions.MusicFile);
+      MusicPlayer.Init(song);
       MusicPlayer.SetLoop(Doc->DocOptions.Infinite);
     }
 
@@ -428,6 +547,25 @@ public:
 
       SetPaintInfo(PaintInfo);
 
+      // WZ4_TIME=<milliseconds> holds the demo at one point of its timeline.
+      // The music keeps running, only the picture stands still -- which is what
+      // makes two builds, or this build and a capture of the original,
+      // comparable frame for frame instead of by eye.
+      {
+        static sInt fixedtime = -2;
+        static sInt timestep = 0;
+        static sInt stepped = 0;
+        if(fixedtime==-2)
+        {
+          const char *t = getenv("WZ4_TIME");
+          fixedtime = (t && *t) ? atoi(t) : -1;
+          const char *s = getenv("WZ4_TIMESTEP");
+          timestep = (s && *s) ? atoi(s) : 0;
+        }
+        if(fixedtime>=0)
+          Time = fixedtime + timestep*stepped++;   // a sweep, when a step is given
+      }
+
       PaintInfo.TimeMS = Time;
       PaintInfo.TimeBeat = Doc->MilliSecondsToBeats(Time);
 
@@ -507,16 +645,16 @@ public:
 
       sEnableGraphicsStats(0);
       sSetTarget(sTargetPara(0,0,&PaintInfo.Client));
-      App->Painter->SetTarget(PaintInfo.Client);
-      App->Painter->Begin();
-      App->Painter->SetPrint(0,0xff000000,1,0xff000000);
-      App->Painter->Print(10,11,Log.Get());
-      App->Painter->Print(11,10,Log.Get());
-      App->Painter->Print(12,11,Log.Get());
-      App->Painter->Print(11,12,Log.Get());
-      App->Painter->SetPrint(0,0xffc0c0c0,1,0xffffffff);
-      App->Painter->Print(11,11,Log.Get());
-      App->Painter->End();
+      Player->Painter->SetTarget(PaintInfo.Client);
+      Player->Painter->Begin();
+      Player->Painter->SetPrint(0,0xff000000,1,0xff000000);
+      Player->Painter->Print(10,11,Log.Get());
+      Player->Painter->Print(11,10,Log.Get());
+      Player->Painter->Print(12,11,Log.Get());
+      Player->Painter->Print(11,12,Log.Get());
+      Player->Painter->SetPrint(0,0xffc0c0c0,1,0xffffffff);
+      Player->Painter->Print(11,11,Log.Get());
+      Player->Painter->End();
       sEnableGraphicsStats(1);
       sSchedMon->FlipFrame();
       if(MTMon)
@@ -584,7 +722,7 @@ public:
       break;
     }
   }
-} *App=0;
+} *Player=0;
 
 
 // for fr-062: check for vertex textures
@@ -598,6 +736,38 @@ static void CheckCapsCallback(void *user)
 
 extern void sCollector(sBool exit=sFALSE);
 
+/****************************************************************************/
+
+// A packaged demo is a single file: the .pak sits in a __wz4pak section of
+// this very executable, put there by "ld -sectcreate", and there is nothing
+// on disk to go looking for. See scripts/package_demo_macos.py.
+
+#if defined(__APPLE__)
+
+#include <mach-o/getsect.h>
+#include <mach-o/ldsyms.h>
+
+static sFile *OpenEmbeddedPackFile()
+{
+  unsigned long size = 0;
+  const sU8 *data = getsectiondata(&_mh_execute_header,"__TEXT","__wz4pak",&size);
+  if(!data || size<32)
+    return 0;
+  sLogF(L"file",L"using packfile embedded in the executable (%d bytes)\n",sInt(size));
+  return sCreateMemFile(data,size,sFALSE);   // section memory, not ours to free
+}
+
+#else
+
+static sFile *OpenEmbeddedPackFile()
+{
+  return 0;
+}
+
+#endif
+
+/****************************************************************************/
+
 static void MakePackfile(const sChar *wz4name, const sChar *packname)
 {
   sArray<sPackFileCreateEntry> files;
@@ -609,6 +779,15 @@ static void MakePackfile(const sChar *wz4name, const sChar *packname)
 
 
   sAddFileLogger(files);
+
+  // Ops record the paths of the machine they were authored on, and the ones
+  // that have moved only open through ProjectFileHandler. It has to sit above
+  // the logger: handlers are asked newest first, so this way the logger sees
+  // the name that actually opened -- "txt_fr.wz4tex" -- instead of the
+  // "C:/svn/farbrausch/fr-062/txt_fr.wz4tex" that did not, which would then
+  // fail to load when the pack is written.
+  ProjectFileName = wz4name;
+  sAddFileHandler(new ProjectFileHandler);
   sBool ok=sFALSE;
 
   ProgressPaintFunc=sProgress;
@@ -648,7 +827,7 @@ static void MakePackfile(const sChar *wz4name, const sChar *packname)
     txtname.PrintAddF(L"wz4file.txt");
     sSaveTextAnsi(txtname,wz4name);
 
-    sPoolString n2=txtname;
+    sPoolString n2=(const sChar *)txtname;
     files.AddTail(sPackFileCreateEntry(n2,0));
 
     ok=sTRUE;
@@ -695,7 +874,7 @@ void ProgressProxy(sInt done,sInt max)
 {
 
   ProgressProxyDone = max;
-  if (App->LoaderObj)
+  if (Player->LoaderObj)
   {
     static const sInt MAX_LOADER_FPS=20;
     static sInt lasttime=0;
@@ -706,7 +885,7 @@ void ProgressProxy(sInt done,sInt max)
       lasttime=time;
       sRender3DBegin();
       sSetTarget(sTargetPara(sST_CLEARALL,0));
-      App->PaintLoaderOp(done,max+ProgressProxyExtra*PrepareFactor);
+      Player->PaintLoaderOp(done,max+ProgressProxyExtra*PrepareFactor);
       sRender3DEnd();
     }
   }
@@ -738,6 +917,15 @@ void sMain()
   // find packfile and open it
   if (!makepack)
   {
+    sFile *embedded = OpenEmbeddedPackFile();
+    if (embedded)
+    {
+      PackFile = new sDemoPackFile(embedded);
+      sAddFileHandler(PackFile);
+    }
+  }
+  if (!makepack && !PackFile)
+  {
     sString<1024> pakname;
     sString<1024> programname;
     const sChar *cmd=sGetCommandLine();
@@ -746,7 +934,15 @@ void sMain()
     while (*cmd && !(sIsSpace(*cmd) || *cmd=='"')) cmd++;
     sCopyString(programname,pstart,cmd-pstart+1);
     
-    sCopyString(sFindFileExtension(programname),L"pak",4);
+    // "wz4player.exe" -> "wz4player.pak". Outside windows the executable has
+    // no extension at all, and sFindFileExtension then hands back the shared
+    // empty string -- writing "pak" into that corrupts it for the whole
+    // process, and programname stays pointing at the executable itself.
+    sChar *ext = sFindFileExtension(programname);
+    if(*ext)
+      sCopyString(ext,L"pak",4);
+    else
+      programname.Add(L".pak");
     if (sCheckFile(programname))
       pakname=programname;
     else
@@ -801,7 +997,33 @@ void sMain()
     sSchedMon = new sStsPerfMon();
 
     MakePackfile(wz4name,makepack);
+
+    // The performance monitor draws itself, so it holds a material, so it
+    // holds shaders. Left alive it would be deleted by ~sStsManager at
+    // subsystem shutdown -- which happens after the run loop has already torn
+    // the graphics layer down, and freeing a shader then hits the
+    // sVERIFY(Shaders) in ~sShader. Let it go while graphics is still up.
+    sDelete(sSchedMon);
+
+    // returning from sMain only hands control to the message loop, and that
+    // would sit there with a window up and the task scheduler spinning. The
+    // pack is written, we are done.
+    sExit();
     return;
+  }
+
+  // The editor moves into the project directory whenever it loads a document
+  // (wDocument::Serialize_ does, for everything except the player), so the
+  // paths the operators recorded -- "data/logo.png" -- are relative to the
+  // .wz4, not to wherever it was started from. The player never had to: it was
+  // meant to ship inside the demo directory. Naming a .wz4 by path on the
+  // command line only works if it does the same.
+  if(!PackFile)
+  {
+    sString<sMAXPATH> dir,leaf;
+    sExtractPath(wz4name,dir,leaf);
+    if(!dir.IsEmpty() && sChangeDir(dir))
+      wz4name = (const sChar *)leaf;
   }
 
   // try to load doc options from wz4 file
@@ -886,9 +1108,12 @@ void sMain()
       Selection.HiddenPart = _i;
 
   // .. and go!
-  App=new MyApp(Selection);
-  App->WZ4Name = wz4name;
-  sSetApp(App);
+  ProjectFileName = wz4name;
+  sAddFileHandler(new ProjectFileHandler);
+
+  Player=new MyApp(Selection);
+  Player->WZ4Name = wz4name;
+  sSetApp(Player);
 }
 
 /****************************************************************************/

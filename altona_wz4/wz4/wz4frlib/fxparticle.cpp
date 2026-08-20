@@ -1285,7 +1285,8 @@ void RNChunks::Render(Wz4RenderContext *ctx)
             sFORALL(Matrices,matp)
             {
               mat = p->Mat*sMatrix34(*matp);
-              Meshes[i]->Render(ctx->RenderMode,Para.LightEnv,&sMatrix34CM(mat),p->Anim,ctx->Frustum);
+              sMatrix34CM matcm(mat);
+              Meshes[i]->Render(ctx->RenderMode,Para.LightEnv,&matcm,p->Anim,ctx->Frustum);
             }
           }
         }
@@ -1333,7 +1334,7 @@ void RNChunks::Render(Wz4RenderContext *ctx)
     sMatrix34CM *mats = FBMUse(PInfo[0].Used*Matrices.GetCount());
     sMatrix34CM *matp;
 
-    if(mats>0)
+    if(mats!=0)
     {
       for(sInt i=0;i<Meshes.GetCount();i++)
       {

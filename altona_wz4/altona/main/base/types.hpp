@@ -572,12 +572,27 @@ void __debugbreak();
 #if sCONFIG_SYSTEM_LINUX
 #define sSTDCALL
 
-#ifndef __SSE__
-#define sCONFIG_SSE               void // mainly for initial build
-#else
-#include "xmmintrin.h"
+#if defined(__ARM_NEON) || defined(__aarch64__)
+#include "base/sse2neon.h"
 #define sCONFIG_SSE               __m128
+#elif defined(__SSE__)
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#define sCONFIG_SSE               __m128
+#else
+#define sCONFIG_SSE               void
 #endif
+
+#ifndef __forceinline
+#define __forceinline             inline __attribute__((always_inline))
+#endif
+#ifndef sFORCEINLINE
+#define sFORCEINLINE              inline __attribute__((always_inline))
+#endif
+#ifndef __assume
+#define __assume(x)               do { if (!(x)) __builtin_unreachable(); } while(0)
+#endif
+
 #endif
 
 #define sCONFIG_LE 1
@@ -1035,7 +1050,13 @@ sChar sLowerChar(sChar c); // returns the lowercase character for c
 sChar *sMakeUpper(sChar *s); // converts s in place to uppercase and returns s
 sChar *sMakeLower(sChar *s); // converts s in place to lowercase and returns s
 
-sINLINE sInt sGetStringLen(const sChar *s)    { sInt i; for(i=0;s[i];i++) {} return i; }
+sINLINE sInt sGetStringLen(const sChar *s)
+{
+  if(!s) return 0;
+  const sChar *p = s;
+  while(*p) p++;
+  return (sInt)(p - s);
+}
 void sAppendString(sChar *d,const sChar *s,sInt size);
 inline void sAppendString(const sStringDesc &d,const sChar *s) { sAppendString(d.Buffer,s,d.Size); }
 void sAppendString2(sChar *d,const sChar *s,sInt size,sInt len);
@@ -1710,30 +1731,34 @@ inline void sCheckMem(const char *file,sInt line) { sTagMem(file,line); sCheckMe
 #if sPLATFORM!=sPLAT_IOS
 #if !sCONFIG_OPTION_XSI
 #if sCONFIG_DEBUGMEM
-inline void *sCDECL operator new  (sCONFIG_SIZET size)throw() { return sAllocMem_(size,16,0); }
-inline void *sCDECL operator new[](sCONFIG_SIZET size)throw() { return sAllocMem_(size,16,0); }
-inline void *sCDECL operator new  (sCONFIG_SIZET size,sInt flags)throw() { return sAllocMem_(size,16,flags); }
-inline void *sCDECL operator new[](sCONFIG_SIZET size,sInt flags)throw() { return sAllocMem_(size,16,flags); }
-inline void sCDECL operator delete  (void* p)throw() { sFreeMem(p); }
-inline void sCDECL operator delete[](void* p)throw() { sFreeMem(p); }
-inline void * sCDECL operator new  (sCONFIG_SIZET size,const char *file,int line)throw() { sTagMem(file,line); return sAllocMem_(size,16,0); }
-inline void * sCDECL operator new[](sCONFIG_SIZET size,const char *file,int line)throw() { sTagMem(file,line); return sAllocMem_(size,16,0); }
-inline void * sCDECL operator new  (sCONFIG_SIZET size,sInt flags,const char *file,int line)throw() { sTagMem(file,line); return sAllocMem_(size,16,flags); }
-inline void * sCDECL operator new[](sCONFIG_SIZET size,sInt flags,const char *file,int line)throw() { sTagMem(file,line); return sAllocMem_(size,16,flags); }
-inline void sCDECL operator delete  (void *p, const char *, int)throw() { sFreeMem(p); }
-inline void sCDECL operator delete[](void *p, const char *, int)throw() { sFreeMem(p); }
+inline void *sCDECL operator new  (sCONFIG_SIZET size){ return sAllocMem_(size,16,0); }
+inline void *sCDECL operator new[](sCONFIG_SIZET size){ return sAllocMem_(size,16,0); }
+inline void *sCDECL operator new  (sCONFIG_SIZET size,sInt flags){ return sAllocMem_(size,16,flags); }
+inline void *sCDECL operator new[](sCONFIG_SIZET size,sInt flags){ return sAllocMem_(size,16,flags); }
+inline void sCDECL operator delete  (void* p) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete  (void* p, sCONFIG_SIZET) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete[](void* p) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete[](void* p, sCONFIG_SIZET) noexcept { sFreeMem(p); }
+inline void * sCDECL operator new  (sCONFIG_SIZET size,const char *file,int line){ sTagMem(file,line); return sAllocMem_(size,16,0); }
+inline void * sCDECL operator new[](sCONFIG_SIZET size,const char *file,int line){ sTagMem(file,line); return sAllocMem_(size,16,0); }
+inline void * sCDECL operator new  (sCONFIG_SIZET size,sInt flags,const char *file,int line){ sTagMem(file,line); return sAllocMem_(size,16,flags); }
+inline void * sCDECL operator new[](sCONFIG_SIZET size,sInt flags,const char *file,int line){ sTagMem(file,line); return sAllocMem_(size,16,flags); }
+inline void sCDECL operator delete  (void *p, const char *, int)noexcept { sFreeMem(p); }
+inline void sCDECL operator delete[](void *p, const char *, int)noexcept { sFreeMem(p); }
 #else
-inline void *sCDECL operator new  (sCONFIG_SIZET size)throw() { return sAllocMem_(size,16,0); }
-inline void *sCDECL operator new[](sCONFIG_SIZET size)throw() { return sAllocMem_(size,16,0); }
-inline void *sCDECL operator new  (sCONFIG_SIZET size,sInt flags)throw() { return sAllocMem_(size,16,flags); }
-inline void *sCDECL operator new[](sCONFIG_SIZET size,sInt flags)throw() { return sAllocMem_(size,16,flags); }
-inline void sCDECL operator delete  (void* p) { sFreeMem(p); }
-inline void sCDECL operator delete[](void* p) { sFreeMem(p); }
+inline void *sCDECL operator new  (sCONFIG_SIZET size){ return sAllocMem_(size,16,0); }
+inline void *sCDECL operator new[](sCONFIG_SIZET size){ return sAllocMem_(size,16,0); }
+inline void *sCDECL operator new  (sCONFIG_SIZET size,sInt flags){ return sAllocMem_(size,16,flags); }
+inline void *sCDECL operator new[](sCONFIG_SIZET size,sInt flags){ return sAllocMem_(size,16,flags); }
+inline void sCDECL operator delete  (void* p) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete  (void* p, sCONFIG_SIZET) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete[](void* p) noexcept { sFreeMem(p); }
+inline void sCDECL operator delete[](void* p, sCONFIG_SIZET) noexcept { sFreeMem(p); }
 #endif // sCONFIG_DEBUGMEM
 #endif // !sCONFIG_OPTION_XSI
 
-inline void *operator new(sCONFIG_SIZET, void *ptr)throw() { return ptr; }
-inline void *operator new[](sCONFIG_SIZET, void *ptr)throw() { return ptr; }
+inline void *operator new(sCONFIG_SIZET, void *ptr)noexcept { return ptr; }
+inline void *operator new[](sCONFIG_SIZET, void *ptr)noexcept { return ptr; }
 
 #undef sNEW_ALLOCATOR
 
@@ -1746,8 +1771,8 @@ inline void *operator new[](sCONFIG_SIZET, void *ptr)throw() { return ptr; }
 #endif  // !IOS 
 
 #if sPLATFORM==sPLAT_IOS
-inline void *operator new(sCONFIG_SIZET, void *ptr)throw() { return ptr; }
-inline void *operator new[](sCONFIG_SIZET, void *ptr)throw() { return ptr; }
+inline void *operator new(sCONFIG_SIZET, void *ptr)noexcept { return ptr; }
+inline void *operator new[](sCONFIG_SIZET, void *ptr)noexcept { return ptr; }
 #define sDEFINE_NEW new
 #endif // IOS
 
@@ -2140,6 +2165,9 @@ struct sGUID
 };
 
 // get project GUID. Take extreme caution if you're using this from within library code!
+#ifndef sCONFIG_GUID
+#define sCONFIG_GUID {0,{0,0,0},{0,0,0,0,0,0}}
+#endif
 static sINLINE sGUID sGetProjectGUID() { sGUID g=sCONFIG_GUID; return g; }
 sGUID sGetGUIDFromString(const sChar *str);
 
@@ -2411,7 +2439,7 @@ protected:
                                             sVERIFY(sStaticArray<Type>::Used+add<=Max_); 
                                         } 
   Type Storage[Max_];
-public:                                 // das ganze rumgescope ist für den PS3-compiler...
+public:                                 // das ganze rumgescope ist fÃ¼r den PS3-compiler...
   typedef typename sRemovePtrType<Type>::Type ElementType;
   enum { SIZE = Max_ };
   sStackArray()                         { sStaticArray<Type>::Data = Storage; sStaticArray<Type>::Used = 0; sStaticArray<Type>::Alloc = Max_; }

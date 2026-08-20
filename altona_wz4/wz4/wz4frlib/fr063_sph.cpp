@@ -888,7 +888,7 @@ void RPSPH::Physics()
   }
 }
 
-static void InterT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
+void InterT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
 {
   RPSPH *_this = (RPSPH *) data;
   sSchedMon->Begin(thread->GetIndex(),0xffffff00);
