@@ -2139,6 +2139,13 @@ void MM_BakedShadow::Render(Wz4Mesh *meshin)
   mat.j.y = -0.5f;
   mat.k.z = 1.0f;
   mat.l.Init(0.5f+0.5f/sxy,0.5f+0.5f/sxy,pcf ? -ShadowBaseBias/sxy : 0,1.0f);
+#if sRENDERER==sRENDER_OGL2
+  // The projection leaves z in OpenGL's [-w,w], while the depth texture
+  // holds what the viewport transform made of it, [0,1]. Fold the same
+  // halving into the lookup, or every shadow comparison misses.
+  mat.k.z *= 0.5f;
+  mat.l.z += 0.5f;
+#endif
   LightProj = view.ModelScreen*mat;
   LightFarR = 1.0f / view.ClipFar;
   LightMatZ.x = view.View.i.z;
