@@ -86,9 +86,19 @@ sU32 CCADepacker(sU8 *dst,const sU8 *src);
 
 sDemoPackFile::sDemoPackFile(const sChar *name)
 {
+  Init(sCreateFile(name,sFA_READ));
+}
+
+sDemoPackFile::sDemoPackFile(sFile *file)
+{
+  Init(file);
+}
+
+void sDemoPackFile::Init(sFile *file)
+{
   sU32 Header[4];
   sClear(Header);
-  File = sCreateFile(name,sFA_READ);
+  File = file;
   File->Read(Header,16);
 
   sU32 *ptr = (sU32 *) Header;

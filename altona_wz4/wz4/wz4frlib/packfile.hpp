@@ -22,8 +22,11 @@ class sDemoPackFile : public sFileHandler
   sU8 *Data;
   sFile *File;
 
+  void Init(sFile *file);
+
 public:
   sDemoPackFile(const sChar *name);
+  sDemoPackFile(sFile *file);           // takes ownership, for packs baked into the executable
   ~sDemoPackFile();
 
   sFile *Create(const sChar *name,sFileAccess access);

@@ -4,20 +4,32 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define V2TYPES
 
+#include <stdint.h>
+#include <stddef.h>
+
+#ifndef _WIN32
+  #ifndef __stdcall
+    #define __stdcall
+  #endif
+  #ifndef __cdecl
+    #define __cdecl
+  #endif
+#endif
+
 typedef int               sInt;
 typedef unsigned int      sUInt;
 typedef sInt              sBool;
 typedef char              sChar;
 
-typedef signed   char     sS8;
-typedef signed   short    sS16;
-typedef signed   long     sS32;
-typedef signed   __int64  sS64;
+typedef int8_t            sS8;
+typedef int16_t           sS16;
+typedef int32_t           sS32;
+typedef int64_t           sS64;
 
-typedef unsigned char     sU8;
-typedef unsigned short    sU16;
-typedef unsigned long     sU32;
-typedef unsigned __int64  sU64;
+typedef uint8_t           sU8;
+typedef uint16_t          sU16;
+typedef uint32_t          sU32;
+typedef uint64_t          sU64;
 
 typedef float             sF32;
 typedef double            sF64;
@@ -29,7 +41,7 @@ typedef double            sF64;
 #ifdef _DEBUG
 extern void __cdecl printf2(const char *format, ...);
 #else
-#define printf2
+#define printf2(...)
 #endif
 
 template<class T> inline T sMin(const T a, const T b) { return (a<b)?a:b;  }

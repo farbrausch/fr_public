@@ -87,6 +87,7 @@ void sVerifyFalse2(const sChar *file,sInt line,const sChar *expr,const sChar *de
 
 void sExit()
 {
+  sDPrintF(L">>> sExit() CALLED! <<<\n");
   if(!sExitFlag)
     sExitFlag = 1;
 }
