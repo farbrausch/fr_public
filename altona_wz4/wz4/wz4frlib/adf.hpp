@@ -10,7 +10,7 @@
 
 /****************************************************************************/
 
-#include "wz4frlib/Wz4_mesh.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
 #include "tADF.hpp"
 #include "adf_shader.hpp"
 

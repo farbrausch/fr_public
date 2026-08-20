@@ -33,7 +33,7 @@ const sInt mmm = m*m*m;
 /****************************************************************************/
 
 
-static void RNFR063_Mandelbulb_LostDevice(void *ptr)
+void RNFR063_Mandelbulb_LostDevice(void *ptr)
 {
   ((RNFR063_Mandelbulb *)ptr)->OctMan->LostDevice();
 }
@@ -2093,7 +2093,7 @@ MandelbulbIsoData::IsoNode *MandelbulbIsoData::GetNode(sInt thread)
 
 
 
-static void CalcNodeT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
+void CalcNodeT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
 {
   sSchedMon->Begin(thread->GetIndex(),0xff00ffff);
   MandelbulbIsoData::CalcNodeInfo *info = (MandelbulbIsoData::CalcNodeInfo *) data;
@@ -2388,7 +2388,7 @@ void RNFR063_MandelbulbIso::Simulate(Wz4RenderContext *ctx)
   SimulateChilds(ctx);
 }
 
-static void MarchIsoT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
+void MarchIsoT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data)
 {
   RNFR063_MandelbulbIso *_this = (RNFR063_MandelbulbIso *) data;
   sF32 iso = sMax(1.05f,_this->Para.IsoValue);

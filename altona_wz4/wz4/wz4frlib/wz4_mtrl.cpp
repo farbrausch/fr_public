@@ -333,6 +333,13 @@ void Wz4ShaderEnv::SetShadow(const sViewport *vp)
   mat.j.y = -0.5f;
   mat.k.z = 1.0f;
   mat.l.Init(0.5f,0.5f,0.0f,1.0f);
+#if sRENDERER==sRENDER_OGL2
+  // The projection leaves z in OpenGL's [-w,w], while the depth texture
+  // holds what the viewport transform made of it, [0,1]. Fold the same
+  // halving into the lookup, or every shadow comparison misses.
+  mat.k.z *= 0.5f;
+  mat.l.z += 0.5f;
+#endif
   ShadowMat = vp->ModelScreen*mat;
 }
 

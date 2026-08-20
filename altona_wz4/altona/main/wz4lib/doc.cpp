@@ -2503,7 +2503,24 @@ sBool wDocument::Load(const sChar *filename)
 
   sBool ok = sLoadObject(filename,this);
   if(ok)
+  {
     Filename = filename;
+
+    // Serialize_ has just moved to the project directory the document recorded,
+    // which is an absolute path from whichever machine it was authored on
+    // ("c:/svn/farbrausch/...") and by now is nearly always gone -- sChangeDir
+    // then quietly does nothing, and every relative path the operators stored is
+    // measured from wherever the editor happened to be started instead. Fall
+    // back to the directory the .wz4 itself came from, and name the document by
+    // its leaf so that saving still lands where it was loaded from.
+    if(!IsPlayer && (DocOptions.ProjectPath.IsEmpty() || !sChangeDir(DocOptions.ProjectPath)))
+    {
+      sString<sMAXPATH> dir,leaf;
+      sExtractPath(filename,dir,leaf);
+      if(!dir.IsEmpty() && sChangeDir(dir))
+        Filename = (const sChar *)leaf;
+    }
+  }
   sFORALL(Includes,inc)
     if(ok)
       if(!inc->Load())

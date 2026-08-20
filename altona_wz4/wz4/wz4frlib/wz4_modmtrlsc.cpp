@@ -228,6 +228,10 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
   const sChar *psp = L"ps_4_0";
   const sChar *vsp = L"vs_4_0";
   shadertype = sSTF_HLSL45;
+#elif sRENDERER!=sRENDER_DX9
+  const sChar *psp = L"fp40";
+  const sChar *vsp = L"vp40";
+  shadertype = sSTF_CG;
 #endif
 
   switch(ShaderType)
@@ -243,11 +247,21 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
   }
 
 
-#if sRENDERER==sRENDER_DX9
+#if sRENDERER==sRENDER_DX9 || sRENDERER==sRENDER_OGL2
   sFORALL(Texs,t)
   {
     if(t->Tex2D)
+    {
+#if sRENDERER==sRENDER_OGL2
+      // A shadow map is sampled through the depth comparison, and opengl
+      // wants that said in the declaration. Direct3D 9 carries it in the
+      // texture format instead, so only this backend needs telling.
+      if(t->Flags & sMTF_PCF)
+        tb.PrintF(L"sampler2DShadow tex%d : register(s%d);\n",_i,_i);
+      else
+#endif
       tb.PrintF(L"sampler2D tex%d : register(s%d);\n",_i,_i);
+    }
     if(t->TexCube)
       tb.PrintF(L"samplerCUBE tex%d : register(s%d);\n",_i,_i);
   }
@@ -332,7 +346,7 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
     tb.PrintF(L"  in %s %s : %s%d,\n",types[r->Type],r->Name,binds[r->Bind],r->Index);
   sFORALL(Outputs,r)
     tb.PrintF(L"  out %s %s : %s%d,\n",types[r->Type],r->Name,binds[r->Bind],r->Index);
-#if sRENDERER==sRENDER_DX9
+#if sRENDERER==sRENDER_DX9 || sRENDERER==sRENDER_OGL2
   sFORALL(Uniforms,r)
   {
     if(r->Type==SCT_SKINNING)
@@ -462,6 +476,21 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
   sU8 *data = 0;
   sInt size = 0;
   sShader *sh = 0;
+#if sRENDERER==sRENDER_OGL2
+  // There is no offline compile step here: the OGL2 backend takes Cg source and
+  // translates it when the shader is created, so the generated text *is* the
+  // compiled form. (The DX path below needs a D3D compiler, which is why this
+  // used to hand back a null shader on every other platform.)
+  {
+    sInt n = sGetStringLen(tb.Get());
+    sU8 *src8 = new sU8[n+1];
+    for(sInt i=0;i<n;i++)
+      src8[i] = (sU8)tb.Get()[i];             // the generated source is ascii
+    src8[n] = 0;
+    sh = sCreateShaderRaw(shadertype,src8,n+1);
+    delete[] src8;
+  }
+#else
   if(sShaderCompileDX(tb.Get(),profile,L"main",data,size,sSCF_AVOID_CFLOW,&error))
   {
     log.PrintF(L"dx: %q\n",error.Get());
@@ -480,6 +509,7 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
 
     sDPrint(log.Get());
   }
+#endif
   delete[] data;
 
   cs = CompiledShaders.AddMany(1);
@@ -488,7 +518,8 @@ sShader *ShaderCreator::Compile(sTextBuffer &log)
   cs->Shader = sh;
   cs->Source = new sChar[len];
   sCopyMem(cs->Source,tb.Get(),(len+1)*sizeof(sChar));
-  sh->AddRef();
+  if(sh)                                      // compilation can legitimately fail
+    sh->AddRef();
 
   return sh;
 }

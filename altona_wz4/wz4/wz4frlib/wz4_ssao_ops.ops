@@ -15,7 +15,7 @@ header
 }
 code
 {
-#include "wz4frlib/wz4_demo.hpp"
+#include "wz4frlib/wz4_demo2.hpp"
 #include "wz4frlib/wz4_demo_ops.hpp"
 #include "wz4frlib/chaosmesh_code.hpp"
 #include "wz4frlib/wz4_demo_ops.hpp"

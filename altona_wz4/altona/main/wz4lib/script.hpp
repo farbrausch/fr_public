@@ -264,7 +264,7 @@ class ScriptCompiler
   Statement *_VarDef(sInt mode);    // 0=local, 1=global, 2=import
   Statement *_Assign();
   Expression *_AssignTo(Expression *a);
-  Expression *ScriptCompiler::_AssignTo(Expression *a,Expression *b);      // b = a
+  Expression *_AssignTo(Expression *a,Expression *b);      // b = a
   Statement *_If();
   Statement *_Do();
   Statement *_While();

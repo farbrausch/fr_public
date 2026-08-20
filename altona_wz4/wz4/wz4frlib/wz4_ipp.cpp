@@ -46,6 +46,7 @@ IppHelper2::IppHelper2()
   sGetGraphicsCaps(caps);
   XYOffset = caps.XYOffset;
   UVOffset = caps.UVOffset;
+  FlipRTV = caps.RTUpsideDown;
 }
 
 IppHelper2::~IppHelper2()
@@ -97,6 +98,16 @@ void IppHelper2::DrawQuad(sTexture2D *dest,sTexture2D *s0,sTexture2D *s1,sU32 co
     u3 = 1+uv/s1->SizeX;
     v3 = 1+uv/s1->SizeY;
   }
+  // Every texture a fullscreen pass reads here is a rendertarget, and on a
+  // backend that stores those upside down the quad has to mirror v to get the
+  // top of the picture back at the top. The pass writes its result the same
+  // way round it read it, so a whole chain of them stays consistent.
+  if(FlipRTV)
+  {
+    v0 = 1-v0; v1 = 1-v1;
+    v2 = 1-v2; v3 = 1-v3;
+  }
+
   if(dest)
   {
     sx = dest->SizeX;
@@ -1652,8 +1663,8 @@ void RNCustomIPP::Init()
   Mtrl->Prepare(sVertexFormatBasic);
 }
 
-#include "shadercomp\shadercomp.hpp"
-#include "shadercomp\shaderdis.hpp"
+#include "shadercomp/shadercomp.hpp"
+#include "shadercomp/shaderdis.hpp"
 sShader *RNCustomIPP::CompileShader(sInt shadertype, const sChar *source)
 {
   sString<16> profile;
