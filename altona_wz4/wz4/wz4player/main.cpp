@@ -154,6 +154,7 @@ void RegisterWZ4Classes()
 //    sREGOPS(wz4_demo,1);          // old demo system, never worked
     sREGOPS(wz4_demo2,0);
     sREGOPS(wz4_mesh,0);
+    sREGOPS(wz4_extra,0);      // bitmap and mesh operators added for the macos port
     sREGOPS(chaosfx,0);
     sREGOPS(easter,0);
     sREGOPS(wz4_bsp,0);

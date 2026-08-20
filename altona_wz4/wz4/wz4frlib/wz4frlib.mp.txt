@@ -85,6 +85,9 @@ folder "wz4"
   file "wz4_mesh_xsi.cpp";
   file "wz4_mesh_lwo.cpp";
   file "wz4_mesh_obj.cpp";
+  file "wz4_extra_ops.ops";
+  file "wz4_extra_bitmap.?pp";
+  file "wz4_extra_mesh.?pp";
 }
 
 folder "wz4_rove"
@@ -173,6 +176,7 @@ folder "_generated"
   file nonew "wz4_modmtrlmod_ops.?pp";
   file nonew "wz4_demo2_ops.?pp";
   file nonew "wz4_mesh_ops.?pp";
+  file nonew "wz4_extra_ops.?pp";
   file nonew "wz4_bsp_ops.?pp";
   file nonew "wz4_ipp_ops.?pp";
   file nonew "wz4_ipp_shader.?pp";
