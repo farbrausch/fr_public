@@ -42,10 +42,18 @@ public:
 };
 
 
+struct DepackState;
+
 class DPFPacked : public sFile
 {
   sInt SeekSize;
   sInt ChunkSize;
+
+  // One arithmetic decoder per open file. This used to be a single global,
+  // which holds up exactly as long as only one packed file is ever being read
+  // at a time -- the moment two of them interleave reads, both streams decode
+  // each other's probability models and turn into noise.
+  DepackState *State;
 
   sFile *BaseFile;
   sS64 BaseOffset;
@@ -311,7 +319,6 @@ struct DepackState
   sU8 SourceBuffer[SrcBufferSize];
 };
 
-static DepackState stx;
 
 static void DecodeLoadSrcBuffer(DepackState &st)
 {
@@ -517,6 +524,7 @@ DPFPacked::DPFPacked(sFile *base,sS64 offset,sS64 size)
 {
   SeekSize = 640*1024;
   ChunkSize = 128*1024;
+  State = new DepackState;
   DestBuffer = new sU8[SeekSize+ChunkSize];
   BaseFile = base;
   BaseOffset = offset;
@@ -530,7 +538,8 @@ DPFPacked::DPFPacked(sFile *base,sS64 offset,sS64 size)
 
 DPFPacked::~DPFPacked()
 {
-  delete DestBuffer;
+  delete[] DestBuffer;
+  delete State;
 }
 
 sBool DPFPacked::Read(void *datav,sDInt size)
@@ -540,11 +549,11 @@ sBool DPFPacked::Read(void *datav,sDInt size)
   while(size>0)
   {
     sVERIFY(DestPtr<=DestEnd);
-    sInt chunk = sMin(size,DestEnd-DestPtr);
+    sInt chunk = sInt(sMin<sDInt>(size,DestEnd-DestPtr));
     if(chunk==0)
     {
       sCopyMem(DestBuffer,DestBuffer+ChunkSize,SeekSize);
-      DecodeChunk(&stx,DestBuffer+SeekSize,DestEnd,DepackStart,this);
+      DecodeChunk(State,DestBuffer+SeekSize,DestEnd,DepackStart,this);
       DepackStart = 0;
       DestPtr = DestBuffer+SeekSize;
     }
@@ -579,8 +588,20 @@ sS64 DPFPacked::GetSize()
 
 void DPFPacked::LoadChunk(sU8 *ptr,sInt size)
 {
+  // The decoder always asks for a whole buffer, and towards the end of the
+  // pack that runs past the end of the base file. sFile::Read is all or
+  // nothing: a disk file happens to leave the bytes it did manage to read in
+  // the buffer, but a memory file (which is what a pack baked into the
+  // executable is) leaves the buffer untouched and the stream decodes garbage
+  // from there on. Ask only for what is really there.
+  sS64 avail = BaseSize - (ReadOffset+BaseOffset);
+  sInt chunk = sInt(sClamp<sS64>(avail,0,size));
+
   BaseFile->SetOffset(ReadOffset+BaseOffset);
-  BaseFile->Read(ptr,size);
+  if(chunk>0)
+    BaseFile->Read(ptr,chunk);
+  if(chunk<size)
+    sSetMem(ptr+chunk,0,size-chunk);
   ReadOffset += size;
 }
 

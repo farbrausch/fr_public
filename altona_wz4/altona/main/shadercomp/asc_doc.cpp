@@ -302,7 +302,7 @@ ACDoc::ACDoc()
   Scan.Init();
   Scan.Flags |= sSF_TYPEDNUMBERS;
   Scan.DefaultTokens();
-  Scan.AddTokens(L"°");
+  Scan.AddTokens(L"\u00b0");
 
   Scan.AddToken(L"#line",AC_TOK_LINE);
   Scan.AddToken(L"+=",AC_TOK_ASSIGNADD);

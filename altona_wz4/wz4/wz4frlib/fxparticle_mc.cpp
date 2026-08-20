@@ -116,7 +116,7 @@ void sINLINE RNMarchingCubesBase<T>::func(const sVector31 &v,typename T::FieldTy
 
   for(sInt i=0;i<fi.pn4;i++)
   {
-    const T::SimdType *part = fi.parts4 + i;
+    const typename T::SimdType *part = fi.parts4 + i;
 
     __m128 dx = _mm_sub_ps(vx,part->x);
     __m128 dy = _mm_sub_ps(vy,part->y);
@@ -150,10 +150,12 @@ void sINLINE RNMarchingCubesBase<T>::func(const sVector31 &v,typename T::FieldTy
   
   _MM_TRANSPOSE4_PS(po,nx,ny,nz);
   __m128 r = _mm_add_ps(_mm_add_ps(_mm_add_ps(nx,ny),nz),po);
-  n.x = r.m128_f32[1];
-  n.y = r.m128_f32[2];
-  n.z = r.m128_f32[3];
-  p = r.m128_f32[0];
+  sF32 r_f32[4];
+  _mm_storeu_ps(r_f32, r);
+  n.x = r_f32[1];
+  n.y = r_f32[2];
+  n.z = r_f32[3];
+  p = r_f32[0];
 
   if(p==0)
     n.Init(0,0,0);
@@ -176,7 +178,7 @@ void sINLINE RNMarchingCubesBase<T>::func(const sVector31 &v,typename T::FieldTy
       __m128i r3 = _mm_cvtps_epi32(r2);
       r3 = _mm_packs_epi32(r3,r3);
       __m128i r4 = _mm_packus_epi16(r3,r3);
-      pot.c = r4.m128i_u32[0]|0xff000000;
+      pot.c = sU32(_mm_cvtsi128_si32(r4))|0xff000000;
     }
     else
     {
@@ -388,7 +390,7 @@ static void StaticRenderT(sStsManager *man,sStsThread *thread,sInt start,sInt co
 {
   sSchedMon->Begin(thread?thread->GetIndex():0,0xff00ff00);
   RNMarchingCubesBase<T> *_this = (RNMarchingCubesBase<T> *) data;
-  _this->RenderT<base,subdiv>(start,count,thread?thread->GetIndex():0);
+  _this->template RenderT<base,subdiv>(start,count,thread?thread->GetIndex():0);
   sSchedMon->End(thread?thread->GetIndex():0);
 }
 
@@ -458,37 +460,15 @@ void RNMarchingCubesBase<T>::RenderT(sInt start,sInt count,sInt thread)
 
       for(sInt i=0;i<(pn+3)/4;i++)
       {
-        fi.parts4[i4].x.m128_f32[0] = p[0].x;
-        fi.parts4[i4].x.m128_f32[1] = p[1].x;
-        fi.parts4[i4].x.m128_f32[2] = p[2].x;
-        fi.parts4[i4].x.m128_f32[3] = p[3].x;
-
-        fi.parts4[i4].y.m128_f32[0] = p[0].y;
-        fi.parts4[i4].y.m128_f32[1] = p[1].y;
-        fi.parts4[i4].y.m128_f32[2] = p[2].y;
-        fi.parts4[i4].y.m128_f32[3] = p[3].y;
-
-        fi.parts4[i4].z.m128_f32[0] = p[0].z;
-        fi.parts4[i4].z.m128_f32[1] = p[1].z;
-        fi.parts4[i4].z.m128_f32[2] = p[2].z;
-        fi.parts4[i4].z.m128_f32[3] = p[3].z;
+        fi.parts4[i4].x = _mm_set_ps(p[3].x, p[2].x, p[1].x, p[0].x);
+        fi.parts4[i4].y = _mm_set_ps(p[3].y, p[2].y, p[1].y, p[0].y);
+        fi.parts4[i4].z = _mm_set_ps(p[3].z, p[2].z, p[1].z, p[0].z);
 
         if(T::Color)
         {
-          fi.parts4[i4].cr.m128_f32[0] = ((p[0].c>>16)&255)/255.0f;
-          fi.parts4[i4].cr.m128_f32[1] = ((p[1].c>>16)&255)/255.0f;
-          fi.parts4[i4].cr.m128_f32[2] = ((p[2].c>>16)&255)/255.0f;
-          fi.parts4[i4].cr.m128_f32[3] = ((p[3].c>>16)&255)/255.0f;
-
-          fi.parts4[i4].cg.m128_f32[0] = ((p[0].c>> 8)&255)/255.0f;
-          fi.parts4[i4].cg.m128_f32[1] = ((p[1].c>> 8)&255)/255.0f;
-          fi.parts4[i4].cg.m128_f32[2] = ((p[2].c>> 8)&255)/255.0f;
-          fi.parts4[i4].cg.m128_f32[3] = ((p[3].c>> 8)&255)/255.0f;
-
-          fi.parts4[i4].cb.m128_f32[0] = ((p[0].c>> 0)&255)/255.0f;
-          fi.parts4[i4].cb.m128_f32[1] = ((p[1].c>> 0)&255)/255.0f;
-          fi.parts4[i4].cb.m128_f32[2] = ((p[2].c>> 0)&255)/255.0f;
-          fi.parts4[i4].cb.m128_f32[3] = ((p[3].c>> 0)&255)/255.0f;
+          fi.parts4[i4].cr = _mm_set_ps(((p[3].c>>16)&255)/255.0f, ((p[2].c>>16)&255)/255.0f, ((p[1].c>>16)&255)/255.0f, ((p[0].c>>16)&255)/255.0f);
+          fi.parts4[i4].cg = _mm_set_ps(((p[3].c>> 8)&255)/255.0f, ((p[2].c>> 8)&255)/255.0f, ((p[1].c>> 8)&255)/255.0f, ((p[0].c>> 8)&255)/255.0f);
+          fi.parts4[i4].cb = _mm_set_ps(((p[3].c>> 0)&255)/255.0f, ((p[2].c>> 0)&255)/255.0f, ((p[1].c>> 0)&255)/255.0f, ((p[0].c>> 0)&255)/255.0f);
         }
 
         p+=4;

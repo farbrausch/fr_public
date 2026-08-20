@@ -64,7 +64,7 @@ type Wz4Mesh : MeshBase
       Wz4Mesh *mesh = (Wz4Mesh *) obj;
       for(sInt i=0;i<matcount;i++)
       {
-        mesh->Render(sRF_TARGET_MAIN,0,&sMatrix34CM(mat[i]),0,fr);
+        sMatrix34CM mati(mat[i]); mesh->Render(sRF_TARGET_MAIN,0,&mati,0,fr);
       }
     }
   }
@@ -81,7 +81,7 @@ type Wz4Mesh : MeshBase
       Wz4MtrlType->PrepareView(*pi.View);
       sFrustum fr; fr.Init(pi.View->ModelScreen);
       Wz4Mesh *mesh = (Wz4Mesh *) obj;
-      mesh->Render(sRF_TARGET_WIRE,0,&sMatrix34CM(mat),0,fr);
+      sMatrix34CM matcm(mat); mesh->Render(sRF_TARGET_WIRE,0,&matcm,0,fr);
     }
   }
 }

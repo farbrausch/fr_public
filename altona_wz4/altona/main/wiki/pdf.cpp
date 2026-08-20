@@ -128,7 +128,7 @@ void sPDF::BeginDoc(sF32 xs,sInt ys)
   SizeY = ys;
 
   Print(L"%PDF-1.1\n");
-  Print(L"%íì¦\"\n");
+  Print(L"%Ã­Ã¬Â¦\"\n");
 }
 
 sInt sPDF::RegisterFont(sInt flags,sFont2D *font)

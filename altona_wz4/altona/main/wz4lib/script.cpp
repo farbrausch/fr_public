@@ -2001,7 +2001,7 @@ void ScriptDump(const sU32 *code,sTextBuffer &tb)
       break;
 
     case SC_DOT|SC_FLOAT:
-      tb.PrintF(L"°%d ",count);
+      tb.PrintF(L"\u00b0%d ",count);
       index-=count*2-1;
       break;
     case SC_NEG|SC_INT:

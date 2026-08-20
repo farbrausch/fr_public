@@ -291,26 +291,39 @@ void sRenderTargetManager_::SetTarget(sTexture2D *tex,sInt clrflags,sU32 clrcol,
     sSetTarget(sTargetPara((clrflags&3)|sST_NOMSAA,clrcol,Window,sGetScreenColorBuffer(),dep));
 }
 
+// Hand the finished frame over to whatever the manager is drawing for -- the
+// window, or the texture SetScreen() was pointed at -- and give the proxy back
+// to the pool. This used to be windows-only, "until sSetScreen is available on
+// all platforms"; everywhere else the frame stayed offscreen and the proxy was
+// never released, so the pool grew by one full-size rendertarget per frame.
+
 void sRenderTargetManager_::FinishScreen()
 {
-#if sPLATFORM==sPLAT_WINDOWS  // Until sSetScreen is available on all platforms
   if(ScreenProxy)
   {
     if (ScreenProxyDirty)
     {
       const sRect sr(0,0,ScreenX,ScreenY);
-      sInt z;
       sCopyTexturePara ctp;
       ctp.Source = ScreenProxy;
       ctp.SourceRect = sr;
       ctp.Dest = ToTexture ? ToTexture : sGetScreenColorBuffer();
-      if(ScreenProxy)
+
+      // Window is the sub-rectangle of the screen we were given, if any. There
+      // is none when rendering the whole screen, and the backbuffer is not a
+      // texture we can ask for its size on every renderer, so fall back to the
+      // size the manager was set up with.
+      if(Window)
         ctp.DestRect = *Window;
-      else
+      else if(ctp.Dest)
+      {
+        sInt z;
         ctp.Dest->GetSize(ctp.DestRect.x1,ctp.DestRect.y1,z);
+      }
+      else
+        ctp.DestRect = sr;
 
       sCopyTexture(ctp);
-  //    sSetScreen(ScreenProxy,sGFF_NONE,Window,);
       ScreenProxyDirty = 0;
     }
     Release(ScreenProxy);
@@ -318,7 +331,6 @@ void sRenderTargetManager_::FinishScreen()
   }
   Release(ToTexture);
   ToTexture = 0;
-#endif
 }
 
 /****************************************************************************/

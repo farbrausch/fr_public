@@ -14,7 +14,7 @@
 #include "base/graphics.hpp"
 #include "wz4lib/doc.hpp"
 #include "wz4lib/basic.hpp"
-#include "wz4_bitmap.hpp"
+// #include "wz4_bitmap.hpp"
 #include "util/image.hpp"
 
 /****************************************************************************/
