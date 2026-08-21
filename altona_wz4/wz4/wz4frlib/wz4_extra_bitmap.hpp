@@ -121,6 +121,118 @@ void Scatter(sU64 *dst,const sU64 *src,sInt xs,sInt ys,
              sF32 anglemin,sF32 anglemax,sF32 alpha,sF32 tint,sInt mode,sInt wrap);
 
 /****************************************************************************/
+/***   generators, second batch                                           ***/
+/****************************************************************************/
+
+// per pixel random. mono keeps the channels together, colour rolls each one
+// separately, which is the difference between film grain and rgb static.
+void Noise(sU64 *dst,sInt xs,sInt ys,sInt seed,sBool colour,sF32 gamma,
+           sU64 col0,sU64 col1);
+
+// arms spiralling out of a centre; twist is how many turns across the radius
+void Spiral(sU64 *dst,sInt xs,sInt ys,sInt arms,sF32 twist,sF32 cx,sF32 cy,
+            sF32 sharpness,sU64 col0,sU64 col1);
+
+// a starburst: count wedges around a centre, fading out with distance
+void Rays(sU64 *dst,sInt xs,sInt ys,sInt count,sF32 cx,sF32 cy,sF32 angle,
+          sF32 sharpness,sF32 falloff,sU64 col0,sU64 col1);
+
+// hexagonal grid. width 0 fills the cells, anything else draws their borders.
+void Hexagon(sU64 *dst,sInt xs,sInt ys,sInt countx,sInt county,sF32 width,
+             sInt seed,sF32 variation,sU64 col0,sU64 col1);
+
+// truchet tiling: one of two rotations of the same tile per cell, which is
+// what makes the arcs join up into a maze that never repeats visibly
+void Truchet(sU64 *dst,sInt xs,sInt ys,sInt count,sInt seed,sF32 width,
+             sBool diagonal,sU64 col0,sU64 col1);
+
+// over-under basket weave
+void Weave(sU64 *dst,sInt xs,sInt ys,sInt countx,sInt county,sF32 width,
+           sF32 shadow,sU64 col0,sU64 col1,sU64 colgap);
+
+// growth rings pushed around by turbulence
+void Wood(sU64 *dst,sInt xs,sInt ys,sF32 rings,sF32 turbulence,sInt octaves,
+          sInt seed,sF32 cx,sF32 cy,sF32 aspect,sU64 col0,sU64 col1);
+
+// veins: a stripe pattern displaced by turbulence, which is the classic way
+// to fake marble
+void Marble(sU64 *dst,sInt xs,sInt ys,sF32 freq,sF32 turbulence,sInt octaves,
+            sInt seed,sF32 angle,sF32 gamma,sU64 col0,sU64 col1);
+
+enum ShapeGradientMode
+{
+  SHAPEGRAD_RADIAL = 0,
+  SHAPEGRAD_ANGULAR,
+  SHAPEGRAD_DIAMOND,
+  SHAPEGRAD_SQUARE,
+};
+
+// the gradient operator interpolates along one axis; this one runs the same
+// ramp out from a centre instead
+void ShapeGradient(sU64 *dst,sInt xs,sInt ys,sInt mode,sF32 cx,sF32 cy,
+                   sF32 radius,sF32 angle,const sF32 *pos,const sU64 *col,
+                   sInt count,sBool repeat);
+
+/****************************************************************************/
+/***   filters, second batch                                              ***/
+/****************************************************************************/
+
+// hard cut with a soft shoulder, which is what a mask usually wants
+void Threshold(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt channel,
+               sF32 threshold,sF32 softness,sU64 col0,sU64 col1);
+
+// piecewise linear tone curve, applied to the channels named in the mask
+// (bit 0 red, 1 green, 2 blue, 3 alpha)
+void Curve(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt channelmask,
+           const sF32 *pos,const sF32 *value,sInt count);
+
+// build a pixel out of four sources, one channel at a time. src[i] may repeat,
+// and a null source means the constant in fill[i].
+void Swizzle(sU64 *dst,sInt xs,sInt ys,const sU64 *const *src,
+             const sInt *channel,const sF32 *fill);
+
+enum DitherMode
+{
+  DITHER_ORDERED = 0,        // 8x8 bayer
+  DITHER_ERROR,              // floyd-steinberg
+};
+
+// quantise to a number of levels per channel, and spread the error rather
+// than dropping it -- which is the difference between this and Bitcrusher
+void Dither(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt levels,sInt mode,
+            sF32 strength);
+
+// blur along one direction. the existing Blur is separable and axis aligned,
+// so it cannot do this.
+void MotionBlur(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 angle,
+                sF32 length,sInt samples,sInt wrap);
+
+// zoom and spin blur around a centre
+void RadialBlur(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 cx,sF32 cy,
+                sF32 zoom,sF32 spin,sInt samples,sInt wrap);
+
+// pull the channels apart, radially from a centre or along an angle
+void ChromaticAberration(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 cx,
+                         sF32 cy,sF32 amount,sBool radial,sF32 angle,sInt wrap);
+
+// cross-fade the opposite edges into each other so the image tiles
+void Seamless(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 border,sBool mirror);
+
+// spread the histogram out over the full range
+void Equalize(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sBool perchannel,
+              sF32 amount);
+
+// combine two tangent space normal maps. Adding them and renormalising tilts
+// the result wrong; this is the whiteout blend, which keeps the detail of
+// both.
+void NormalCombine(sU64 *dst,const sU64 *a,const sU64 *b,sInt xs,sInt ys,
+                   sF32 strength);
+
+// occlusion from a height map: how much of the sky each texel can still see
+void AmbientOcclusion(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 radius,
+                      sInt samples,sF32 height,sF32 strength,sInt wrap);
+
+/****************************************************************************/
 
 }
 

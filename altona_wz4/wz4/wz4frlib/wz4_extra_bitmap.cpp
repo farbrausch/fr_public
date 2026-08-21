@@ -775,6 +775,857 @@ void Scatter(sU64 *dst,const sU64 *src,sInt xs,sInt ys,
   }
 }
 
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   value noise                                                        ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// Wood and Marble need turbulence, and the engine's perlin lives behind
+// xInitPerlin() and a table this file cannot see. A hashed lattice does the
+// same job here and stays tileable, which the pattern generators want.
+
+static sU32 NoiseHash(sInt x,sInt y,sInt seed)
+{
+  sU32 h = sU32(x)*374761393u + sU32(y)*668265263u + sU32(seed)*2246822519u;
+  h = (h ^ (h>>13)) * 1274126177u;
+  return h ^ (h>>16);
+}
+
+static sF32 NoiseAt(sInt x,sInt y,sInt period,sInt seed)
+{
+  if(period>0)
+  {
+    x %= period; if(x<0) x += period;
+    y %= period; if(y<0) y += period;
+  }
+  return (NoiseHash(x,y,seed) & 0xffffff)/16777215.0f;
+}
+
+static sF32 ValueNoise(sF32 x,sF32 y,sInt period,sInt seed)
+{
+  sF32 fx = sRoundDown(x), fy = sRoundDown(y);
+  sInt ix = sInt(fx), iy = sInt(fy);
+  sF32 tx = x-fx, ty = y-fy;
+
+  // smoothstep on the interpolant, or the lattice shows through as a grid
+  tx = tx*tx*(3-2*tx);
+  ty = ty*ty*(3-2*ty);
+
+  sF32 a = NoiseAt(ix  ,iy  ,period,seed);
+  sF32 b = NoiseAt(ix+1,iy  ,period,seed);
+  sF32 c = NoiseAt(ix  ,iy+1,period,seed);
+  sF32 d = NoiseAt(ix+1,iy+1,period,seed);
+
+  return (a + (b-a)*tx) + ((c + (d-c)*tx) - (a + (b-a)*tx))*ty;
+}
+
+static sF32 Turbulence(sF32 x,sF32 y,sInt period,sInt octaves,sInt seed)
+{
+  octaves = sClamp<sInt>(octaves,1,10);
+  sF32 sum = 0, amp = 1, norm = 0;
+  for(sInt i=0;i<octaves;i++)
+  {
+    sum += sAbs(ValueNoise(x,y,period,seed+i*71)*2-1)*amp;
+    norm += amp;
+    amp *= 0.5f;
+    x *= 2; y *= 2;
+    period *= 2;
+  }
+  return sum/norm;
+}
+
+// 0..1 -> 0..1, pushed towards its ends. sharpness 0 leaves it alone.
+static sF32 Sharpen01(sF32 v,sF32 sharpness)
+{
+  v = sClamp<sF32>(v,0,1);
+  if(sharpness<=0.0f) return v;
+  sF32 e = 1.0f + sharpness*8.0f;
+  return sFPow(v,e);
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   generators, second batch                                           ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+void Noise(sU64 *dst,sInt xs,sInt ys,sInt seed,sBool colour,sF32 gamma,
+           sU64 col0,sU64 col1)
+{
+  if(gamma<=0.0f) gamma = 1.0f;
+  Pixel p0,p1;
+  p0.Load(col0);
+  p1.Load(col1);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      if(!colour)
+      {
+        sF32 v = NoiseAt(x,y,0,seed);
+        if(gamma!=1.0f) v = sFPow(v,gamma);
+        dst[x+y*xs] = Fade(col0,col1,v);
+      }
+      else
+      {
+        // one roll per channel: rgb static rather than grain
+        Pixel p;
+        sF32 vb = NoiseAt(x,y,0,seed);
+        sF32 vg = NoiseAt(x,y,0,seed+7919);
+        sF32 vr = NoiseAt(x,y,0,seed+104729);
+        if(gamma!=1.0f)
+        {
+          vb = sFPow(vb,gamma); vg = sFPow(vg,gamma); vr = sFPow(vr,gamma);
+        }
+        p.b = p0.b + sInt((p1.b-p0.b)*vb);
+        p.g = p0.g + sInt((p1.g-p0.g)*vg);
+        p.r = p0.r + sInt((p1.r-p0.r)*vr);
+        p.a = p1.a;
+        dst[x+y*xs] = p.Store();
+      }
+    }
+  }
+}
+
+void Spiral(sU64 *dst,sInt xs,sInt ys,sInt arms,sF32 twist,sF32 cx,sF32 cy,
+            sF32 sharpness,sU64 col0,sU64 col1)
+{
+  arms = sClamp<sInt>(arms,1,64);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 dx = (sF32(x)+0.5f)/xs - cx;
+      sF32 dy = (sF32(y)+0.5f)/ys - cy;
+      sF32 r = sFSqrt(dx*dx+dy*dy);
+      sF32 a = sFATan2(dy,dx)/sPI2F;
+
+      // winding the angle with the radius is what turns spokes into a spiral
+      sF32 t = (a + twist*r)*arms;
+      t -= sRoundDown(t);
+
+      sF32 v = t<0.5f ? t*2 : (1-t)*2;
+      dst[x+y*xs] = Fade(col0,col1,Sharpen01(v,sharpness));
+    }
+  }
+}
+
+void Rays(sU64 *dst,sInt xs,sInt ys,sInt count,sF32 cx,sF32 cy,sF32 angle,
+          sF32 sharpness,sF32 falloff,sU64 col0,sU64 col1)
+{
+  count = sClamp<sInt>(count,1,256);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 dx = (sF32(x)+0.5f)/xs - cx;
+      sF32 dy = (sF32(y)+0.5f)/ys - cy;
+      sF32 r = sFSqrt(dx*dx+dy*dy)*2;
+      sF32 a = sFATan2(dy,dx)/sPI2F - angle;
+
+      sF32 t = a*count;
+      t -= sRoundDown(t);
+      sF32 v = t<0.5f ? t*2 : (1-t)*2;
+      v = Sharpen01(v,sharpness);
+
+      // and fade the whole thing out with distance from the centre
+      sF32 fade = sClamp<sF32>(1.0f-r,0,1);
+      if(falloff!=1.0f)
+        fade = sFPow(fade,sMax(0.01f,falloff));
+
+      dst[x+y*xs] = Fade(col0,col1,v*fade);
+    }
+  }
+}
+
+void Hexagon(sU64 *dst,sInt xs,sInt ys,sInt countx,sInt county,sF32 width,
+             sInt seed,sF32 variation,sU64 col0,sU64 col1)
+{
+  countx = sMax(1,countx);
+  county = sMax(1,county);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 fx = sF32(x)/xs*countx;
+      sF32 fy = sF32(y)/ys*county;
+
+      // hex centres sit on two interleaved rectangular lattices; the nearest
+      // of the nine candidates around a point is the cell it belongs to, and
+      // the runner up says how close the border is
+      sF32 best = 1e9f, second = 1e9f;
+      sInt bx = 0,by = 0;
+      for(sInt oy=-1;oy<=1;oy++)
+      {
+        for(sInt ox=-1;ox<=1;ox++)
+        {
+          sInt ix = sInt(sRoundDown(fx))+ox;
+          sInt iy = sInt(sRoundDown(fy))+oy;
+          sF32 px = ix + ((iy&1) ? 0.5f : 0.0f) + 0.5f;
+          sF32 py = iy + 0.5f;
+          sF32 dx = fx-px, dy = (fy-py)*1.1547f;   // 2/sqrt(3): make them regular
+          sF32 d = sFSqrt(dx*dx+dy*dy);
+          if(d<best) { second = best; best = d; bx = ix; by = iy; }
+          else if(d<second) { second = d; }
+        }
+      }
+
+      sF32 edge = second-best;                     // 0 exactly on a border
+      sF32 v;
+      if(width<=0.0f)
+      {
+        v = 1.0f;
+      }
+      else
+      {
+        v = sClamp<sF32>(edge/width,0,1);
+      }
+
+      // let the cells differ from each other, the way real tiling does
+      if(variation>0)
+      {
+        sF32 r = NoiseAt(bx,by,0,seed);
+        v *= 1.0f - variation*r;
+      }
+
+      dst[x+y*xs] = Fade(col0,col1,v);
+    }
+  }
+}
+
+void Truchet(sU64 *dst,sInt xs,sInt ys,sInt count,sInt seed,sF32 width,
+             sBool diagonal,sU64 col0,sU64 col1)
+{
+  count = sClamp<sInt>(count,1,256);
+  if(width<=0.0f) width = 0.1f;
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 fx = sF32(x)/xs*count;
+      sF32 fy = sF32(y)/ys*count;
+      sInt ix = sInt(sRoundDown(fx));
+      sInt iy = sInt(sRoundDown(fy));
+      sF32 u = fx-ix, v = fy-iy;
+
+      // each cell picks one of the two rotations, and because both of them
+      // meet the cell border at the same four points, the tiles always join
+      if(NoiseHash(ix,iy,seed)&1)
+        u = 1.0f-u;
+
+      sF32 d;
+      if(diagonal)
+      {
+        d = sAbs(u-v)*0.70710678f;
+      }
+      else
+      {
+        // two quarter circles, around opposite corners
+        sF32 d0 = sAbs(sFSqrt(u*u+v*v)-0.5f);
+        sF32 d1 = sAbs(sFSqrt((1-u)*(1-u)+(1-v)*(1-v))-0.5f);
+        d = sMin(d0,d1);
+      }
+
+      sF32 t = sClamp<sF32>(1.0f-d/width,0,1);
+      dst[x+y*xs] = Fade(col0,col1,t);
+    }
+  }
+}
+
+void Weave(sU64 *dst,sInt xs,sInt ys,sInt countx,sInt county,sF32 width,
+           sF32 shadow,sU64 col0,sU64 col1,sU64 colgap)
+{
+  countx = sMax(1,countx);
+  county = sMax(1,county);
+  width = sClamp<sF32>(width,0.01f,1.0f);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 fx = sF32(x)/xs*countx;
+      sF32 fy = sF32(y)/ys*county;
+      sInt ix = sInt(sRoundDown(fx));
+      sInt iy = sInt(sRoundDown(fy));
+      sF32 u = fx-ix, v = fy-iy;
+
+      // in every other cell the horizontal strand passes over the vertical one
+      sBool horizontal = ((ix+iy)&1)==0;
+      sF32 across = horizontal ? v : u;
+
+      sF32 half = width*0.5f;
+      sF32 d = sAbs(across-0.5f);
+      if(d>half)
+      {
+        dst[x+y*xs] = colgap;
+        continue;
+      }
+
+      // round the strand off towards its edges
+      sF32 shade = 1.0f - shadow*(d/half)*(d/half);
+      sU64 col = horizontal ? col0 : col1;
+      Pixel p;
+      p.Load(col);
+      p.b = sInt(p.b*shade);
+      p.g = sInt(p.g*shade);
+      p.r = sInt(p.r*shade);
+      dst[x+y*xs] = p.Store();
+    }
+  }
+}
+
+void Wood(sU64 *dst,sInt xs,sInt ys,sF32 rings,sF32 turbulence,sInt octaves,
+          sInt seed,sF32 cx,sF32 cy,sF32 aspect,sU64 col0,sU64 col1)
+{
+  if(aspect<=0.0f) aspect = 1.0f;
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 dx = ((sF32(x)+0.5f)/xs - cx)*aspect;
+      sF32 dy = (sF32(y)+0.5f)/ys - cy;
+      sF32 r = sFSqrt(dx*dx+dy*dy);
+
+      // the rings are circles; the turbulence is what stops them looking
+      // like a target
+      sF32 t = r*rings + turbulence*Turbulence(dx*8,dy*8,0,octaves,seed);
+      t -= sRoundDown(t);
+      sF32 v = t<0.5f ? t*2 : (1-t)*2;
+      dst[x+y*xs] = Fade(col0,col1,v);
+    }
+  }
+}
+
+void Marble(sU64 *dst,sInt xs,sInt ys,sF32 freq,sF32 turbulence,sInt octaves,
+            sInt seed,sF32 angle,sF32 gamma,sU64 col0,sU64 col1)
+{
+  if(gamma<=0.0f) gamma = 1.0f;
+  sF32 ca = sFCos(angle*sPI2F);
+  sF32 sa = sFSin(angle*sPI2F);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 fx = sF32(x)/xs;
+      sF32 fy = sF32(y)/ys;
+      sF32 p = fx*ca + fy*sa;
+
+      sF32 t = p*freq + turbulence*Turbulence(fx*8,fy*8,0,octaves,seed);
+      sF32 v = sFSin(t*sPI2F)*0.5f+0.5f;
+      if(gamma!=1.0f) v = sFPow(v,gamma);
+      dst[x+y*xs] = Fade(col0,col1,v);
+    }
+  }
+}
+
+// sample a list of (position,colour) stops, the way Gradient does
+static sU64 SampleStops(const sF32 *pos,const sU64 *col,sInt count,sF32 t)
+{
+  if(count<=0) return 0;
+  if(count==1) return col[0];
+  if(t<=pos[0]) return col[0];
+  if(t>=pos[count-1]) return col[count-1];
+  for(sInt i=1;i<count;i++)
+  {
+    if(t<=pos[i])
+    {
+      sF32 span = pos[i]-pos[i-1];
+      sF32 f = span>0.00001f ? (t-pos[i-1])/span : 0;
+      return Fade(col[i-1],col[i],f);
+    }
+  }
+  return col[count-1];
+}
+
+void ShapeGradient(sU64 *dst,sInt xs,sInt ys,sInt mode,sF32 cx,sF32 cy,
+                   sF32 radius,sF32 angle,const sF32 *pos,const sU64 *col,
+                   sInt count,sBool repeat)
+{
+  if(count<1) return;
+  if(radius<=0.00001f) radius = 0.00001f;
+  sF32 ca = sFCos(-angle*sPI2F);
+  sF32 sa = sFSin(-angle*sPI2F);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 dx = (sF32(x)+0.5f)/xs - cx;
+      sF32 dy = (sF32(y)+0.5f)/ys - cy;
+      sF32 rx = dx*ca - dy*sa;
+      sF32 ry = dx*sa + dy*ca;
+
+      sF32 t;
+      switch(mode)
+      {
+      default:
+      case SHAPEGRAD_RADIAL:  t = sFSqrt(rx*rx+ry*ry)/radius; break;
+      case SHAPEGRAD_ANGULAR: t = sFATan2(ry,rx)/sPI2F + 0.5f; break;
+      case SHAPEGRAD_DIAMOND: t = (sAbs(rx)+sAbs(ry))/radius; break;
+      case SHAPEGRAD_SQUARE:  t = sMax(sAbs(rx),sAbs(ry))/radius; break;
+      }
+
+      if(repeat)
+      {
+        t -= sRoundDown(t);
+      }
+      dst[x+y*xs] = SampleStops(pos,col,count,sClamp<sF32>(t,0,1));
+    }
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   filters, second batch                                              ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+void Threshold(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt channel,
+               sF32 threshold,sF32 softness,sU64 col0,sU64 col1)
+{
+  sF32 lo = threshold - softness*0.5f;
+  sF32 hi = threshold + softness*0.5f;
+  if(hi-lo < 0.000001f) { lo = threshold-0.0000005f; hi = threshold+0.0000005f; }
+
+  for(sInt i=0;i<xs*ys;i++)
+  {
+    Pixel p;
+    p.Load(src[i]);
+    sF32 c = sF32(p.Channel(channel))/MaxChannel;
+    sF32 t = sClamp<sF32>((c-lo)/(hi-lo),0,1);
+    t = t*t*(3-2*t);                       // smoothstep, so the edge is not a stair
+    dst[i] = Fade(col0,col1,t);
+  }
+}
+
+void Curve(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt channelmask,
+           const sF32 *pos,const sF32 *value,sInt count)
+{
+  if(count<2) count = 0;
+
+  // bake the curve into a table once, rather than walking the point list per
+  // pixel per channel
+  static const sInt LutSize = 1024;
+  sInt *lut = new sInt[LutSize];
+  for(sInt i=0;i<LutSize;i++)
+  {
+    sF32 t = sF32(i)/(LutSize-1);
+    sF32 v = t;
+    if(count>=2)
+    {
+      if(t<=pos[0]) v = value[0];
+      else if(t>=pos[count-1]) v = value[count-1];
+      else
+      {
+        for(sInt j=1;j<count;j++)
+        {
+          if(t<=pos[j])
+          {
+            sF32 span = pos[j]-pos[j-1];
+            sF32 f = span>0.00001f ? (t-pos[j-1])/span : 0;
+            v = value[j-1] + (value[j]-value[j-1])*f;
+            break;
+          }
+        }
+      }
+    }
+    lut[i] = sInt(sClamp<sF32>(v,0,1)*MaxChannel);
+  }
+
+  for(sInt i=0;i<xs*ys;i++)
+  {
+    Pixel p;
+    p.Load(src[i]);
+    sInt *ch[4] = { &p.r,&p.g,&p.b,&p.a };
+    for(sInt c=0;c<4;c++)
+      if(channelmask & (1<<c))
+        *ch[c] = lut[sClamp<sInt>(*ch[c],0,MaxChannel)*(LutSize-1)/MaxChannel];
+    dst[i] = p.Store();
+  }
+
+  delete[] lut;
+}
+
+void Swizzle(sU64 *dst,sInt xs,sInt ys,const sU64 *const *src,
+             const sInt *channel,const sF32 *fill)
+{
+  for(sInt i=0;i<xs*ys;i++)
+  {
+    Pixel out;
+    sInt *ch[4] = { &out.r,&out.g,&out.b,&out.a };
+    for(sInt c=0;c<4;c++)
+    {
+      if(src[c])
+      {
+        Pixel p;
+        p.Load(src[c][i]);
+        *ch[c] = p.Channel(channel[c]);
+      }
+      else
+      {
+        *ch[c] = sInt(sClamp<sF32>(fill[c],0,1)*MaxChannel);
+      }
+    }
+    dst[i] = out.Store();
+  }
+}
+
+void Dither(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sInt levels,sInt mode,
+            sF32 strength)
+{
+  levels = sClamp<sInt>(levels,2,256);
+  sF32 step = sF32(MaxChannel)/(levels-1);
+  strength = sClamp<sF32>(strength,0,1);
+
+  static const sInt Bayer[8][8] =
+  {
+    { 0,32, 8,40, 2,34,10,42},{48,16,56,24,50,18,58,26},
+    {12,44, 4,36,14,46, 6,38},{60,28,52,20,62,30,54,22},
+    { 3,35,11,43, 1,33, 9,41},{51,19,59,27,49,17,57,25},
+    {15,47, 7,39,13,45, 5,37},{63,31,55,23,61,29,53,21},
+  };
+
+  if(mode==DITHER_ORDERED)
+  {
+    for(sInt y=0;y<ys;y++)
+    {
+      for(sInt x=0;x<xs;x++)
+      {
+        // the threshold matrix decides which way each pixel rounds
+        sF32 bias = (Bayer[y&7][x&7]/64.0f - 0.5f)*step*strength;
+        Pixel p;
+        p.Load(src[x+y*xs]);
+        sInt *ch[4] = { &p.b,&p.g,&p.r,&p.a };
+        for(sInt c=0;c<4;c++)
+        {
+          sF32 v = *ch[c] + bias;
+          *ch[c] = sInt(sRoundDown(v/step+0.5f)*step);
+        }
+        dst[x+y*xs] = p.Store();
+      }
+    }
+  }
+  else
+  {
+    // floyd-steinberg: carry what was rounded away into the neighbours
+    sF32 *err = new sF32[xs*ys*3];
+    for(sInt i=0;i<xs*ys*3;i++) err[i] = 0;
+
+    for(sInt y=0;y<ys;y++)
+    {
+      for(sInt x=0;x<xs;x++)
+      {
+        Pixel p;
+        p.Load(src[x+y*xs]);
+        sInt *ch[3] = { &p.b,&p.g,&p.r };
+        for(sInt c=0;c<3;c++)
+        {
+          sF32 v = *ch[c] + err[(x+y*xs)*3+c]*strength;
+          sF32 q = sRoundDown(v/step+0.5f)*step;
+          sF32 e = v-q;
+          *ch[c] = sInt(q);
+
+          if(x+1<xs)              err[((x+1)+(y  )*xs)*3+c] += e*7/16;
+          if(y+1<ys)
+          {
+            if(x>0)               err[((x-1)+(y+1)*xs)*3+c] += e*3/16;
+                                  err[((x  )+(y+1)*xs)*3+c] += e*5/16;
+            if(x+1<xs)            err[((x+1)+(y+1)*xs)*3+c] += e*1/16;
+          }
+        }
+        dst[x+y*xs] = p.Store();
+      }
+    }
+    delete[] err;
+  }
+}
+
+void MotionBlur(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 angle,
+                sF32 length,sInt samples,sInt wrap)
+{
+  samples = sClamp<sInt>(samples,1,256);
+  sF32 dx = sFCos(angle*sPI2F)*length;
+  sF32 dy = sFSin(angle*sPI2F)*length;
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 u = (sF32(x)+0.5f)/xs;
+      sF32 v = (sF32(y)+0.5f)/ys;
+      sInt ab=0,ag=0,ar=0,aa=0;
+
+      for(sInt i=0;i<samples;i++)
+      {
+        sF32 f = samples>1 ? sF32(i)/(samples-1)-0.5f : 0;
+        Pixel p;
+        p.Load(SampleBilinear(src,xs,ys,u+dx*f,v+dy*f,wrap));
+        ab += p.b; ag += p.g; ar += p.r; aa += p.a;
+      }
+
+      Pixel o;
+      o.b = ab/samples; o.g = ag/samples; o.r = ar/samples; o.a = aa/samples;
+      dst[x+y*xs] = o.Store();
+    }
+  }
+}
+
+void RadialBlur(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 cx,sF32 cy,
+                sF32 zoom,sF32 spin,sInt samples,sInt wrap)
+{
+  samples = sClamp<sInt>(samples,1,256);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 u = (sF32(x)+0.5f)/xs - cx;
+      sF32 v = (sF32(y)+0.5f)/ys - cy;
+      sInt ab=0,ag=0,ar=0,aa=0;
+
+      for(sInt i=0;i<samples;i++)
+      {
+        sF32 f = samples>1 ? sF32(i)/(samples-1)-0.5f : 0;
+        sF32 s = 1.0f + zoom*f;
+        sF32 a = spin*f*sPI2F;
+        sF32 ca = sFCos(a), sa = sFSin(a);
+
+        sF32 su = (u*ca - v*sa)*s + cx;
+        sF32 sv = (u*sa + v*ca)*s + cy;
+
+        Pixel p;
+        p.Load(SampleBilinear(src,xs,ys,su,sv,wrap));
+        ab += p.b; ag += p.g; ar += p.r; aa += p.a;
+      }
+
+      Pixel o;
+      o.b = ab/samples; o.g = ag/samples; o.r = ar/samples; o.a = aa/samples;
+      dst[x+y*xs] = o.Store();
+    }
+  }
+}
+
+void ChromaticAberration(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 cx,
+                         sF32 cy,sF32 amount,sBool radial,sF32 angle,sInt wrap)
+{
+  sF32 ca = sFCos(angle*sPI2F);
+  sF32 sa = sFSin(angle*sPI2F);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      sF32 u = (sF32(x)+0.5f)/xs;
+      sF32 v = (sF32(y)+0.5f)/ys;
+
+      sF32 ox,oy;
+      if(radial)
+      {
+        // a lens spreads the channels along the line to the centre, and more
+        // of it the further out you look
+        ox = (u-cx)*amount;
+        oy = (v-cy)*amount;
+      }
+      else
+      {
+        ox = ca*amount;
+        oy = sa*amount;
+      }
+
+      Pixel pr,pg,pb,o;
+      pr.Load(SampleBilinear(src,xs,ys,u+ox,v+oy,wrap));
+      pg.Load(SampleBilinear(src,xs,ys,u,v,wrap));
+      pb.Load(SampleBilinear(src,xs,ys,u-ox,v-oy,wrap));
+
+      o.r = pr.r; o.g = pg.g; o.b = pb.b; o.a = pg.a;
+      dst[x+y*xs] = o.Store();
+    }
+  }
+}
+
+void Seamless(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 border,sBool mirror)
+{
+  border = sClamp<sF32>(border,0.001f,0.5f);
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      // The trick is to blend the image with a copy of itself offset by half
+      // its size. What lands on the edge then comes from the middle, which is
+      // continuous across the wrap by construction.
+      sInt sx = mirror ? (xs-1-x) : ((x+xs/2)%xs);
+      sInt sy = mirror ? (ys-1-y) : ((y+ys/2)%ys);
+
+      sF32 u = sF32(x)/(xs-1);
+      sF32 v = sF32(y)/(ys-1);
+      sF32 du = sMin(u,1.0f-u)/border;
+      sF32 dv = sMin(v,1.0f-v)/border;
+      sF32 wu = sClamp<sF32>(du,0,1);
+      sF32 wv = sClamp<sF32>(dv,0,1);
+      wu = wu*wu*(3-2*wu);
+      wv = wv*wv*(3-2*wv);
+
+      dst[x+y*xs] = Fade(src[sx+sy*xs],src[x+y*xs],wu*wv);
+    }
+  }
+}
+
+void Equalize(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sBool perchannel,
+              sF32 amount)
+{
+  static const sInt Bins = 1024;
+  sInt size = xs*ys;
+  amount = sClamp<sF32>(amount,0,1);
+  if(size<=0) return;
+
+  sInt hist[4][Bins];
+  sInt map[4][Bins];
+  sInt channels = perchannel ? 3 : 1;
+
+  for(sInt c=0;c<channels;c++)
+    for(sInt i=0;i<Bins;i++)
+      hist[c][i] = 0;
+
+  for(sInt i=0;i<size;i++)
+  {
+    Pixel p;
+    p.Load(src[i]);
+    if(perchannel)
+    {
+      hist[0][p.r*(Bins-1)/MaxChannel]++;
+      hist[1][p.g*(Bins-1)/MaxChannel]++;
+      hist[2][p.b*(Bins-1)/MaxChannel]++;
+    }
+    else
+    {
+      hist[0][sClamp<sInt>(p.Channel(CHANNEL_LUMINANCE),0,MaxChannel)*(Bins-1)/MaxChannel]++;
+    }
+  }
+
+  // the running total of the histogram is the mapping that flattens it
+  for(sInt c=0;c<channels;c++)
+  {
+    sInt sum = 0;
+    for(sInt i=0;i<Bins;i++)
+    {
+      sum += hist[c][i];
+      map[c][i] = sInt(sF32(sum)/size*MaxChannel);
+    }
+  }
+
+  for(sInt i=0;i<size;i++)
+  {
+    Pixel p,o;
+    p.Load(src[i]);
+    if(perchannel)
+    {
+      o.r = map[0][p.r*(Bins-1)/MaxChannel];
+      o.g = map[1][p.g*(Bins-1)/MaxChannel];
+      o.b = map[2][p.b*(Bins-1)/MaxChannel];
+      o.a = p.a;
+    }
+    else
+    {
+      sInt lum = sClamp<sInt>(p.Channel(CHANNEL_LUMINANCE),1,MaxChannel);
+      sInt eq = map[0][lum*(Bins-1)/MaxChannel];
+      // scale the colour rather than replacing it, so hue survives
+      o.r = p.r*eq/lum;
+      o.g = p.g*eq/lum;
+      o.b = p.b*eq/lum;
+      o.a = p.a;
+    }
+
+    dst[i] = Fade(src[i],o.Store(),amount);
+  }
+}
+
+void NormalCombine(sU64 *dst,const sU64 *a,const sU64 *b,sInt xs,sInt ys,
+                   sF32 strength)
+{
+  for(sInt i=0;i<xs*ys;i++)
+  {
+    Pixel pa,pb,o;
+    pa.Load(a[i]);
+    pb.Load(b[i]);
+
+    sF32 ax = sF32(pa.r)/MaxChannel*2-1;
+    sF32 ay = sF32(pa.g)/MaxChannel*2-1;
+    sF32 az = sF32(pa.b)/MaxChannel*2-1;
+    sF32 bx = (sF32(pb.r)/MaxChannel*2-1)*strength;
+    sF32 by = (sF32(pb.g)/MaxChannel*2-1)*strength;
+    sF32 bz = sF32(pb.b)/MaxChannel*2-1;
+
+    // whiteout blend: add the slopes, multiply what is left pointing up
+    sF32 x = ax+bx;
+    sF32 y = ay+by;
+    sF32 z = az*bz;
+    sF32 len = sFSqrt(x*x+y*y+z*z);
+    if(len<0.00001f) { x = 0; y = 0; z = 1; len = 1; }
+    x /= len; y /= len; z /= len;
+
+    o.r = sInt((x*0.5f+0.5f)*MaxChannel);
+    o.g = sInt((y*0.5f+0.5f)*MaxChannel);
+    o.b = sInt((z*0.5f+0.5f)*MaxChannel);
+    o.a = pa.a;
+    dst[i] = o.Store();
+  }
+}
+
+void AmbientOcclusion(sU64 *dst,const sU64 *src,sInt xs,sInt ys,sF32 radius,
+                      sInt samples,sF32 height,sF32 strength,sInt wrap)
+{
+  samples = sClamp<sInt>(samples,4,64);
+  sInt steps = sClamp<sInt>(sInt(radius),1,64);
+  if(radius<1.0f) radius = 1.0f;
+
+  for(sInt y=0;y<ys;y++)
+  {
+    for(sInt x=0;x<xs;x++)
+    {
+      Pixel c;
+      c.Load(src[x+y*xs]);
+      sF32 h0 = sF32(c.Channel(CHANNEL_LUMINANCE))/MaxChannel*height;
+
+      sF32 occ = 0;
+      for(sInt s=0;s<samples;s++)
+      {
+        sF32 a = sF32(s)/samples*sPI2F;
+        sF32 dx = sFCos(a), dy = sFSin(a);
+
+        // walk outwards and remember the steepest thing in the way: that is
+        // the horizon in this direction
+        sF32 maxslope = 0;
+        for(sInt t=1;t<=steps;t++)
+        {
+          sF32 dist = radius*t/steps;
+          Pixel p;
+          p.Load(Fetch(src,xs,ys,x+sInt(dx*dist),y+sInt(dy*dist),wrap));
+          sF32 h = sF32(p.Channel(CHANNEL_LUMINANCE))/MaxChannel*height;
+          sF32 slope = (h-h0)/dist;
+          if(slope>maxslope) maxslope = slope;
+        }
+        occ += maxslope/sFSqrt(maxslope*maxslope+1);   // sin of the horizon angle
+      }
+
+      sF32 v = sClamp<sF32>(1.0f - occ/samples*strength,0,1);
+      Pixel o;
+      o.b = o.g = o.r = sInt(v*MaxChannel);
+      o.a = MaxChannel;
+      dst[x+y*xs] = o.Store();
+    }
+  }
+}
+
 /****************************************************************************/
 
 }
