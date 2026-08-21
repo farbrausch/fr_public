@@ -11,6 +11,7 @@
 /***                                                                      ***/
 /****************************************************************************/
 
+#include <stdlib.h>
 #include "base/types.hpp"
 #include "base/system.hpp"
 #include "base/math.hpp"
@@ -382,8 +383,8 @@ void sExitShaders()
 
 sShader *sCreateShaderRaw(sInt type,const sU8 *code,sInt bytes)
 {
-  sVERIFY(type & sSTF_PLATFORM);        // no more automatic setting of shader platform!
-//  type |= sGetShaderPlatform();
+  if(!(type & sSTF_PLATFORM))
+    type |= sGetShaderPlatform();
   sU32 hash;
   sShader *sh;
 
@@ -1889,7 +1890,7 @@ void sTextureProxy::Connect(sTextureBase *tex)
   }
 }
 
-#if sRENDERER!=sRENDER_DX9 && sRENDERER!=sRENDER_DX11 && sRENDERER!=sRENDER_OGLES2 && sRENDERER!=sRENDER_BLANK
+#if sRENDERER!=sRENDER_DX9 && sRENDERER!=sRENDER_DX11 && sRENDERER!=sRENDER_OGLES2 && sRENDERER!=sRENDER_BLANK && sRENDERER!=sRENDER_OGL2
 
 void sTextureProxy::Connect2()
 {
@@ -2550,12 +2551,17 @@ void sViewport::Prepare(sInt update)
       sVERIFYFALSE;
       return;
     }
-    /*
 #if sRENDERER==sRENDER_OGL2
-    mat.k.z = 2*mat.k.z - 1;
-    mat.l.z = 2*mat.l.z;
+    // Direct3D clips z to [0,w], OpenGL to [-w,w]. Left alone, half the
+    // depth buffer goes unused and geometry that D3D would have cut at the
+    // near plane still draws. z_gl = 2*z_d3d - w for every column, which
+    // covers the perspective case (w comes from z) and the pixel, screen
+    // and orthogonal ones (w is 1) in the same breath.
+    mat.i.z = 2*mat.i.z - mat.i.w;
+    mat.j.z = 2*mat.j.z - mat.j.w;
+    mat.k.z = 2*mat.k.z - mat.k.w;
+    mat.l.z = 2*mat.l.z - mat.l.w;
 #endif
-    */
     
     Proj = mat;
   }
@@ -4155,6 +4161,8 @@ void sGrabScreen(class sTexture2D *tex, sGrabFilterFlags filter, const sRect *ds
 
 void sSetTarget(const sTargetPara &para)
 {
+#if sRENDERER==sRENDER_OGL2
+#endif
   const sRect *r=0;
   if(!para.Window.IsEmpty())
     r = &para.Window;
@@ -4163,11 +4171,30 @@ void sSetTarget(const sTargetPara &para)
   if(para.Flags & sST_CLEARDEPTH) oldflags |= sCLEAR_ZBUFFER;
   if(para.Flags & sST_NOMSAA    ) oldflags |= sRTF_NO_MULTISAMPLING;
   if(!(para.Flags & sST_SCISSOR)) oldflags |= sCLEAR_NOSCISSOR;
+#if sRENDERER==sRENDER_OGL2
+  // The window's depth buffer belongs to the GL context rather than to an
+  // sTexture2D, so Depth is legitimately null when drawing to the screen.
+  // Dropping the depth clear for that case leaves the buffer at whatever it
+  // powered up as -- zero here -- and every fragment then fails the LEQUAL
+  // test, which is why nothing 3D ever appeared. Only an offscreen target
+  // with no depth attachment should lose its clear.
+  if(!para.Depth && para.Target[0])
+#else
   if(!para.Depth)
+#endif
   {
     oldflags |= sRTZBUF_NONE;
     oldflags &= ~sCLEAR_ZBUFFER;
   }
+
+#if sRENDERER==sRENDER_OGL2
+  // A depth texture as the z buffer is how a shadow map gets rendered. The
+  // old style entry points carry only a colour texture, so name it first.
+  {
+    extern void sSetRendertargetDepth(sTexture2D *depth);
+    sSetRendertargetDepth(para.Depth ? para.Depth->CastTex2D() : 0);
+  }
+#endif
 
   if(para.Target[1]==0 && para.Target[2]==0 && para.Target[3]==0)
   {
@@ -4198,6 +4225,13 @@ void sSetTarget(const sTargetPara &para)
       oldflags &= ~sCLEAR_COLOR;
     }
 
+#if sRENDERER==sRENDER_OGL2
+    // the per-target clears above consumed the arming, so say it again
+    {
+      extern void sSetRendertargetDepth(sTexture2D *depth);
+      sSetRendertargetDepth(para.Depth ? para.Depth->CastTex2D() : 0);
+    }
+#endif
     sSetRendertarget(r,oldflags,para.ClearColor[0].GetColor(),(sTexture2D **)para.Target,n);
   }
 }
@@ -4220,9 +4254,23 @@ void sCopyTexture(const sCopyTexturePara &para)
   }
   else if(para.Dest == sGetScreenColorBuffer())
   {
-    sVERIFY((para.Dest->Flags & sTEX_TYPE_MASK)==sTEX_2D);
+    // Renderers that have no texture object standing in for the backbuffer
+    // return a null pointer here, and a null Dest is then exactly what "copy
+    // to the window" looks like -- so check the texture we are about to cast,
+    // which is the source, rather than dereferencing the destination.
+    sVERIFY(para.Source && (para.Source->Flags & sTEX_TYPE_MASK)==sTEX_2D);
     sSetScreen((sTexture2D *)para.Source,oldflags,&para.DestRect,&para.SourceRect);
   }
+#if sRENDERER==sRENDER_OGL2 && defined(__APPLE__)
+  else if(para.Source && para.Dest &&
+          (para.Source->Flags & sTEX_TYPE_MASK)==sTEX_2D &&
+          (para.Dest->Flags & sTEX_TYPE_MASK)==sTEX_2D)
+  {
+    extern void sMacCopyTexture2D(sTexture2D *,sTexture2D *,const sRect *,const sRect *);
+    sMacCopyTexture2D((sTexture2D *)para.Dest,(sTexture2D *)para.Source,
+                      &para.DestRect,&para.SourceRect);
+  }
+#endif
   else
   {
     sVERIFYFALSE;

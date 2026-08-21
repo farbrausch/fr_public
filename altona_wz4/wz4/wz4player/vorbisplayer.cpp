@@ -248,6 +248,167 @@ private:
 };
 
 
+#else // sPLATFORM==sPLAT_WINDOWS
+
+/****************************************************************************/
+
+// Everywhere else altona already owns the audio device and hands out a single
+// stereo 16 bit callback (CoreAudio on macOS). So instead of a private mixing
+// thread filling a DirectSound ring, the renderers run straight inside that
+// callback, and the play position is the last callback's sample count plus
+// however much of it has had time to leave the device since.
+
+#include "base/sound.hpp"
+
+class bSoundOutput
+{
+public:
+
+  bSoundOutput()
+  {
+    RenderBuffer = 0;
+    Channels = 2;
+    Rate = 44100;
+    Running = sFALSE;
+    LastCount = 0;
+    LastTime = 0;
+  }
+
+  ~bSoundOutput()
+  {
+    Exit();
+  }
+
+  sBool Init(sInt rate, sInt channels)
+  {
+    Exit();
+
+    Channels = sMax(1,channels);
+    Rate = rate;
+    LastCount = 0;
+    LastTime = sGetTime();
+    RenderBuffer = new sF32[Channels*CHUNK];
+    Renderers.HintSize(MAX_RENDERERS);
+
+    Instance = this;
+    if(!sSetSoundHandler(rate,HandlerProxy,LATENCY_MS,0))
+    {
+      sLogF(L"snd",L"no audio output, playing silently\n");
+      Instance = 0;
+      sDeleteArray(RenderBuffer);
+      return sFALSE;
+    }
+
+    Running = sTRUE;
+    return sTRUE;
+  }
+
+  void Exit()
+  {
+    if(Running)
+    {
+      sClearSoundHandler();     // returns once the callback is off the device
+      Running = sFALSE;
+    }
+    if(Instance==this)
+      Instance = 0;
+    sDeleteArray(RenderBuffer);
+    Renderers.Reset();
+  }
+
+  void Register(bRenderer *r)
+  {
+    Lock();
+    Renderers.AddTail(r);
+    Unlock();
+  }
+
+  void Unregister(bRenderer *r)
+  {
+    Lock();
+    Renderers.RemOrder(r);
+    Unlock();
+  }
+
+  void Lock() { ThreadLock.Lock(); }
+  void Unlock() { ThreadLock.Unlock(); }
+
+  // How much of the samples handed over by the last callback has played by now.
+  sInt GetRemainder()
+  {
+    if(!Running) return 0;
+    return sClamp(sMulDiv(sInt(sGetTime()-LastTime),Rate,1000),0,LastCount);
+  }
+
+  sInt GetLatency() const { return LastCount; }
+  sInt GetChannels() const { return Channels; }
+  sInt GetRate() const { return Rate; }
+
+private:
+
+  static const sInt MAX_RENDERERS = 8;
+  static const sInt LATENCY_MS = 50;
+  static const sInt CHUNK = 1024;       // frames rendered per pass
+
+  static bSoundOutput *Instance;
+
+  static void HandlerProxy(sS16 *data, sInt count)
+  {
+    bSoundOutput *out = Instance;
+    if(out)
+      out->Handler(data,count);
+    else
+      sSetMem(data,0,count*4);
+  }
+
+  // count is in stereo frames; the renderers work in Channels-wide floats.
+  void Handler(sS16 *data, sInt count)
+  {
+    LastTime = sGetTime();
+
+    Lock();
+    for(sInt done=0; done<count; )
+    {
+      sInt todo = sMin(count-done,(sInt)CHUNK);
+      sSetMem(RenderBuffer,0,sizeof(sF32)*Channels*todo);
+
+      bRenderer *r;
+      sFORALL(Renderers,r)
+        r->Render(RenderBuffer,todo);
+
+      ClipTo(data+2*done,RenderBuffer,todo);
+      done += todo;
+    }
+    LastCount = count;
+    Unlock();
+  }
+
+  void ClipTo(sS16 *dst, const sF32 *src, sInt frames)
+  {
+    const sInt ch = Channels;
+    for(sInt i=0; i<frames; i++)
+    {
+      const sF32 l = src[0];
+      const sF32 r = (ch>1) ? src[1] : l;    // mono plays out of both speakers
+      src += ch;
+      *dst++ = sS16(sClamp(32760.0f*l,-32760.0f,+32760.0f));
+      *dst++ = sS16(sClamp(32760.0f*r,-32760.0f,+32760.0f));
+    }
+  }
+
+  sStaticArray<bRenderer*> Renderers;
+  sThreadLock ThreadLock;
+
+  sF32 *RenderBuffer;
+  sInt Channels;
+  sInt Rate;
+  sBool Running;
+  volatile sInt LastCount;              // frames the last callback asked for
+  volatile sInt LastTime;               // and when it asked, in ms
+};
+
+bSoundOutput *bSoundOutput::Instance = 0;
+
 #endif // Windows
 
 
@@ -310,12 +471,19 @@ struct bMusicPlayer::VerySecret : protected bRenderer
   {
     Exit();
     File = sCreateFile(filename);
+    if (!File)                          // missing song: play the demo silently
+    {
+      sLogF(L"snd",L"could not open <%s>\n",filename);
+      return;
+    }
     
     const sChar *ext = sFindFileExtension(filename);
     if (!sCmpStringI(ext,L"ogg"))
       InitVorbis(File->MapAll(),File->GetSize());
     else if (!sCmpStringI(ext,L"v2m"))
       InitV2(File->MapAll(),File->GetSize());
+    else
+      sLogF(L"snd",L"<%s> is neither an .ogg nor a .v2m\n",filename);
   }
 
   sBool InitCommon(void *ptr, sDInt size)

@@ -25,9 +25,7 @@ extern "C"
 
 	extern long __stdcall synthGetFrameSize(void *pthis);
 
-#ifdef RONAN
 	extern void __stdcall synthSetLyrics(void *pthis, const char **ptr);
-#endif
 
 }
 

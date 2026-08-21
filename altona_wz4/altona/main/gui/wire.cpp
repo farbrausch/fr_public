@@ -205,7 +205,7 @@ struct Shortcut                 // some kind of key binding
   FormInstance *Instance;       // with whom. may be 0
   Form *Class;                  // class to bind to. must be set
   sU32 Key;                     // key to press (may be 0)
-  sInt Qual;                    // zusätzliche wire qualifier
+  sInt Qual;                    // zusÃ¤tzliche wire qualifier
   sInt Hit;                     // for drags, when QUAL_HIT is set
   sInt Sets;                    // swithc between command sets, 0 = all sets
   CommandTool *Tool;            // use only when tool is active!
@@ -691,7 +691,9 @@ void sWireMasterWindow::ProcessText(const sChar *text,const sChar *reffilename)
 
   _Global();
 
-  sVERIFY(Scan->Errors == 0);
+  if(Scan->Errors)
+    sFatal(L"wire script error in %s:\n%s",reffilename?reffilename:L"(unknown)",(const sChar *)Scan->ErrorMsg);
+
   sDelete(Scan);
 }
 
@@ -707,7 +709,9 @@ void sWireMasterWindow::ProcessFile(const sChar *name)
 
   _Global();
 
-  sVERIFY(Scan->Errors == 0);
+  if(Scan->Errors)
+    sFatal(L"wire script error in %s:\n%s",name?name:L"(unknown)",(const sChar *)Scan->ErrorMsg);
+
   sDelete(Scan);
 }
 

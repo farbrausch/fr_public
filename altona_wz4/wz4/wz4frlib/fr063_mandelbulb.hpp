@@ -53,7 +53,7 @@ public:
 
 class MandelbulbIsoData : public wObject
 {
-  friend static void CalcNodeT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
+  friend void CalcNodeT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
   enum IsoEnum
   {
     CellSize = 8,
@@ -111,7 +111,7 @@ public:
 
 class RNFR063_MandelbulbIso : public Wz4RenderNode
 {
-  friend static void MarchIsoT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
+  friend void MarchIsoT(sStsManager *,sStsThread *thread,sInt start,sInt count,void *data);
 
   enum IsoEnum
   {

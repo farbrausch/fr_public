@@ -1,0 +1,27 @@
+# Build directories
+build/
+build_*/
+bin/
+tools/shadercompile_host
+tools/shadercompile_host.dSYM
+*.o
+*.obj
+*.a
+*.dylib
+*.so
+*.out
+*.exe
+*.bin
+*.psfr
+*.vsfr
+
+# Editor autosaves: werkkzeug4 drops "!<n>_autosave.wz4" into a backup/ next to
+# whatever it has open, and into the working directory it was started from.
+backup/
+
+# Generated test media
+*.wav
+*.tga
+
+# System files
+.DS_Store

@@ -1,0 +1,1516 @@
+/*+**************************************************************************/
+/***                                                                      ***/
+/***   This file is distributed under a BSD license.                      ***/
+/***   See LICENSE.txt for details.                                       ***/
+/***                                                                      ***/
+/**************************************************************************+*/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Operators the wz3 bitmap generator and the wz4 mesh cannot          ***/
+/***   otherwise express. They extend the existing GenBitmap and Wz4Mesh   ***/
+/***   types rather than introducing new ones, so they turn up in the      ***/
+/***   same columns as everything else.                                   ***/
+/***                                                                      ***/
+/***   The work happens in wz4_extra_bitmap.cpp and wz4_extra_mesh.cpp.    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+header
+{
+#include "wz4lib/basic_ops.hpp"
+#include "wz4frlib/wz3_bitmap_ops.hpp"
+#include "wz4frlib/wz3_bitmap_code.hpp"
+#include "wz4frlib/wz4_mesh.hpp"
+#include "wz4frlib/wz4_mesh_ops.hpp"
+}
+
+code
+{
+#include "wz4frlib/wz4_extra_bitmap.hpp"
+#include "wz4frlib/wz4_extra_mesh.hpp"
+
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap generators                                                  ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Checker()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Count[2](1..256) = 8;
+    float Offset(-4..4 step 0.01) = 0;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Checker(out->Data,out->XSize,out->YSize,para->Count[0],para->Count[1],
+            para->Offset,Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Sine()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Waves(1..16) = 3;
+    float Frequency(0..64 step 0.01) = 3;
+    float Angle(-1..1 step 0.001) = 0;
+    float Spread(-1..1 step 0.001) = 0.19;
+    float Phase(-4..4 step 0.001) = 0;
+    float Amplify(0..16 step 0.01) = 1;
+    float Gamma(0.01..16 step 0.01) = 1;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Sine(out->Data,out->XSize,out->YSize,para->Waves,para->Frequency,
+         para->Angle,para->Spread,para->Phase,para->Amplify,para->Gamma,
+         Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Julia()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    flags Mode("julia|mandelbrot") = 0;
+    if(Mode==0)
+    {
+      float C[2](-2..2 step 0.0001) = { -0.79, 0.15 };
+    }
+    float Center[2](-4..4 step 0.0001) = 0;
+    float Zoom(0.001..4096 step 0.001) = 0.7;
+    int Iterations(1..4096) = 128;
+    float Cycle(1..1024 step 0.1) = 24;
+    color ColorIn("rgba") = 0xff000000;
+    color Color0("rgba") = 0xff204080;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Julia(out->Data,out->XSize,out->YSize,para->Mode==0,para->C[0],para->C[1],
+          para->Center[0],para->Center[1],para->Zoom,para->Iterations,para->Cycle,
+          Wz4Extra::Color64(para->ColorIn),Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap filters                                                     ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+// in1 is a palette: its first row is the ramp the source is mapped through,
+// so a Gradient with a small height is exactly the right thing to feed it.
+
+operator GenBitmap Colorize(GenBitmap,GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Channel("luminance|red|green|blue|alpha") = 0;
+    flags Flags("replace alpha|keep alpha") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Colorize(out->Data,in0->Data,out->XSize,out->YSize,
+             in1->Data,in1->XSize,para->Channel,para->Flags&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Morphology(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Mode("erode|dilate|open|close") = 0;
+    int Radius(0..64) = 2;
+    flags Shape("square|circle") = 1;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Morphology(out->Data,in0->Data,out->XSize,out->YSize,para->Mode,
+               para->Radius,para->Shape&1,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Median(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Size("3x3|5x5|7x7") = 0;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Median(out->Data,in0->Data,out->XSize,out->YSize,para->Size+1,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Sobel(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Mode("magnitude|emboss") = 0;
+    flags Channel("luminance|red|green|blue|alpha") = 0;
+    if(Mode==1)
+    {
+      float Angle(-1..1 step 0.001) = 0;
+    }
+    float Amplify(0..64 step 0.01) = 1;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Sobel(out->Data,in0->Data,out->XSize,out->YSize,para->Mode,para->Channel,
+          para->Angle,para->Amplify,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap special / samplers                                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap DistanceField(GenBitmap)
+{
+  column = 2;
+  parameter
+  {
+    flags Channel("luminance|red|green|blue|alpha") = 0;
+    float Threshold(0..1 step 0.001) = 0.5;
+    float Range(0.1..1024 step 0.1) = 32;
+    flags Border("clamp|tile") = 0;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::DistanceField(out->Data,in0->Data,out->XSize,out->YSize,para->Channel,
+                  para->Threshold,para->Range,para->Border&1,
+                  Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Kaleidoscope(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    int Sectors(1..256) = 6;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Angle(-4..4 step 0.001) = 0;
+    float Zoom(0.001..64 step 0.001) = 1;
+    flags Flags("repeat|mirror") = 1;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Kaleidoscope(out->Data,in0->Data,out->XSize,out->YSize,para->Sectors,
+                 para->Center[0],para->Center[1],para->Angle,para->Zoom,
+                 para->Flags&1,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+// in0 is what gets stamped on, in1 is the stamp
+
+operator GenBitmap Scatter(GenBitmap,GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    int Count(0..4096) = 32;
+    int Seed(0..65535) = 1;
+    float Scale[2](0.001..16 step 0.001) = { 0.1, 0.4 };
+    float Angle[2](-4..4 step 0.001) = { 0, 1 };
+    float Alpha(0..1 step 0.001) = 1;
+    float Tint(0..1 step 0.001) = 0;
+    flags Mode("over|add|max") = 0;
+    flags Border("clamp|tile") = 1;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Scatter(out->Data,in0->Data,out->XSize,out->YSize,
+            in1->Data,in1->XSize,in1->YSize,
+            para->Count,para->Seed,para->Scale[0],para->Scale[1],
+            para->Angle[0],para->Angle[1],para->Alpha,para->Tint,
+            para->Mode,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh primitives                                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Icosphere()
+{
+  column = 0;
+  parameter
+  {
+    int Subdivisions(0..6) = 2;
+    float Radius(0..1024 step 0.01) = 0.5;
+  }
+  code
+  {
+    Wz4Extra::MakeIcosphere(out,para->Subdivisions,para->Radius);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Platonic()
+{
+  column = 0;
+  parameter
+  {
+    flags Type("tetrahedron|cube|octahedron|dodecahedron|icosahedron") = 4;
+    float Radius(0..1024 step 0.01) = 0.5;
+  }
+  code
+  {
+    Wz4Extra::MakePlatonic(out,para->Type,para->Radius);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh TorusKnot()
+{
+  column = 0;
+  parameter
+  {
+    int P "P (around the axis)" (1..32) = 2;
+    int Q "Q (through the hole)" (1..32) = 3;
+    int Segments(3..4096) = 256;
+    int Slices(3..256) = 12;
+    float Radius(0..1024 step 0.01) = 0.5;
+    float RingRadius(0..1024 step 0.01) = 0.2;
+    float TubeRadius(0..1024 step 0.01) = 0.06;
+    flags Flags("open|caps") = 0;
+  }
+  code
+  {
+    Wz4Extra::MakeTorusKnot(out,para->P,para->Q,para->Segments,para->Slices,
+                            para->Radius,para->RingRadius,para->TubeRadius,para->Flags&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Supershape()
+{
+  column = 0;
+  parameter
+  {
+    int Segments "Segments (around)" (3..1024) = 96;
+    int Slices "Slices (pole to pole)" (3..1024) = 48;
+    float Radius(0..1024 step 0.01) = 0.5;
+    group "longitude";
+    float M0 "m" (0..64 step 0.01) = 6;
+    float N0 "n1,n2,n3" [3] (0.01..64 step 0.01) = { 1, 1, 1 };
+    float AB0 "a,b" [2] (0.01..16 step 0.01) = 1;
+    group "latitude";
+    float M1 "m" (0..64 step 0.01) = 3;
+    float N1 "n1,n2,n3" [3] (0.01..64 step 0.01) = { 1, 1, 1 };
+    float AB1 "a,b" [2] (0.01..16 step 0.01) = 1;
+  }
+  code
+  {
+    sF32 p0[6] = { para->M0,para->N0[0],para->N0[1],para->N0[2],para->AB0[0],para->AB0[1] };
+    sF32 p1[6] = { para->M1,para->N1[0],para->N1[1],para->N1[2],para->AB1[0],para->AB1[1] };
+    Wz4Extra::MakeSupershape(out,para->Segments,para->Slices,para->Radius,p0,p1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Spring()
+{
+  column = 0;
+  parameter
+  {
+    float Turns(0.01..1024 step 0.01) = 4;
+    float Radius(0..1024 step 0.01) = 0.4;
+    float Height(0..1024 step 0.01) = 1;
+    int Segments "Segments per turn" (3..256) = 32;
+    int Slices(3..256) = 10;
+    float TubeRadius(0..1024 step 0.001) = 0.05;
+    float Taper(-1..1 step 0.001) = 0;
+    flags Flags("open|caps") = 1;
+  }
+  code
+  {
+    Wz4Extra::MakeSpring(out,para->Turns,para->Radius,para->Height,para->Segments,
+                         para->Slices,para->TubeRadius,para->Taper,para->Flags&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Lathe()
+{
+  column = 0;
+  parameter
+  {
+    int Segments(3..4096) = 32;
+    float Arc(0.001..1 step 0.001) = 1;
+    flags Flags("open|caps") = 1;
+    array
+    {
+      float Radius(0..1024 step 0.01);
+      float Height(-1024..1024 step 0.01);
+    }
+  }
+  code
+  {
+    if(cmd->ArrayCount<2) return 0;
+    sF32 *profile = new sF32[cmd->ArrayCount*2];
+    Wz4MeshArrayLathe *a = (Wz4MeshArrayLathe *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      profile[i*2+0] = a[i].Radius;
+      profile[i*2+1] = a[i].Height;
+    }
+    Wz4Extra::MakeLathe(out,profile,cmd->ArrayCount,para->Segments,para->Arc,para->Flags&1);
+    delete[] profile;
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh modifiers                                                     ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Shell(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Thickness(-1024..1024 step 0.001) = 0.02;
+    flags Mode("outside|inside|centered") = 1;
+  }
+  code
+  {
+    Wz4Extra::Shell(out,para->Thickness,para->Mode);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Smooth(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    int Iterations(1..64) = 4;
+    float Strength(0..1 step 0.001) = 0.5;
+    flags Mode("laplacian|taubin") = 1;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::Smooth(out,para->Iterations,para->Strength,para->Mode&1,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh UVProject(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Mode("planar|cylindrical|spherical|box") = 0;
+    flags UVSet("uv0|uv1") = 0;
+    float Tile[2](-1024..1024 step 0.001) = 1;
+    float Offset[2](-1024..1024 step 0.001) = 0;
+    group "projector";
+    float31 Scale(-1024..1024 step 0.01) = { 1,1,1 };
+    float30 Rot(-64..64 step 0.001) = { 0,0,0 };
+    float31 Trans(-1024..1024 step 0.01) = { 0,0,0 };
+  }
+  code
+  {
+    sSRT srt;
+    srt.Scale = para->Scale;
+    srt.Rotate = para->Rot;
+    srt.Translate = para->Trans;
+    sMatrix34 mat;
+    srt.MakeMatrix(mat);
+    Wz4Extra::UVProject(out,para->Mode,para->UVSet,mat,
+                        para->Tile[0],para->Tile[1],para->Offset[0],para->Offset[1]);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Weld(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Threshold(0.000001..1024 step 0.0001) = 0.001;
+    flags Flags("keep normals|recalculate normals") = 1;
+  }
+  code
+  {
+    Wz4Extra::Weld(out,para->Threshold,para->Flags&1);
+  }
+}
+
+/****************************************************************************/
+
+// in0 is the surface to cover, in1 is what gets planted on it
+
+operator Wz4Mesh ScatterOnMesh(Wz4Mesh,Wz4Mesh)
+{
+  column = 3;
+  parameter
+  {
+    int Count(0..16384) = 64;
+    int Seed(0..65535) = 1;
+    float Scale[2](0.001..1024 step 0.001) = { 0.1, 0.2 };
+    float Align(0..1 step 0.001) = 1;
+    flags Flags("no spin|random spin:*1drop surface|keep surface") = 3;
+  }
+  code
+  {
+    Wz4Extra::ScatterOnMesh(out,in0,in1,para->Count,para->Seed,
+                            para->Scale[0],para->Scale[1],para->Align,
+                            para->Flags&1,(para->Flags>>1)&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap generators, second batch                                    ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Noise()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Seed(0..65535) = 1;
+    flags Mode("monochrome|colour") = 0;
+    float Gamma(0.01..16 step 0.01) = 1;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Noise(out->Data,out->XSize,out->YSize,para->Seed,para->Mode&1,
+                    para->Gamma,Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Spiral()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Arms(1..64) = 3;
+    float Twist(-64..64 step 0.01) = 6;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Sharpness(0..1 step 0.001) = 0;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Spiral(out->Data,out->XSize,out->YSize,para->Arms,para->Twist,
+                     para->Center[0],para->Center[1],para->Sharpness,
+                     Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Rays()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Count(1..256) = 16;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Angle(-4..4 step 0.001) = 0;
+    float Sharpness(0..1 step 0.001) = 0.3;
+    float Falloff(0.01..16 step 0.01) = 1.5;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Rays(out->Data,out->XSize,out->YSize,para->Count,para->Center[0],
+                   para->Center[1],para->Angle,para->Sharpness,para->Falloff,
+                   Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Hexagon()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Count[2](1..256) = { 6, 7 };
+    float Width(0..1 step 0.001) = 0.08;
+    int Seed(0..65535) = 1;
+    float Variation(0..1 step 0.001) = 0;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Hexagon(out->Data,out->XSize,out->YSize,para->Count[0],para->Count[1],
+                      para->Width,para->Seed,para->Variation,
+                      Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Truchet()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Count(1..256) = 8;
+    int Seed(0..65535) = 1;
+    float Width(0.001..1 step 0.001) = 0.08;
+    flags Mode("arcs|diagonals") = 0;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Truchet(out->Data,out->XSize,out->YSize,para->Count,para->Seed,
+                      para->Width,para->Mode&1,
+                      Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Weave()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    int Count[2](1..256) = 8;
+    float Width(0.01..1 step 0.001) = 0.8;
+    float Shadow(0..1 step 0.001) = 0.6;
+    color Color0 "Warp"("rgba") = 0xffc08040;
+    color Color1 "Weft"("rgba") = 0xff5a3a1a;
+    color ColorGap "Gap"("rgba") = 0xff000000;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Weave(out->Data,out->XSize,out->YSize,para->Count[0],para->Count[1],
+                    para->Width,para->Shadow,Wz4Extra::Color64(para->Color0),
+                    Wz4Extra::Color64(para->Color1),Wz4Extra::Color64(para->ColorGap));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Wood()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    float Rings(0..256 step 0.1) = 14;
+    float Turbulence(0..16 step 0.01) = 0.6;
+    int Octaves(1..10) = 4;
+    int Seed(0..65535) = 1;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Aspect(0.01..16 step 0.01) = 1;
+    color Color0("rgba") = 0xff5a3a1a;
+    color Color1("rgba") = 0xffc08040;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Wood(out->Data,out->XSize,out->YSize,para->Rings,para->Turbulence,
+                   para->Octaves,para->Seed,para->Center[0],para->Center[1],
+                   para->Aspect,Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Marble()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    float Frequency(0..256 step 0.1) = 4;
+    float Turbulence(0..16 step 0.01) = 1.2;
+    int Octaves(1..10) = 5;
+    int Seed(0..65535) = 1;
+    float Angle(-4..4 step 0.001) = 0.12;
+    float Gamma(0.01..16 step 0.01) = 1;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    Wz4Extra::Marble(out->Data,out->XSize,out->YSize,para->Frequency,para->Turbulence,
+                     para->Octaves,para->Seed,para->Angle,para->Gamma,
+                     Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap ShapeGradient()
+{
+  column = 0;
+  parameter
+  {
+    flags Size(" 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192"
+            ":*8 1| 2| 4| 8| 16| 32| 64| 128| 256| 512| 1024| 2048| 4096| 8192")=0x0808;
+    flags Mode("radial|angular|diamond|square") = 0;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Radius(0.001..16 step 0.001) = 0.5;
+    float Angle(-4..4 step 0.001) = 0;
+    flags Flags("clamp|repeat") = 0;
+    array
+    {
+      float Pos(0..1 step 0.01);
+      color Color("rgba");
+    }
+  }
+  code
+  {
+    out->Init(1<<(para->Size&0xff),1<<((para->Size>>8)&0xff));
+    if(cmd->ArrayCount<1) return 0;
+
+    sF32 *pos = new sF32[cmd->ArrayCount];
+    sU64 *col = new sU64[cmd->ArrayCount];
+    GenBitmapArrayShapeGradient *a = (GenBitmapArrayShapeGradient *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      pos[i] = a[i].Pos;
+      col[i] = Wz4Extra::Color64(a[i].Color);
+    }
+    Wz4Extra::ShapeGradient(out->Data,out->XSize,out->YSize,para->Mode,
+                            para->Center[0],para->Center[1],para->Radius,para->Angle,
+                            pos,col,cmd->ArrayCount,para->Flags&1);
+    delete[] pos;
+    delete[] col;
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap filters, second batch                                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap Threshold(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Channel("luminance|red|green|blue|alpha") = 0;
+    float Threshold(0..1 step 0.001) = 0.5;
+    float Softness(0..1 step 0.001) = 0.02;
+    color Color0("rgba") = 0xff000000;
+    color Color1("rgba") = 0xffffffff;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Threshold(out->Data,in0->Data,out->XSize,out->YSize,para->Channel,
+                        para->Threshold,para->Softness,
+                        Wz4Extra::Color64(para->Color0),Wz4Extra::Color64(para->Color1));
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Curve(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Channels("*0-|red:*1-|green:*2-|blue:*3-|alpha") = 7;
+    array
+    {
+      float Pos(0..1 step 0.01);
+      float Value(0..1 step 0.01);
+    }
+  }
+  code
+  {
+    out->InitSize(in0);
+    sF32 *pos = 0,*val = 0;
+    if(cmd->ArrayCount>0)
+    {
+      pos = new sF32[cmd->ArrayCount];
+      val = new sF32[cmd->ArrayCount];
+      GenBitmapArrayCurve *a = (GenBitmapArrayCurve *) cmd->Array;
+      for(sInt i=0;i<cmd->ArrayCount;i++)
+      {
+        pos[i] = a[i].Pos;
+        val[i] = a[i].Value;
+      }
+    }
+    Wz4Extra::Curve(out->Data,in0->Data,out->XSize,out->YSize,para->Channels,
+                    pos,val,cmd->ArrayCount);
+    delete[] pos;
+    delete[] val;
+  }
+}
+
+/****************************************************************************/
+
+// one input per output channel; leave one unconnected to use the constant
+
+operator GenBitmap Swizzle(?GenBitmap,?GenBitmap,?GenBitmap,?GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Red("luminance|red|green|blue|alpha") = 1;
+    flags Green("luminance|red|green|blue|alpha") = 2;
+    flags Blue("luminance|red|green|blue|alpha") = 3;
+    flags Alpha("luminance|red|green|blue|alpha") = 4;
+    float Fill[4](0..1 step 0.001) = { 0,0,0,1 };
+  }
+  code
+  {
+    GenBitmap *ins[4] = { in0,in1,in2,in3 };
+    GenBitmap *first = 0;
+    for(sInt i=0;i<4;i++)
+      if(ins[i] && !first)
+        first = ins[i];
+    if(!first) return 0;
+
+    out->InitSize(first);
+    for(sInt i=0;i<4;i++)
+      if(ins[i] && (ins[i]->XSize!=out->XSize || ins[i]->YSize!=out->YSize))
+        return 0;
+
+    const sU64 *src[4];
+    sInt ch[4] = { para->Red,para->Green,para->Blue,para->Alpha };
+    sF32 fill[4] = { para->Fill[0],para->Fill[1],para->Fill[2],para->Fill[3] };
+    for(sInt i=0;i<4;i++)
+      src[i] = ins[i] ? ins[i]->Data : 0;
+
+    Wz4Extra::Swizzle(out->Data,out->XSize,out->YSize,src,ch,fill);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Dither(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    int Levels(2..256) = 4;
+    flags Mode("ordered|error diffusion") = 0;
+    float Strength(0..1 step 0.001) = 1;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Dither(out->Data,in0->Data,out->XSize,out->YSize,para->Levels,
+                     para->Mode,para->Strength);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Equalize(GenBitmap)
+{
+  column = 1;
+  parameter
+  {
+    flags Mode("luminance|per channel") = 0;
+    float Amount(0..1 step 0.001) = 1;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Equalize(out->Data,in0->Data,out->XSize,out->YSize,para->Mode&1,
+                       para->Amount);
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Bitmap special and samplers, second batch                          ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator GenBitmap NormalCombine(GenBitmap,GenBitmap)
+{
+  column = 2;
+  parameter
+  {
+    float Strength(0..16 step 0.001) = 1;
+  }
+  code
+  {
+    if(in0->XSize!=in1->XSize || in0->YSize!=in1->YSize) return 0;
+    out->InitSize(in0);
+    Wz4Extra::NormalCombine(out->Data,in0->Data,in1->Data,out->XSize,out->YSize,
+                            para->Strength);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap AmbientOcclusion(GenBitmap)
+{
+  column = 2;
+  parameter
+  {
+    float Radius(1..64 step 0.1) = 16;
+    int Samples(4..64) = 16;
+    float Height(0.01..256 step 0.01) = 24;
+    float Strength(0..8 step 0.001) = 1;
+    flags Border("clamp|tile") = 1;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::AmbientOcclusion(out->Data,in0->Data,out->XSize,out->YSize,
+                               para->Radius,para->Samples,para->Height,
+                               para->Strength,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap MotionBlur(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    float Angle(-4..4 step 0.001) = 0;
+    float Length(0..4 step 0.0001) = 0.05;
+    int Samples(1..256) = 24;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::MotionBlur(out->Data,in0->Data,out->XSize,out->YSize,para->Angle,
+                         para->Length,para->Samples,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap RadialBlur(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Zoom(-4..4 step 0.0001) = 0.2;
+    float Spin(-4..4 step 0.0001) = 0;
+    int Samples(1..256) = 24;
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::RadialBlur(out->Data,in0->Data,out->XSize,out->YSize,
+                         para->Center[0],para->Center[1],para->Zoom,para->Spin,
+                         para->Samples,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap ChromaticAberration(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    flags Mode("radial|directional") = 0;
+    float Center[2](-4..4 step 0.001) = 0.5;
+    float Amount(-4..4 step 0.0001) = 0.05;
+    if(Mode==1)
+    {
+      float Angle(-4..4 step 0.001) = 0;
+    }
+    flags Border("clamp|tile") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::ChromaticAberration(out->Data,in0->Data,out->XSize,out->YSize,
+                                  para->Center[0],para->Center[1],para->Amount,
+                                  para->Mode==0,para->Angle,para->Border&1);
+  }
+}
+
+/****************************************************************************/
+
+operator GenBitmap Seamless(GenBitmap)
+{
+  column = 3;
+  parameter
+  {
+    float Border(0.001..0.5 step 0.001) = 0.25;
+    flags Mode("offset|mirror") = 0;
+  }
+  code
+  {
+    out->InitSize(in0);
+    Wz4Extra::Seamless(out->Data,in0->Data,out->XSize,out->YSize,para->Border,
+                       para->Mode&1);
+  }
+}
+
+/****************************************************************************/
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh primitives, second batch                                      ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Cone()
+{
+  column = 0;
+  parameter
+  {
+    int Slices(3..4096) = 24;
+    int Segments(1..1024) = 1;
+    float Radius[2](0..1024 step 0.001) = { 0.5, 0 };
+    float Height(0..1024 step 0.01) = 1;
+    flags Flags("open|caps") = 1;
+  }
+  code
+  {
+    Wz4Extra::MakeCone(out,para->Slices,para->Segments,para->Radius[0],
+                       para->Radius[1],para->Height,para->Flags&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Capsule()
+{
+  column = 0;
+  parameter
+  {
+    int Slices(3..4096) = 24;
+    int Segments(1..1024) = 1;
+    int CapSegments(1..256) = 8;
+    float Radius(0..1024 step 0.001) = 0.3;
+    float Height "Height (straight part)"(0..1024 step 0.01) = 0.6;
+  }
+  code
+  {
+    Wz4Extra::MakeCapsule(out,para->Slices,para->Segments,para->CapSegments,
+                          para->Radius,para->Height);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Tube()
+{
+  column = 0;
+  parameter
+  {
+    int Slices(3..4096) = 32;
+    int Segments(1..1024) = 1;
+    float Outer(0..1024 step 0.001) = 0.5;
+    float Inner(0..1024 step 0.001) = 0.35;
+    float Height(0..1024 step 0.01) = 0.8;
+    flags Flags("open|caps") = 1;
+  }
+  code
+  {
+    Wz4Extra::MakeTube(out,para->Slices,para->Segments,para->Outer,para->Inner,
+                       para->Height,para->Flags&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh RoundedBox()
+{
+  column = 0;
+  parameter
+  {
+    int Segments(1..64) = 4;
+    float31 Size(0..1024 step 0.01) = { 1,1,1 };
+    float Radius(0.001..512 step 0.001) = 0.15;
+  }
+  code
+  {
+    Wz4Extra::MakeRoundedBox(out,para->Segments,para->Size.x,para->Size.y,
+                             para->Size.z,para->Radius);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Gear()
+{
+  column = 0;
+  parameter
+  {
+    int Teeth(3..256) = 16;
+    float Outer(0..1024 step 0.001) = 0.5;
+    float Root(0..1024 step 0.001) = 0.38;
+    float Bore(0..1024 step 0.001) = 0.12;
+    float Thickness(0.001..1024 step 0.001) = 0.15;
+    float ToothWidth(0.05..0.95 step 0.001) = 0.5;
+  }
+  code
+  {
+    Wz4Extra::MakeGear(out,para->Teeth,para->Outer,para->Root,para->Bore,
+                       para->Thickness,para->ToothWidth);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Star()
+{
+  column = 0;
+  parameter
+  {
+    int Points(3..256) = 5;
+    float Outer(0..1024 step 0.001) = 0.5;
+    float Inner(0..1024 step 0.001) = 0.2;
+    float Bore(0..1024 step 0.001) = 0;
+    float Thickness(0.001..1024 step 0.001) = 0.12;
+  }
+  code
+  {
+    Wz4Extra::MakeStar(out,para->Points,para->Outer,para->Inner,para->Bore,
+                       para->Thickness);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Mobius()
+{
+  column = 0;
+  parameter
+  {
+    int Segments(3..4096) = 96;
+    int Slices(1..256) = 8;
+    float Radius(0..1024 step 0.001) = 0.5;
+    float Width(0..1024 step 0.001) = 0.25;
+    int Twists(1..64) = 1;
+  }
+  code
+  {
+    Wz4Extra::MakeMobius(out,para->Segments,para->Slices,para->Radius,
+                         para->Width,para->Twists);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Screw()
+{
+  column = 0;
+  parameter
+  {
+    int Segments "Segments per turn"(3..512) = 32;
+    float Turns(0.1..1024 step 0.01) = 5;
+    float Radius(0..1024 step 0.001) = 0.3;
+    float Depth(0..1024 step 0.001) = 0.08;
+    float Pitch(0.001..1024 step 0.001) = 0.15;
+    float Shoulder(0..0.49 step 0.001) = 0.15;
+    flags Flags("open|caps") = 1;
+  }
+  code
+  {
+    Wz4Extra::MakeScrew(out,para->Segments,para->Turns,para->Radius,para->Depth,
+                        para->Pitch,para->Shoulder,para->Flags&1);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+// one array row is one point of the outline, in both cross sections at once:
+// .ops gives an operator a single array, and a loft needs its two profiles to
+// pair up point for point anyway
+
+operator Wz4Mesh Loft()
+{
+  column = 0;
+  parameter
+  {
+    int Steps(1..1024) = 8;
+    float Height(0..1024 step 0.01) = 1;
+    flags Flags("open|caps") = 1;
+    array
+    {
+      float Bottom[2] (-1024..1024 step 0.01);
+      float Top[2] (-1024..1024 step 0.01);
+    }
+  }
+  code
+  {
+    if(cmd->ArrayCount<3) return 0;
+    sF32 *p0 = new sF32[cmd->ArrayCount*2];
+    sF32 *p1 = new sF32[cmd->ArrayCount*2];
+    Wz4MeshArrayLoft *a = (Wz4MeshArrayLoft *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      p0[i*2+0] = a[i].Bottom[0]; p0[i*2+1] = a[i].Bottom[1];
+      p1[i*2+0] = a[i].Top[0];    p1[i*2+1] = a[i].Top[1];
+    }
+    Wz4Extra::MakeLoft(out,p0,p1,cmd->ArrayCount,para->Steps,para->Height,para->Flags&1);
+    delete[] p0;
+    delete[] p1;
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+// the array is the path; the profile is a regular polygon, because the one
+// array an operator gets is already spoken for
+
+operator Wz4Mesh Sweep()
+{
+  column = 0;
+  parameter
+  {
+    int Sides(3..256) = 6;
+    float Radius(0..1024 step 0.001) = 0.12;
+    float Twist(-64..64 step 0.001) = 0;
+    flags Flags("open|closed:*1-|caps") = 2;
+    array
+    {
+      float31 Point(-1024..1024 step 0.01);
+    }
+  }
+  code
+  {
+    if(cmd->ArrayCount<2) return 0;
+
+    sF32 *profile = new sF32[para->Sides*2];
+    for(sInt i=0;i<para->Sides;i++)
+    {
+      sF32 a = sF32(i)/para->Sides*sPI2F;
+      profile[i*2+0] = sFCos(a)*para->Radius;
+      profile[i*2+1] = sFSin(a)*para->Radius;
+    }
+
+    sF32 *path = new sF32[cmd->ArrayCount*3];
+    Wz4MeshArraySweep *a = (Wz4MeshArraySweep *) cmd->Array;
+    for(sInt i=0;i<cmd->ArrayCount;i++)
+    {
+      path[i*3+0] = a[i].Point.x;
+      path[i*3+1] = a[i].Point.y;
+      path[i*3+2] = a[i].Point.z;
+    }
+
+    Wz4Extra::MakeSweep(out,profile,para->Sides,path,cmd->ArrayCount,
+                        para->Flags&1,(para->Flags>>1)&1,para->Twist);
+    delete[] profile;
+    delete[] path;
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+/***                                                                      ***/
+/***   Mesh modifiers, second batch                                       ***/
+/***                                                                      ***/
+/****************************************************************************/
+
+operator Wz4Mesh Twist(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Axis("x|y|z") = 1;
+    float Angle(-64..64 step 0.001) = 0.5;
+    float Center(-1024..1024 step 0.01) = 0;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::Twist(out,para->Axis,para->Angle,para->Center,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Taper(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    flags Axis("x|y|z") = 1;
+    float Amount(-64..64 step 0.001) = -0.5;
+    float Center(-1024..1024 step 0.01) = 0;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::Taper(out,para->Axis,para->Amount,para->Center,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Inset(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Amount(0..1 step 0.001) = 0.3;
+    float Offset(-1024..1024 step 0.001) = 0;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::Inset(out,para->Amount,para->Offset,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh ExplodeFaces(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Distance(-1024..1024 step 0.001) = 0.1;
+    float FromCenter(0..1 step 0.001) = 0;
+    float Scale(0..16 step 0.001) = 1;
+    float Randomize(0..4 step 0.001) = 0;
+    int Seed(0..65535) = 1;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::ExplodeFaces(out,para->Distance,para->FromCenter,para->Scale,
+                           para->Randomize,para->Seed,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh SpikeFaces(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Height(-1024..1024 step 0.001) = 0.2;
+    float Inset(0..1 step 0.001) = 0.3;
+    float Randomize(0..4 step 0.001) = 0;
+    int Seed(0..65535) = 1;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::SpikeFaces(out,para->Height,para->Inset,para->Randomize,
+                         para->Seed,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Wireframe(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Width(0.001..0.99 step 0.001) = 0.2;
+    float Depth(-1024..1024 step 0.001) = 0.02;
+    flags Selection("all|selected|unselected") = 0;
+  }
+  code
+  {
+    Wz4Extra::Wireframe(out,para->Width,para->Depth,para->Selection);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh ConvexHull(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  code
+  {
+    Wz4Extra::ConvexHull(out);
+    out->CalcNormalAndTangents();
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh Simplify(Wz4Mesh)
+{
+  column = 2;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float CellSize(0.0001..1024 step 0.0001) = 0.1;
+    flags Flags("keep normals|recalculate normals") = 1;
+  }
+  code
+  {
+    Wz4Extra::Simplify(out,para->CellSize,para->Flags&1);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh SmoothNormals(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Angle "Angle (turns)"(0..0.5 step 0.001) = 0.1;
+  }
+  code
+  {
+    Wz4Extra::SmoothNormals(out,para->Angle);
+  }
+}
+
+/****************************************************************************/
+
+operator Wz4Mesh VertexAO(Wz4Mesh)
+{
+  column = 1;
+  flags = passinput|passoutput;
+  parameter
+  {
+    float Radius(0.001..1024 step 0.001) = 0.4;
+    float Strength(0..8 step 0.001) = 1;
+    flags Target("uv1|selection") = 0;
+  }
+  code
+  {
+    Wz4Extra::VertexAO(out,para->Radius,para->Strength,para->Target);
+  }
+}
+
+/****************************************************************************/
